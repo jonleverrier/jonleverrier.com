@@ -89,7 +89,16 @@ export default defineConfig(({command}) => ({
         // Needs Chromium, installed into the web container by
         // .ddev/web-build/Dockerfile.chromium (Puppeteer's own download is x86-64
         // only and won't exec on arm64).
-        critical({
+        // SKIPPED ON THE SERVER. This step needs three things a Forge deploy cannot
+        // give it: headless Chromium (installed here by .ddev/web-build/
+        // Dockerfile.chromium, not on the box), a URL that resolves, and the site
+        // already LIVE serving the build that has just been made — which during a
+        // deploy is the previous release, and on a first deploy is nothing at all.
+        //
+        // Opt-OUT rather than opt-in, so local behaviour is untouched: `npm run
+        // build` in ddev still generates critical CSS exactly as before, and only
+        // the deploy script sets SKIP_CRITICAL=1.
+        ...(process.env.SKIP_CRITICAL === '1' ? [] : [critical({
             criticalUrl: process.env.URL,
             criticalBase: './public/dist/criticalcss/',
             // `template` is NOT a free label — it's the filename Craft will look for.
@@ -150,7 +159,7 @@ export default defineConfig(({command}) => ({
                     forceInclude: [/is-page-(leaving|entering)/],
                 },
             },
-        }),
+        })]),
         ViteRestart({
             reload: [
                 'craft/templates/**/*',
