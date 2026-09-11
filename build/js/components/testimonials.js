@@ -17,6 +17,8 @@
 // re-laid out, so measure once and reuse. Invalidated on resize (below), which is the
 // only thing that moves it: the slide width is a container-query expression, and the
 // two breakpoint steps in it are width changes too.
+import { onSwipe } from './swipe.js';
+
 const steps = new WeakMap();
 
 function stepFor(track, slides) {
@@ -156,11 +158,22 @@ export function mountTestimonials(root = document) {
         }, 150);
     };
 
+    // Swipe to change quote — the same gesture as the method timeline, from the
+    // same helper. `dir` is set before sliding exactly as the arrow keys do: the
+    // CSS reads it to know which way the quote came from.
+    const unswipe = onSwipe(root, '.c-testimonials.has-multiple', (slider, dir) => {
+        const track = slider.querySelector('.c-testimonials__track');
+        if (!track) return;
+        track.dataset.dir = String(dir);
+        slideTo(slider, Number(track.dataset.index || 0) + dir);
+    });
+
     root.addEventListener('click', onClick);
     root.addEventListener('keydown', onKeydown);
     window.addEventListener('resize', onResize, {passive: true});
 
     return () => {
+        unswipe();
         root.removeEventListener('click', onClick);
         root.removeEventListener('keydown', onKeydown);
         window.removeEventListener('resize', onResize);

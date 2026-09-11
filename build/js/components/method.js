@@ -12,6 +12,8 @@
  * its first phase the moment it lands (see jonson-ask.js revealAnswer).
  */
 
+import { onSwipe } from './swipe.js';
+
 const SEL = '.c-method';
 const MULTI = '.c-method.has-multiple';
 
@@ -132,51 +134,14 @@ export function mountMethod(root = document) {
     if (!root || root._methodMounted) return () => {};
     root._methodMounted = true;
 
-    // ---- swipe ---------------------------------------------------------------
-    // TOUCH AND PEN ONLY. A mouse already has the cycle buttons and the arrow keys,
-    // and claiming a mouse drag here would fight text selection in the phase's prose
-    // for no gain. On a phone the buttons are small targets beside a timeline the
-    // thumb is already resting on, so the gesture is the natural control.
-    //
-    // The decision is made on pointerUP, from the total travel — not progressively
-    // on move. Nothing tracks the finger, so there is no half-dragged state to
-    // settle or rubber-band, and methodApply's own transition does the movement.
-    // What stops the page scrolling underneath is `touch-action: pan-y` in the CSS,
-    // not preventDefault here.
-    const SWIPE_MIN = 44;   // px of travel before it is a swipe rather than a tap
-    const SWIPE_BIAS = 1.3; // and how much more horizontal than vertical
-
-    let swipe = null;
-    // A swipe that starts on a node or a cycle button still ends in a click, which
-    // would then jump to whatever was under the finger. Stamped rather than a flag
-    // that needs clearing: if no click follows, this expires on its own.
-    let swipedAt = 0;
-
-    const onPointerDown = (e) => {
-        if (e.pointerType === 'mouse') return;
-        const slider = e.target.closest(MULTI);
-        if (!slider) return;
-        swipe = { slider, id: e.pointerId, x: e.clientX, y: e.clientY };
-    };
-
-    const onPointerUp = (e) => {
-        if (!swipe || e.pointerId !== swipe.id) return;
-        const { slider, x, y } = swipe;
-        swipe = null;
-        const dx = e.clientX - x;
-        const dy = e.clientY - y;
-        if (Math.abs(dx) < SWIPE_MIN) return;              // a tap, or a twitch
-        if (Math.abs(dx) < Math.abs(dy) * SWIPE_BIAS) return; // they were scrolling
-        swipedAt = Date.now();
-        // Drag left to go forward — the content follows the finger, as a page does.
-        // methodApply clamps, so a swipe past either end is a no-op.
-        methodApply(slider, Number(slider.dataset.index || 0) + (dx < 0 ? 1 : -1));
-    };
-
-    const onPointerCancel = () => { swipe = null; };
+    // Swipe to change phase (see components/swipe.js, shared with the testimonial
+    // slider). `touch-action: pan-y` on .c-method__viewport is what keeps a sideways
+    // gesture from scrolling the page; the helper's comments carry the rest.
+    const unswipe = onSwipe(root, MULTI, (slider, dir) => {
+        methodApply(slider, Number(slider.dataset.index || 0) + dir);
+    });
 
     const onClick = (e) => {
-        if (Date.now() - swipedAt < 400) return; // the click that trails a swipe
         const slider = e.target.closest(MULTI);
         if (!slider) return;
         const index = Number(slider.dataset.index || 0);
@@ -202,9 +167,6 @@ export function mountMethod(root = document) {
 
     root.addEventListener('click', onClick);
     root.addEventListener('keydown', onKeydown);
-    root.addEventListener('pointerdown', onPointerDown);
-    root.addEventListener('pointerup', onPointerUp);
-    root.addEventListener('pointercancel', onPointerCancel);
     window.addEventListener('resize', onResize);
 
     // Timelines already in the page (About) rest on their first phase now; ones
@@ -214,9 +176,7 @@ export function mountMethod(root = document) {
     return function dispose() {
         root.removeEventListener('click', onClick);
         root.removeEventListener('keydown', onKeydown);
-        root.removeEventListener('pointerdown', onPointerDown);
-        root.removeEventListener('pointerup', onPointerUp);
-        root.removeEventListener('pointercancel', onPointerCancel);
+        unswipe();
         window.removeEventListener('resize', onResize);
         if (raf) cancelAnimationFrame(raf);
         root._methodMounted = false;

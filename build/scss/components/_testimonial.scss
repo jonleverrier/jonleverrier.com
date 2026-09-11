@@ -64,6 +64,10 @@ $c-testimonials-slide: rem(740);
     width: 100cqi;
     margin-inline: calc((100% - 100cqi) / 2);
     overflow: hidden; // the track slides behind this window; peeks show in the gutters
+    // Horizontal gestures belong to the slider, vertical ones to the page. In CSS,
+    // not a preventDefault in a move handler: the browser needs to know before the
+    // gesture starts, or it scrolls a few pixels and then stops. See swipe.js.
+    touch-action: pan-y;
     // The current slide width (mirrors the card flex-basis) — the edge-fade keys its
     // geometry off this so the fade always lands exactly on the gutter.
     --slide: min(#{$c-testimonials-slide}, 100cqi);
