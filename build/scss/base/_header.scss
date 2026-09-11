@@ -170,11 +170,18 @@ $c-header-rest-sm: $c-header-top-sm;
     position: fixed;
     top: calc(#{getmap($space, rhythm, 500)} + #{getmap($space, rhythm, 700)});
 
-    // Follows the closed header on a phone. Left at the desktop offset the bar
-    // dropped 28px the instant the nav opened and climbed back on close — the logo
-    // visibly moving because of a menu that has nothing to do with it.
+    // Follows the closed header on a phone — but it has to ADD the slab's own offset
+    // to do it, which is what the desktop value above has always been doing.
+    //
+    // Closed, .b-header is `absolute` and its top is measured from the SLAB. Open, it
+    // is `fixed` and measured from the VIEWPORT, and the slab sits one rhythm500 down
+    // from there (body > .b-wrap's block padding). So the same visual position needs
+    // the two added: rhythm500 + the header's own offset. That is precisely what
+    // `calc(rhythm500 + rhythm700)` is above — slab offset plus header offset, not an
+    // arbitrary pair — and taking only the header half here is what left the logo
+    // sitting 16.88px too high the moment the nav opened.
     @include mq(until, md) {
-        top: $c-header-top-sm;
+        top: calc(#{getmap($space, rhythm, 500)} + #{$c-header-top-sm});
     }
     left: 0;
     // Inset by the scrollbar the lock just removed, rather than padded by it. Locking
