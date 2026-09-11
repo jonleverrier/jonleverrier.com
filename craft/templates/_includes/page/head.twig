@@ -169,18 +169,26 @@
        these files and preloading them again just spends early bandwidth and
        priority on requests the cache would have served anyway.
 
-       Fonts: the two woff2 faces of the display family only. JonSonSans is what
-       the h1 and the header button are set in, so it decides whether the first
-       paint looks right. The .otf copies are woff2 fallbacks — preloading them
-       makes every modern browser fetch the same face twice. JonSonMono is out on
-       purpose: nothing above the fold uses it and both weights ship as .ttf
-       (~115kB each), which would sit in front of the assets that do matter.
+       Fonts: the four woff2 faces, both families. JonSonSans is what the h1 and
+       the header button are set in, so it decides whether the first paint looks
+       right. The .otf copies are woff2 fallbacks — preloading them makes every
+       modern browser fetch the same face twice.
+
+       JonSonMono used to be excluded here, on the grounds that nothing above the
+       fold used it and both weights shipped as .ttf at ~115kB. Neither is true
+       any more. That reasoning was written for Roboto Mono, which has since been
+       replaced by Söhne — 25kB a face in woff2, SMALLER than either Baikal
+       weight. And it is very much above the fold: field-input sets the ask bar's
+       placeholder in it, which is the front door's one control, plus the meta
+       rows on every note and case study.
 
        `crossorigin` is load-bearing, not decorative — fonts are fetched
        anonymously, and a preload that doesn't match the real request is a second
        download rather than a saved one. #}
     <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ craft.vite.asset('build/fonts/Baikal-ExpandedLight.woff2') }}">
     <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ craft.vite.asset('build/fonts/Baikal-ExpandedBold.woff2') }}">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ craft.vite.asset('build/fonts/soehne-mono-leicht.woff2') }}">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ craft.vite.asset('build/fonts/soehne-mono-halbfett.woff2') }}">
 
     {{ craft.vite.includeCriticalCssTags(tplPath) }}
     {{ craft.vite.script('build/js/app.js', true) }}
