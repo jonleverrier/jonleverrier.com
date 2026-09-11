@@ -639,10 +639,23 @@ $c-jonson-line: #383910;
     position: relative;
     z-index: 1;
 
-    // Mobile: the back circle sits in the row, immediately left of the input
-    // (which fills the rest) — never stacked below it.
+    // MOBILE: the input on top, the home/back circles centred underneath.
+    //
+    // The input is what the footer is FOR, and on a phone the row put two circles
+    // in front of it and left the field the leftover width — the control a visitor
+    // came to use was the narrowest thing in its own bar. Stacked, it gets the full
+    // width and the buttons read as what they are: somewhere to go afterwards.
+    //
+    // column-REVERSE rather than reordering the markup, because the nav must stay
+    // first in the DOM: from md it is grid-column 1, and the same markup serves the
+    // ask bar on notes and case studies. The cost is that tab order still reaches
+    // the buttons before the input; they are two links with clear labels, which is
+    // a smaller price than two layouts' worth of duplicated markup.
     display: flex;
-    align-items: center;
+    flex-direction: column-reverse;
+    // stretch, not centre: the field has to take the full width. The nav centres
+    // itself instead (see .c-jonson__nav).
+    align-items: stretch;
     gap: getmap($space, rhythm, 400);
 
     // From md: a 3-column grid — a left gutter wide enough for the circle, the
@@ -708,7 +721,10 @@ $c-jonson-band-h: rem(46);
 // the field up to the words without leaving it.
 .c-jonson__field {
     position: relative;
-    flex: 1 1 0;
+    // 0 0 auto, not `1 1 0`: the footer is a COLUMN on mobile now, and `1 1 0` there
+    // means "grow to fill the column's height", which stretched the field down the
+    // bar instead of across it. Width comes from the parent's align-items: stretch.
+    flex: 0 0 auto;
     min-width: 0;
     padding-top: calc(#{$c-jonson-band-h} - #{$b-radius-200});
     margin-top: calc(-1 * (#{$c-jonson-band-h} - #{$b-radius-200}));
@@ -1212,6 +1228,9 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
 .c-jonson__nav {
     display: flex;
     align-items: center;
+    // Centred under the input on mobile. From md the grid puts this in the left
+    // gutter with justify-self: start, where this has no effect.
+    justify-content: center;
     gap: getmap($space, rhythm, 500); // the gap the share icons keep (see .b-social), so the two rows of round buttons on a note match
     flex: 0 0 auto;
 
