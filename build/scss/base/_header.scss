@@ -12,6 +12,14 @@
     left: 0;
     right: 0;
     z-index: getmap($z-index, xl);
+
+    // PHONES: down to the wrap's own left padding, so the logo sits the same
+    // distance from the top of the slab as from its side. rhythm700 is a desktop
+    // measurement — 34.38px of clearance above a header that is itself only a logo
+    // and a burger, on the screen with the least room to spare.
+    @include mq(until, md) {
+        top: getmap($space, rhythm, 500);
+    }
 }
 
 // Jonson pages keep the header pinned as you scroll the conversation — but only
@@ -63,11 +71,14 @@ $c-header-rest: calc(#{getmap($space, rhythm, 500)} + #{getmap($space, rhythm, 7
 // the top by twice the inset it keeps from the left, which on a small screen is
 // simply space the conversation could be using.
 //
-// The TRAVEL is deliberately identical (17.5px either way), so the slide between
-// resting and pinned reads exactly as it does on a desktop; only where it starts
-// and ends moves.
+// REST AND PINNED ARE THE SAME PLACE on a phone, so there is no slide at all here.
+// That is the honest consequence of wanting the header at its left-padding value
+// in both states: once resting and pinned are both one inset from the top, there
+// is nothing between them to travel through. The transform stays in the rule
+// rather than being deleted — it resolves to 0 at this width and to the desktop's
+// 17.5px above it, from the same pair of names.
 $c-header-stuck-sm: getmap($space, rhythm, 500);
-$c-header-rest-sm: getmap($space, rhythm, 700);
+$c-header-rest-sm: getmap($space, rhythm, 500);
 
 .is-jonson .b-header {
     position: sticky;
