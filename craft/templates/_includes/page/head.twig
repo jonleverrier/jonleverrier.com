@@ -179,8 +179,8 @@
        `crossorigin` is load-bearing, not decorative — fonts are fetched
        anonymously, and a preload that doesn't match the real request is a second
        download rather than a saved one. #}
-    <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ craft.vite.asset('build/fonts/BaikalTrial-ExpandedLight.woff2') }}">
-    <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ craft.vite.asset('build/fonts/BaikalTrial-ExpandedBold.woff2') }}">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ craft.vite.asset('build/fonts/Baikal-ExpandedLight.woff2') }}">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ craft.vite.asset('build/fonts/Baikal-ExpandedBold.woff2') }}">
 
     {{ craft.vite.includeCriticalCssTags(tplPath) }}
     {{ craft.vite.script('build/js/app.js', true) }}
