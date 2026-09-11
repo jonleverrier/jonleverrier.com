@@ -82,7 +82,7 @@ $c-case-toc-num: rem(34);
 .c-case-toc__page {
     max-width: getmap($mq-breakpoints, xxl);
     margin-inline: auto;
-    padding-inline: getmap($space, rhythm, 500);
+    padding-inline: var(--b-page-inset);
 }
 
 .c-case-toc__inner {

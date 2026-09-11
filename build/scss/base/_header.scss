@@ -127,7 +127,7 @@
     // drops it the instant overflow goes hidden (measured: 485 → 500, same as `auto`).
     // Defaults to 0px, so overlay-scrollbar machines are unaffected.
     right: var(--nav-scrollbar, 0px);
-    padding-inline: getmap($space, rhythm, 500);
+    padding-inline: var(--b-page-inset);
     // CAPPED AND CENTRED, exactly as `body > .b-wrap` is — the box this header sits in
     // when it is `absolute`. Without these two lines the fixed header spans the whole
     // viewport, and past the xxl cap that gives its inner .b-wrap MORE room than it had:

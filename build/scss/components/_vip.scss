@@ -24,7 +24,7 @@ $c-vip-ease: cubic-bezier(0.16, 1, 0.3, 1); // the site's settle curve (see _jon
 // and lg. Past the design canvas the page centres and the slab's edge moves in by
 // half the surplus — the max() term follows it. The disc's right edge lands on the
 // button's right edge at every width.
-$c-vip-outer: getmap($space, rhythm, 500);
+$c-vip-outer: var(--b-page-inset);
 @function vip-right($inner) {
     @return calc(max(0px, (100vw - #{getmap($mq-breakpoints, xxl)}) / 2) + #{$c-vip-outer} + #{$inner});
 }

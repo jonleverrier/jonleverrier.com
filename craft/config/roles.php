@@ -19,6 +19,5 @@ return [
     'Design Engineer',
     'Brand Designer',
     'AI Designer',
-    'Street Photographer',
     'Fully Grown Human',
 ];

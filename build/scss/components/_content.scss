@@ -448,7 +448,7 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
     margin: 0 auto getmap($space, rhythm, 500);
     // .b-wrap's inset + .c-content's, summed. Written as an addition rather than the
     // total so the two sources stay visible — change either and this follows.
-    padding-inline: getmap($space, rhythm, 500) + getmap($space, rhythm, 500);
+    padding-inline: calc(var(--b-page-inset) + #{getmap($space, rhythm, 500)});
     text-transform: uppercase;
     font-weight: 600;
     // Green, matching .c-content__clients-whisper and the page's top whisper, NOT the
@@ -456,10 +456,10 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
     // disappear into the cream slab here.
     color: $c-content-whisper;
     @include mq(from, md) {
-        padding-inline: getmap($space, rhythm, 500) + getmap($space, rhythm, 600);
+        padding-inline: calc(var(--b-page-inset) + #{getmap($space, rhythm, 600)});
     }
     @include mq(from, lg) {
-        padding-inline: getmap($space, rhythm, 500) + getmap($space, rhythm, 800);
+        padding-inline: calc(var(--b-page-inset) + #{getmap($space, rhythm, 800)});
     }
 }
 

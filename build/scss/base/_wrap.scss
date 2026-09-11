@@ -6,9 +6,34 @@
 @use '../mixins' as *;
 @use '../theme' as *;
 
+// THE PAGE INSET — how far the slab sits off the window edge.
+//
+// A custom property because it is not one number: it narrows on a phone, and at
+// least seven other rules reproduce it to stay aligned with the logo — the section
+// strip, the nav panel, the nav-open header, the VIP disc, the work whisper, and
+// the Jonson bar's full-bleed maths. Before this they each carried their own copy of
+// `rhythm 500`, so a change here silently left the rest behind and everything that
+// lines up on the logo's left edge stopped doing so.
+//
+// INLINE ONLY. The block padding stays a flat rhythm 500 on purpose: three sections
+// size themselves with `calc(100dvh - 2 * rhythm 500)` against it, and narrowing the
+// side gutter has nothing to do with how tall the first screen is.
+:root {
+    --b-page-inset: #{getmap($space, rhythm, 500)};
+
+    // Tighter on a phone. Content sits inside TWO insets — this one plus .c-content's
+    // own — so at rhythm 500 each a 375px screen loses 33.75px, about 18% of its width,
+    // before any content starts. One step down the scale gives ~11px of that back per
+    // side without letting text run at the window edge.
+    @include mq(until, md) {
+        --b-page-inset: #{getmap($space, rhythm, 400)};
+    }
+}
+
 // the first .b-wrap after the body
 body > .b-wrap {
-    padding: getmap($space, rhythm, 500);
+    padding-block: getmap($space, rhythm, 500);
+    padding-inline: var(--b-page-inset);
     position: relative;
     // The whole page stops at the design canvas, so nothing inside has to cap itself
     // against a viewport that keeps growing. At 1728 a full-bleed case study image
@@ -25,8 +50,16 @@ body > .b-wrap {
     display: flex;
     flex-direction: column;
 
+    // The gap between the page's top-level blocks — in practice the one above the
+    // footer. Same token as the side gutter, so the page's margin reads as one
+    // measurement rather than a side value and an unrelated vertical one, and so a
+    // phone tightens both together.
+    //
+    // Safe to vary where the block PADDING above is not: the full-height sections
+    // size themselves against that padding (`calc(100dvh - 2 * rhythm 500)`) and
+    // never against this.
     > * + * {
-        margin-top: getmap($space, rhythm, 500);
+        margin-top: var(--b-page-inset);
     }
 }
 

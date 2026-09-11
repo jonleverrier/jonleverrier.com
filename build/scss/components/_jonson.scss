@@ -789,7 +789,7 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     .c-jonson__field & {
         @include mq(until, md) {
             left: auto;
-            width: calc(100vw - 4 * #{getmap($space, rhythm, 500)});
+            width: calc(100vw - 2 * var(--b-page-inset) - 2 * #{getmap($space, rhythm, 500)});
         }
     }
 

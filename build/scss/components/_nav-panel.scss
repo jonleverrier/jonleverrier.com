@@ -97,7 +97,7 @@ $c-nav-panel-ms: 260ms;
     height: 100%;
     // The outer half of the logo's inset — the same padding `body > .b-wrap` puts
     // between the viewport and the slab. The inner half is the .b-wrap in the markup.
-    padding-inline: getmap($space, rhythm, 500);
+    padding-inline: var(--b-page-inset);
 
     // The header sits over the top of this, so the list is pushed clear of it.
     padding-block: rem(120) getmap($space, rhythm, 500);
