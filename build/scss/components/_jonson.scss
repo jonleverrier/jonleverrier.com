@@ -137,12 +137,29 @@ $c-jonson-line: #383910;
     height: $spine-length;
     margin: rem(28) auto rem(22);
     background: $c-jonson-line;
+
+    // MOBILE: the cap drops 20px, matching .c-content__whisper. The logo's role
+    // ticker wraps at this width, which pushes the header down into the timeline's
+    // lead-in; the conversation view has the identical drawing above it and needed
+    // the identical move, but only the lighter template got it the first time.
+    //
+    // Not a margin on .c-jonson__whisper itself — it would collapse with this 28px
+    // and the larger simply wins, so nothing moves.
+    @include mq(until, md) {
+        margin-top: rem(48);
+    }
 }
 
 .c-jonson__whisper::after {
     content: '';
     position: absolute;
     top: rem(22);
+    // Moves with the line above by the same 20px: the ::before is the line and this
+    // is the dot capping it — one drawing, and shifting either alone pulls the dot
+    // off the end of its own line.
+    @include mq(until, md) {
+        top: rem(42);
+    }
     left: 50%;
     transform: translate(-50%, -50%);
     width: rem(16);
@@ -1214,6 +1231,16 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     // afterthought beside the same question typed on the front door. What stays
     // different is the surface it sits on: solid white here, frosted glass there.
     @include typography(p);
+
+    // Tighter on a phone. field-input's 12/8/12/16 is shared with the front door,
+    // so this narrows the footer's field only — the front door's bar is the page's
+    // main event and keeps its air.
+    //
+    // The left inset comes down with the block padding: at 16 against a reduced
+    // height the placeholder sat noticeably off-centre in its own box.
+    @include mq(until, md) {
+        padding: rem(10) rem(8) rem(10) rem(12);
+    }
 }
 
 .c-jonson__submit {

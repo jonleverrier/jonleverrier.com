@@ -180,10 +180,14 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
         background: $c-content-spine;
     }
 
-    // MOBILE: the whole cap drops 20px. The logo's role ticker wraps to two or three
-    // lines at this width — "Street Photographer" does not fit one — which pushes the
-    // header down into the timeline's lead-in. Measured at 375: the ticker's last line
-    // ended at 123 and the cap DOT's top edge sat at 120, overlapping it by 3px.
+    // MOBILE: the whole cap drops 20px. The logo's role ticker wraps at this width,
+    // which pushes the header down into the timeline's lead-in. Measured at 375 when
+    // this was written: the ticker's last line ended at 123 and the cap DOT's top edge
+    // sat at 120, overlapping it by 3px. ("Street Photographer", the 19-character role
+    // that forced a third line, has since been dropped — the wrap is shorter now, but
+    // two lines still reach far enough down to need this.)
+    //
+    // .c-jonson__whisper carries the same pair of offsets for the same reason.
     //
     // Both offsets move, by the same amount, because they are one drawing: the ::before
     // is the line and the ::after is the dot capping it, and shifting either alone pulls
@@ -634,6 +638,20 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
         width: rem(1);
         margin: -#{rem(8)} rem(16) -#{rem(8)} 0; // top/bottom = the box's padding; right = the row's gap, so the line sits centred in a double gap
         background: rgba($c-content-summary, 0.18);
+    }
+
+    // NOT ON A PHONE, anywhere this row appears. The hairline is drawn for a
+    // single line; once the row wraps it lands at the START of the wrapped line
+    // and pushes the reading time along, so it reads as a stray mark rather than
+    // a separator between two things.
+    //
+    // On the shared class, not on the index's own: the cards carry both
+    // .c-content__meta-items and .c-notes__meta-items, so the index had this and
+    // the note page — the same row, same wrap, same stray line — did not.
+    @include mq(until, md) {
+        &::before {
+            content: none;
+        }
     }
 }
 

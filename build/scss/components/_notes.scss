@@ -148,15 +148,9 @@
     justify-content: flex-start;
     margin-top: rem(12);
 
-    // In a card on a phone the row has to wrap, and the hairline before the
-    // reading time — drawn for a row — would sit at the start of a wrapped
-    // line and push the text along. So below md it goes, and the items just
-    // stack; from md the row fits and it returns.
-    @include mq(until, md) {
-        .c-content__date + .c-content__read::before {
-            content: none;
-        }
-    }
+    // The wrapped-row hairline is handled on .c-content__date + .c-content__read
+    // itself (see _content.scss) — it applies to every meta row now, not just the
+    // cards, because the note page has the identical problem.
 }
 
 // The Summary under the meta row: the note's standfirst, set as a standard
