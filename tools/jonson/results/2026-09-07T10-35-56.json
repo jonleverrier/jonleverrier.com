@@ -1,0 +1,2337 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-07T10:31:47.563Z",
+  "scenarios": [
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] in the Channel Islands and spent time in Paris and Brighton along the way. I've been doing this for over 25 years, working acro"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "music",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — originally from Jersey[[jersey]], with stints in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, and I still love the cra"
+        }
+      ],
+      "failures": [
+        "T1 showed music"
+      ]
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and have knocked about a fair bit: Paris, Brighton, and a year travelling around Asia before settling in France. I've been desi"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon, an independent web designer originally from Jersey, now living in Bordeaux[[bordeaux]] after stints in Paris and Brighton. I've been doing this for over 25 years — strategy through design to development, which is a slightly unusual"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] in the Channel Islands, and I've lived in Paris and Brighton along the way. I've been designing and building for the web for ov"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — originally from Jersey[[jersey]], with stints in Paris and Brighton along the way. I've been designing and building for the web for over 25 years and work across the whole"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "Photography's the big one — street photography specifically, wandering a city with a Leica and hoping a good frame turns up, which mostly it doesn't. I collect photography books too. Beyond that I cook a lot, always with music on, and I lov"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Photography's a big one — I shoot street, which is basically wandering a city hoping a small miracle happens in front of the lens, and mostly it doesn't. I collect photography books, cook a lot, and I'm forever restless about travel — I'm d"
+        }
+      ],
+      "failures": [
+        "T1 missing context",
+        "T1 showed music"
+      ]
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "A fair bit runs through my life outside the screen. Street photography is the big one — I shoot with a Leica rangefinder[[street-photo]] and I'm a bit obsessed, collecting photography books along the way. I love to cook, I'm forever listeni"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "music",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "A fair bit, and it all bleeds into each other. I'm big into street photography — I shoot with a Leica rangefinder and collect photography books, and I'm forever chasing that one \"good\" frame that mostly never comes. I also love travelling, "
+        }
+      ],
+      "failures": [
+        "T1 showed music"
+      ]
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "Quite a lot, as it happens. I'm big into street photography — I shoot on a Leica rangefinder and collect photography books, which is a slippery slope for the wallet. I love travelling, especially to places with a bad reputation, and I'm alw"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A fair bit, honestly. I'm a keen street photographer — I shoot on a Leica rangefinder and collect photography books, which is a slippery slope for the wallet. I love music and used to DJ[[music]], I cook, and I travel a lot — I've got a sof"
+        }
+      ],
+      "failures": [
+        "T1 missing context",
+        "T1 showed music"
+      ]
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I'm in Bordeaux[[bordeaux]], down in the south-west of France — been in the country for over ten years now. Originally I'm from Jersey[[jersey]] in the Channel Islands, and I've had spells in Paris[[france]] and Brighton[[brighton]] along t"
+        }
+      ],
+      "failures": [
+        "T1 missing context"
+      ]
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Bordeaux[[bordeaux]], in the south-west of France — been in France over ten years now. Before here I lived in Paris and, briefly, Brighton, and I'm originally from Jersey in the Channel Islands. [[next: what made you settle in Bordeaux? @ph"
+        }
+      ],
+      "failures": [
+        "T1 missing context"
+      ]
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Bordeaux[[bordeaux]], in the south-west of France — been in the country over ten years now. Before that I lived in Paris for a spell and Brighton for a year, and I'm originally from Jersey[[jersey]] in the Channel Islands. [[next: what's it"
+        }
+      ],
+      "failures": [
+        "T1 missing context"
+      ]
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I'm in Bordeaux[[bordeaux]], in the south-west of France — been in France over ten years now, though I was born on Jersey[[jersey]] and lived in Paris and Brighton along the way. I work remotely, which after all these years I'd argue is eve"
+        }
+      ],
+      "failures": [
+        "T1 missing context"
+      ]
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I'm in Bordeaux[[bordeaux]], down in the south-west of France — been in the country over ten years now. Before that I lived in Paris and Brighton, and I'm originally from Jersey in the Channel Islands. [[next: what's Bordeaux like to work f"
+        }
+      ],
+      "failures": [
+        "T1 missing context"
+      ]
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I'm in Bordeaux[[bordeaux]], in the south-west of France — been in the country over ten years now. Originally I'm from Jersey[[jersey]] in the Channel Islands, and I've had spells in Paris and Brighton along the way. [[next: what's it like "
+        }
+      ],
+      "failures": [
+        "T1 missing context"
+      ]
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 3,
+          "chips": 3,
+          "answer": "I was born there — Jersey[[jersey]] is home ground, grew up on the island and started out designing and building websites there before I ever left. Trinity's my favourite parish, if you want the local's answer. [[next: what work did you do "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 3,
+          "chips": 3,
+          "answer": "Jersey's home — I was born there, on the island, back in 1982. Spent my early years and the start of my career on Jersey[[jersey]] before I moved away, and I still have a real soft spot for it. Trinity's my favourite parish, if you're curio"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "Jersey's home — I was born there, on 9 July 1982. It's a small island in the Channel Islands, and I still have a real soft spot for it; my favourite parish is Trinity[[jersey]]. I've since lived in Paris, Brighton and now Bordeaux, but Jers"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I was born there — Jersey[[jersey]] is home, or at least where I started out. I've lived plenty of places since (Paris, Brighton, now Bordeaux) but I still have a real soft spot for the island; Trinity's my favourite parish, and a fair bit "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "Jersey's home — I was born there, on the island, back in '82. It's a proper little place: my favourite parish is Trinity[[jersey]], and I still feel the pull of it even after years in France. A fair bit of my early career was rooted there t"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I was born there, on the island — grew up in Jersey[[jersey]] before I ever left for Paris, Brighton and eventually France. Trinity's my favourite parish, if you're curious. [[next: what took you from Jersey to France? @about | did you do a"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "A Leica M11P with a 35mm f/1.4 Summilux — my dream setup, honestly. It's a rangefinder, which some people think is a bit mad for street photography, but I love the deliberateness of it.[[street-photo]] [[next: why a rangefinder for street p"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "A Leica M11P with a 35mm f/1.4 Summilux — my dream setup, honestly. It's a rangefinder, which means manual focusing and a bit of a slower, more deliberate way of shooting, but for street photography that suits me perfectly. [[next: why do y"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "A Leica M11P with a 35mm f/1.4 Summilux — my dream setup, honestly. It's a rangefinder, which the internet loves to argue about, but shooting street with it just clicks for me[[street-photo]]. [[next: why do you prefer a rangefinder for str"
+        }
+      ],
+      "failures": [
+        "T1 missing context"
+      ]
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "A Leica M11P with a 35mm Summilux f/1.4 — my dream setup, honestly. It's a rangefinder, which some people find fiddly, but for street photography[[street-photo]] that slower, deliberate way of shooting suits me perfectly. [[next: what draws"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "A Leica M11-P with a 35mm f/1.4 Summilux — my dream setup, and honestly a bit indulgent, but a rangefinder just suits the way I shoot on the street. Sorry not sorry.[[street-photo]] [[next: what draws you to street photography? | who are yo"
+        }
+      ],
+      "failures": [
+        "T1 missing context"
+      ]
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A Leica M11P with a 35mm Summilux f/1.4 — my dream setup, honestly. It's a rangefinder, which makes it a bit slower and more deliberate to shoot with, and that suits the way I like to work on the street[[street-photo]]. [[next: what draws y"
+        }
+      ],
+      "failures": [
+        "T1 missing context"
+      ]
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Loved it — I spent about three weeks there once, near the end of a long stretch around South East Asia, and it completely got under my skin. What stayed with me wasn't the sights so much as the people I met and the way things are made there"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I loved it — I spent about three weeks there once, coming up from South East Asia, and it completely got under my skin. Something about being able to slow down and stay put for once, getting to know a few people and places properly rather t"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I loved Japan — I spent a few weeks there near the end of a long trip through Asia, and it left a real mark. What got me wasn't the sights so much as the people; I ended up hanging out with a collective of architects and designers in Kyoto "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Loved it — I spent a stretch there after a long run through South East Asia, and it was the place where I stopped rushing and actually got to know people rather than just ticking off sights. Kyoto in particular stuck with me: I ended up sta"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I do, a lot — I spent a chunk of time there years back and it left a real mark on me. What got under my skin wasn't so much the sights as the people: I ended up hanging out with a collective of architects and designers in Kyoto and it was p"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I loved it — I spent a few weeks there years ago, coming up from South East Asia, and it completely changed the pace of my trip. I stopped rushing around and actually got to know some people and places properly, which I hadn't managed anywh"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've put together a collection of logos over the years — a mix of ones that made it into the world and a few that never saw the light of day, which are sometimes the more interesting ones to look at.[[casestudies]] A couple I'm particularly"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've designed a fair few logos over the years — some that made it into the world, some that never did. There's a little collection of used and unused marks I've pulled together, which is honestly one of my favourite things to look back on.["
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've done a fair bit of logo and brand work over the years — a mix that made it out into the world and a few that never did. There's a case study that's actually a collection of used and unused logos, which is probably the most fun way to s"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've done a fair bit of logo work over the years — from product branding to a whole collection of used and unused marks that never quite made it out into the world, which are always fun to look back on.[[casestudies]] Is there a particular "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've done a fair bit of logo work over the years — some launched, some never saw the light of day, which is often the way with logos.[[casestudies]] There's a little collection of used and unused marks I've put together, plus the product br"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've done a fair few logos over the years — some made it into the wild, plenty didn't. I keep a little collection of both the used and unused ones, which is often more honest than a polished portfolio because you see the roads not taken. Th"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper is the UK's leading provider of legal and business CPD conferences — they've been running around 20 years, and I've looked after their design and platforms for over a decade now. The big piece was replacing an ageing bespoke sys"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "The White Paper booking engine[[study:white-paper-booking-engine-design-development]] is a good one to dig into — they're the UK's leading provider of legal and business CPD conferences, and I've looked after their design and platforms for "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper is the UK's leading provider of CPD conferences for legal and business professionals — I've looked after their design and platforms for over a decade now. The big one was replacing an ageing bespoke system that handled their adm"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper's a UK conference provider I've worked with for a long time — the kind of relationship where you end up knowing the business inside out. They'd been running on an ageing bespoke system that handled office admin, the website and "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper is the UK's leading provider of legal and business CPD conferences — I've looked after their design and digital experience for over a decade. The big piece was replacing an ageing bespoke system that ran their admin, website and"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper is the UK's leading provider of legal and business CPD conferences — I've looked after their design and digital side for over a decade now. The big piece was replacing an ageing bespoke system that ran their office admin, websit"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Yes — I worked with Vaiie for a good stretch, first as a design consultant and later brought in-house as Head of Design. It's regulatory tech: customer onboarding and identity verification for firms working across multiple jurisdictions.[[t"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I first came in as a design consultant in regtech, then was brought in-house as Head of Design to lead the work. It was very much 0-to-1 stuff: designing a multi-jurisdictional client onboarding platform and an identity verification t"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — that was a proper stint. I came in as a design consultant first, then got brought in-house as Head of Design to lead the work. Across the two spells I helped shape their onboarding and identity verification products, and pulled their "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — that's one of the projects I'm proudest of, actually. I first came in as a design consultant working on their regtech products, then they brought me in-house as Head of Design to lead things properly. Designed a multi-jurisdictional c"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I worked with Vaiie for a few years, first as a design consultant and later brought in-house as Head of Design. It's regulatory software: customer onboarding and identity verification for firms operating across multiple jurisdictions."
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — Vaiie's a regulatory software start-up, customer onboarding and identity verification for multi-jurisdictional firms. I started as a design consultant, then got brought in-house as Head of Design to lead things after the consultancy w"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "sectors",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Financial services has run through a good chunk of my career, yes — I've redesigned and built front-ends for Lloyds Bank International and HSBC International, and more recently spent a few years leading design on regulatory software for Vai"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — regtech and financial services have been a big part of my work. I designed and built a multi-jurisdictional client onboarding platform and an identity verification tool, and earlier in my career I redesigned front-ends for the likes o"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Financial services has been a big part of my career — I've redesigned and front-ended sites for the likes of Lloyds Bank International and HSBC International, and more recently spent a few years in regtech, leading design on a client onboar"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Financial services, yes — I've done front-end and redesign work for the likes of Lloyds Bank International and HSBC International, and more recently spent a good while as Head of Design at a regtech start-up, evolving their onboarding and i"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Financial services and regtech are firmly my patch — I've redesigned the front-ends for Lloyds Bank International and HSBC International, and spent a good stretch as Head of Design at a regulatory software startup, shaping a client onboardi"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Not fintech under that exact label, but plenty of adjacent ground — I've worked in financial services and banking (things like Lloyds Bank International and HSBC International), and more recently spent a good stretch in regtech leading desi"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Broadly, three flavours: helping organisations with complex products simplify them so people actually engage, getting startups from an idea to something real that stands out, and partnering with agencies short on resource. Over 25 years I'v"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Broadly, three flavours: helping organisations with complex products simplify them, getting startups from an idea to something real, and partnering with agencies who need a reliable extra pair of hands. Over 25 years I've worked across bank"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Broadly, three flavours: complex products that need simplifying, early-stage startups turning an idea into something real, and helping agencies who are short on resource. Concretely that's spanned regulatory software, an online estate agenc"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Broadly, I work across the whole life cycle — strategy, design and build — which is a bit unusual for a designer. Over 25 years I've done everything from booking engines and on-demand platforms to regulatory compliance tools, first-of-a-kin"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A real spread over 25-odd years — ecommerce front-ends, product design in regtech, booking and on-demand platforms, brand and identity work, plus a fair bit of 0-to-1 work getting startups from an idea to something real. I've worked for age"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A real mix over 25-odd years — booking and on-demand platforms, e-commerce sites, product design for regtech, brand and front-end work, even an iOS app for street photographers. I've worked across everything from startups getting their firs"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "sectors",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Over 25 years I've worked with a real mix — well-known banks, telecoms and beauty brands, startups finding their feet, and government bodies too. Everything from Lloyds and HSBC International to Feel Unique's first ecommerce sites and the f"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've been at this over 25 years, so the roster's a fair mix — everything from banks and telecoms to regtech startups and beauty ecommerce. A good spread of well-known brands and smaller ventures over the years, working as an agency hand, in"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Over the years I've worked with a real mix — big names and scrappy startups alike, from banks and telecoms to beauty ecommerce and government bodies — so I've seen how design plays out at very different scales.[[clients]] One relationship e"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A pretty broad mix over the years — big names alongside startups and side projects. Banking clients like Lloyds and HSBC International, telecoms with Sure, government work for the States of Jersey, beauty e-commerce with Feel Unique, and pl"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "sectors",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Over 25 years I've been lucky to work with a real spread — big names in banking and telecoms, regulatory tech startups, ecommerce brands, even government. Everything from HSBC International and Lloyds Bank International to Feel Unique and t"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "sectors",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Over 20-odd years I've worked with a good spread of well-known brands and organisations — from banks like Lloyds International and HSBC to beauty ecommerce, telecoms, government bodies and a fair few startups.[[clients]] It's ranged across "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A fair spread over the years — regtech and regulatory tech, events and eventtech, plenty of e-commerce and marketplaces, financial services and insurance, telecoms, property, beauty, bioscience, and a good deal of 0-to-1 work with startups "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A fair spread over the years — regulatory tech, events and e-commerce, property, financial services, telecoms, plus a good bit of 0-to-1 work with startups getting a first product off the ground.[[sectors]] That said, I'm not precious about"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've worked across quite a spread over the years — regtech and financial services, events and e-commerce, property, telecoms, beauty, bioscience, insurance and professional services, plus a good bit of 0-to-1 startup work. That's a represen"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Quite a range over the years — everything from finance and telecoms to regtech, proptech and e-commerce, plus a fair bit of 0-to-1 work with startups and side projects. I'm not precious about sector labels though; the way I work tends to ca"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Quite a spread over the years — regtech and financial services, events, e-commerce and marketplaces, property, telecoms, beauty, plus a fair bit of 0-to-1 work with startups. But I'm not precious about sector labels; the way I work carries "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Quite a spread over 25-odd years — legal and business events, regtech, property, banking and financial services, telecoms, e-commerce and marketplaces, beauty, plus a fair bit of 0-to-1 work with startups.[[sectors]] I'm not precious about "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "One that stuck with me: a CEO said I challenged their thinking and got them considering ideas and options they'd never had from anyone they'd worked with before — went way beyond what they expected. That kind of thing matters more to me tha"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "People tend to describe me as reliable, adaptable and genuinely invested in doing good work — one client kept me on their team for over a decade to look after their brand and platforms, which I think says more than any single quote could. I"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "People tend to say I'm reliable, adaptable and genuinely care about doing excellent work — one client kept me on for over a decade looking after their brand and platforms, which I think says more than any single testimonial could.[[testimon"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "What comes up most is that I'm reliable and adaptable, and that I genuinely care about doing excellent work — one client kept me on for over ten years to look after their brand and platforms, which I think says more than any single quote co"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "One thing that comes up is that I'm reliable and adaptable, and that I care about doing genuinely good work — one client kept me on to look after their brand and platforms for over ten years, which I think says more than any single quote co"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "They tend to describe me as reliable, adaptable and someone who genuinely cares about the work — one kept me on their team for over ten years to look after their brand and platforms. What I hear most is that I challenge their thinking; I'll"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I like to run a project through four broad phases — starting with research and planning to understand the problem, then branding, design, and development, working end to end rather than handing off between people.[[method]] That said, I kee"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I work across the whole life cycle, which is a bit unusual for a designer — I start with research and planning, move through branding and design, and take it right into development and launch.[[method]] Keeping that whole span in one pair o"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I work end to end, which is a bit unusual for a designer — research and planning, then branding, design, and development, in that order. That said, I stay flexible; the shape adapts to what a project actually needs rather than forcing it th"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "My process runs in a natural order — I start by understanding the problem (research, planning, mapping the journey), move into branding if it's needed, then design, then development. I keep it flexible though; the shape shifts to fit the pr"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I work across the whole life cycle, which is a bit unusual for a designer — I start with research and planning, move through branding and design, and take it right into development. That end-to-end reach means the thinking behind a project "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I work right across the life cycle — start by understanding the problem and the people (research, planning), then move through branding, design and finally development, so nothing gets designed in a vacuum.[[method]] The exact shape flexes "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "The simplest way is to drop me a message about what you've got in mind — even a rough sketch of the idea is enough to get going. From there we'd usually have a call to talk it through, and I'll be honest early about whether I'm the right pe"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Simplest way is just to drop me a message with a rough sense of what you're after — even a couple of lines is enough to get a conversation going. From there we'd usually have a quick call to see if it's a fit, and take it from there.[[conta"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Simplest thing is to drop me a line with a rough idea of what you're after — even a loose sketch is fine. We'd have a chat, work out whether it's a fit, and take it from there.[[contact]] [[next: what happens after that first chat? @method "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "The simplest way is to just get in touch — drop me a line about what you're working on, or book a call if you'd rather talk it through. From there I'll want to understand where you're at and what you're trying to solve, and we take it from "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Simplest way is to drop me a message with a bit about what you're after — even a rough idea is fine — and we'll take it from there with a call to talk it through properly. No formal pitch required at this stage; I'd rather just understand w"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Simplest thing is to drop me a line telling me a bit about what you're after — a rough idea is plenty, we can shape it from there. From that first chat we'd work out whether it's a good fit and what the sensible next step looks like. Whiche"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "clients",
+            "sectors",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole arc of a project — strategy, design and development — which is rare in one person, so you're not stitching together three different people who each blame the other when something breaks. Over 25 years I've do"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "clients",
+            "sectors",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Because I work end to end — strategy, design and build — which is rare in one person, and it means fewer handoffs and a more coherent result. I've spent over 25 years on this, across a broad range of well-known brands and sectors, and clien"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I can take something the whole way — strategy, design and build — which is rare in one person, and I've spent 25 years doing it for startups, agencies and big organisations alike, including a fair few well-known brands over the year"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "clients",
+            "sectors",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole life cycle — strategy, design and front-end development — which is rare in one person, so you're not stitching together three freelancers who don't talk to each other. I've spent 25 years doing this for every"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "clients",
+            "sectors",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole life cycle — strategy, design and development — which is rare for a designer, so you get one person joining the dots rather than a relay race with things dropped at every handoff. I've spent over 25 years doi"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "clients",
+            "sectors",
+            "testimonial",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole life cycle — strategy, design and development — which is rare for a designer, so you don't have to stitch together three people who don't talk to each other. Over 25 years I've done that for everyone from ban"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Big spread, honestly — I lean towards anything with groove and soul, so a lot of Massive Attack, Crazy P, El Michels Affair, some old Ella Fitzgerald, then the odd bit of Justice or The Prodigy when I need energy while working or taking pho"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Loads — it shifts with what I'm doing. When I'm working I lean on things with a groove that doesn't demand too much attention: Crazy P, El Michels Affair, a bit of drum and bass like LTJ Bukem. Then there's the stuff I grew up on that never"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A pretty broad spread, honestly — I'll go from The Beatles and Beastie Boys to old jazz like Ella Fitzgerald, then straight into drum and bass with LTJ Bukem or something atmospheric like Massive Attack. It shifts with what I'm doing — some"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Loads, honestly — it shifts with what I'm doing. When I'm designing I lean into things with a bit of groove and space: Crazy P, El Michels Affair, some LTJ Bukem for the flow states. Then there's the older bedrock — Beatles, Beastie Boys, M"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A fair spread, honestly — I'll happily go from The Beatles and Beastie Boys to Massive Attack, then off into drum & bass with LTJ Bukem or the more soulful funk of El Michels Affair and Crazy P.[[music]] Whatever fits the moment — I nearly "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Loads of it, and it's all over the place — I've always got something on while I work, cook or shoot. Old soul and jazz like Ella Fitzgerald, hip hop from Beastie Boys and El Michels Affair, drum and bass from LTJ Bukem, plus the big trip-ho"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Always — it's practically part of the setup, whether I'm designing, cooking or out with the camera. My taste roams a fair bit: Beastie Boys and Massive Attack when I need momentum, Ella Fitzgerald or some El Michels Affair when I want somet"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Constantly — music's on whether I'm designing, coding, cooking or out taking photos. It shifts with what I'm doing: something atmospheric and heads-down when I'm deep in code, and I lean towards soul, hip-hop, drum & bass and a bit of elect"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Constantly — music's part of how I work, cook, take photos, all of it. I used to DJ, so it runs deep. My taste jumps around: soulful and hip-hop leaning stuff like El Michels Affair and Thes One, then drum and bass from LTJ Bukem, the odd b"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Almost always — it's part of how I get into a rhythm, whether I'm designing, coding, cooking or out taking photos. My taste is all over the place: Beatles and Beastie Boys through to drum and bass like LTJ Bukem, some Massive Attack and Cra"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Constantly — it's the backbone of how I work, cook, take pictures, all of it. My taste jumps around a fair bit: Beastie Boys and El Michels Affair for energy, then something warmer like Ella Fitzgerald or Crazy P when I need to settle in. I"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Constantly — it's part of how I get into the zone, whether I'm designing, coding or out taking photos. My taste jumps around a lot: some old soul and jazz, a fair bit of drum and bass and electronica, and plenty of the classics that never l"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "Jersey's home — I was born there and grew up on the island[[jersey]]. My favourite corner is Trinity, up in the north; it's got that quieter, greener feel to it. I'm in Bordeaux[[bordeaux]] these days, but Jersey's still very much in my bon"
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "It's a small island in the Channel Islands, closer to France than to England, which gives it this lovely mix of both — French place names, English pace of life. I grew up there with the sea never far away, and it's where I first got into we"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "Jersey's home — I was born there, on the island, in July 1982. Trinity[[jersey]] is my favourite parish, and even after over a decade living in France it still pulls at me. I've done a fair bit of work tied to the island too over the years."
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 1,
+          "chips": 3,
+          "answer": "It's a small island in the Channel Islands, close to the French coast — beaches, cliff walks, a slightly peculiar mix of British and French all its own. I grew up there and started out in web design there when I was 18, so a lot of my early"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "Jersey's home — I was born there and grew up on the island[[jersey]]. Trinity's my favourite parish, and even though I've lived in Paris, Brighton and now Bordeaux for years, it's still the place I measure everywhere else against. [[next: w"
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "It's a small island in the Channel Islands, a strange, lovely mix of British and French — close enough to France that you feel it in the food and the light, but very much its own thing. Trinity[[jersey]] up in the north-east is my favourite"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I was born there, on the island — a proper Jersey boy. Trinity's my favourite parish, and I still feel the pull of the place even after years living in France. Bordeaux[[bordeaux]] is home now, but Jersey[[jersey]] never really leaves you. "
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "It's a small island in the Channel Islands, closer to France than England, which suits my anglo-french life rather nicely. Trinity[[jersey]] is my favourite parish — greener and quieter, the inland countryside rather than the tourist bits. "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "Jersey's home — I was born and grew up there, on the island[[jersey]]. Trinity's my favourite parish, and even after years living in France it's still the place I measure everything else against. [[next: what took you from Jersey to France?"
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 1,
+          "chips": 3,
+          "answer": "It's a small island in the Channel Islands, closer to France than to England, which gives it a lovely in-between feel — you get both cultures rubbing along. I grew up there and it's where I first got into web design; I even ran a Jersey nig"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 3,
+          "chips": 3,
+          "answer": "Jersey's home — I was born there, on the 9th of July 1982. Grew up on the island, and Trinity[[jersey]] is my favourite parish if you're after a recommendation. I still have a soft spot for it; a fair bit of my early design work was for isl"
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 2,
+          "chips": 3,
+          "answer": "Small island, big character — one of the Channel Islands, sat between England and France, which suits my Anglo-French life rather nicely. The coastline is the thing people remember: proper tides, beaches that stretch for miles at low water,"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and have lived in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, working acr"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A real mix. There's a lot of hip-hop and soul in there — Beastie Boys, El Michels Affair, Thes One — plus proper old-school stuff like Ella Fitzgerald and The Beatles. Then a whole other side that's more electronic: LTJ Bukem, Justice, The "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "music",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and have spent stints in Paris and Brighton along the way. I've been designing and building things for the web for over 25 year"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A bit of everything, really. I lean towards trip-hop and drum & bass — Massive Attack, LTJ Bukem — but I'll happily swing to old jazz like Ella Fitzgerald, or something with a bit of grit like The Prodigy or Beastie Boys. I used to DJ, so I"
+        }
+      ],
+      "failures": [
+        "T1 showed music",
+        "T2 missing music"
+      ]
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and have knocked about a fair bit in between. I've been designing and building for the web for over 25 years, and I work across"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A real mix, honestly — from The Beatles and Beastie Boys through to drum and bass like LTJ Bukem, some heavier stuff like The Prodigy and Justice, and then jazz and soul when I want to slow down — Ella Fitzgerald, El Michels Affair. I used "
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "music",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — originally from Jersey[[jersey]], and I've lived in France for over ten years now. I've been designing and building for the web for over 25 years, and I like that I work r"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A pretty broad mix, really. There's the old-guard stuff I always come back to — the Beatles, Beastie Boys, Massive Attack — then a lot of electronic depending on the mood: LTJ Bukem and drum and bass when I want to keep moving, Justice or t"
+        }
+      ],
+      "failures": [
+        "T1 showed music",
+        "T2 missing music"
+      ]
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], originally from Jersey[[jersey]] in the Channel Islands. I've been designing and building for the web for over 25 years, working across strategy, design and development, w"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A real mix — I lean towards things with groove and atmosphere: Massive Attack, Crazy P, El Michels Affair, plus a soft spot for drum and bass from my DJ days, LTJ Bukem especially. Then there's the old faithfuls like The Beatles and Beastie"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and lived a stretch in Paris and Brighton along the way. I've been doing this over 25 years, working across strategy, design an"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "A bit of everything, but I always come back to hip hop, drum & bass and electronic stuff — Beastie Boys, LTJ Bukem, Justice, The Prodigy — alongside older loves like The Beatles and Ella Fitzgerald. I nearly always have something on while I"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I work across the whole life cycle, which is unusual for a designer — I start with research and planning to understand the problem, move through branding and design, and can take it all the way into development if you need me to.[[method]] "
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad that was useful — give me a shout if you'd like to talk anything through properly.[[contact]] [[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I've a tried and tested way of working, though I stay flexible — the right solution sometimes means adapting. Broadly it runs from research and planning, through branding and design, into development, and I'll happily work across the whole "
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad that helped — shout if anything else comes up. [[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I work across the whole life cycle, which is a bit unusual for a designer — I start with research and planning, move through branding and design, and take it right into development. The shape of it flows in that order, but I stay flexible; "
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad that helped — give me a shout if anything comes up.[[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "My process runs in a fairly natural order — start with research and planning to properly understand the problem, then branding if it's needed, then design, then development. That said, I stay flexible; sometimes you have to adapt the order "
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad that helped — shout if anything else comes up. [[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I keep a tried-and-tested shape to my work — research and planning first, then branding, design, and development — but I stay flexible, because sometimes you have to adapt to land the right solution.[[method]] Where I'm a bit unusual is tha"
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad it helped — shout if anything else comes up. [[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I keep a tried-and-tested shape to how I work, but I stay flexible — sometimes you have to adapt to get the right solution. Broadly it runs from research and planning, through branding, into design, then development — I work across the whol"
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad it helped — shout if anything else comes up. [[next: none]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

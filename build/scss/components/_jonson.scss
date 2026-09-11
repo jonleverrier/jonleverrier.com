@@ -1,0 +1,1306 @@
+/**
+ * COMPONENT: JONSON
+ *
+ * In-place conversation view. Revealed when the visitor asks their first
+ * question (the hero tunnel is hidden). A centered vertical timeline:
+ * eyebrow → question (large) → response, repeating down a connecting line,
+ * with a compact follow-up input pinned to the bottom.
+ *
+**/
+
+@use 'sass:color';
+@use '../mixins' as *;
+@use '../theme' as *;
+@use 'field' as *;
+@use 'prose' as *;
+
+// Shared measure for the question + response columns (~640px).
+$c-jonson-measure: rem(740);
+
+// Timeline spine colour — solid (no opacity) so overlapping dots/line don't
+// stack transparency. Must differ from the view background (primary 500).
+//
+// A literal, not a palette token: this is a deepened olive picked against the
+// slab it sits on, and there is no entry in $colour for it. Was light 900 (the
+// warm near-black), which read as a hard line rather than a shadow of the slab.
+// Add it to the palette if anything else ever needs it.
+$c-jonson-line: #383910;
+
+.c-jonson {
+    position: relative;
+    isolation: isolate; // own stacking context so the dot layer sits behind content
+    container-type: inline-size; // width reference for the full-bleed context rail
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: calc(100dvh - 2 * #{getmap($space, rhythm, 500)});
+    // Top padding clears the header logo (knob: bump this token if the top dot
+    // still sits too close to the logo). No bottom padding — the input sits
+    // flush to the bottom of the section; the trailing line reflects the top.
+    padding-top: getmap($space, rhythm, 900);
+    padding-bottom: 0;
+    // Inline padding tracks .b-wrap so content/rail edges line up with the
+    // header logo + CTA.
+    padding-inline: getmap($space, rhythm, 500);
+    @include mq(from, md) {
+        padding-inline: getmap($space, rhythm, 600);
+    }
+    @include mq(from, lg) {
+        padding-inline: getmap($space, rhythm, 800);
+    }
+    color: getmap($colour, light, 100);
+    background-color: getmap($colour, primary, 500);
+    &[hidden] {
+        display: none;
+    }
+}
+
+// Ambient dot grid behind the content — full bleed, edge to edge. Two painted
+// layers sharing the same dot pattern so they stay aligned:
+//   ::before — a faint base grid that's always present.
+//   ::after  — a brighter copy, masked to a diagonal band that sweeps across,
+//              so dots light up in a travelling wave. Only the band's
+//              mask-position animates; the dots themselves never move.
+.c-jonson::before,
+.c-jonson::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1; // above the olive background, below all content
+    pointer-events: none;
+    background-image: radial-gradient(
+        circle,
+        getmap($colour, light, 700) 1px,
+        transparent 1.6px
+    );
+    background-size: 26px 26px;
+}
+
+.c-jonson::before {
+    opacity: 0.15; // faint base grid, always visible
+}
+
+.c-jonson::after {
+    opacity: 0.2; // brighter where the sweeping band reveals it
+    mask-image: linear-gradient(115deg, transparent 30%, #000 50%, transparent 70%);
+    mask-size: 300% 100%;
+    mask-repeat: no-repeat;
+    will-change: mask-position;
+    animation: c-jonson-dots 16s linear infinite;
+}
+
+// Slide the reveal band diagonally across the grid.
+@keyframes c-jonson-dots {
+    from { mask-position: 140% 0; }
+    to   { mask-position: -40% 0; }
+}
+
+// When the interactive canvas grid is mounted (jonson-grid.js), it reproduces
+// the base grid + sweep and adds the pointer warp — so the painted pseudo-grid
+// steps aside to avoid a doubled pattern. The CSS grid remains the no-JS /
+// reduced-motion fallback (the class is only added once the canvas is up).
+.c-jonson.is-interactive::before,
+.c-jonson.is-interactive::after {
+    opacity: 0;
+}
+
+// Arrival — the thread settles out of the warp as it's revealed.
+// `backwards` (not `forwards`) so no transform lingers to break the sticky form.
+.c-jonson:not([hidden]) {
+    animation: c-jonson-arrive 700ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes c-jonson-arrive {
+    from { opacity: 0; transform: scale(1.06); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+// Timeline connectors, drawn with pseudo-elements (no markup). A short centred
+// line sits above each turn and between its question and answer; a dot caps the
+// top (above the whisper) and bottom (after the last answer).
+.c-jonson__turn::before,
+.c-jonson__response::before {
+    content: '';
+    display: block;
+    width: $spine-width;
+    height: $spine-length;
+    margin: rem(22) auto;
+    background: $c-jonson-line;
+}
+
+// Top cap: a line above the whisper (::before, in flow) capped with a dot
+// (::after, absolute, sitting on the line's top end).
+.c-jonson__whisper::before {
+    content: '';
+    display: block;
+    width: $spine-width;
+    height: $spine-length;
+    margin: rem(28) auto rem(22);
+    background: $c-jonson-line;
+}
+
+.c-jonson__whisper::after {
+    content: '';
+    position: absolute;
+    top: rem(22);
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: rem(16);
+    height: rem(16);
+    border-radius: 50%;
+    background: $c-jonson-line;
+}
+
+// Bottom cap: a line after the last answer (::after, in flow) capped with a dot
+// (::before, absolute, at the line's bottom end).
+// Bottom cap: line trailing from the last answer to the footer, ending in a
+// dot. In flow (scrolls with the content — never sits under it) and stretches
+// to fill the gap because the thread grows. Line + dot in one pseudo: a 2px
+// line down to `100% - dot`, the dot painted at the base.
+.c-jonson__thread::after {
+    content: '';
+    flex: 1 0 rem(58); // stretch to carry the line down to the footer
+    width: rem(16);
+    margin: rem(22) auto getmap($space, rhythm, 700); // gap between dot and footer
+    background:
+        linear-gradient($c-jonson-line, $c-jonson-line) center top / $spine-width calc(100% - #{rem(16)}) no-repeat,
+        radial-gradient(circle, $c-jonson-line rem(8), transparent rem(8)) center bottom / rem(16) rem(16) no-repeat;
+}
+
+// Matches .b-footer__whisper (an <h3>, hence bold — whisper sets no weight).
+.c-jonson__whisper {
+    @include typography(whisper);
+    position: relative; // anchor the top-cap dot
+    margin: 0;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, primary, 430); // light blue, flat — matches .c-jonson__suggestions-whisper
+}
+
+.c-jonson__thread {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1; // fill the column so the trailing line reaches the footer
+    width: 100%;
+    max-width: $c-jonson-measure; // single measure; content below goes full-width
+}
+
+.c-jonson__turn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    // `backwards`, NOT `both`. The keyframes end on the natural state (opacity 1,
+    // translateY(0)), so holding the end state buys nothing — but it leaves an
+    // identity transform applied forever, and any transform, even an identity one,
+    // makes this a containing block and a stacking context. That trapped everything
+    // inside the thread: `position: fixed` resolved against this turn instead of the
+    // viewport, so nothing in an answer could break out to cover the screen.
+    // `backwards` still applies the from-state before it starts, so there's no flash.
+    animation: c-jonson-rise 450ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.c-jonson__question {
+    // Opening question matches the homepage hero headline (.c-frontdoor__title).
+    @include typography(h1);
+    font-size: rem(60);
+    @include mq(from, lg) {
+        font-size: rem(80);
+    }
+    @include mq(from, xxl) {
+        font-size: rem(100);
+    }
+    font-weight: 600;
+    width: 100%;
+    margin: 0;
+    text-align: center;
+    color: getmap($colour, light, 100);
+
+    // Capitalise the visitor's question regardless of how they typed it.
+    &::first-letter {
+        text-transform: uppercase;
+    }
+
+    // Wider than the 740 thread measure on large viewports, so the question has
+    // more room left/right than the answer (which stays at the measure). The
+    // thread caps children at 740, so break out like the rail: width up to
+    // rem(1000), never past the section, re-centred with a negative margin.
+    @include mq(from, lg) {
+        width: min(100cqi, #{rem(1000)});
+        margin-inline: calc((100% - min(100cqi, #{rem(1000)})) / 2);
+    }
+}
+
+// Follow-up questions step down a size — the opening question stays the hero.
+// They also keep the thread measure (only the opener breaks out wider).
+.c-jonson__turn + .c-jonson__turn .c-jonson__question {
+    @include typography(h2);
+
+    @include mq(from, lg) {
+        width: 100%;
+        margin-inline: 0;
+    }
+}
+
+.c-jonson__response {
+    width: 100%;
+    text-align: left;
+
+    // The answer-voice body copy (shared with the static .c-content block).
+    @include prose-body;
+    > p {
+        color: getmap($colour, light, 700); // cream, on the olive section
+    }
+
+    // Single source of vertical rhythm between the response's COMPONENTS — the
+    // panels the server streams in (case studies, method, music, CTAs…) — so
+    // they carry no outer margin of their own: a component gets the big gap on
+    // either side of it. A component is any child with a class; the prose the
+    // model writes (p, ul, h2…) is bare, and keeps prose-body's paragraph
+    // rhythm among itself. One step of specificity above prose-body's own
+    // `* + *`, so this wins for a panel and loses for a paragraph. The
+    // connector line (::before) keeps its own margin.
+    > * + [class],
+    > [class] + * {
+        margin-top: getmap($space, rhythm, 800);
+    }
+}
+
+// The answer is composed off-screen, then revealed. The prose stays calm — a
+// single gentle fade — so the rail is unmistakably the hero.
+.c-jonson__response.is-pending > p {
+    opacity: 0;
+    transform: translateY(rem(6));
+}
+
+.c-jonson__response.is-revealed > p {
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 600ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+// The rail is the hero entrance: it zooms up from a small rectangle to full
+// size a beat after the text lands. Its cards develop in separately (_rail.scss).
+.c-jonson__response.is-pending > .c-rail {
+    opacity: 0;
+    transform: scale(0.82);
+}
+
+.c-jonson__response.is-revealed > .c-rail {
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 360ms ease,
+        transform 540ms cubic-bezier(0.34, 1.28, 0.64, 1); // ease-out, slight overshoot
+    transition-delay: 140ms;
+}
+
+// The testimonial reveals like the prose — a quiet fade, no zoom — so it reads
+// as quiet backing rather than a second hero.
+.c-jonson__response.is-pending > .c-testimonials {
+    opacity: 0;
+    transform: translateY(rem(6));
+}
+
+.c-jonson__response.is-revealed > .c-testimonials {
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 600ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: 220ms; // lands just after the prose it backs
+}
+
+// The clients marquee + sector tags + method timeline + music strip fade in like
+// the testimonial — quiet backing.
+.c-jonson__response.is-pending > .c-clients,
+.c-jonson__response.is-pending > .c-sectors,
+.c-jonson__response.is-pending > .c-method,
+.c-jonson__response.is-pending > .c-music {
+    opacity: 0;
+    transform: translateY(rem(6));
+}
+
+.c-jonson__response.is-revealed > .c-clients,
+.c-jonson__response.is-revealed > .c-sectors,
+.c-jonson__response.is-revealed > .c-method,
+.c-jonson__response.is-revealed > .c-music {
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 600ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: 220ms;
+}
+
+// The suggestion chips fade up last, a beat after the prose.
+.c-jonson__response.is-pending > .c-jonson__suggestions {
+    opacity: 0;
+    transform: translateY(rem(8));
+}
+
+.c-jonson__response.is-revealed > .c-jonson__suggestions {
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 500ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: 320ms; // after the answer has settled
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-jonson__response.is-pending > p,
+    .c-jonson__response.is-pending > .c-rail,
+    .c-jonson__response.is-pending > .c-testimonials,
+    .c-jonson__response.is-pending > .c-clients,
+    .c-jonson__response.is-pending > .c-sectors,
+    .c-jonson__response.is-pending > .c-method,
+    .c-jonson__response.is-pending > .c-jonson__suggestions { transform: none; }
+
+    .c-jonson__response.is-revealed > p,
+    .c-jonson__response.is-revealed > .c-rail,
+    .c-jonson__response.is-revealed > .c-testimonials,
+    .c-jonson__response.is-revealed > .c-clients,
+    .c-jonson__response.is-revealed > .c-sectors,
+    .c-jonson__response.is-revealed > .c-method,
+    .c-jonson__response.is-revealed > .c-jonson__suggestions {
+        transition: opacity 220ms linear;
+        transition-delay: 0s;
+    }
+}
+
+// "Where next?" prompt chips under each answer — tappable follow-ups that keep
+// the conversation moving.
+.c-jonson__suggestions {
+    // Outer spacing owned by .c-jonson__response's owl selector (see below).
+}
+
+// Scoped so it out-specifies `.c-jonson__response p` (the mono prose rule),
+// letting this <p> match .c-jonson__whisper without changing the element.
+.c-jonson__suggestions .c-jonson__suggestions-whisper {
+    @include typography(whisper);
+    margin: 0 0 getmap($space, rhythm, 500); // was 14px — more air before the chips
+    font-family: $g-font-primary; // JonSonSans, like .c-jonson__whisper (not the mono prose)
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, primary, 430); // the light blue, flat — the same as .c-jonson__whisper (no sheen)
+}
+
+.c-jonson__suggestions-list {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; // each pill hugs its text; always one per row
+    gap: rem(14);
+}
+
+// The custom angle the border gradient rotates through. @property makes it a
+// real <angle> so it can be animated smoothly (a plain var would jump).
+@property --c-chip-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+.c-jonson__suggestion {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    position: relative;
+    max-width: 100%;
+    padding: rem(12) rem(22);
+    border: rem(2) solid rgba(getmap($colour, light, 700), 0.4);
+    border-radius: rem(999); // pill
+    background-color: getmap($colour, primary, 500); // solid base green (hides the dot grid)
+    color: getmap($colour, light, 100);
+    font-family: $g-font-secondary; // JonSonMono — matches the response voice
+    @include typography(p-sm);
+    font-weight: 600; // the mono's bold face — the Light face thins out at 16px
+    line-height: 1.2;
+    text-align: left;
+    transition:
+        border-color 220ms ease,
+        padding-right 300ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    // Circular "→" tucked at the right edge — hidden until the pill extends.
+    &::after {
+        content: '→';
+        position: absolute;
+        top: 50%;
+        right: rem(6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: rem(28);
+        height: rem(28);
+        border-radius: 50%;
+        background-color: getmap($colour, primary, 600); // button red
+        color: getmap($colour, light, 100); // white arrow
+        font-size: rem(15);
+        line-height: 1;
+        opacity: 0;
+        transform: translateY(-50%) scale(0.4);
+        transition:
+            opacity 220ms ease,
+            transform 300ms cubic-bezier(0.34, 1.4, 0.7, 1); // slight overshoot
+        pointer-events: none;
+    }
+
+    // On hover: darker-green fill, the pill extends to the right, the arrow
+    // pops in, and the stroke becomes a cream highlight spinning around the pill.
+    // Layered background — solid fill in the padding box, conic gradient in the
+    // (transparent) border box; the angle animates for the spin.
+    &:hover {
+        border-color: transparent;
+        padding-right: rem(50);
+        background:
+            linear-gradient(getmap($colour, light, 800), getmap($colour, light, 800)) padding-box,
+            conic-gradient(
+                from var(--c-chip-angle),
+                rgba(getmap($colour, light, 700), 0.12),
+                getmap($colour, light, 100) 50%,
+                rgba(getmap($colour, light, 700), 0.12)
+            ) border-box;
+        animation: c-jonson-chip-spin 1.4s linear infinite;
+    }
+
+    &:hover::after {
+        opacity: 1;
+        transform: translateY(-50%) scale(1);
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, light, 100);
+        outline-offset: rem(2);
+    }
+}
+
+@keyframes c-jonson-chip-spin {
+    to { --c-chip-angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-jonson__suggestion,
+    .c-jonson__suggestion::after {
+        transition: none; // no extend/pop motion
+    }
+
+    .c-jonson__suggestion:hover {
+        animation: none; // no spin — a static brightened stroke instead
+        border-color: getmap($colour, light, 700);
+    }
+}
+
+// Thinking indicator — a 3×3 grid of dots that ripple while we wait on the
+// first token (also covers retry waits). Drawn from a single element via
+// box-shadow; the shadows inherit `color` (currentColor).
+.c-jonson__thinking {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative; // anchor the spherical glow behind the dots
+    min-height: rem(72); // reserve space for the rotated box-shadow grid (no layout box)
+    // No own margin. The gap ABOVE is owned by the connector line's margin-bottom
+    // (22px, which collapses with any top margin here anyway); the gap BELOW is the
+    // trailing line's margin-top (22px, a separate flex item so it does NOT collapse
+    // with a bottom margin here). A margin here only pads the bottom — leaving the
+    // dots visibly lower in their space. Zero gives a symmetric 22px top and bottom.
+    margin: 0;
+
+    // Soft spherical glow behind the rippling dots — a faint radial highlight (lifted
+    // a touch above centre) fading to nothing, breathing noticeably, so the grid reads
+    // as if suspended inside a gently-pulsing lit orb. Kept low-intensity; the pulse
+    // carries most of the life.
+    //
+    // Cool blue rather than white: against the olive slab a white glow just reads as
+    // haze, where a blue one reads as light with a source. Low alpha either way, so
+    // the hue only shows in the brightest part of the falloff.
+    &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: rem(130);
+        aspect-ratio: 1;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: radial-gradient(
+            circle at 50% 50%,
+            rgba(getmap($colour, primary, 430), 0.22),
+            rgba(getmap($colour, primary, 430), 0.10) 38%,
+            transparent 68%
+        );
+        pointer-events: none;
+        z-index: 0; // behind the dots
+        animation: c-jonson-orb 2.4s ease-in-out infinite;
+    }
+
+    span {
+        position: relative; // above the orb glow
+        z-index: 1;
+        width: 4px;
+        aspect-ratio: 1;
+        color: getmap($colour, light, 700);
+        border-radius: 50%;
+        // All nine at rest, so the LATTICE is what you see and the wave passes over
+        // it. It used to sit with the middle row pre-swollen to 5px spread while the
+        // animation lit 2–3 scattered cells — which meant no frame ever showed the
+        // 3x3 arrangement, and the thing read as a few big dots and some specks in no
+        // order at all. The structure was there and invisible.
+        box-shadow:
+            19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 0,
+            19px 0     0 0, 38px 0     0 0, 57px 0     0 0,
+            19px 19px  0 0, 38px 19px  0 0, 57px 19px  0 0;
+        // translateX centres the grid; transform-origin pins the rotation to the
+        // grid's visual centre (≈40px,2px) so it spins in place rather than
+        // swinging around the tiny source element.
+        transform-origin: 40px 2px;
+        transform: translateX(-38px) rotate(45deg);
+        animation: c-jonson-think 2s infinite linear;
+    }
+}
+
+// The wave. Cells are lit by ANTI-DIAGONAL — every cell where (column + row) is the
+// same — which after the 45deg rotation above lands as a straight band travelling
+// across the grid on screen. That rotation was doing nothing before; this is what it
+// was for.
+//
+// Five bands (1, 2, 3, 2, 1 cells), swept out to the far corner and back rather than
+// wrapped. A wrap would teleport the band from one corner to the other on the loop;
+// the return leg costs nothing and reads as the wave washing back.
+//
+// Spread, not opacity: box-shadow interpolates between keyframes, so each dot grows
+// and shrinks smoothly through the band passing over it.
+@keyframes c-jonson-think {
+    0% { box-shadow:
+        19px -19px 0 3px, 38px -19px 0 0, 57px -19px 0 0,
+        19px 0 0 0, 38px 0 0 0, 57px 0 0 0,
+        19px 19px 0 0, 38px 19px 0 0, 57px 19px 0 0; }
+    12.5% { box-shadow:
+        19px -19px 0 0, 38px -19px 0 3px, 57px -19px 0 0,
+        19px 0 0 3px, 38px 0 0 0, 57px 0 0 0,
+        19px 19px 0 0, 38px 19px 0 0, 57px 19px 0 0; }
+    25% { box-shadow:
+        19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 3px,
+        19px 0 0 0, 38px 0 0 3px, 57px 0 0 0,
+        19px 19px 0 3px, 38px 19px 0 0, 57px 19px 0 0; }
+    37.5% { box-shadow:
+        19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 0,
+        19px 0 0 0, 38px 0 0 0, 57px 0 0 3px,
+        19px 19px 0 0, 38px 19px 0 3px, 57px 19px 0 0; }
+    50% { box-shadow:
+        19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 0,
+        19px 0 0 0, 38px 0 0 0, 57px 0 0 0,
+        19px 19px 0 0, 38px 19px 0 0, 57px 19px 0 3px; }
+    62.5% { box-shadow:
+        19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 0,
+        19px 0 0 0, 38px 0 0 0, 57px 0 0 3px,
+        19px 19px 0 0, 38px 19px 0 3px, 57px 19px 0 0; }
+    75% { box-shadow:
+        19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 3px,
+        19px 0 0 0, 38px 0 0 3px, 57px 0 0 0,
+        19px 19px 0 3px, 38px 19px 0 0, 57px 19px 0 0; }
+    87.5% { box-shadow:
+        19px -19px 0 0, 38px -19px 0 3px, 57px -19px 0 0,
+        19px 0 0 3px, 38px 0 0 0, 57px 0 0 0,
+        19px 19px 0 0, 38px 19px 0 0, 57px 19px 0 0; }
+    100% { box-shadow:
+        19px -19px 0 3px, 38px -19px 0 0, 57px -19px 0 0,
+        19px 0 0 0, 38px 0 0 0, 57px 0 0 0,
+        19px 19px 0 0, 38px 19px 0 0, 57px 19px 0 0; }
+}
+
+// The thinking orb's breathing glow — a pronounced scale + brightness pulse (the
+// glow itself is faint, so the movement is what gives it life).
+@keyframes c-jonson-orb {
+    0%, 100% { opacity: 0.25; transform: translate(-50%, -50%) scale(0.85); }
+    50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.15); }
+}
+
+@keyframes c-jonson-rise {
+    from { opacity: 0; transform: translateY(rem(16)); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+// Footer — a darker-olive bar pinned to the bottom of the view, housing the
+// follow-up input. Full-bleeds past the section's padding to the screen edges
+// (and cancels the section's bottom padding) so it reads as a solid footer.
+.c-jonson__footer {
+    align-self: stretch; // override the column's align-items: center
+    // NOT sticky. It was written as `position: sticky; bottom: 0`, but never stuck:
+    // the .b-slab--p500 ancestor used `overflow: hidden`, which made it a scroll
+    // container and rendered every sticky descendant inert. That slab now uses
+    // `overflow: clip` so the header can stick, which would otherwise switch this on
+    // as a side effect — the footer sits in flow at the end of the conversation and
+    // should stay there.
+    position: relative;
+    z-index: 1;
+
+    // Mobile: the back circle sits in the row, immediately left of the input
+    // (which fills the rest) — never stacked below it.
+    display: flex;
+    align-items: center;
+    gap: getmap($space, rhythm, 400);
+
+    // From md: a 3-column grid — a left gutter wide enough for the circle, the
+    // centred input, and a mirror gutter. In-flow (unlike absolute) so the circle
+    // can't be clipped by an overflow ancestor or overlapped by the input. The
+    // gutters grow with 1fr, so the input stays centred while the circle sits out
+    // at the house-margin edge.
+    @include mq(from, md) {
+        display: grid;
+        grid-template-columns:
+            minmax(calc(#{rem(44)} + #{getmap($space, rhythm, 500)}), 1fr)
+            minmax(0, #{$c-jonson-measure})
+            minmax(calc(#{rem(44)} + #{getmap($space, rhythm, 500)}), 1fr);
+        align-items: center;
+        gap: 0;
+    }
+
+    margin-top: 0;
+    margin-bottom: 0; // don't bleed past the bottom padding — mirror the top gap
+    // Bleed L/R to cancel the section's inline padding, then restore the SAME
+    // (house) inset with padding — so the footer's content edge lines up with the
+    // header logo + thread, and the circle sits on that edge.
+    margin-inline: calc(-1 * #{getmap($space, rhythm, 500)});
+    padding-inline: getmap($space, rhythm, 500);
+    @include mq(from, md) {
+        margin-inline: calc(-1 * #{getmap($space, rhythm, 600)});
+        padding-inline: getmap($space, rhythm, 600);
+    }
+    @include mq(from, lg) {
+        margin-inline: calc(-1 * #{getmap($space, rhythm, 800)});
+        padding-inline: getmap($space, rhythm, 800);
+    }
+    padding-block: getmap($space, rhythm, 600); // a little more breathing room top/bottom
+    background-color: getmap($colour, light, 800);
+}
+
+// Cream variant, for the ask bar on a light content page (_components/ask.twig).
+// l650 — a step down from the l600 slab it sits in, so the bar reads as its own
+// block. The testimonial panel on the same page shares that token.
+// Only the colours change — the layout, input and submit are inherited.
+// Doubled class to out-specify the base rule's per-breakpoint margin-inline, which
+// otherwise wins on source order once the media queries are sorted.
+$c-ask-cream: getmap($colour, light, 650);
+
+// The "lost for words?" nudge on a content page's ask bar — the front door's
+// band, in the light bar's colours: a beige band tucked behind the field that
+// slides out on hover or focus, carrying the nudge, and stands down once the
+// field has anything in it. Same mechanics as .c-frontdoor__field (see
+// _frontdoor.scss for the reasoning behind each rule); the classes are this
+// bar's own so the two can be dressed apart.
+// The front door's depth. Here the band rises from behind the field rather
+// than dropping below it: the bar sits flush on the bottom edge of the l600
+// slab, which clips its children, so there's no room to drop into — but above
+// the field is the bar's own top padding and then the open page, and the band
+// is free to overlap that.
+$c-jonson-band-h: rem(46);
+
+// The field wrapper: the form, and the band behind it. Takes the form's place
+// in the bar's layout — the centre column from md, the room beside the buttons
+// below it. Its hover area is extended upward by the band's visible depth (a
+// top padding cancelled by the same negative margin, so its layout box is still
+// the form's and the bar's padding stays even) so the pointer can travel from
+// the field up to the words without leaving it.
+.c-jonson__field {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    padding-top: calc(#{$c-jonson-band-h} - #{$b-radius-200});
+    margin-top: calc(-1 * (#{$c-jonson-band-h} - #{$b-radius-200}));
+
+    @include mq(from, md) {
+        grid-column: 2;
+        width: 100%;
+        max-width: $c-jonson-measure;
+        justify-self: center;
+    }
+
+    // Above the band, so only the band's visible strip shows from behind the field.
+    .c-jonson__form {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+    }
+
+    &:not(:has(.c-jonson__prompt)) {
+        padding-top: 0;
+        margin-top: 0;
+    }
+}
+
+// THE BAND — shared by the light bar (rising from the field's top) and the front
+// door (dropping from its bottom, the --below variant). One box, one colour,
+// holding two panels stacked as grid rows: the nudge's label on a strip the
+// band's own depth, and every prompt as a chip on a row that's collapsed (0fr)
+// until the nudge is clicked. Then the rows swap — label to nothing, chips to
+// their natural height — so the box grows away from the field, while inside it
+// the label slides out to the left and the chips slide in from the right,
+// clipped by their rows. The stage never moves and never changes colour; the
+// only motion is the two panels. Tucked behind the field (clipped away) at
+// rest, out on hover or focus, down again once the field has anything in it.
+$c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visible depth
+
+.c-jonson__band {
+    --band-hide: inset(100% 0 0 0); // clipped away toward the field
+    --band-bg: #536069; // the input's focus border (navy at 70%) composited on the cream, solid
+    --band-bg-deep: #3e4e5c; // under the pointer on the label
+
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% - #{$c-jonson-band-h}); // its bottom edge a radius below the field's top
+    z-index: 0;
+    // One grid row — the chips, collapsed (0fr) until opened — and a minimum
+    // height that is the strip the label sits on. The label itself is out of the
+    // grid, pinned to the band's field-side edge, so nothing about the row
+    // opening can move it: its exit is a flat slide. (An earlier cut gave the
+    // label its own row, and the row's resizing carried it up as it left.)
+    display: grid;
+    grid-template-rows: 0fr;
+    min-height: $c-jonson-band-h;
+    padding-bottom: $b-radius-200; // the overlap hidden behind the field
+    border-radius: $b-radius-200 $b-radius-200 0 0;
+    background-color: var(--band-bg);
+    clip-path: var(--band-hide);
+    // The 140ms on clip-path is a HIDE delay, and only ever applies on the way out:
+    // the revealed rule below zeroes it, so opening is still immediate.
+    //
+    // It exists because the band is hit-testable only where it is unclipped, and the
+    // clip opens downward over 260ms — the nudge's words are the last part to arrive.
+    // A pointer diving from the bar straight to the words can beat the reveal, land on
+    // a region that isn't there yet, and cancel the very thing it was reaching for.
+    // Holding the open state for a moment after the bar loses the pointer gives that
+    // move somewhere to land. Leaving the field altogether just costs 140ms before the
+    // band starts closing, which reads as the band settling rather than snapping.
+    transition:
+        clip-path 260ms cubic-bezier(0.16, 1, 0.3, 1) 140ms,
+        grid-template-rows 340ms cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 200ms ease;
+
+    // Phones: the field is too narrow for a row of chips, so the band spans the
+    // bar instead — anchored to the field's right edge (the bar's content edge)
+    // and as wide as the bar's content: the viewport less the slab's margin and
+    // the bar's own inset, each side.
+    .c-jonson__field & {
+        @include mq(until, md) {
+            left: auto;
+            width: calc(100vw - 4 * #{getmap($space, rhythm, 500)});
+        }
+    }
+
+    &--below {
+        --band-hide: inset(0 0 100% 0);
+        --band-bg: #{rgba(getmap($colour, light, 800), 0.92)}; // the front door's olive, near-solid over the hero
+        // Deeper under the pointer, exactly as the light bar's band does. It used to
+        // be a no-op here, on the grounds that the words alone were the cue — but no
+        // hover was ever written on the words either, so the front door's nudge had
+        // NO hover response at all while the light bar's had one.
+        //
+        // Two things move, because one isn't enough over a photograph: the olive goes
+        // down a step (matching the slate band's own ~7 points of lightness), and the
+        // alpha goes up, so the band reads as more solid over the hero at the same
+        // time as darker. 0.92 → 0.97 rather than 1: the hero still has to show
+        // through a little, or the band stops belonging to the door.
+        --band-bg-deep: #{rgba(color.scale(getmap($colour, light, 800), $lightness: -35%), 0.97)};
+
+        bottom: auto;
+        top: calc(100% - #{$c-jonson-band-h});
+        padding: $b-radius-200 0 0;
+        border-radius: 0 0 $b-radius-200 $b-radius-200;
+    }
+}
+
+// The two panels. The band's clip-path wipes each at the band's edge — the label
+// leaves to the left, the chips arrive from the right. The label's row keeps its
+// depth throughout, so the label's move is a flat slide (collapsing the row under
+// it as it went made it look like it rose as it left); the chips panel is pulled
+// up over that row instead, so it takes the strip's place once the label has gone.
+.c-jonson__band-label,
+.c-jonson__band-chips {
+    transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+// The strip: pinned to the band's field-side edge, just above the hidden overlap.
+.c-jonson__band-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: $b-radius-200;
+    height: $c-jonson-band-strip;
+    z-index: 1;
+
+    .c-jonson__band--below & {
+        bottom: auto;
+        top: $b-radius-200;
+    }
+}
+
+// The chips: the grid's one row, top-aligned, so when it opens they take the
+// strip's place (the label having left) and the band grows away from the field.
+.c-jonson__band-chips {
+    position: relative;
+    min-height: 0;
+    padding: rem(12) rem(16);
+    transform: translateX(100%);
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+// Open: the chips' row opens out, the panels slide, and the band stays out
+// whatever the pointer does.
+:is(.c-jonson__field, .c-frontdoor__field).is-open {
+    .c-jonson__band {
+        grid-template-rows: 1fr;
+        clip-path: inset(0);
+    }
+
+    .c-jonson__band-label {
+        transform: translateX(-100%);
+        pointer-events: none;
+    }
+
+    .c-jonson__band-chips {
+        transform: none;
+    }
+}
+
+// Out on hover of the BAR, and on focus anywhere in the field — so it's reachable by
+// keyboard too. :focus-within covers the band's own focus, which is what keeps it
+// out once a tabbing visitor lands on the words.
+//
+// Deliberately NOT `.c-jonson__field:hover`, which is what this was. The field's box
+// includes the strip the band will occupy — padding-bottom on the front door, padding
+// -top on the light bar, both there so the pointer can travel between the input and
+// the words without leaving the field — and that strip is live even while the band is
+// clipped away. So approaching the input from the band's side revealed the words
+// BEFORE the pointer ever reached the bar: the panel appeared to open at nothing.
+//
+// The form is the visible bar (input + submit), which is the thing being pointed at.
+// The band is listed with it so the travel still works: once it's out it's no longer
+// clipped, so it can be hovered in its own right and holds itself open. While it's
+// clipped it can't trigger anything — clip-path removes a region from hit-testing —
+// which is exactly the property that makes this safe to write.
+:is(.c-jonson__field, .c-frontdoor__field):is(
+    :has(:is(.c-jonson__form, .c-frontdoor__form, .c-jonson__band):hover),
+    :focus-within
+) .c-jonson__band {
+    clip-path: inset(0);
+    // Out at once. The delay on the base rule is for the return trip only — see there.
+    // Safe as a blanket reset: every other transition on this element already runs at
+    // zero delay.
+    transition-delay: 0s;
+}
+
+// Someone typing doesn't need to be told what to ask: once the field has anything
+// in it the band stands down (and comes back if they clear it). The nudge leaves
+// the tab order too — clipped, it was still the next stop after submit, so a
+// keyboard user landed on something invisible. Delayed so the clip finishes first.
+:is(.c-jonson__field, .c-frontdoor__field):has([data-jonson-input]:not(:placeholder-shown)) {
+    .c-jonson__band {
+        clip-path: var(--band-hide);
+    }
+
+    :is(.c-jonson__prompt, .c-frontdoor__prompt) {
+        visibility: hidden;
+        transition: visibility 0s linear 260ms;
+    }
+}
+
+// …except while the nudge is typing its own answer in, or the drawer is open.
+:is(.c-jonson__field, .c-frontdoor__field):is(.is-open, :has(:is(.c-jonson__prompt, .c-frontdoor__prompt).is-typing)) {
+    .c-jonson__band {
+        clip-path: inset(0);
+    }
+
+    :is(.c-jonson__prompt, .c-frontdoor__prompt) {
+        visibility: visible;
+    }
+}
+
+// The pointer has left with the drawer open: the whole band tucks away as one
+// piece (lost-for-words.js adds .is-tucking for the wipe, then resets the
+// panels with .is-resetting — no transitions — once it's out of sight).
+:is(.c-jonson__field, .c-frontdoor__field).is-open.is-tucking .c-jonson__band {
+    clip-path: var(--band-hide);
+}
+
+:is(.c-jonson__field, .c-frontdoor__field).is-resetting {
+    .c-jonson__band,
+    .c-jonson__band-label,
+    .c-jonson__band-chips {
+        transition: none;
+    }
+}
+
+// Deeper under the pointer on the words (the light bar; the front door's band
+// sets --band-bg-deep to its own colour, so this is a no-op there).
+:is(.c-jonson__field, .c-frontdoor__field):has(:is(.c-jonson__prompt, .c-frontdoor__prompt):is(:hover, :focus-visible)) .c-jonson__band {
+    background-color: var(--band-bg-deep);
+}
+
+
+// No visible nudge — no band.
+:is(.c-jonson__field, .c-frontdoor__field):not(:has(:is(.c-jonson__prompt, .c-frontdoor__prompt):not([hidden]))) .c-jonson__band {
+    display: none;
+}
+
+// The words on the light bar's band: sized to their text, sat where the strip's
+// padding puts them. (The front door's are in _frontdoor.scss — yellow on olive.)
+.c-jonson__prompt {
+    position: absolute;
+    left: rem(16);
+    top: rem(6);
+    z-index: 1;
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    // One line, always: the strip is a fixed depth, and a label that wrapped on a
+    // phone put its first line behind the field. A label longer than the strip
+    // ends in an ellipsis (the button's name stays the full text — only the paint
+    // is cut).
+    max-width: calc(100% - #{rem(32)});
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: $g-font-secondary; // JonSonMono, as the input's own text
+    @include typography(p-sm);
+    font-weight: 600; // as the input — the Light face thins out at 16px
+    @include mq(until, md) {
+        font-size: rem(13); // narrower field, shorter line…
+        left: rem(10); // …and a tighter inset, so the default label fits the 375 field whole
+        max-width: calc(100% - #{rem(20)});
+    }
+    color: getmap($colour, light, 100); // white on the slate band
+    cursor: pointer;
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, light, 100); // white, as the words — navy would sink into the slate band
+        outline-offset: rem(2);
+    }
+
+    &[hidden] {
+        display: none;
+    }
+
+    // Typing: the label fades and a spinner takes its place (see the front door).
+    &.is-typing {
+        color: transparent;
+        pointer-events: none;
+
+        &::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: calc(50% - #{rem(8)});
+            width: rem(16);
+            height: rem(16);
+            border: rem(2) solid rgba(getmap($colour, light, 100), 0.3);
+            border-top-color: getmap($colour, light, 100);
+            border-radius: 50%;
+            animation: c-form-spin 650ms linear infinite;
+        }
+    }
+}
+
+.c-jonson__drawer-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: rem(8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.c-jonson__drawer-item {
+    margin: 0;
+    max-width: 100%;
+}
+
+// The chips: the suggestions' dress, a size down — a band of six wants less air
+// than three under an answer. The hover's arrow room shrinks with it. No fill at
+// rest: on the Jonson page the chip's green vanishes into the green slab, and
+// that's the look — on the band, where the ground is olive or slate, only a
+// transparent chip reads the same way. The hover keeps its fill, ring and arrow.
+.c-jonson__drawer-chip {
+    padding: rem(8) rem(14);
+    white-space: normal;
+    background-color: transparent;
+
+    &:hover {
+        padding-right: rem(40);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-jonson__band,
+    .c-jonson__band-label,
+    .c-jonson__band-chips {
+        transition: none;
+    }
+
+    .c-jonson__prompt.is-typing::after {
+        animation: none;
+    }
+}
+
+.c-jonson__footer.c-jonson__footer--light {
+    background-color: $c-ask-cream;
+
+
+    // Outside .c-content, so it's already the slab's full width — the base rule's
+    // negative margins exist to cancel .c-jonson's inline padding and here just drag
+    // it 92px past the slab's rounded corners.
+    margin-inline: 0;
+    @include mq(from, md) { margin-inline: 0; }
+    @include mq(from, lg) { margin-inline: 0; }
+    // Keep the content edge lined up with the header logo and the page above.
+    padding-inline: getmap($space, rhythm, 500);
+    @include mq(from, md) {
+        padding-inline: getmap($space, rhythm, 600);
+    }
+    @include mq(from, lg) {
+        padding-inline: getmap($space, rhythm, 800);
+    }
+    // Sits flush in the slab's bottom corners, as the conversation footer does.
+    border-radius: 0 0 $b-radius-300 $b-radius-300;
+
+    .c-jonson__input {
+        color: getmap($colour, primary, 700); // navy, as the page's other text
+
+        &::placeholder {
+            color: rgba(22, 44, 65, 0.72); // the same navy, stepped back — was 0.55, which sat at 3:1 on the white field
+        }
+
+        // Restated here, not inherited from field-input: this block's placeholder rule
+        // above outranks the mixin's `:focus::placeholder`, so without it the
+        // placeholder would sit under the caret on the light footer while clearing
+        // everywhere else.
+        &:focus::placeholder {
+            color: transparent;
+        }
+    }
+
+    // The back circle is cream-on-olive by default — invisible here. Its HOVER is
+    // the bigger problem: a spinning conic border over a light-800 padding-box fill
+    // with a white arrow, all sized for the olive footer. On cream that renders a
+    // dark disc with an arrow you can't see. Restated in this palette rather than
+    // patched: navy stroke and arrow, and the conic's fill switched to the footer's
+    // own cream so the centre still reads hollow.
+    $c-ask-ink: getmap($colour, primary, 700);
+    $c-ask-fill: $c-ask-cream; // must track the footer's own fill, above
+
+    .c-jonson__home {
+        border-color: rgba(22, 44, 65, 0.35);
+        color: rgba(22, 44, 65, 0.55);
+
+        &:hover {
+            border-color: transparent;
+            color: $c-ask-ink;
+            background:
+                linear-gradient($c-ask-fill, $c-ask-fill) padding-box,
+                conic-gradient(
+                    from var(--c-chip-angle),
+                    rgba(22, 44, 65, 0.12),
+                    $c-ask-ink 50%,
+                    rgba(22, 44, 65, 0.12)
+                ) border-box;
+        }
+
+        &:focus-visible {
+            outline-color: $c-ask-ink;
+        }
+    }
+
+    // The submit disc's ring is white for the olive bar; on the cream it
+    // measured 1.4:1, so it takes the same ink as the home button's.
+    .c-jonson__submit:focus-visible {
+        outline-color: $c-ask-ink;
+    }
+
+    // The drawer's chips on the slate: the Jonson page's pattern exactly — no
+    // fill, a light hairline, the words in white; on hover a fill a step darker
+    // than the ground (the band's own deeper slate) with the white ring spinning
+    // round it. Only the fill colour differs from the Jonson page, where the
+    // ground is green and the hover fill is the olive.
+    .c-jonson__drawer-chip {
+        border-color: rgba(getmap($colour, light, 100), 0.4);
+        background-color: transparent;
+        color: getmap($colour, light, 100);
+
+        &:hover {
+            background:
+                linear-gradient(#3e4e5c, #3e4e5c) padding-box,
+                conic-gradient(
+                    from var(--c-chip-angle),
+                    #536069, // the band's own slate, so the ring's dark half melts into the ground and only the white sweep reads
+                    getmap($colour, light, 100) 50%,
+                    #536069
+                ) border-box;
+        }
+    }
+
+    // field-shell's resting stroke is light 800 — a dark olive, which reads as a
+    // step down from the olive footer but as a heavy dark box on cream. Here it's
+    // the navy ink held right back, and focus is the same ink dialled up rather
+    // than a jump to full strength, so the field firms up without changing hue.
+    // Both states restated: this block out-specifies field-shell's own :focus-within.
+    .c-jonson__form {
+        border-color: rgba(22, 44, 65, 0.35);
+
+        &:focus-within,
+        &:has(.c-jonson__input:not(:placeholder-shown)) {
+            border-color: rgba(22, 44, 65, 0.7);
+        }
+    }
+}
+
+// Follow-up input — same field as the hero, centred within the footer.
+.c-jonson__form {
+    // Taken away when the API couldn't be reached (jonson-ask.js sets [hidden] on the
+    // `apiError` done event); the footer around it stays, so the reset circle survives.
+    // Spelled out because field-shell sets its own display, which outranks the UA
+    // stylesheet's [hidden] rule — set the attribute alone and the input stays put.
+    &[hidden] {
+        display: none;
+    }
+
+    @include field-shell('.c-jonson__input');
+    width: 100%;
+    max-width: $c-jonson-measure; // match the thread's measure
+
+    @include mq(from, md) {
+        grid-column: 2; // the centred column of the footer grid
+    }
+
+    // Solid fill — no glass alpha — for the follow-up input.
+    background: getmap($colour, light, 100);
+
+    &:focus-within {
+        background-color: getmap($colour, light, 100);
+    }
+}
+
+.c-jonson__input {
+    @include field-input;
+    // The hero input's step, not a smaller one. Both fields already share their
+    // padding and placeholder treatment through field-input; the type was the one
+    // thing that differed, and a question typed into the footer read as an
+    // afterthought beside the same question typed on the front door. What stays
+    // different is the surface it sits on: solid white here, frosted glass there.
+    @include typography(p);
+}
+
+.c-jonson__submit {
+    @include field-submit;
+    width: rem(44);
+}
+
+// "Back to the start" — a circle the same height as the input, with a left arrow.
+// The buttons at the footer's left — home, and on a content page a back button
+// before it — as one row in the footer's first cell (see .c-jonson__home's
+// placement below; the wrapper takes it when it's there).
+.c-jonson__nav {
+    display: flex;
+    align-items: center;
+    gap: getmap($space, rhythm, 500); // the gap the share icons keep (see .b-social), so the two rows of round buttons on a note match
+    flex: 0 0 auto;
+
+    @include mq(from, md) {
+        grid-column: 1;
+        justify-self: start;
+    }
+}
+
+.c-jonson__home {
+    flex: 0 0 auto;
+    width: rem(44);
+    height: rem(44);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    background: transparent;
+    // Match .c-jonson__suggestion's outline — stroke and arrow the same colour.
+    border: rem(3) solid rgba(getmap($colour, light, 700), 0.4);
+    color: rgba(getmap($colour, light, 700), 0.4);
+    cursor: pointer;
+    transition: border-color 220ms ease, color 220ms ease;
+
+    // From md: first grid cell (the left gutter), flush to its left edge — which
+    // the footer's padding puts on the house-margin content edge, lining up with
+    // the header logo + thread. The input (auto-placed into the centre cell)
+    // stays centred.
+    @include mq(from, md) {
+        grid-column: 1;
+        justify-self: start;
+    }
+
+    // Hover: the stroke becomes a cream highlight spinning around the ring and the
+    // arrow brightens to white — same treatment as .c-jonson__suggestion. A solid
+    // light-800 fill in the padding box (matching the footer) keeps the centre
+    // hollow; the conic shows only through the transparent border.
+    &:hover {
+        border-color: transparent;
+        color: getmap($colour, light, 100);
+        background:
+            linear-gradient(getmap($colour, light, 800), getmap($colour, light, 800)) padding-box,
+            conic-gradient(
+                from var(--c-chip-angle),
+                rgba(getmap($colour, light, 700), 0.12),
+                getmap($colour, light, 100) 50%,
+                rgba(getmap($colour, light, 700), 0.12)
+            ) border-box;
+        animation: c-jonson-chip-spin 1.4s linear infinite;
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, light, 100);
+        outline-offset: rem(2);
+    }
+
+    svg {
+        display: block;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-jonson__home:hover {
+        animation: none; // no spin — a static white stroke instead
+        border-color: getmap($colour, light, 100);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-jonson:not([hidden]) {
+        animation: none;
+    }
+
+    .c-jonson__turn {
+        animation: none;
+    }
+
+    .c-jonson::after {
+        animation: none; // no sweeping wave
+        opacity: 0; // leave only the static base grid
+    }
+
+    .c-jonson__thinking span {
+        animation: none;
+        opacity: 0.6;
+    }
+
+    .c-jonson__thinking::before {
+        animation: none; // hold the orb glow steady (no breathing)
+    }
+}

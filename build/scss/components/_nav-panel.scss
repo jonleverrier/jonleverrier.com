@@ -1,0 +1,234 @@
+/**
+ * COMPONENT: NAV PANEL
+ *
+ * The site menu, as the page slab turned white (_components/nav-panel.twig).
+ *
+ * A native <dialog>, so the top layer, Escape and the focus trap come for free —
+ * same call as .c-contact-panel. Where that one slides in at the side, this one
+ * sits exactly where the slab does: FIXED, inset by the outer wrap's own padding,
+ * capped at the same max-width, wearing the slab's radius. The tokens are shared
+ * with `body > .b-wrap` and .b-slab rather than copied as numbers, so moving the
+ * page gutter moves the panel with it.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// Matches the enter/exit below AND the SLIDE_MS constant in nav-panel.js — the
+// script waits this long before close() so the fade actually plays.
+$c-nav-panel-ms: 260ms;
+
+.c-nav-panel {
+    // Over the WHOLE site, not just the slab: edge to edge, the page gutter included.
+    // It sat on the slab's box first and read as one panel among several rather than
+    // the site being covered.
+    position: fixed;
+    inset: 0;
+    // Both `auto` deliberately: the UA stylesheet gives <dialog> `width: fit-content`
+    // AND `height: fit-content`, and overriding only the width left the panel sized to
+    // its four links — a white card half way down the slab rather than the slab turned
+    // white. auto + the insets below is what stretches it.
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    // NOT `margin: auto`. With all four insets set, auto margins shrink a dialog to
+    // its content and centre it — which left the page showing above and below the
+    // panel. Zero stretches it between the insets instead. The content's own cap
+    // lives on the .b-wrap inside, exactly as the page's does.
+    margin: 0;
+
+    // BELOW the header (xl), not in the top layer. This is opened with show(), not
+    // showModal(), on purpose: a modal dialog is promoted above every z-index, which
+    // buried the logo and the Contact button — including the very burger you need to
+    // press to close it. The trade is that Escape and the focus trap stop being free,
+    // so nav-panel.js wires both by hand.
+    z-index: getmap($z-index, lg);
+
+    padding: 0;
+    // The same scrollbar compensation the header gets (see _header.scss): this panel is
+    // fixed and full-bleed, so the widened viewport would shift its CENTRED list by
+    // half the scrollbar's width. Half a jump is still a jump.
+    padding-right: var(--nav-scrollbar, 0px);
+    border: 0;
+    // No radius: it meets all four edges of the viewport, so there are no corners to
+    // round. (The slab's own $b-radius-300 was right when this sat on the slab.)
+    background-color: getmap($colour, light, 100); // #fff
+    color: getmap($colour, primary, 700);
+    overflow: clip; // bound the corners without making this a scroll container
+
+    // Closed is the default for a dialog; these only describe the open state's
+    // arrival. `display` is what <dialog> toggles, so the transition rides
+    // `allow-discrete` — without it the panel would pop rather than fade.
+    opacity: 0;
+    transition:
+        opacity $c-nav-panel-ms ease,
+        display $c-nav-panel-ms allow-discrete;
+
+    &[open] {
+        opacity: 1;
+    }
+
+    @starting-style {
+        &[open] {
+            opacity: 0;
+        }
+    }
+
+    // No ::backdrop rule: a non-modal dialog doesn't get one. The panel already
+    // covers the slab edge to edge, and a scrim would only darken the thin gutter
+    // around it and give the whole thing a lightbox feel it doesn't want.
+}
+
+// While the panel is open the header sits on white, where its own white type
+// disappears. The same switch the eggshell slab already makes for the logo
+// (see _logo.scss), keyed off the root class nav-panel.js sets.
+.is-nav-open {
+    .b-logo__title,
+    .b-logo__item {
+        color: getmap($colour, primary, 700);
+    }
+}
+
+.c-nav-panel__inner {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    // The outer half of the logo's inset — the same padding `body > .b-wrap` puts
+    // between the viewport and the slab. The inner half is the .b-wrap in the markup.
+    padding-inline: getmap($space, rhythm, 500);
+
+    // The header sits over the top of this, so the list is pushed clear of it.
+    padding-block: rem(120) getmap($space, rhythm, 500);
+
+    &:focus-visible {
+        outline: none; // a silent target for a pointer open, never a focus ring
+    }
+}
+
+// The nested .b-wrap is a flex child here; without this it collapses to its content
+// width and the cap it carries never applies.
+.c-nav-panel__inner > .b-wrap {
+    width: 100%;
+}
+
+.c-nav-panel__items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    // Centred in the wrap, which is itself centred in the viewport — so the list sits
+    // on the page's own axis rather than against either gutter. The links are
+    // inline-block, so this moves the links themselves, not just the text in them.
+    text-align: center;
+}
+
+.c-nav-panel__item + .c-nav-panel__item {
+    margin-top: rem(8);
+}
+
+// Contact, phones only. It's in this list precisely BECAUSE the header drops its
+// Contact button below md (.b-header__contact in _header.scss) — above that the
+// button is there and a second one here would be the same door twice.
+//
+// display:none rather than a Twig condition, so the markup is the same at every
+// width and the item can't be missing from a cached page served to a phone. It stays
+// last in the DOM either way, which is what keeps the nth-child stagger delays above
+// intact when it's hidden.
+.c-nav-panel__item--mobile {
+    @include mq(from, md) {
+        display: none;
+    }
+}
+
+// The items arrive one after another as the panel opens, rising into place.
+//
+// The drift is VERTICAL because the list is centred. It came in from the right while
+// the list was right-aligned — the motion resolving onto the edge the items settle
+// against — and that reading disappears the moment there is no edge to settle on.
+// Centred, a sideways drift just looks like a slide.
+//
+// An ANIMATION, not a transition. The panel goes display:none → block, so its
+// children have no previous state to transition from — a transition would need
+// @starting-style to have anything to move from, where an animation simply plays
+// when the element is first displayed. It also restarts on every open for free.
+//
+// nth-child rather than a --i custom property on each <li>: the site prefers that
+// where the markup doesn't otherwise need one (see the note in _case-study.scss),
+// and this list is four items long. The loop runs to six for headroom.
+// Pushed harder than the first pass (420ms / 55ms / 28px). The step is what actually
+// reads as stagger — doubling it is what separates the items into four arrivals
+// rather than one soft cascade — and the travel is doubled with it so each item has
+// somewhere to come from. Last item lands at 300 + 520 = 820ms.
+$c-nav-panel-item-ms: 520ms;
+$c-nav-panel-item-step: 100ms;
+
+.c-nav-panel[open] .c-nav-panel__item {
+    // `both` so an item is held at the `from` state through its delay — without it
+    // every item is fully visible until its turn, and the stagger does nothing.
+    animation: c-nav-panel-item $c-nav-panel-item-ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@for $i from 1 through 6 {
+    .c-nav-panel[open] .c-nav-panel__item:nth-child(#{$i}) {
+        animation-delay: ($i - 1) * $c-nav-panel-item-step;
+    }
+}
+
+@keyframes c-nav-panel-item {
+    from {
+        opacity: 0;
+        transform: translateY(rem(56));
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+// Motion off: the list is simply there. Not `animation-duration: 0` — that still
+// runs the animation and can flash the `from` state on a slow frame.
+@media (prefers-reduced-motion: reduce) {
+    .c-nav-panel[open] .c-nav-panel__item {
+        animation: none;
+    }
+}
+
+.c-nav-panel__link {
+    display: inline-block;
+    font-family: $g-font-primary;
+    font-weight: 600;
+    // The h1 scale itself, through the site's own mixin, rather than a clamp tuned to
+    // look about right: it carries size, line-height and letter-spacing across base,
+    // md and lg, so the nav matches the page headings at every breakpoint and follows
+    // the scale if it ever moves. The same call .c-frontdoor__title and
+    // .c-content__title make.
+    @include typography(h1);
+    // The logo navy — the darkest thing the site uses, and what the header switches to
+    // over this panel, so the list and the wordmark above it share one ink. 15.75:1 on
+    // white; the red active item is the only colour in the list.
+    color: getmap($colour, primary, 700);
+    text-decoration: none;
+    transition: color 200ms ease;
+
+    // The link red on hover — 600, the brand red, the same one the active item wears.
+    // NOT the accent-link mixin's darkened hover shade (color.scale(-15%) off 650),
+    // which is the treatment running text uses and reads as a duller red here at h1
+    // size. 4.59:1 on this white panel, so it clears AA.
+    &:hover,
+    &:focus-visible {
+        color: getmap($colour, primary, 600);
+    }
+}
+
+// The page you are on. Painted from aria-current rather than a class, so the state a
+// screen reader announces and the state you can see are the same one thing.
+//
+// The same 600 as the hover above, on purpose: the current page reads red at REST,
+// where every other item only turns red under the pointer. That is the distinction
+// now — state versus gesture — rather than two shades of red the eye has to compare.
+// 600 is only ruled out as text on the CREAM slab (3.56:1); this panel is pure white,
+// where it measures 4.59:1 and clears AA.
+.c-nav-panel__link[aria-current='page'] {
+    color: getmap($colour, primary, 600);
+}

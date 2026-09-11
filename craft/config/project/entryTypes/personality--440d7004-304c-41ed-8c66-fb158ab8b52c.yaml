@@ -1,0 +1,58 @@
+allowLineBreaksInTitles: false
+color: cyan
+description: null
+fieldLayouts:
+  a06da29c-8e3f-451e-beab-c0926e32126d:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-06-16T10:34:15+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: e304270d-d9be-4623-8d5f-43901f7a8fa7 # Personality
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 9002b8d4-9897-4b43-a340-42061a970bb8
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-03T15:10:36+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: e92cf7c2-ce99-4782-b339-eab7b65ea6c1 # Memories
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 90f70768-1669-4dba-a4e4-037fe688a528
+            userCondition: null
+            warning: null
+            width: 100
+        name: JonSon
+        uid: 2b7790d0-60e5-452e-ac3d-d1b0b88581b5
+        userCondition: null
+    thumbFieldKey: null
+handle: personality
+hasTitleField: false
+icon: gear-complex
+name: Personality
+showSlugField: false
+showStatusField: false
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

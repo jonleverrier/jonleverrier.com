@@ -1,0 +1,58 @@
+{#
+  Clients marquee — a slowly auto-scrolling strip of logos of companies Jon has
+  worked with, surfaced at credibility moments (the [[clients]] marker). One
+  "run" of logos; jonson-ask.js fills + duplicates it for a seamless loop and
+  sets the scroll speed.
+
+  Expects: clients — a list of { name, logo } maps (logo is an Asset).
+  Optional: contained — true on a static page (e.g. contact) where the marquee
+  should sit in the content column rather than full-bleed a container-query box.
+  Optional: small — on the static strip, use narrower cards so ~8 logos show at once.
+#}
+{% set contained = contained ?? false %}
+{% set small = small ?? false %}
+{% if clients is defined and clients %}
+    <div class="c-clients js-clients{% if contained %} c-clients--static{% endif %}{% if small %} c-clients--small{% endif %}" role="group" aria-label="Companies Jon has worked with">
+        <div class="c-clients__track">
+            <ul class="c-clients__items">
+                {% for c in clients %}
+                    {% if c.logo %}
+                        {# On the contained (static) marquee the cards are plain logos —
+                           no hover-flip to a summary. #}
+                        {% set summary = contained ? '' : (c.summary ?? '')|trim %}
+                        <li class="c-clients__item{% if summary %} has-summary{% endif %}">
+                            <span class="c-clients__inner">
+                                <span class="c-clients__slider">
+                                    <span class="c-clients__face c-clients__face--logo">
+                                        {% if c.logo.extension|lower == 'svg' %}
+                                            {# Vector — serve as-is (crisp at any size, no transform). #}
+                                            <img
+                                                class="c-clients__logo"
+                                                src="{{ c.logo.url }}"
+                                                alt="{{ c.name }}"
+                                                height="64"
+                                                loading="lazy" decoding="async">
+                                        {% else %}
+                                            {# Raster — retina-first: a 2× (128px tall) source shown at 64px. #}
+                                            <img
+                                                class="c-clients__logo"
+                                                src="{{ c.logo.getUrl({ height: 128, format: 'webp' }) }}"
+                                                alt="{{ c.name }}"
+                                                height="64"
+                                                loading="lazy" decoding="async">
+                                        {% endif %}
+                                    </span>
+                                    {% if summary %}
+                                        <span class="c-clients__face c-clients__face--summary">
+                                            <span class="c-clients__summary">{{ summary }}</span>
+                                        </span>
+                                    {% endif %}
+                                </span>
+                            </span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endif %}

@@ -1,0 +1,44 @@
+{#
+  A year of notes — /notes/2020: the notes index filtered to the notes posted
+  in that year, through the same listing as /notes (see _components/notes-index).
+  Routed from config/routes.php, which hands the year in as `year`.
+
+  Whisper is the notes index's section name; the h1 is the year. Six a page, at
+  /notes/2020/p2 and on, with the head's canonical and prev/next following. A
+  year with no notes, or a page past the last, is a 404.
+#}
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+
+{# Cream slab — the default is olive p500. #}
+{% set slabModifier = 'b-slab--l600' %}
+
+{% set perPage = 6 %}
+{% set notesQuery = craft.entries()
+    .section('notes')
+    .status('live')
+    .postDate(['and', '>= ' ~ year ~ '-01-01', '< ' ~ (year + 1) ~ '-01-01'])
+    .orderBy('postDate DESC')
+    .limit(perPage) %}
+{% set pageCount = (notesQuery.count() / perPage)|round(0, 'ceil') %}
+
+{# The head's title, since no element names this page: "2020 | Notes | Jon Leverrier". #}
+{% set pageTitleParts = [year, 'Notes'] %}
+
+{% block siteContent %}
+    {% if pageCount == 0 or craft.app.request.pageNum > pageCount %}
+        {% exit 404 %}
+    {% endif %}
+
+    {% set notesIndex = craft.app.entries.getSectionByHandle('note') %}
+
+    {% include '_components/notes-index' with {
+        query: notesQuery,
+        whisper: notesIndex ? notesIndex.name : 'Notes',
+        title: year,
+        standfirst: null,
+        topic: null,
+        allCurrent: false,
+    } only %}
+{% endblock %}

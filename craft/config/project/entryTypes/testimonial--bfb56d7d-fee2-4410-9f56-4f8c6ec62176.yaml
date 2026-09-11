@@ -1,0 +1,154 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  b32de8fd-c471-42ee-a1e4-f640c2498ecc:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-07-06T08:34:53+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: cae568b2-765d-47ae-83a8-77bf3b56ed54 # Blockquote
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 35ab4faf-405a-4e52-b614-df3edca40367
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-05T16:38:17+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 4f7ddbf7-9856-47f8-80e4-9ea65921bc23 # Name
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 98fcbc18-f391-4890-88d5-0d0aab041fda
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-05T16:58:12+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: aa85c7c1-9789-4e1e-8c17-73f94dc0470e # Job Title
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 9b3bfd88-9890-4718-bfb9-f845b53cc394
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-05T16:38:17+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 85738cb0-617b-45ba-9842-28cb680b4591 # Company
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: b1a0b4a8-873d-458c-a015-439af2b6d235
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-05T16:55:46+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 9a729bf7-4da1-42b6-90a3-6a4c12666f0c # Context
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 39690d51-61be-441c-b0d0-bd13d8215e9e
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-06T08:06:24+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 48a345a5-15fa-438d-9106-72cc3204d789 # Profile Image
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 95b5dc9d-c238-415b-8f7c-fb9d8122c3de
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-25T19:58:09+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: d2d8f42a-ad66-4f98-8f9f-181b3aa8f046 # Case Study Link
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 06e33f88-2da8-4b04-8a51-0335c03c80ef
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-26T12:37:23+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: df554acf-1b5c-47ab-b8e6-c45e0ca061a7 # Featured
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: e3824d0d-cd7b-4d65-8a41-04e568f7349e
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: 72b5fc90-185c-4a0d-9d8c-30ffcb724db0
+        userCondition: null
+    thumbFieldKey: null
+handle: testimonial
+hasTitleField: false
+icon: person
+name: Testimonial
+showSlugField: false
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{company}'

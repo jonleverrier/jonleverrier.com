@@ -1,0 +1,113 @@
+{#
+  Case study summary card — a discovery tile that links to a full case study page.
+  Media on top, then the client (eyebrow), the case study title, an optional blurb,
+  and a row of skill chips. The whole card is the link.
+
+  Params (only url + title are required; the rest degrade gracefully):
+    url     — the case study page URL
+    title   — the case study title (heading)
+    client  — the client it was for (small eyebrow above the title)
+    summary — a short public blurb
+    skills  — list of skill labels (chips)
+    image   — Asset for the media (cream placeholder shows until one exists)
+    loading — 'eager' (default) | 'lazy' for a card in normal document flow
+#}
+{% import '_macros/media' as media %}
+{% set client = client ?? '' %}
+{% set summary = summary ?? '' %}
+{% set skills = skills ?? [] %}
+{% set image = image ?? null %}
+{# Included with `only`, so every optional var needs a default here or Twig throws
+   on the ones a caller omits — the marquee passes no logo, and without this the
+   whole panel failed to render (silently, since renderComponent swallows it). #}
+{% set logo = logo ?? null %}
+{# Eager by DEFAULT because of where this card is usually met: inside a Jonson answer,
+   in a panel composed off-screen and revealed as one piece. A lazy image there never
+   intersects a viewport while it's being built, so it never loads and the card arrives
+   empty. Callers that put the card in normal document flow — the static strip at the
+   foot of a case study — pass 'lazy' and get the browser's own behaviour back. #}
+{% set loading = loading ?? 'eager' %}
+
+{# Thumbnail widths. The media well is 3:2 and the transforms are width-only, so the
+   source's own ratio is preserved and the CSS `object-fit: cover` does any cropping —
+   an upload at the field's stated 2220x1480 needs neither.
+
+   Two layouts, two sets of widths, because their display sizes differ by 2x:
+     marquee — slide is (1110 - gap) / 2 = 547, so 547 / 1094 covers 1x and 2x
+     feature — card spans the 1110 panel, so 1110 / 2220 does
+
+   The caller passes `imageWidths` + `imageSizes` together; the defaults here are the
+   marquee's, since that's the variant the strip and Jonson's [[casestudies:all]] use.
+   Below md both layouts go full width, which the trailing `100vw` covers. #}
+{% set imageWidths = imageWidths ?? [547, 1094] %}
+{% set imageSizes = imageSizes ?? '(min-width: 48em) 547px, 100vw' %}
+{% set imageFallback = imageFallback ?? 547 %}
+
+<a class="c-case-study" href="{{ url }}">
+    <div class="c-case-study__media">
+        {% if image %}
+            {# Quality raised — the thumbnail IS the card, and banding in a flat brand
+               background is exactly what 82 gives you. `loading` is the caller's
+               (see the default above).
+
+               `tone: true` — the card arrives on a wash of its own two colours
+               rather than the well's flat placeholder. On here for BOTH variants:
+               the feature card is one big picture and the marquee is a row of them,
+               and either way the card is the thing being looked at, not a thumbnail
+               beside text (which is the case the macro keeps it off for). #}
+            {{ media.picture(image, imageSizes, {
+                class: 'c-case-study__img',
+                widths: imageWidths,
+                fallback: imageFallback,
+                loading: loading,
+                quality: 90,
+                tone: true,
+            }) }}
+        {% endif %}
+    </div>
+    {# Logo sits left of the text when the client has one in the Client List
+       (matched by name in FindContext::clientLogo). Most don't, so the row has to
+       read properly with the chip absent — hence __text carrying its own column
+       rather than the logo being positioned against the meta box. #}
+    <div class="c-case-study__meta">
+        {% if logo %}
+            {# Vector — serve as-is, same as the clients marquee. No transform, no
+               webp: it's crisp at any size and a raster pipeline buys nothing.
+               Eager, because the panel is revealed as a piece and a lazy image
+               inside it never intersects. #}
+            <span class="c-case-study__logo">
+                <img
+                    class="c-case-study__logo-img"
+                    src="{{ logo.url }}"
+                    alt="{{ client ?: title }}"
+                    height="64"
+                    decoding="async">
+            </span>
+        {% endif %}
+        {# The client sits outside the collapsing box, so it's the only line with any
+           height before a hover — which is what drops it to the foot of the card,
+           onto the scrim, rather than leaving it stranded halfway up above three
+           invisible-but-still-tall siblings.
+
+           __reveal / __reveal-inner are a pair on purpose, not one box with a class
+           to spare: collapsing to nothing and back needs a grid row that animates
+           (0fr → 1fr) AND a child that clips while it does. One element can't be
+           both. See _case-study.scss. #}
+        <div class="c-case-study__text">
+            {% if client %}<p class="c-case-study__client">{{ client }}</p>{% endif %}
+            <div class="c-case-study__reveal">
+                <div class="c-case-study__reveal-inner">
+                    <h3 class="c-case-study__title">{{ title }}</h3>
+                    {% if summary %}<p class="c-case-study__summary">{{ summary }}</p>{% endif %}
+                    {% if skills is not empty %}
+                        <ul class="c-case-study__skills">
+                            {% for skill in skills %}
+                                <li class="c-case-study__skill">{{ skill }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</a>

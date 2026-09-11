@@ -1,0 +1,18 @@
+{#
+    VIP — a private front door: /vip/{slug}
+
+    Jon makes an entry here for someone, writes a private note on them in
+    `jonsonSummary`, and sends them this URL — or its code form, /vip/{altSlug},
+    minted on first save (see modules/jonson/services/Vip). Landing on either
+    doesn't render a page: it remembers who they are (a signed cookie holding the
+    entry's uid) and sends them to the homepage, where Jonson is primed with the
+    note for the whole visit and every page carries a small strip saying VIP +
+    their name.
+
+    An entry with no note isn't a door: nothing is remembered and the visitor
+    arrives home as anyone else. Disabling the entry revokes the door for everyone
+    who already holds its cookie. The code URL is handled by controllers/
+    VipController; both end in Vip::enter(), so they can't drift apart.
+#}
+{% do craft.app.getModule('jonson').vip.enter(entry) %}
+{% exit %}

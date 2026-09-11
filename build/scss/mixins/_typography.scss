@@ -1,0 +1,91 @@
+/**
+ * MIXINS: TYPOGRAPHY
+ *
+**/
+@use 'sass:map';
+@use '../theme' as *;
+@use '../mixins/mq' as *;
+@use '../mixins/props' as *;
+
+/**
+ * typography
+ *
+ * will loop through the $mq-breakpoints and output media queries
+ * which contain key/pair values from the $element map.
+ *
+ * it can take a second parameter, that searches for a nested map
+ * within the given $element. no media queries will be output in this scenario.
+ *
+ *  h1 {
+ *      @include typography(h1);
+ *  }
+ *
+ *  h1 {
+ *      @include typography(h1, xxl);
+ *  }
+ *
+**/
+
+// default values: these can be overriden in theme/_setup.scss
+$typography: (
+    p: (
+        base: (
+            font-size:      0rem,
+            line-height:    0,
+        )
+    )
+) !default;
+
+
+@mixin typography($element, $key:null) {
+
+    // has a value been passed
+    @if ($element) {
+
+        $map: map.get($typography, $element);
+
+        // if there a value in the $typography sass map?
+        @if ($map) {
+
+            // if $key value passed
+            @if ($key) {
+
+                // get $key map from the given $element
+                $base: map.get($map, $key);
+                // output key/pair values from key
+                // no media queries!!
+                @include props($base);
+
+            // if just $element value passed
+            } @else {
+
+                // get base map
+                $base: map.get($map, base);
+                // get prop values
+                @include props($base);
+                // remove base from map as there is no base
+                // options in $mq-breakpoints
+                $mq: map.remove($map, base);
+
+                // loop through given value(s) in typography map
+                @each $bp, $attr in $mq {
+                    // pass breakpoint value to mq mixin to generate mq markup
+                    @include mq(from, $bp) {
+                        // get props from mixin and pass in data for mq mixin to render
+                        @include props($attr);
+                    }
+                }
+
+            }
+
+        // if no value can be found in the $typography sass map, log error
+        } @else {
+            @error 'mixins/_typography.scss: #{$element} does not exist in the $typography sass map';
+        }
+
+    // if no value has been passed, log an error
+    } @else {
+        @error 'mixins/_typography.scss: value not given. provide a value from $typography sass map';
+    }
+
+}

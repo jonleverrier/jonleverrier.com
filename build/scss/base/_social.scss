@@ -1,0 +1,188 @@
+/**
+ * BASE: SOCIAL
+ *
+ * Social profile links for the dark (b-slab--p700) footer. Each link stacks two
+ * brand icons from the SVG spritemap (build/icons) — the default on :before, the
+ * hover variant on :after — and cross-fades between them.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$b-social-icon-size: rem(46);
+
+.b-social__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: getmap($space, rhythm, 500);
+}
+
+.b-social__link {
+    display: inline-flex;
+    align-items: center;
+    gap: rem(10);
+    position: relative; // containing block for the hover icon layer
+
+    @include typography(p-sm);
+    color: getmap($colour, primary, 400);
+    text-decoration: none;
+
+    // TWO stacked icons, cross-faded — NOT one background-image swapped on :hover.
+    //
+    // The swap was noticeably laggy in Safari: with $sprite-type: fragment the icon is
+    // an SVG fragment URL, and WebKit doesn't fetch and rasterise a given fragment
+    // until something actually paints it. The hover variant was therefore decoded at
+    // the moment of hover, so the first hover on each link stalled or flashed empty.
+    //
+    // `:after` carries the hover icon at opacity 0 from page load, which is enough to
+    // get it painted and decoded up front. Hovering then only flips two opacities,
+    // which is compositor work.
+    &:before,
+    &:after {
+        content: '';
+        flex: 0 0 auto;
+        transform-origin: center bottom;
+        // Springy ease — overshoots then settles for a bouncy "pop".
+        transition:
+            transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+            opacity 140ms ease;
+    }
+
+    // The hover icon sits exactly over the default one. Centred with a negative margin
+    // rather than translateY, because the pop below sets `transform` and would replace
+    // any centring transform.
+    &:after {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        margin-top: calc(#{$b-social-icon-size} / -2);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    // Bouncy lift + scale + slight tilt on hover, on both layers so they move as one.
+    &:hover:before,
+    &:hover:after,
+    &:focus-visible:before,
+    &:focus-visible:after {
+        transform: translateY(rem(-6)) scale(1.15) rotate(-6deg);
+    }
+
+    &:hover:before,
+    &:focus-visible:before {
+        opacity: 0;
+    }
+
+    &:hover:after,
+    &:focus-visible:after {
+        opacity: 1;
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid currentColor;
+        outline-offset: rem(2);
+    }
+}
+
+// Per-platform brand icons — default on :before, hover variant on :after.
+// $include-size: false so the box size is controlled below (not the sprite's
+// natural dimensions).
+.b-social__link--linkedin:before {
+    @include icon($name: icon_social_linkedin_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--linkedin:after {
+    @include icon($name: icon_social_linkedin_hover, $include-size: false, $type: $sprite-type);
+}
+
+.b-social__link--instagram:before {
+    @include icon($name: icon_social_instagram_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--instagram:after {
+    @include icon($name: icon_social_instagram_hover, $include-size: false, $type: $sprite-type);
+}
+
+.b-social__link--flickr:before {
+    @include icon($name: icon_social_flickr_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--flickr:after {
+    @include icon($name: icon_social_flickr_hover, $include-size: false, $type: $sprite-type);
+}
+
+.b-social__link--github:before {
+    @include icon($name: icon_social_github_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--github:after {
+    @include icon($name: icon_social_github_hover, $include-size: false, $type: $sprite-type);
+}
+
+// The share block's set (see _components/share): email and the AI assistants,
+// in the same two-icon pattern as the profiles above.
+
+.b-social__link--email:before {
+    @include icon($name: icon_social_email_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--email:after {
+    @include icon($name: icon_social_email_hover, $include-size: false, $type: $sprite-type);
+}
+
+.b-social__link--perplexity:before {
+    @include icon($name: icon_social_perplexity_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--perplexity:after {
+    @include icon($name: icon_social_perplexity_hover, $include-size: false, $type: $sprite-type);
+}
+
+.b-social__link--gemini:before {
+    @include icon($name: icon_social_gemini_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--gemini:after {
+    @include icon($name: icon_social_gemini_hover, $include-size: false, $type: $sprite-type);
+}
+
+.b-social__link--claude:before {
+    @include icon($name: icon_social_claude_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--claude:after {
+    @include icon($name: icon_social_claude_hover, $include-size: false, $type: $sprite-type);
+}
+
+.b-social__link--grok:before {
+    @include icon($name: icon_social_grok_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--grok:after {
+    @include icon($name: icon_social_grok_hover, $include-size: false, $type: $sprite-type);
+}
+
+.b-social__link--chatgpt:before {
+    @include icon($name: icon_social_chatgpt_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--chatgpt:after {
+    @include icon($name: icon_social_chatgpt_hover, $include-size: false, $type: $sprite-type);
+}
+
+.b-social__link--dribbble:before {
+    @include icon($name: icon_social_dribbble_default, $include-size: false, $type: $sprite-type);
+}
+.b-social__link--dribbble:after {
+    @include icon($name: icon_social_dribbble_hover, $include-size: false, $type: $sprite-type);
+}
+
+// The icon() background shorthand resets background-size, so size the icon
+// boxes here — after, and at a specificity matching, the modifier rules so
+// `contain` reliably wins.
+//
+// BOTH layers: an unsized :after has no box, so it never paints — which would leave
+// the hover icon undecoded and put the Safari lag straight back.
+.b-social__items .b-social__link:before,
+.b-social__items .b-social__link:after {
+    width: $b-social-icon-size;
+    height: $b-social-icon-size;
+    background-size: contain;
+}

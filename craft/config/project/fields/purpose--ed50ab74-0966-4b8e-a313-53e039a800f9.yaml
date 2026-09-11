@@ -1,0 +1,62 @@
+columnSuffix: null
+handle: purpose
+instructions: null
+name: Purpose
+searchable: false
+settings:
+  customOptions: false
+  options:
+    -
+      __assoc__:
+        -
+          - label
+          - 'Looking for a job'
+        -
+          - value
+          - lookingForAJob
+        -
+          - icon
+          - ''
+        -
+          - color
+          - ''
+        -
+          - default
+          - ''
+    -
+      __assoc__:
+        -
+          - label
+          - 'Looking to win work'
+        -
+          - value
+          - lookingToWinWork
+        -
+          - icon
+          - ''
+        -
+          - color
+          - ''
+        -
+          - default
+          - ''
+    -
+      __assoc__:
+        -
+          - label
+          - 'Looking to form a partnership'
+        -
+          - value
+          - lookingToFormAPartnership
+        -
+          - icon
+          - ''
+        -
+          - color
+          - ''
+        -
+          - default
+          - ''
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Dropdown

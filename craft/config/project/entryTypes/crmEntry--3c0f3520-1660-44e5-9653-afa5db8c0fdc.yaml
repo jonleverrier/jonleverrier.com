@@ -1,0 +1,128 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  95e7dab1-65c4-40a5-83f8-bcce6873cd08:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-07-22T12:48:36+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 6e43da47-a5d5-4d1c-a791-af7d18e9a2ac # First Name
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: true
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 3e929514-e017-403d-9771-61fd29c35b0b
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-22T12:48:36+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: f487c1d5-6e83-4e7f-9124-c60a7de99825 # Surname
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: true
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 918a7494-a8be-4422-b69c-e23132ef0a45
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-22T12:48:36+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 994d5070-7163-4d97-8082-568fdabea3f5 # Email
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: true
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 6eca9e1c-d181-4e2e-b37a-820c0b3b63ba
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-22T12:48:36+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: d97b5f71-70aa-4e74-a738-d602ebec8e89 # Message
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 84e189c0-e3bb-4127-b39d-0065594feb37
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-06T19:18:00+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 24d25123-4314-4ccb-a64f-a450d200cb1d # URL
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 3ef529ea-c466-4599-90cf-c78276bf4a49
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-22T12:48:36+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 32583b60-37cb-443a-9712-36c9c501d20f # Conversation
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 3242bb03-6274-40b8-a575-5a1491e7e6e9
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: 8eb01035-7482-41e3-90ff-4014425f2c14
+        userCondition: null
+    thumbFieldKey: null
+handle: crmEntry
+hasTitleField: false
+icon: null
+name: 'CRM Entry'
+showSlugField: false
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: '{firstName} {surname}'
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{firstName} {surname}'

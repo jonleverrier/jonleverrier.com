@@ -1,0 +1,75 @@
+{#
+  sitemap.xml — every page on the site worth indexing, one <url> each.
+
+  No route needed: Craft resolves /sitemap.xml straight to this file, which is why
+  it sits loose in the templates root rather than under _views.
+
+  WHAT GOES IN
+
+  Entries first, gathered from the sections themselves rather than a list kept by
+  hand, so a new section appears here the day it's created. An entry earns a line
+  when all three are true:
+
+    · it has a URL      — a section with `hasUrls` off (globals, testimonials, the
+                          CV, the client list) returns null and falls out on its own
+    · it is live        — a draft, a disabled entry, one dated for next week or
+                          expired last month is not a page anyone can open
+    · it isn't excluded — the "Exclude from sitemap?" switch on the entry, which is
+                          on the Case Study / About / Note / Page layouts. Read with
+                          `?? false` so a section that never got the field simply
+                          isn't excluded, rather than erroring
+
+  Then the topic pages (/notes/{topic}), the one category group that renders —
+  same three rules, the switch included (it's on the Topics group's SEO tab). The
+  others (Sectors, Job Status) carry a uriFormat but have no template behind it, so
+  their URLs 404 — see DENIED below.
+
+  WHAT STAYS OUT, and why each one
+
+    vip          The private doors (/vip/{slug}). The whole point is that they're
+                 sent to one person; publishing the list would hand every door to
+                 anyone who reads this file. Never add this section.
+    methodology  Its single is enabled and holds a URI, but there is no template
+                 behind it, so /methodology is a 404 today. A sitemap full of 404s
+                 is worse than a short one. Give it a view (or turn the single's
+                 URL off) and delete it from this list.
+
+  Also absent, deliberately: paginated listings (/notes/p2 …) and the year archives
+  (/notes/2020). Both are real, self-canonical pages, but everything they list is
+  already here on its own line, and nothing on the site links to a year. Add them
+  if that changes.
+
+  lastmod is the entry's own dateUpdated in W3C form. No changefreq or priority —
+  Google has said for years that it ignores both.
+
+  The <?xml-stylesheet?> line below points at sitemap.xsl, which turns this into a
+  readable table for anyone who opens the URL in a browser. A crawler ignores the
+  instruction and reads the <urlset> as it always did.
+#}
+{%- header 'Content-Type: text/xml; charset=UTF-8' -%}
+{%- set denied = ['vip'] -%}
+{%- set handles = craft.app.entries.allSections|filter(s => s.handle not in denied)|map(s => s.handle)|values -%}
+{%- set entries = craft.entries().section(handles).status('live').orderBy('uri ASC').all() -%}
+{#- A category's status is `enabled`, not the entries' `live` — asking for 'live'
+    here returns nothing at all, silently, which is how the topic pages went missing
+    the first time this ran. -#}
+{%- set topics = craft.categories().group('topics').status('enabled').orderBy('title ASC').all() -%}
+{%- set pages = [] -%}
+{%- for entry in entries -%}
+    {%- if entry.url and not (entry.excludeFromSitemap ?? false) -%}
+        {%- set pages = pages|merge([{ url: entry.url, updated: entry.dateUpdated }]) -%}
+    {%- endif -%}
+{%- endfor -%}
+{%- for topic in topics -%}
+    {%- if topic.url and not (topic.excludeFromSitemap ?? false) -%}
+        {%- set pages = pages|merge([{ url: topic.url, updated: topic.dateUpdated }]) -%}
+    {%- endif -%}
+{%- endfor -%}
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="{{ siteUrl('sitemap.xsl') }}"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{% for page in pages %}    <url>
+        <loc>{{ page.url }}</loc>
+{% if page.updated %}        <lastmod>{{ page.updated|date('c') }}</lastmod>
+{% endif %}    </url>
+{% endfor %}</urlset>

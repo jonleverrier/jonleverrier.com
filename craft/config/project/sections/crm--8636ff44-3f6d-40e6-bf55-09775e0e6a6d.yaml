@@ -1,0 +1,17 @@
+defaultPlacement: end
+enableVersioning: true
+entryTypes:
+  -
+    uid: 3c0f3520-1660-44e5-9653-afa5db8c0fdc # CRM Entry
+handle: crm
+maxAuthors: 1
+minAuthors: 1
+name: CRM
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: false
+    hasUrls: false
+    template: null
+    uriFormat: null
+type: channel

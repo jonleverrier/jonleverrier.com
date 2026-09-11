@@ -1,0 +1,250 @@
+{#
+  A static page in the Jonson timeline shape — whisper → title → prose, joined
+  by the dotted spine (see build/scss/components/_content.scss). Sits on the
+  page slab, whose colour is set on the layout via `slabModifier`.
+
+  Expects (all optional, but render at least one):
+    title   — the main page title.
+    topic   — a short label directly under the title (a note's Topic).
+    topicUrl — where the topic links to (the category's own page); without it the
+              topic is plain text.
+    posted  — a date (DateTime) shown beside it as "04 February 2010".
+    readingTime — whole minutes, shown as "3 min read".
+              Any of the three renders the meta row; all absent, no row.
+    updated — a date (DateTime): a "Last updated" line at the foot of the blocks.
+    updatedLabel — the words before that date; defaults to "Last updated". A
+              note says "Note last updated on".
+    share   — { url, title } → a "Share" eyebrow and links, under the updated line
+              (see _components/share).
+    next    — an entry → a "Next note" card linking to it, at the right of the
+              foot row (see _components/next-note).
+    prev    — an entry → a "Previous note" card, at the left of the foot row.
+    asideOverlay — true to float the aside over the blocks without insetting them
+              (see the note at the flag below).
+    aside   — HTML for a panel beside the blocks (an "on this page" nav): floats
+              in the left gutter, sticky, on wide viewports; sits above the blocks
+              on the measure below that. See .c-content__aside.
+    whisper — the small uppercase line at the top.
+    body    — trusted HTML for the prose (paragraphs).
+    ctas    — a list of CTA Matrix blocks ({ title, ctaUrl }) rendered as boxes
+              below the prose.
+    clients — a list of { name, logo, summary } maps → a "Brands I have worked with"
+              logo marquee below the form block.
+    modifier — a BEM modifier suffix for .c-content, so one page can vary the
+              shared layout (e.g. 'case-study' widens the h1). Styling hook only;
+              nothing here branches on it.
+    columns — a list of up to two columns → a two-column band directly below the
+              title, at the title's own width. Either column may be empty; the band
+              renders as long as one has content. An item is either a trusted HTML
+              string, or a map { html, readMore } where readMore marks the column
+              for read-more.js to collapse to its opening block.
+    blocks  — trusted HTML for the page body, below the columns (a case study's
+              Case Content). Rendered by the caller, so this component doesn't need
+              to know one block type from another.
+    blocksAfterBody — put the blocks BELOW the body/reveal instead of above it. The
+              case study has no body, so the order never mattered there; a page
+              that opens with prose (About) wants its blocks to follow it. Every
+              block carries its own spine connector, so either order joins up.
+    method  — a list of { title, summary, services } → the "How I can help"
+              timeline (the same component a Jonson answer gets from [[method]]),
+              in its light dress for the slab. Below the body and blocks, above
+              the work strip. Declares a container so the timeline's cqi units
+              measure this column, not the window.
+    caseStudiesTitle — a label above the work strip. Sits in the content column
+              while the strip below it keeps its full-bleed, so the two read as one
+              block without the label drifting out to the window edge. Omitted, the
+              strip runs unlabelled, which is the index's arrangement — the page is
+              already titled "Case Studies" and naming them twice reads as a stutter.
+#}
+{% set modifier = modifier ?? null %}
+{% set columns = columns ?? [] %}
+{% set body = body ?? null %}
+{% set topic = (topic ?? '')|trim %}
+{% set topicUrl = topicUrl ?? null %}
+{% set posted = posted ?? null %}
+{% set readingTime = readingTime ?? null %}
+{% set updated = updated ?? null %}
+{% set updatedLabel = updatedLabel ?? 'Last updated' %}
+{% set share = share ?? null %}
+{% set next = next ?? null %}
+{% set prev = prev ?? null %}
+{% set aside = aside ?? null %}
+{# asideSide: 'left' (default — the Summary panel) or 'right'. asideAfter: render the
+   aside AFTER the blocks, so in flow (below the wide breakpoint) it follows them —
+   the topics box on the notes index, which belongs after the list. #}
+{# asideInset: give the blocks the aside layout (position + gutter inset) without an
+   aside element — for a panel that lives INSIDE the blocks and floats itself into
+   the gutter on wide screens (the topics box on the notes index, see .c-topics). #}
+{# asideOverlay: keep the aside pinned and sticky beside the blocks, but DON'T inset
+   the blocks to make room for it — the panel floats over the page instead. For a
+   page whose blocks are the content (a case study's full-width imagery), where
+   narrowing them by a gutter costs more than a panel over one edge of them. #}
+{% set asideOverlay = aside and (asideOverlay ?? false) %}
+{% set hasAside = aside or (asideInset ?? false) %}
+{% set asideClass = 'c-content__aside' ~ ((aside and (asideSide ?? 'left') == 'right') ? ' c-content__aside--right' : '') ~ ((aside and (asideAfter ?? false)) ? ' c-content__aside--after' : '') %}
+{% set ctas = ctas ?? null %}
+{% set form = form ?? false %}
+{% set clients = clients ?? null %}
+{% set caseStudies = caseStudies ?? null %}
+{% set caseStudiesTitle = caseStudiesTitle ?? null %}
+{% set testimonials = testimonials ?? null %}
+{% set blocks = blocks ?? null %}
+{% set blocksAfterBody = blocksAfterBody ?? false %}
+{% set method = method ?? null %}
+{% set hasColumns = columns|filter(c => c)|length > 0 %}
+{% set hasReveal = body or ctas or form %}
+{% set hasBodyBlock = hasReveal or clients or caseStudies or testimonials or hasColumns or blocks or method %}
+{% if (title ?? false) or (whisper ?? false) or hasBodyBlock %}
+    <div class="c-content{{ modifier ? ' c-content--' ~ modifier : '' }}" data-content-grid>
+        {% if whisper ?? false %}
+            <p class="c-content__whisper">{{ whisper }}</p>
+        {% endif %}
+        {% if title ?? false %}
+            <h1 class="c-content__title">{{ title }}</h1>
+        {% endif %}
+        {# The meta row hangs directly off the title — same rise animation, no
+           connector between, so it reads as part of the heading: the topic as a
+           chip, then the dates. <time> carries the machine date; the visible one
+           is short, day-month-year, since it sits in a row. #}
+        {% if topic or posted or readingTime %}
+            <ul class="c-content__meta-items">
+                {# Date, reading time, topic — the facts first, the chip last, as on
+                   the notes index. #}
+                {% if posted %}
+                    <li class="c-content__meta-item c-content__date"><time datetime="{{ posted|atom }}">{{ posted|date('d F Y') }}</time></li>
+                {% endif %}
+                {% if readingTime %}
+                    <li class="c-content__meta-item c-content__date c-content__read">{{ readingTime }} min read</li>
+                {% endif %}
+                {% if topic %}
+                    <li class="c-content__meta-item">
+                        {% if topicUrl %}<a class="c-content__topic" href="{{ topicUrl }}">{{ topic }}</a>{% else %}<span class="c-content__topic">{{ topic }}</span>{% endif %}
+                    </li>
+                {% endif %}
+            </ul>
+        {% endif %}
+        {# Two-column band, directly below the title and on the title's own width.
+           Outer/inner like the other blocks below: the inner is the grid and carries
+           the rise animation; the spine connector hangs off the OUTER, since a
+           pseudo-element on a grid becomes a grid item and eats the first cell. #}
+        {% if hasColumns %}
+            <div class="c-content__cols">
+                <div class="c-content__cols-inner">
+                    {# `data-read-more` goes on the COLUMN, not on a wrapper inside it.
+                       prose-body styles `> p` — direct children only — so a wrapper
+                       between the column and its paragraphs silently drops the type
+                       styling and the prose falls back to the inherited sans. #}
+                    {% for column in columns|slice(0, 2) %}
+                        {% set html = column.html is defined ? column.html : column %}
+                        {% set readMore = column.readMore is defined and column.readMore %}
+                        <div class="c-content__col"{{ readMore ? ' data-read-more' : '' }}>{{ html|raw }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        {# Page body, below the columns. Outer/inner like the blocks further down: the
+           inner carries the rise animation and the spine connector. #}
+        {% if blocks and not blocksAfterBody %}
+            <div class="c-content__blocks{{ hasAside ? ' has-aside' : '' }}{{ asideOverlay ? ' has-aside--overlay' : '' }}">
+                {% if aside and not (asideAfter ?? false) %}<div class="{{ asideClass }}">{{ aside|raw }}</div>{% endif %}
+                <div class="c-content__blocks-inner js-reveal">{{ blocks|raw }}</div>
+                {% if aside and (asideAfter ?? false) %}<div class="{{ asideClass }}">{{ aside|raw }}</div>{% endif %}
+            </div>
+        {% endif %}
+        {% if hasReveal %}
+            <div class="c-content__body">
+                <div class="c-content__reveal">
+                    <div class="c-content__reveal-inner js-reveal">
+                        {% if body %}{{ body|raw }}{% endif %}
+                        {% if form or ctas %}
+                            <div class="c-content__form-cols">
+                                {% if form %}{% include '_components/form' %}{% endif %}
+                                {% include '_components/ctas' with { ctas: ctas, heading: ctasHeading ?? null } only %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        {% if blocks and blocksAfterBody %}
+            <div class="c-content__blocks{{ hasAside ? ' has-aside' : '' }}{{ asideOverlay ? ' has-aside--overlay' : '' }}">
+                {% if aside and not (asideAfter ?? false) %}<div class="{{ asideClass }}">{{ aside|raw }}</div>{% endif %}
+                <div class="c-content__blocks-inner js-reveal">{{ blocks|raw }}</div>
+                {% if aside and (asideAfter ?? false) %}<div class="{{ asideClass }}">{{ aside|raw }}</div>{% endif %}
+            </div>
+        {% endif %}
+        {# A footnote under the last block: when the page was last changed. On the
+           reading measure, small, stepped back — a fact for the reader who wants
+           it, not a beat of the page. #}
+        {% if updated %}
+            <p class="c-content__updated">{{ updatedLabel }} <time datetime="{{ updated|atom }}">{{ updated|date('d F Y') }}</time></p>
+        {% endif %}
+        {# The foot row: the previous-note card at the content's left edge, the
+           share block, the next-note card at the right edge — under one
+           connector. Whatever's present takes the row. The cards carry
+           js-observe: observe.js adds is-inview the first time they come into
+           view, and they fade up on wide viewports (see .c-content__next). #}
+        {% if share or next or prev %}
+            <div class="c-content__foot">
+                {% if share %}
+                    <div class="c-content__share">
+                        {% include '_components/share' with { url: share.url, title: share.title } only %}
+                    </div>
+                {% endif %}
+                {% if prev %}
+                    <div class="c-content__prev js-observe">
+                        {% include '_components/next-note' with { note: prev, direction: 'prev' } only %}
+                    </div>
+                {% endif %}
+                {% if next %}
+                    <div class="c-content__next js-observe">
+                        {% include '_components/next-note' with { note: next, direction: 'next' } only %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+        {% if method %}
+            <div class="c-content__method">
+                <div class="c-content__method-inner js-reveal">
+                    {% include '_components/method' with { method: method, light: true } only %}
+                </div>
+            </div>
+        {% endif %}
+        {# Clients marquee sits OUTSIDE the reveal wrapper so it can full-bleed
+           (the reveal's overflow:hidden would crop it). The outer is the full-
+           bleed 100vw box; the inner collapses (0fr → 1fr) with the same beat as
+           the reveal, so it reserves no height while the spinner runs. #}
+        {# Case study marquee. Same placement rationale as the clients strip below:
+           outside the reveal so it can full-bleed, but INSIDE .c-content so the
+           timeline's trailing spine and end node (.c-content::after) still come
+           after it rather than the strip hanging off the bottom of the page. #}
+        {% if caseStudies %}
+            <div class="c-content__work">
+                <div class="c-content__work-inner js-reveal">
+                    {% if caseStudiesTitle %}
+                        <p class="c-content__work-whisper">{{ caseStudiesTitle }}</p>
+                    {% endif %}
+                    {% include '_components/case-studies-strip' with { studies: caseStudies } only %}
+                </div>
+            </div>
+        {% endif %}
+        {# Testimonial slider, below the work. Outside the reveal (so it can break
+           out) but inside .c-content, so the timeline's trailing spine still closes
+           after it. #}
+        {% if testimonials %}
+            <div class="c-content__quotes">
+                <div class="c-content__quotes-inner js-reveal">
+                    {% include '_components/testimonials' with { items: testimonials } only %}
+                </div>
+            </div>
+        {% endif %}
+        {% if clients %}
+            <div class="c-content__clients">
+                <div class="c-content__clients-inner js-reveal">
+                    <p class="c-content__clients-whisper">Brands I have worked with</p>
+                    {% include '_components/clients' with { clients: clients, contained: true, small: true } only %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}

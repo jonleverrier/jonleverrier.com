@@ -1,0 +1,108 @@
+{#
+  picture(asset, sizes, options)
+
+  Renders a <picture> with AVIF and WebP <source srcset>s across widths and a
+  fallback <img> (original format). Width-only transforms → aspect ratio
+  preserved, no crop. width/height on the <img> come from the transform to avoid
+  layout shift.
+
+  Source order is the selection order: the browser takes the first <source> whose
+  type it understands, so AVIF sits above WebP and anything older falls through to
+  the <img>. The AVIF source is omitted entirely on a host that can't encode it —
+  see craft.frontend.supportsAvif() for why that's checked rather than assumed.
+
+  An image can opt into a colour placeholder: a gradient between its two dominant
+  colours, shown until the image itself has arrived on screen. It rides on custom
+  properties rather than an element, so there's no extra markup and nothing to
+  style around — see _picture.scss for the reveal, and
+  FrontEndVariable::imageTones() for how the colours are picked and cached.
+
+  options (all optional):
+    widths   — list of srcset widths (default 320…1200)
+    fallback — <img> width (default 640)
+    loading  — 'lazy' (default) | 'eager'
+    fetchpriority — 'high' to hint the resource is needed early. Omitted by default,
+               and only ever right for an image that is genuinely in the first
+               viewport: the hint works by taking priority FROM the other requests
+               in flight, so spending it on something below the fold slows the
+               fonts and CSS that decide first paint. Pairs with loading: 'eager'
+               — a lazy image isn't requested early enough for a priority to
+               matter. Applies to whichever <source> the browser picks.
+    class    — class for the <img>
+    tone     — true to show the colour placeholder. OFF by default, and opt-in
+               rather than opt-out on purpose: it's a flourish for imagery the
+               visitor has come to look at (the case study pages), and it reads as
+               noise everywhere else — in a Jonson answer it turns a rail of
+               supporting thumbnails into a row of flashing colour blocks while
+               they're trying to read. Never worth it for an image that is mostly
+               transparent either, where a colour block behind it reads as a
+               background the image doesn't have.
+    ratio    — width / height, e.g. 16/9: every transform is then a CROP to that
+               shape, from the asset's focal point, at each width. Without it,
+               transforms are width-only and the asset keeps its own shape.
+    alt      — the <img>'s alt text, overriding the asset's own. Pass '' for a
+               picture that's decorative in context (a thumbnail beside a linked
+               title that already names the page) so a screen reader skips it.
+    quality  — 1–100, for the WebP source and the <img> fallback ONLY. Omitted,
+               Craft's defaultImageQuality (82) applies. Worth knowing that this now
+               reaches very few visitors: almost everything current takes the AVIF,
+               which is encoded at its own fixed quality and ignores this. Turning it
+               up is a change to what old Safari and IE-era browsers get, not to what
+               the image looks like for most people — the AVIF knobs are
+               AVIF_QUALITY in FrontEndVariable and AVIF_CHROMA in the Images
+               service.
+#}
+{% macro picture(asset, sizes, options) %}
+    {% if asset %}
+        {% set options = options ?? {} %}
+        {% set widths = options.widths ?? [320, 480, 640, 960, 1200] %}
+        {% set fallback = options.fallback ?? 640 %}
+        {% set loading = options.loading ?? 'lazy' %}
+        {% set fetchpriority = options.fetchpriority ?? null %}
+        {% set klass = options.class ?? '' %}
+        {% set sizes = sizes ?? '100vw' %}
+        {# Merged into each transform rather than set as a key with a null value:
+           passing `quality: null` to getUrl() would override the default with
+           nothing, not fall back to it. #}
+        {% set quality = options.quality is defined and options.quality ? options.quality : null %}
+        {% set q = quality ? { quality: quality } : {} %}
+        {# A ratio makes every transform a crop: height from the width. #}
+        {% set ratio = options.ratio ?? null %}
+        {% set alt = options.alt is defined ? options.alt : (asset.alt ?: asset.title) %}
+        {# Null on an SVG, on a file Imagick can't read, or when switched off —
+           `has-tone` is what the CSS keys the reveal off, so an image without one
+           simply shows normally instead of fading in from nothing. #}
+        {% set tone = (options.tone ?? false) ? craft.frontend.imageTones(asset) : null %}
+        {# Deliberately ignores `quality`. AVIF is encoded at its own measured
+           setting — see avifQuality() — because the two codecs don't share a scale
+           and matching the numbers up only made AVIF worse. #}
+        {% set avifQ = { quality: craft.frontend.avifQuality() } %}
+        <picture class="c-picture{{ tone ? ' has-tone' }}"{% if tone %} style="--tone-a: {{ tone.a }}; --tone-b: {{ tone.b }}"{% endif %}>
+            {% if craft.frontend.supportsAvif() %}
+                <source
+                    type="image/avif"
+                    srcset="{% for w in widths %}{{ asset.getUrl({ width: w, format: 'avif' }|merge(ratio ? { height: (w / ratio)|round, mode: 'crop' } : {})|merge(avifQ)) }} {{ w }}w{{ not loop.last ? ', ' }}{% endfor %}"
+                    sizes="{{ sizes }}">
+            {% endif %}
+            <source
+                type="image/webp"
+                srcset="{% for w in widths %}{{ asset.getUrl({ width: w, format: 'webp' }|merge(ratio ? { height: (w / ratio)|round, mode: 'crop' } : {})|merge(q)) }} {{ w }}w{{ not loop.last ? ', ' }}{% endfor %}"
+                sizes="{{ sizes }}">
+            <img
+                class="c-picture__img{% if klass %} {{ klass }}{% endif %}"
+                {% set fb = { width: fallback }|merge(ratio ? { height: (fallback / ratio)|round, mode: 'crop' } : {}) %}
+                src="{{ asset.getUrl(fb|merge(q)) }}"
+                width="{{ asset.getWidth(fb) }}"
+                height="{{ asset.getHeight(fb) }}"
+                {# The asset's own Alt Text field first. `title` is only a fallback and
+                   a poor one: Craft auto-fills it from the filename, so an asset
+                   nobody has retitled announces itself to a screen reader as
+                   "6826106d8521545815a7cf5b Omidyar Network Case Study Asset8
+                   Pattern". Fill in Alt Text on the asset. #}
+                alt="{{ alt }}"
+                loading="{{ loading }}"
+                {%- if fetchpriority %} fetchpriority="{{ fetchpriority }}"{% endif %}
+                decoding="async">
+        </picture>
+    {% endif %}
+{% endmacro %}

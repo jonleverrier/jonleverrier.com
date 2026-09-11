@@ -1,0 +1,233 @@
+/**
+ * THEME: SETUP
+ *
+**/
+
+@use '../mixins/rem' as *;
+
+// @spiriit/vite-plugin-svg-spritemap: this variable is set via vite.config.js
+$sprite-type: 'uri' !default;
+
+$g-font-primary: "JonSonSans", system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+$g-font-secondary: "JonSonMono", ui-monospace, "SF Mono", "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+
+$b-radius-100: 0.5rem;
+$b-radius-200: 1.25rem;
+$b-radius-300: 2.5rem;
+
+// MEASURES
+// The wide content box — .c-content__body's max-width, and the width a lone
+// testimonial and the case-study cards break out to from `xl`. These three are
+// meant to line up, so the value lives here rather than being repeated in each
+// component and silently drifting apart.
+$g-measure-wide: rem(1110);
+
+// SPACING
+// The timeline spine — every vertical connector on the site (content pages,
+// case content, topics, pagination, the ToC, the Jonson conversation) draws at
+// this width, so the line never steps between one component and the next.
+// A literal, since rem() isn't in scope here: the root is 10px, so 0.3rem = 3px.
+$spine-width: 0.3rem;
+
+// …and how LONG one segment of it is. Same reasoning as the width: every divider
+// between two beats draws at this, so the timeline can't step from one component
+// to the next. The lead-in above a page's whisper is deliberately longer (it caps
+// the line rather than joining two things) and scales with this — see
+// .c-content__whisper. A literal for the same reason as above: rem() isn't in
+// scope here, and the root is 10px.
+$spine-length: 5rem;
+
+$space: (
+	rhythm: (
+		100: 0.313rem,
+		200: 0.563rem,
+		300: 0.875rem,
+		400: 1.125rem,
+		500: 1.688rem,
+		600: 2.313rem,
+		700: 3.438rem,
+		800: 4.563rem,
+		900: 6.875rem
+	)
+);
+
+// Z-INDEX
+$z-index: (
+	xxl:	9000,
+	xl: 	3000,
+	lg: 	2000,
+	md: 	1000,
+	sm: 	1
+);
+
+// BREAKPOINT SIZES
+$mq-breakpoints: (
+    sm:     35em,    // 560 — large phone
+    md:     48em,    // 768 — tablet portrait
+    lg:     64em,    // 1024 — tablet landscape / small laptop
+    xl:     80em,    // 1280 — desktop
+    xxl:    108em,   // 1728 — large desktop / design canvas
+);
+
+// COLOUR
+$colour: (
+	primary: (
+        400: #ffb929,
+        // The blues, light to dark: the pale pill fill (method palette f, topics,
+        // sector tags), the flat light blue of the Jonson titles and footer strapline,
+        // and the content-page whisper (was the green #57772e).
+        410: #e8f5ff,
+        430: #b6ddff,
+        450: #3a6479, // darkened from #4e88a4 (same hue, lightness only) so 12px whisper labels clear AA on the card cream — 4.96:1 on the slab, 4.52:1 on l650
+		500: #4a5030,
+        600: #e02e1a,
+        // The same red, lightness only, for TEXT on the cream surfaces: 600 is the button
+        // and chip red (white on it, or it on white — both pass), but as a text link on
+        // the eggshell slab it sat at 3.56:1. This clears AA on the slab (4.98) and on
+        // the l650 card (4.54). Buttons and chips keep 600.
+        650: #b62515,
+        700: #0c243c,
+	),
+	light: (
+		100: #fff,
+        600: #e8e2d5, // eggshell — the content-page slab
+        // One step down from the slab, for blocks that sit ON it and need to read as
+        // their own panel: the cream ask-bar footer and the testimonial panel. They
+        // share this deliberately, so it's a token rather than a hex in each file.
+        650: #e0d8c7,
+        700: #f1eada,
+        725: #d9cdb0, // a step deeper than 700 — the ask bar's nudge band under the pointer
+        750: #aca89e, // grey-taupe — the content timeline's spine and caps, the CTA/TOC box border
+        800: #3d4324,
+        850: #4d4949, // warm grey — summaries and standfirsts on the cream slab
+        860: #4d4d4d, // neutral grey — a footnote beside the warm summary (the "last updated" line)
+        880: #464440, // the prose's sub-heading grey — h3/h4, list markers, card and next-note titles
+        900: #1d180d,
+        950: #1a1a1a, // neutral near-black — body prose ink on the light slab (not the warm 900)
+	),
+);
+
+// TYPOGRAPHY
+// Perfect-fourth scale (×1.333). px values converted via rem() so they
+// render correctly under the 62.5% root trick (1rem = 10px).
+$typography: (
+    // PHONES (base, until md) are fluid. The expanded sans sets a ten-letter word at
+    // ~0.77em a letter, so on a 375 phone the h1 has to be under 40px for a word
+    // like "Breadcrumb" to fit the 308px column at all — 10vw tracks that, floored
+    // and capped. The steps below it follow at the scale's ratios so the hierarchy
+    // holds at every width (at 375: 37.5 / 30 / 24 / 20 / 18), and every step lands
+    // on its former value at md, where the fixed sizes take over.
+    h1: (
+        base: (
+            font-size:      clamp(#{rem(34)}, 10vw, #{rem(48)}),
+            line-height:    1.1,
+            letter-spacing: -0.03em,
+        ),
+        md: (
+            font-size:      rem(66),    // the hero size
+            line-height:    1.05,
+        ),
+        lg: (
+            font-size:      rem(80), // was 88 — a notch down, so a long title holds fewer lines on a wide screen
+            line-height:    1.2, // opens up from the base's 1.05: at this size a two-line title's lines were touching
+        ),
+        // No xxl step. It ran to rem(99.275) and the h1 kept growing past the point
+        // the page itself stops: body > .b-wrap caps at 108em, so beyond that the slab
+        // is a fixed width and a bigger headline only buys more lines inside the same
+        // box. Capping at the lg size lets the measure do the work instead.
+    ),
+    h2: (
+        base: (
+            font-size:      clamp(#{rem(28)}, 8vw, #{rem(40)}),
+            line-height:    1.1,
+        ),
+        md: (
+            font-size:      rem(50),
+        ),
+        lg: (
+            font-size:      rem(54), // was 60 — a notch down with the h1
+        ),
+    ),
+    h3: (
+        base: (
+            font-size:      clamp(#{rem(23)}, 6.4vw, #{rem(32)}),
+            line-height:    1.15,
+        ),
+        md: (
+            font-size:      rem(37),
+            line-height:    1.2, // a touch more air once the size steps up — a two-line h3 at 37px set tight on 1.15 (h3-prose inherits this; it only overrides the size)
+        ),
+        lg: (
+            font-size:      rem(42),
+        ),
+    ),
+    h4: (
+        base: (
+            font-size:      clamp(#{rem(20)}, 5.4vw, #{rem(26)}),
+            line-height:    1.2,
+        ),
+        md: (
+            font-size:      rem(28),
+        ),
+        lg: (
+            font-size:      rem(32),
+        ),
+    ),
+    // Two named sizes the note and case-study pages share, kept on the scale so
+    // they move with it. Font-size only: each consumer keeps its own line-height.
+    // standfirst — the Summary standfirst and the prose h4 it's paired with: a tenth
+    // up on p-lg at each size (the bold mono sets small at the scale's own value).
+    standfirst: (
+        base: ( font-size: clamp(#{rem(21)}, 5.6vw, #{rem(26)}) ),
+        md:   ( font-size: rem(29) ),
+        lg:   ( font-size: rem(31) ),
+    ),
+    // h3-prose — the prose h3, a notch under the h3 step from md up so a sentence-
+    // length sub-heading doesn't outweigh its section title; on phones the h3 step
+    // is already small enough, so it's the same size there.
+    h3-prose: (
+        base: ( font-size: clamp(#{rem(23)}, 6.4vw, #{rem(32)}) ),
+        md:   ( font-size: rem(34) ),
+        lg:   ( font-size: rem(37) ),
+    ),
+    p-lg: (
+        base: (
+            font-size:      clamp(#{rem(20)}, 5.1vw, #{rem(24)}),    // lead paragraph
+            line-height:    1.3,
+        ),
+        md: (
+            font-size:      rem(26),
+        ),
+        lg: (
+            font-size:      rem(28),
+        ),
+    ),
+    p: (
+        base: (
+            // A step under the anchor on phones: the mono body at 21px in a 308px
+            // column measured 21 characters a line — the eye came back every two or
+            // three words. 18px gives ~28, as far as a mono can go in that width.
+            font-size:      rem(18),
+            line-height:    1.4,
+        ),
+        md: (
+            font-size:      rem(21),    // body anchor
+        ),
+        xl: (
+            font-size:      rem(23),
+        ),
+    ),
+    p-sm: (
+        base: (
+            font-size:      rem(16),
+            line-height:    1.45,
+        ),
+    ),
+    whisper: (
+        base: (
+            font-size:      rem(12),    // labels, captions
+            line-height:    1.4,
+            letter-spacing: 0.19em,     // airy — these are all uppercase labels
+        ),
+    ),
+);

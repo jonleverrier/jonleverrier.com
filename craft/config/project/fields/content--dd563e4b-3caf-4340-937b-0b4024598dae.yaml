@@ -1,0 +1,84 @@
+columnSuffix: null
+handle: content
+instructions: null
+name: Content
+searchable: false
+settings:
+  advancedLinkFields:
+    - target
+    - download
+  availableTransforms: ''
+  availableVolumes: ''
+  characterLimit: null
+  css: null
+  cssFile: null
+  defaultTransform: null
+  defaultUploadLocationSubpath: null
+  defaultUploadLocationVolume: null
+  fullGraphqlData: true
+  headingLevels:
+    - '2'
+    - '3'
+    - '4'
+  imageEntryTypeUid: null
+  imageFieldUid: null
+  imageMode: img
+  js: null
+  jsFile: null
+  options:
+    __assoc__:
+      -
+        - list
+        -
+          __assoc__:
+            -
+              - properties
+              -
+                __assoc__:
+                  -
+                    - reversed
+                    - false
+                  -
+                    - startIndex
+                    - false
+                  -
+                    - styles
+                    - false
+      -
+        - codeBlock
+        -
+          __assoc__:
+            -
+              - languages
+              -
+                -
+                  __assoc__:
+                    -
+                      - language
+                      - plaintext
+                    -
+                      - label
+                      - 'Plain text'
+  parseEmbeds: false
+  purifierConfig: null
+  purifyHtml: true
+  showUnpermittedFiles: false
+  showUnpermittedVolumes: false
+  showWordCount: true
+  sourceEditingGroups:
+    - __ADMINS__
+  toolbar:
+    - heading
+    - '|'
+    - bold
+    - italic
+    - link
+    - bulletedList
+    - numberedList
+    - codeBlock
+    - code
+    - sourceEditing
+  wordLimit: null
+translationKeyFormat: null
+translationMethod: none
+type: craft\ckeditor\Field

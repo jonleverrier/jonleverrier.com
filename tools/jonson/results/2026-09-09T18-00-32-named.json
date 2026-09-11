@@ -1,0 +1,349 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-09T17:59:49.590Z",
+  "scenarios": [
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "This is one I'm proud of — a long-standing client of over a decade, the UK's leading provider of legal and business CPD conferences. I designed and built their booking engine and on-demand platform, replacing a painful eight-step checkout and a mess of disconnected systems with something far leaner.[[casestudies]]\n\nThe results spoke for themselves: drop-off fell by around 90%, processing time by 85%, and the on-demand side now brings in a solid chunk of their revenue. Their back office went from four people handling bookings down to one.\n\n[[next: how did you fix the eight-step checkout? @study:white-paper-booking-engine-design-development | what does the on-demand platform actually do? @study:white-paper-booking-engine-design-development | how do you usually approach a project like this? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "White Paper is a long-standing client of mine — a UK CPD conference provider that's been running for around 20 years. I designed and rebuilt their booking engine and on-demand platform, pulling conference data that had been scattered across disconnected systems into a single content repository, and reworking a painful eight-step booking flow into something far leaner.\n\nThe results were the part I'm proudest of: drop-off fell by around 90%, processing time by 85%, and on-demand ended up accounting for about 35% of their revenue.[[casestudies]]\n\n[[next: what was wrong with their old booking flow? | how did you handle the on-demand content? | how do you usually approach a project like this? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper is a long-standing client of mine — a UK CPD conference provider that's been running for over 20 years. I designed and built their booking engine and on-demand platform, tackling a checkout that took eight interactions to get from a programme page to a booking, and conference data scattered across disconnected systems.[[casestudies:white-paper-booking-engine-design-development]]\n\nThe results were the part I'm most pleased with: drop-off fell by around 90%, processing time dropped dramatically, and on-demand ended up as a solid chunk of their revenue. Happy to go deeper on any part of it.\n\n[[next: how did you fix the eight-step checkout? @study:white-paper-booking-engine-design-development | what's the AI copilot you built for them? @study:white-paper-booking-engine-design-development | how do you approach a project like this? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper's one of my longest relationships — a UK CPD conference provider I've looked after for over a decade. The big piece was rebuilding their booking engine and on-demand platform: the old flow took eight interactions to get from a programme page to a booking, and conference data was scattered across disconnected systems with no view of what actually sold.[[casestudies:white-paper-booking-engine-design-development]]\n\nWe simplified the checkout into clear tasks, pulled everything into a single content repository, and automated the confirmations, certificates and on-demand access. The results were the satisfying part — drop-off fell by around 90% and their back office processing dropped dramatically.\n\n[[next: how did you cut the drop-off rate so much? @study:white-paper-booking-engine-design-development | what does your process actually look like on a project like that? @method | have you done similar work for other clients? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "The White Paper project runs deep — they're a UK CPD conference provider I've worked with for over a decade, and this was a rebuild of their booking engine and on-demand platform. [[casestudies:white-paper-booking-engine-design-development]]\n\nThe old journey took eight interactions to get from a programme page to a booking, with everything crammed into one long checkout — lots of drop-offs. We split it into clear tasks, pulled all their conference data into a single repository, and automated the confirmations, certificates and on-demand access. The upshot was around 90% less drop-off and the back office going from four staff to one on bookings.\n\n[[next: how did you split the checkout into tasks? @study:white-paper-booking-engine-design-development | what did the on-demand platform involve? @study:white-paper-booking-engine-design-development | how do you approach a project like this from the start? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper's a long-standing client — a UK provider of CPD conferences for legal and business professionals, going back over 20 years. I designed and built their on-demand platform and booking engine, which meant untangling a booking flow that took eight interactions to get from programme to checkout, and pulling their conference data out of a handful of disconnected platforms into one place.[[casestudies:white-paper-booking-engine-design-development]]\n\nThe results were the satisfying part: drop-off fell by around 90%, and back-office processing time dropped enough that they went from four people handling bookings to one.\n\n[[next: how did you cut the booking drop-off so much? @study:white-paper-booking-engine-design-development | what was wrong with their old checkout? @study:white-paper-booking-engine-design-development | how do you usually approach a project like this? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Yes — Vaiie was a good long run for me. I started as a design consultant in regtech and later came in-house as Head of Design, working on their client onboarding platform and an identity verification tool, plus bringing the regulatory products together under one brand.\n\n[[casestudies]]\n\n[[next: how did you approach the Vaiie branding? @study:vaiie-product-branding | what was tricky about the identity verification design? @study:vaiie-identify-product-design | what's it like designing for a regulated sector? @sector:Regulatory]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes, quite closely over a few years. I started with them as a design consultant on their regtech products, then was brought in-house as Head of Design to lead the design side and help establish a design culture across the organisation.[[casestudies]]\n\nThe work spanned product branding, a multi-jurisdictional onboarding platform and an identity verification tool that ended up government approved — so a good mix of brand, UX and hands-on product design.\n\n[[next: what was the identity verification product about? @study:vaiie-identify-product-design | how did you approach the branding for their products? @study:vaiie-product-branding | what's it like establishing a design culture in a startup? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — Vaiie's one of the clients I've worked with most closely. I started as a design consultant in regtech and later came in-house as Head of Design, working across their onboarding and identity verification products.[[casestudies]]\n\nThe gist: I built the product branding, designed a multi-jurisdictional client onboarding platform and an identity verification tool that was later government approved. If you want the detail, the case studies are just there.\n\n[[next: how did you approach the Vaiie branding? @study:vaiie-product-branding | what was hard about the identity verification design? @study:vaiie-identify-product-design | what does the onboarding product do? @study:vaiie-onboard-product-design]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes, quite a bit — I first came in as a design consultant and later stepped in-house as Head of Design. I worked across their product suite in regulatory tech: the branding, a client onboarding platform, and an identity verification tool.[[casestudies]]\n\n[[next: what did the identity verification work involve? @study:vaiie-identify-product-design | how did you approach branding regulatory products? @study:vaiie-product-branding | what was it like moving from consultant to in-house? @cv]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I worked with Vaiie for a good stretch. I started out as a design consultant and later came in-house as their Head of Design, working across their regulatory products: product branding, a client onboarding platform and an identity verification tool used by the Government of Jersey.[[casestudies]]\n\nIt was a rare chance to bring proper design thinking into a sector that tends to lean on globes and glass panels — I went the opposite way, keeping things simple where everyone else was making them complex.\n\n[[next: what did you do on the identity verification tool? @study:vaiie-identify-product-design | how did you approach the branding for Vaiie? @study:vaiie-product-branding | what's it like designing for regulatory tech? @sector:RegTech]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — quite a lot, actually. I started out doing product design consultancy for them in RegTech, then was brought in-house as Head of Design to lead the work across their onboarding and identity verification products.[[casestudies]]\n\nIt was a genuinely interesting brief: making regulatory compliance feel human rather than a COO's headache. Happy to talk through any of it.\n\n[[next: how did you rebrand the Vaiie products? @study:vaiie-product-branding | what did the identity verification work involve? @study:vaiie-identify-product-design | what's it like designing for a regulated startup? @sector:RegTech]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes, that was mine — I designed the identity verification journey for Vaiie, the piece clients could white label and run themselves without needing a developer. [[casestudies:vaiie-identify-product-design]]\n\nThe interesting part was getting the customer-facing experience right: the back office and verification tech were already strong, but the bit real people actually touch hadn't had the same attention. So it was a lot of persona work, mapping the happy and unhappy paths, and some genuinely surprising usability lessons along the way.\n\n[[next: what usability surprises came up in testing? @study:vaiie-identify-product-design | how did you approach the persona work? @study:vaiie-identify-product-design | what else did you do for Vaiie? @study:vaiie-product-branding]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Yes, I designed the identity verification journey for Vaiie — the customer-facing part clients could white label themselves without needing a developer. The back office and verification tech were already strong; it was the actual user experience that hadn't had the same attention, so that's where I came in. [[casestudies:vaiie-identify-product-design]]\n\n[[next: what problems did you find in user testing? | how did the white labelling work across devices? | what was it like working with Vaiie? @study:vaiie-identify-product-design | @study:vaiie-identify-product-design | @study:vaiie-product-branding]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I designed the identity verification journey for Vaiie, the customer-facing part clients could white label themselves without needing a developer. [[casestudies:vaiie-identify-product-design]]\n\nThe tricky bit was that the journey might sit inside account creation, or arrive by email weeks later, on any device — so it had to hold up across a lot of contexts. It shipped mobile responsive, white labelled, and supporting 254 countries and territories.\n\n[[next: how did you test the identity verification flow? @study:vaiie-identify-product-design | what was the trickiest usability problem you hit? @study:vaiie-identify-product-design | how do you approach a project like this? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes, that was mine — the identity verification journey clients could white label themselves without needing a developer. The back office and the verification tech were strong, but the customer-facing part hadn't had the same attention, so that's where I focused.[[casestudies]]\n\nSome of the trickiest bits were down to small human details — like people reading a code as digits when we needed them to hear it grouped, or the camera being mirrored so people moved the wrong way. Testing sorted those out.\n\n[[next: how did you handle the camera mirroring problem? @study:vaiie-identify-product-design | what other Vaiie work have you done? @study:vaiie-product-branding | how do you approach a project like this? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I designed the identity verification journey for Vaiie. The brief was to make something clients could white-label themselves, without needing a developer, and get it working across any device and any entry point — embedded, standalone URL or via API.\n\nThe interesting bits were all in the detail: testing threw up things like people reading \"33-44-11\" as words rather than digits, and the camera being mirrored so folks moved the wrong way. Lots of small fixes that made the whole thing feel effortless.[[casestudies]]\n\n[[next: how did you fix the mirrored camera problem? @study:vaiie-identify-product-design | what personas did you build for it? @study:vaiie-identify-product-design | how do you approach a project like this? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes, that was mine — I designed the identity verification journey for Vaiie, one they could white label and roll out themselves without needing a developer to hand-hold it. [[casestudies]]\n\nThe interesting bit was the customer-facing side, which hadn't had the same love as the back office and the verification tech itself. It shipped white labelled across 254 countries and territories, with thousands of document templates, and later got government approval.\n\n[[next: how did you approach the UX for the verification flow? @study:vaiie-identify-product-design | what surprised you in user testing? @study:vaiie-identify-product-design | did you do the product branding for Vaiie too? @study:vaiie-product-branding]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

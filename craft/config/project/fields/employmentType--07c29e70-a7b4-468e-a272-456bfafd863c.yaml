@@ -1,0 +1,22 @@
+columnSuffix: null
+handle: employmentType
+instructions: null
+name: 'Employment Type'
+searchable: false
+settings:
+  allowSelfRelations: false
+  branchLimit: null
+  defaultPlacement: end
+  maintainHierarchy: false
+  maxRelations: 1
+  minRelations: null
+  selectionLabel: null
+  showSearchInput: true
+  showSiteMenu: false
+  source: 'group:1a861c96-c194-4c76-96b0-35ef2047f305' # Job Status
+  targetSiteId: null
+  validateRelatedElements: false
+  viewMode: list
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Categories

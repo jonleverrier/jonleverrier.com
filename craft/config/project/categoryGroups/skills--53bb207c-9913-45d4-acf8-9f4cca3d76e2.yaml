@@ -1,0 +1,50 @@
+defaultPlacement: end
+fieldLayouts:
+  969e0c34-d236-47e4-a901-b9fb41651fda:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            autocapitalize: true
+            autocomplete: false
+            autocorrect: true
+            class: null
+            dateAdded: '2026-07-25T19:16:10+00:00'
+            disabled: false
+            elementCondition: null
+            id: null
+            inputType: null
+            instructions: null
+            label: null
+            max: null
+            min: null
+            name: null
+            orientation: null
+            placeholder: null
+            readonly: false
+            requirable: false
+            size: null
+            step: null
+            tip: null
+            title: null
+            type: craft\fieldlayoutelements\TitleField
+            uid: 93ba8147-dd9c-48d8-8405-5c175aa28caf
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: f31e20ce-324d-44a8-9698-7f8aa313a6b0
+        userCondition: null
+    thumbFieldKey: null
+handle: skills
+name: Skills
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    hasUrls: false
+    template: null
+    uriFormat: null
+structure:
+  maxLevels: 1
+  uid: db7747d7-fed5-416b-be6d-b2ebc5054796

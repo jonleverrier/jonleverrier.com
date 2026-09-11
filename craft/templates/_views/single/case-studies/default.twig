@@ -1,0 +1,102 @@
+{#
+  Case study index — the `caseStudy` single, which owns /case-study. The individual
+  studies live in the `caseStudies` structure at /case-study/{slug} and render from
+  _views/structure/caseStudies/default.twig.
+
+  NOTE the router keys off the section's NAME, kebab-cased (see _routers/single.twig),
+  not its handle — the section is named "Case Studies" and handled `caseStudy`, so this
+  directory has to be `case-studies`. Rename the section in the CMS and this directory
+  has to be renamed with it, or the page 404s on a LoaderError.
+
+  Same `_components/content` shape as the contact single and a case study page, with
+  the grid of cards below. Cards come from `_components/case-study`, the same
+  component Jonson surfaces in an answer, so a study looks the same wherever it's met.
+
+  `status('live')` matches FindContext: disabled, future-dated and expired entries
+  stay out. Featured first, mirroring the [[casestudies:all]] ordering.
+#}
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+
+{# Cream slab, as on the contact page and a case study — the default is olive p500. #}
+{% set slabModifier = 'b-slab--l600' %}
+
+{% block siteContent %}
+    {% set studies = craft.entries()
+        .section('caseStudies')
+        .status('live')
+        .all() %}
+
+    {# Structure order, straight through — `caseStudies` is a Structure section, so the
+       query already comes back in the order the entries are dragged into in the CP.
+       That IS the running order for this page: it's the one view that shows every
+       study, so the sequence should be whatever you arranged, top to bottom.
+
+       Deliberately NOT featured-first. `isFeatured` is quality control for the places
+       that show a SUBSET and have to choose — the Jonson panel picking a few studies
+       for a generic question, the strip at the foot of a study. Here nothing is being
+       chosen, so promoting the flagged ones only overrides the ordering you set by
+       hand with a flag that was answering a different question. #}
+    {% set ordered = studies %}
+
+    {# Whisper is set here rather than from entry.title: the single is titled "Case
+       Study" (singular), which reads wrong above a list of several — and that title
+       is also the browser tab and the admin label, so it's not the right thing to
+       rename just for this line. #}
+    {# Both come from the entry, same as the contact single: Title is the whisper,
+       Long title the h1 (falling back to Title if it's empty). Set them on the
+       `caseStudy` single in the CMS.
+
+       The marquee goes THROUGH the content component rather than after it, so it
+       sits inside the timeline — the trailing spine and end node (.c-content::after)
+       come after the strip instead of the strip hanging below them. #}
+    {# All live testimonials, in the same shape FindContext hands the component:
+       quote/name/role/company/image. `status('live')` matches everywhere else —
+       disabled, future-dated and expired stay out.
+
+       The company comes from `craft.frontend.testimonialCompany`, not the
+       `company` field — a quote with a case study linked is named by the study,
+       so the client can't read one way here and another on its own page. #}
+    {% set quotes = [] %}
+    {% for t in craft.entries().section('testimonials').status('live').all() %}
+        {% set quote = t.blockquote ?? '' %}
+        {% if quote %}
+            {% set quotes = quotes|merge([{
+                quote: quote,
+                name: t.personName ?? '',
+                role: t.jobTitle ?? '',
+                company: craft.frontend.testimonialCompany(t),
+                image: t.profileImage.one() ?? null,
+            }]) %}
+        {% endif %}
+    {% endfor %}
+
+    {# "Brands I have worked with" logo strip, below the quotes. Same source as the contact page and
+       the Jonson [[clients]] panel: only clients that actually have a logo asset. #}
+    {% set clients = [] %}
+    {% for c in craft.entries().section('clientList').status('live').all() %}
+        {% set logo = c.logo.one() %}
+        {# Same two gates as the contact single and the Jonson panel: needs a logo, and
+           the client's Hidden? switch keeps it out. Null-safe, since the switch is
+           unset on anything saved before the field existed. #}
+        {% if logo and not (c.isHidden ?? false) %}
+            {% set clients = clients|merge([{ name: c.title, logo: logo, summary: c.summary ?? '' }]) %}
+        {% endif %}
+    {% endfor %}
+
+    {% include '_components/content' with {
+        whisper: entry.title,
+        title: entry.longTitle ?: entry.title,
+        caseStudies: ordered,
+        testimonials: quotes,
+        clients: clients,
+    } only %}
+
+    {# Ask bar as a real footer — a SIBLING of .c-content, not a child. The timeline's
+       end node is .c-content::after, so anything inside would sit above it; on the
+       green pages the conversation footer likewise comes after the trailing dot. Out
+       here it also spans the slab without needing negative margins, since the inline
+       padding belongs to .c-content. #}
+    {% include '_components/ask' only %}
+{% endblock %}

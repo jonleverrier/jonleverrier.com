@@ -1,0 +1,40 @@
+columnSuffix: null
+handle: services
+instructions: null
+name: Services
+searchable: false
+settings:
+  addRowLabel: 'Add a row'
+  columns:
+    __assoc__:
+      -
+        - col1
+        -
+          __assoc__:
+            -
+              - heading
+              - Name
+            -
+              - handle
+              - name
+            -
+              - width
+              - '100'
+            -
+              - type
+              - singleline
+  defaults:
+    -
+      __assoc__:
+        -
+          - col1
+          - ''
+        -
+          - rowId
+          - 03173b7c-c503-41f9-beff-a8b9de37162e
+  maxRows: null
+  minRows: null
+  staticRows: false
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Table

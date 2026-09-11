@@ -1,0 +1,69 @@
+/**
+ * COMPONENT: ACCENT LINK (shared)
+ *
+ * The red text-link treatment — no underline at rest, underline and a darker red
+ * on hover. Used by links inside a case study's prose (_case-content.scss), and via
+ * `accent-pill` below by the Read more control (_read-more.scss) and the meta
+ * column's "+N more" toggle (_meta.scss).
+ *
+ * A mixin rather than a class, because some consumers are <button>s that only read
+ * as links and another is a real <a> inside authored copy. Sharing the mixin is
+ * what stops them drifting apart when one gets adjusted.
+ *
+**/
+
+@use 'sass:color';
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$c-accent-link-ink: getmap($colour, primary, 650); // the link red — the button red deepened for text on cream (see the token)
+
+@mixin accent-link {
+    color: $c-accent-link-ink;
+    text-decoration: none;
+    // Clear of the descenders, so the hover rule doesn't cut through a g or a y.
+    text-underline-offset: rem(4);
+    cursor: pointer;
+
+    // Colour, not opacity: fading toward the slab washes the red out rather than
+    // deepening it, and the underline would fade with it.
+    transition: color 200ms ease;
+
+    &:hover {
+        // 15% darker — scaling lightness toward black keeps the hue and saturation,
+        // where `darken()` subtracts a flat amount and can flatten a saturated red.
+        color: color.scale($c-accent-link-ink, $lightness: -15%);
+        text-decoration: underline;
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid $c-accent-link-ink;
+        outline-offset: rem(3);
+    }
+}
+
+// The outlined variant — an accent link inside a red stroked pill, at the .c-button
+// radius, for controls that need to look pressable rather than read as running text
+// (Read more, and the meta column's "+N more").
+//
+// PADDING IS THE CONSUMER'S: Read more sits alone on its own line and takes the full
+// .c-button--sm box, while the meta toggle sits inline at the end of a wrapping list
+// and needs a tighter one so it doesn't force that line open.
+//
+// Include it AFTER any typography mixin — the line-height below is what keeps the
+// pill off a prose leading, and a later @include typography would overwrite it.
+@mixin accent-pill {
+    @include accent-link;
+
+    // currentColor, not the red restated: accent-link darkens `color` on hover and
+    // the stroke should travel with it.
+    border: rem(2) solid currentColor;
+    border-radius: $b-radius-200;
+    line-height: 1;
+
+    // Not the underline, though: inside a border it reads as a link that has been
+    // boxed by mistake. The stroke and the text darkening are hover enough.
+    &:hover {
+        text-decoration: none;
+    }
+}

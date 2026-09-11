@@ -1,0 +1,49 @@
+{#
+  Generic page — the `pages` structure at /{slug}. One template for every entry in it:
+  whisper, title, the Summary as a standfirst, then the CKEditor body.
+
+  Directory is the section HANDLE here, not its kebab-cased name — the structure router
+  keys off `entry.section.handle` (see _routers/structure.twig), unlike the single
+  router which uses the name. Section handle is `pages`, so this is `pages`.
+
+  Same `_components/content` shape and cream slab as the contact single and the case
+  study index, so a plain page sits in the family rather than looking like a new
+  template.
+#}
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+
+{# Cream slab — the default is olive p500. #}
+{% set slabModifier = 'b-slab--l600' %}
+
+{% block siteContent %}
+    {# `|trim ? … : null` rather than a plain truthiness test: a CKEditor field returns
+       a Markup object, which is always truthy even when it holds nothing — an empty
+       field would otherwise render an empty prose block. #}
+    {% set prose = entry.content|trim ? entry.content : null %}
+
+    {# The Summary as a standfirst above the prose, exactly as on About: a plain-text
+       field, so it's escaped here; blank lines become paragraph breaks and single
+       line breaks stay as breaks. Set in bold mono (see .c-content__summary) so it
+       reads as a statement rather than the opening of the prose. #}
+    {% set summary = (entry.summary ?? '')|trim %}
+    {% set standfirst = null %}
+    {% if summary %}
+        {% set standfirst %}
+            {% for para in summary|split("\n\n") %}
+                <p class="c-content__summary">{{ para|trim|nl2br }}</p>
+            {% endfor %}
+        {% endset %}
+    {% endif %}
+
+    {# Whisper is the SECTION's name, not the entry's title — the entry title is
+       already the h1's fallback, and repeating it above itself reads as a stutter.
+       Taken from the section rather than hardcoded, so renaming it in the CMS carries
+       here. Long title is the h1, falling back to Title when it's empty. #}
+    {% include '_components/content' with {
+        whisper: entry.section.name,
+        title: entry.longTitle ?: entry.title,
+        body: (standfirst or prose) ? ((standfirst ?? '') ~ (prose ?? '')) : null,
+    } only %}
+{% endblock %}

@@ -1,0 +1,22 @@
+defaultPlacement: end
+enableVersioning: true
+entryTypes:
+  -
+    uid: bfb56d7d-fee2-4410-9f56-4f8c6ec62176 # Testimonial
+handle: testimonials
+maxAuthors: 1
+minAuthors: 1
+name: Testimonials
+previewTargets:
+  -
+    label: 'Primary entry page'
+    refresh: '1'
+    urlFormat: '{url}'
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: false
+    template: null
+    uriFormat: null
+type: channel

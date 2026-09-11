@@ -1,0 +1,18 @@
+{#
+  A row of CTA boxes — solid cards from a `ctas` Matrix list ({ title, ctaUrl }).
+  Styling takes cues from .c-jonson__suggestion (solid fill, JonSonMono, the
+  pop-in arrow + spinning border on hover). See build/scss/components/_ctas.scss.
+#}
+{% if ctas ?? false %}
+    <div class="c-ctas">
+        {% if heading ?? false %}
+            <p class="c-ctas__whisper">{{ heading }}</p>
+        {% endif %}
+        {% for cta in ctas %}
+            {% set href = cta.ctaUrl.url ?? null %}
+            <a class="c-ctas__item"{% if href %} href="{{ href }}"{% endif %}>
+                <span class="c-ctas__label">{{ cta.title }}</span>
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}

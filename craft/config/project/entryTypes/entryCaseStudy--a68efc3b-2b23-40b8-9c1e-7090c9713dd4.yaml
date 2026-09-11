@@ -1,0 +1,109 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  65eb909b-26c4-494f-b3b8-3b93b6be799a:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            autocapitalize: true
+            autocomplete: false
+            autocorrect: true
+            class: null
+            dateAdded: '2026-08-02T14:36:40+00:00'
+            disabled: false
+            elementCondition: null
+            id: null
+            inputType: null
+            instructions: null
+            label: null
+            max: null
+            min: null
+            name: null
+            orientation: null
+            placeholder: null
+            readonly: false
+            required: true
+            size: null
+            step: null
+            tip: null
+            title: null
+            type: craft\fieldlayoutelements\entries\EntryTitleField
+            uid: fba81b4d-40aa-42e3-b608-e5916e1a540e
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-08-02T14:46:28+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 6ad25872-242d-49e3-b49d-89a6b3cba5a7 # Long title
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 512b10f3-bf39-4f58-bf9b-a04e96d7e567
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-08-02T14:49:20+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 76c638b1-cf43-42a7-9c63-56cb5ffa05b5 # Summary
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: d1fe2092-3d82-4631-be77-577cc7c9e0a9
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: 62ef5459-cdcc-41fa-97db-4a9032ca494c
+        userCondition: null
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-09-05T22:33:05+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: f87acb59-ec2e-4031-aa6c-ad11069ba376 # Open Graph Image
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 16dad23f-9329-4277-af21-dea8e59029ee
+            userCondition: null
+            warning: null
+            width: 100
+        name: SEO
+        uid: 133efb18-7134-4944-960c-ddb5d156801f
+        userCondition: null
+    thumbFieldKey: null
+handle: entryCaseStudy
+hasTitleField: true
+icon: null
+name: 'Case Study'
+showSlugField: true
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

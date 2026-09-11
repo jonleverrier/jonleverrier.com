@@ -1,0 +1,127 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-09T19:50:55.238Z",
+  "scenarios": [
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Because I work across the whole life cycle — strategy, design and development — which is rare for a designer, so you're not stitching three people together to get one coherent result. I've got over 25 years at it, across startups, agencies and in-house teams, and people tend to stick around: one relationship has run for years and is still going. [[casestudies]]\n\nThe honest test of fit, though, is your particular thing — happy to get into that.\n\n[[next: what do your clients say about working with you? @testimonial | how do you actually approach a project? @method | what kinds of sectors have you worked in? @sectors]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole life cycle — strategy, design and development — which is rare for a designer, so you're not stitching three people's ideas together. I've been doing this for over 25 years across startups, agencies and in-house teams, and clients tend to stick around; one relationship has run over ten years now. Have a look at the work and see if it feels like the kind of thing you need.\n\n[[casestudies]]\n\n[[next: how do you approach a new project? @method | what do your clients say about working with you? @work | what sectors have you worked in? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole life cycle — strategy, design and development — which is rare for a designer, so you're not stitching three people together to get one coherent thing. I've been doing this for over 25 years across agencies, in-house teams and on my own, and people tend to stick around: one relationship's run over a decade looking after a brand and its platforms.\n\n[[testimonial]]\n\nThe best way to judge though is the work itself.\n\n[[casestudies]]\n\n[[next: how do you approach a new project? @method | who have you worked with over the years? @clients | which sectors have you worked in? @sectors]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole life of a project — strategy, design and build — which means fewer handoffs, less lost in translation, and someone who can carry an idea from a rough plan through to something that actually ships and performs. I've been doing this for over 25 years, across everything from startups to established firms, and people tend to stay: one relationship has run over a decade.[[testimonial]]\n\nIf it helps, I'm happy to show you the kind of work that backs that up.[[casestudies]]\n\n[[next: how do you actually approach a project? | what kinds of clients have you worked with? | which sectors have you worked in?]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole thing — strategy, design and build — which is rare in one person, so you're not stitching together three suppliers and hoping they talk to each other. I've got 25-odd years behind me, and people tend to stick around: one relationship has run well over a decade. Clients describe me as reliable, adaptable and a bit obsessive about doing the work properly.\n\n[[testimonial]]\n\nWhat's the work you're weighing me up for?\n\n[[next: what kind of projects have you worked on? @work | can you show me some examples? @work | how do you actually approach a project? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole thing — strategy, design and build — which means fewer handoffs, fewer things lost in translation, and someone who cares about the outcome rather than just the deliverable. I've spent over 25 years doing this for startups, agencies and organisations with genuinely complex products, and people tend to stick around once they've worked with me.[[testimonial]]\n\nIf it helps, have a look at what I've actually done — that'll tell you more than any pitch of mine.[[casestudies]]\n\n[[next: how do you approach a new project? | which sectors have you worked in? | who have you worked with over the years?]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

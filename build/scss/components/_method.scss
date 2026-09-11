@@ -1,0 +1,619 @@
+/**
+ * COMPONENT: METHOD ("How I can help")
+ *
+ * Jon's project journey as a horizontal, paged timeline at process/offering
+ * moments (the [[method]] marker). Each phase is the response measure with its
+ * numbered node pinned to its own left edge; a line runs through the nodes and
+ * "travels" (fills blue) up to the active one. The viewport breaks out to the
+ * full container so the next phases peek in the right gutter and the outgoing
+ * one slides off left — the linear order stays visible as you cycle, nodes
+ * travelling with their phase. Paged with the nodes or the prev/next arrows.
+ *
+ * The track slide is a pixel translate set in JS (jonson-ask.js) — one phase +
+ * gap per step — and the fill width tracks the active node.
+ *
+**/
+
+@use 'sass:math';
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$c-method-node: rem(44);
+$c-method-accent: getmap($colour, primary, 400); // house yellow (#ffb929)
+$c-method-slide: rem(740); // one phase == the response measure ($c-jonson-measure)
+$c-method-vpad: rem(80); // viewport vertical padding — in-box room so the pulse rings aren't clipped
+
+.c-method {
+    position: relative;
+    isolation: isolate; // own stacking context so the bleed layer sits behind content
+    padding-block: getmap($space, rhythm, 800); // breathing room inside the band — matches the quote panel
+
+    // Solid darker-olive band (light 800 / #3d4324) — same fill as the quote
+    // panel + footer. A full-bleed pseudo paints behind the timeline and breaks
+    // past the centred measure to the content card's left/right edges. The
+    // .b-slab--p500 card clips the overflow (so no horizontal scroll), and the
+    // component's own box + children stay put, so the timeline layout is unchanged.
+    &::before {
+        content: '';
+        position: absolute;
+        z-index: -1;
+        inset-block: 0;
+        left: 50%;
+        width: 100vw;
+        margin-left: -50vw; // centre the 100vw layer on the (centred) component
+        background: getmap($colour, light, 800);
+    }
+}
+
+// ── Viewport: breaks out so phases peek in the gutters (like the testimonials)
+.c-method__viewport {
+    display: block;
+    width: 100cqi;
+    // Break out to the full container, keyed to the phase measure (NOT the live
+    // 100% width). This cancels exactly against the track's padding-left gutter
+    // below — both reference $c-method-slide — so node 01 lands on the phase's
+    // left edge (= the title/prose measure edge) whatever width .c-method is.
+    // On narrow viewports (container < measure) min() zeroes it: no breakout.
+    margin-inline: calc((min(#{$c-method-slide}, 100cqi) - 100cqi) / 2);
+    // Vertical breathing room INSIDE the box for the active node's pulse rings
+    // (and pill hover pops) so they're never clipped by the viewport's top/bottom
+    // edge — robust even where the carousel mask clips to the border box (Safari
+    // without mask-clip: no-clip). Pulled back with a matching negative margin so
+    // the line's position is unchanged.
+    padding-block: $c-method-vpad;
+    margin-block: calc(-1 * #{$c-method-vpad});
+    // Single-phase: no clip and no mask, so a pill's hover pop shows in full.
+    overflow: visible;
+}
+
+
+// Only the multi-phase carousel needs to clip the sliding track and fade the
+// peeking phases — both are scoped here so single-phase methods never clip the
+// hover pop. Clip the horizontal axis (vertical stays visible for the pop);
+// `clip` is required — `overflow-x: hidden` would force `overflow-y` to `auto`.
+.c-method.has-multiple .c-method__viewport {
+    position: relative;  // containing block for the overlay, so inset:0 = the viewport (100cqi), not .c-method
+    isolation: isolate;  // own stacking context so the overlay can sit above the will-change track
+    overflow-x: clip;
+    overflow-y: visible;
+}
+
+// Gutter fade as a STATIC overlay, not a `mask` on the viewport. A mask forces
+// the browser to re-rasterise the whole masked buffer every frame while the
+// track transform-animates; at a fractional page offset (e.g. when there's
+// content above the component) that re-raster snaps by a subpixel and the line
+// wobbles. This overlay sits on top of the track but never moves, so there's
+// nothing to re-raster — no wobble.
+//
+// One full-width gradient: band-coloured over the gutters, fully transparent
+// across the centred measure so the ACTIVE phase stays crisp. The clear window
+// is the measure centred on the viewport (50% ± measure/2) — expressed with
+// plain %/px, NOT container-query `cqi` in a `var()`, which doesn't resolve
+// reliably inside a pseudo-element and was bleeding the fade over the node.
+.c-method.has-multiple .c-method__viewport::after {
+    content: "";
+    position: absolute;
+    // Inset top/bottom by the viewport's vertical padding so the fade covers only
+    // the content band (from the node row down), NOT the empty ring-room that the
+    // negative margin pulls up over the paragraph above / content below.
+    inset: $c-method-vpad 0;
+    z-index: 1; // above the track in paint order
+    pointer-events: none;
+    $band: getmap($colour, light, 800);
+    $half: math.div($c-method-slide, 2); // half the measure — correct division
+    background: linear-gradient(to right,
+        $band 0,
+        rgba($band, 0) calc(50% - #{$half}),
+        rgba($band, 0) calc(50% + #{$half}),
+        $band 100%);
+}
+
+// Final phase: no phases peek any more, and the yellow line runs the full width —
+// so soften it only at the very frame edges (a narrow fade) rather than the wide
+// measure-window fade used mid-timeline, which would eat most of the completed line.
+$band-complete: getmap($colour, light, 800);
+.c-method.is-complete.has-multiple .c-method__viewport::after {
+    background: linear-gradient(to right,
+        $band-complete 0,
+        rgba($band-complete, 0) 6%,
+        rgba($band-complete, 0) 94%,
+        $band-complete 100%);
+}
+
+.c-method__track {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    // Fit the content (all phases), so the line/fill — anchored left:0/right:0
+    // to the track — span every node instead of stopping at the viewport edge.
+    width: max-content;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    // Phase spacing is a left margin on subsequent phases (see below), NOT flex
+    // `gap`: WebKit lays a leading gap after the absolutely-positioned fill span
+    // (the track's first child), which would shove phase 01 off the measure edge.
+    // Offset the first phase back to the response measure (the left gutter
+    // width), so it sits at the measure while the viewport still extends left
+    // for the outgoing phase to slide into.
+    padding-left: calc((100cqi - min(#{$c-method-slide}, 100cqi)) / 2);
+    transition: transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+    // NO permanent will-change/translateZ here: a permanent GPU layer holding the
+    // numbers + pills, pinned at the component's fractional page offset (when
+    // components stack above), is what re-samples them each frame = the jitter.
+    // Rendered in the page's main layer they stay put; the browser still promotes
+    // the track for the one-off transform transition during a phase slide.
+}
+
+// ── The timeline line (::before on the track) + its "travelled" blue fill ────
+// The static line is a pseudo-element — no markup. The fill stays a real
+// element because JS sets its width inline (see jonson-ask.js).
+.c-method__track::before {
+    content: "";
+    position: absolute;
+    top: calc(#{$c-method-node} / 2);
+    left: 0;
+    // Extend the right end past the track by the right gutter's width, so on the
+    // LAST phase (where the track ends at that phase's edge) the baseline line still
+    // reaches the viewport's right edge and the overlay fades it off — instead of
+    // capping mid-frame. On earlier phases the track already runs past the frame, so
+    // this just pushes the (clipped) end a little further right; no visible change.
+    right: calc((100cqi - #{$c-method-slide}) / -2);
+    height: rem(3);
+    transform: translateY(-50%);
+    background: rgba(#fff, 0.15);
+    pointer-events: none;
+}
+
+.c-method__line--fill {
+    position: absolute;
+    top: calc(#{$c-method-node} / 2 - #{rem(1.5)}); // centre the 3px line without a transform
+    left: 0;
+    width: 0; // set in JS to the active node's centre (in track coords)
+    height: rem(3); // match the static line stroke (.c-method__track::before)
+    background: $c-method-accent;
+    pointer-events: none;
+    overflow: hidden; // clip the sweeping band to the line's own length
+    // No `transition: width` — animating width is a layout property that
+    // re-rasterises the line every frame and makes it wobble vertically during
+    // the slide. The line now just snaps to the new length.
+}
+
+// A bright pulse that sweeps left→right along the travelled segment. It's a
+// gradient band moved with `transform: translateX` (compositor-driven, no
+// per-frame repaint) rather than `background-position` — so it stays smooth
+// even while the main thread is busy (e.g. the canvas dot grid). The band is
+// half the line's width; the keyframe carries it from fully off the left to
+// fully off the right, so the loop wraps while it's invisible (no hop).
+.c-method__line--fill::after {
+    // JITTER BISECTION step 1: shimmer disabled. If the line/numbers stop
+    // jittering, the continuous `c-method-strike` transform animation was the
+    // trigger. Restore by removing `display:none` and re-enabling the animation.
+    display: none;
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 50%;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent 0%, #fff 50%, transparent 100%);
+    // animation: c-method-strike 2.4s linear infinite;
+}
+
+@keyframes c-method-strike {
+    from { transform: translateX(-110%); } // band fully off the left
+    to   { transform: translateX(230%); }  // band fully off the right
+}
+
+// Off-screen (set by pause-offscreen.js): stop the infinite shimmer so it doesn't
+// keep the compositor busy when the timeline isn't visible.
+.c-method.is-anim-paused .c-method__line--fill::after {
+    animation-play-state: paused;
+}
+
+// Final node = goal reached: the yellow burns across the whole line, once, then
+// stays full. Three things make it render right in every browser:
+//  - clip-path set STATICALLY (inset(0) = fully revealed) instead of held by the
+//    animation's `forwards`. A held/animated clip-path promotes the fill to its own
+//    compositor layer, which Chrome paints ABOVE the fade overlay (so the line ran
+//    solid, no edge fade); a static resting value keeps it a plain element the
+//    overlay can fade, identically in every browser.
+//  - the fill's width is extended to the viewport's right edge, since 100% of the
+//    track stops at the last phase, short of the frame.
+// (No z-index here: the fill already sits above the grey baseline by tree order, and
+// leaving it at auto keeps the active node's z-index:2 above the burning line so the
+// yellow never paints over the "04".)
+.c-method.is-complete .c-method__line--fill {
+    // Run the yellow the WHOLE way. 100% is the track width, which ends at the last
+    // phase — short of the frame by the right gutter's width, (100cqi - measure)/2.
+    // Extend by exactly that so it reaches the viewport's right edge (lean — no
+    // giant off-screen element to composite). (!important beats methodApply's inline
+    // width.)
+    width: calc(100% + (100cqi - #{$c-method-slide}) / 2) !important;
+    clip-path: inset(0 0 0 0); // resting state: fully revealed, static (not promoted)
+    animation: c-method-burn 1.2s linear 1;
+}
+
+// No travelling shimmer in the complete state — just the steady burn.
+.c-method.is-complete .c-method__line--fill::after {
+    animation: none;
+    opacity: 0;
+}
+
+@keyframes c-method-burn {
+    from { clip-path: inset(0 100% 0 0); } // hidden — clipped in from the right
+    to   { clip-path: inset(0 0 0 0); }    // fully revealed left→right
+}
+
+// The burn animates the fill's clip-path, which the browser promotes to its own
+// compositor layer — briefly painting the yellow line OVER the final node's "04".
+// Put just that node on its own layer above the fill so it stays crisp. Scoped
+// to .is-complete + .is-active: it only touches the last node during the take-off,
+// so it can't affect the stacking of the earlier nodes (they're never complete).
+.c-method.is-complete .c-method__phase.is-active .c-method__node {
+    position: relative;
+    z-index: 2;
+}
+
+// …and ONLY while the burn is actually running (`is-burning`, set and cleared by
+// methodApply around the 1.2s animation). It used to sit on .is-complete
+// permanently, which left a 3D-composited layer inside the track for as long as
+// the visitor stayed on the last phase — the only such layer on any slide. Safari
+// then had to order every pill's hover layer against it inside a track resting at
+// a fractional page offset, and re-snapped the content by a pixel on hover and back
+// on leave. Nothing else differs between the last slide and the others, and the
+// jump was last-slide-only. With the layer gone once the burn ends, a hover on
+// slide four promotes exactly what it promotes on slide one: the pill.
+.c-method.is-complete.is-burning .c-method__phase.is-active .c-method__node {
+    transform: translateZ(0); // force a compositor layer, above the animating fill
+}
+
+// ── Phases (peeking slides) ────────────────────────────────────────────────
+.c-method__phase {
+    flex: 0 0 min(#{$c-method-slide}, 100cqi); // the response measure
+    opacity: 0.32; // off-view phases sit back, faintly visible in the gutter
+    transition: opacity 500ms ease;
+
+    &.is-active {
+        opacity: 1;
+    }
+
+    // Inter-phase spacing (replaces flex `gap` — see .c-method__track). Only
+    // between phases, so phase 01 stays flush to the measure edge.
+    & + & {
+        margin-left: calc(#{getmap($space, rhythm, 800)} * 4); // 4× the rhythm-800 gap
+    }
+
+    // Vertical rhythm — house owl pattern (see base/_wrap.scss, _footer.scss).
+    // Reset UA margins, then stack children on a single rhythm token instead of
+    // bespoke per-element top margins. The node (first child) gets no top space.
+    > * {
+        margin: 0;
+    }
+
+    > * + * {
+        margin-top: getmap($space, rhythm, 600);
+    }
+}
+
+// Numbered node — pinned to each phase's own left edge, sitting on the line.
+.c-method__node {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: $c-method-node;
+    height: $c-method-node;
+    padding: 0;
+    border: rem(2) solid rgba(#fff, 0.26);
+    border-radius: 50%;
+    background: getmap($colour, primary, 500); // olive — masks the line behind
+    color: rgba(#fff, 0.6);
+    cursor: pointer;
+    transition: border-color 400ms ease, background-color 400ms ease, color 400ms ease;
+
+    // Two concentric rings, centred on the node. Idle (hidden) by default; they
+    // ripple outward — a radar-style pulse — only when the phase is active. Grown
+    // with transform:scale (NOT width/height) so the animation is compositor-only:
+    // it promotes each ring to its own layer and never invalidates the node's
+    // paint. width/height animation is main-thread paint that re-rasterises the
+    // whole node — including the number — every frame; with the marquee/testimonials
+    // above pushing this to a fractional pixel offset, that re-raster snapped by a
+    // subpixel and the number wiggled. The stroke softens a touch as it scales, but
+    // it's fading to invisible by then, so it's masked.
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100%; // node size — fixed; the animation scales it
+        height: 100%;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        border: rem(4) solid rgba($c-method-accent, 0.5); // thick stroke, matches the accent
+        opacity: 0;
+        pointer-events: none;
+        // Keep each ring on its OWN compositor layer permanently (cheap — they're
+        // transparent when idle). Otherwise the pulse promotes the whole NODE while
+        // it scales and de-promotes it after, and at a fractional page offset that
+        // de-promotion drops the node/number ~1px back to its true position. Self-
+        // compositing the rings leaves the node painted on the main thread throughout.
+        will-change: transform;
+    }
+}
+
+.c-method__phase.is-active .c-method__node {
+    border-color: $c-method-accent;
+    background: $c-method-accent;
+    color: getmap($colour, light, 900);
+
+    // Ripple outward once on first view, then stop (reverts to opacity 0).
+    // ::after is offset half a cycle so it follows the first as a second ring.
+    &::before,
+    &::after {
+        animation: c-method-ping 2.6s ease-out 1;
+    }
+    &::after {
+        animation-delay: 1.3s;
+    }
+}
+
+@keyframes c-method-ping {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(1); }    // emerge from the node
+    25%  { opacity: 0.5; }                                             // ease in
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.4); }  // small, tight pulse — fades out exactly as it reaches its modest max, so no large faint ring lingers
+}
+
+.c-method__num {
+    font-family: $g-font-secondary; // JonSonMono
+    @include typography(p-sm);
+    font-weight: 600;
+}
+
+.c-method__display {
+    @include typography(h3); // sets font-size + line-height
+    font-family: $g-font-primary;
+    font-weight: 700;
+    line-height: 1.02; // override h3's default — short display heading, kept tight
+    // Solid white, so the heading is what lifts off the olive and the summary below
+    // sits back in the answer-voice cream. The two swapped: this was the cream that
+    // matched .c-testimonial__name, and the summary held the white.
+    color: getmap($colour, light, 100);
+    margin-top: getmap($space, rhythm, 700); // more room above the title than the owl default
+}
+
+.c-method__summary {
+    font-family: $g-font-secondary; // JonSonMono
+    @include typography(p);
+    font-weight: 500; // the weight the mono face is used at elsewhere (.c-clients__summary)
+    // The answer-voice body colour — same cream .c-jonson__response gives its own
+    // paragraphs on the olive slab. Was solid white to match .c-testimonial__quote,
+    // which made it read as a pull-quote rather than as part of the answer.
+    color: getmap($colour, light, 700);
+}
+
+.c-method__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: rem(18); // the pills carry markers now, so they want a little more air between them
+    padding: 0;
+    list-style: none;
+    // More air above the pills than the phase's owl rhythm (600) gives: the title
+    // above is a heading, and the pills read as a separate block beneath it. Same
+    // specificity as `.c-method__phase > * + *`, later in the file, so this wins.
+    margin-top: getmap($space, rhythm, 700);
+}
+
+// Cream pills — styled to match .c-sectors__tag (cream on the olive, navy text,
+// with the same springy hover).
+.c-method__item {
+    padding: rem(16) rem(30);
+    border: rem(2) solid transparent;
+    border-radius: rem(999); // pill
+    background-color: getmap($colour, light, 700);
+    color: getmap($colour, primary, 700);
+    font-family: $g-font-secondary; // JonSonMono — matches the response voice
+    @include typography(p-sm);
+    font-weight: 600; // the mono's bold face — a label, set like the date labels and the summary
+    line-height: 1.2;
+    cursor: default; // labels, not buttons
+    transition: transform var(--tag-dur, 400ms) cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    &:hover {
+        transform:
+            translateY(var(--tag-lift, -5px))
+            scale(var(--tag-scale, 1.1))
+            rotate(var(--tag-rot, -3deg));
+    }
+}
+
+// Three calm tones, navy text — mirrors .c-sectors__tag--a/e/f. Assigned on a
+// random cycle in method.twig so the mix shuffles per render. Each carries the
+// palette's marker before its label (see mixins/_pill-marker).
+.c-method__item--a { // beige / navy
+    background-color: getmap($colour, light, 700);
+    color: getmap($colour, primary, 700);
+
+    &::before { @include pill-marker(triangle); }
+}
+
+.c-method__item--e { // white / navy
+    background-color: getmap($colour, light, 100);
+    color: getmap($colour, primary, 700);
+
+    &::before { @include pill-marker(pacman); }
+}
+
+.c-method__item--f { // light blue / navy
+    background-color: getmap($colour, primary, 410);
+    color: getmap($colour, primary, 700);
+
+    &::before { @include pill-marker(diamond); }
+}
+
+// The slider is click/script-focusable (tabindex -1) for arrow-key support, but
+// never in the tab order — suppress its focus ring (the cycle buttons carry the
+// visible keyboard focus instead). Mirrors .c-testimonials.
+.c-method.has-multiple:focus {
+    outline: none;
+}
+
+// ── Pagination — prev + next in a plain row, matching .c-testimonials__nav ──
+.c-method__nav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; // right-align, like the testimonial controls
+    gap: rem(8);
+    margin-top: rem(30);
+    // Sit above the viewport: its mask makes it a stacking context that paints
+    // over this in-flow nav, and its vertical padding overlaps here — without
+    // this the buttons would be unclickable.
+    position: relative;
+    z-index: 1;
+}
+
+// Cycle buttons — same red + inset "pop" as .c-testimonials__cycle / .c-button.
+// (Method disables prev rather than hiding it, so the :disabled state stays.)
+.c-method__cycle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: rem(44);
+    height: rem(44);
+    border: 0;
+    border-radius: 50%;
+    background: getmap($colour, primary, 600);
+    color: getmap($colour, light, 100);
+    box-shadow: inset 0 rem(-3) 0 rgba(#000, 0.3); // raised "pop", like .c-button
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 200ms ease;
+
+    svg {
+        display: block;
+    }
+
+    &:disabled {
+        opacity: 0.28;
+        cursor: default;
+    }
+
+    &:not(:disabled):hover {
+        transform: translateY(rem(-1));
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid currentColor;
+        outline-offset: rem(2);
+    }
+}
+
+// Same arrow SVG as .c-jonson__submit; flip it for "previous".
+.c-method__cycle--prev svg {
+    transform: scaleX(-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-method__track,
+    .c-method__line--fill,
+    .c-method__phase,
+    .c-method__node,
+    .c-method__node::before {
+        transition: none;
+    }
+
+    .c-method__item {
+        transition: none;
+
+        &:hover {
+            transform: none;
+        }
+    }
+
+    .c-method.is-complete .c-method__line--fill {
+        animation: none; // no burn reveal — the line is just full yellow
+    }
+
+    .c-method__line--fill::after,
+    .c-method.is-complete .c-method__line--fill::after {
+        animation: none;
+        opacity: 0; // no travelling pulse
+    }
+
+    .c-method__phase.is-active .c-method__node::before,
+    .c-method__phase.is-active .c-method__node::after {
+        animation: none;
+        opacity: 0; // no ripple
+    }
+}
+
+// ── Light dress — the cream slab (About) ────────────────────────────────────
+//
+// The default sits in a Jonson answer on olive: a darker-olive band bleeding to
+// the window edges, white ink, an olive node masking the line. The light version
+// follows the same pattern one shade down: the band is the ask bar's cream
+// ($c-ask-cream, the light footer's ground), so on the cream slab the timeline
+// and the ask bar beneath it read as the same family of panel — as the olive
+// band and the olive footer do on a Jonson page. The gutter fades and the node
+// mask pick up that same cream, and the ink goes navy. The accent line, the
+// yellow active node and the pills are already built for a light ground (the
+// pills are the cream/white/blue set), so they stay.
+.c-method--light {
+    // light-650 IS $c-ask-cream in _jonson.scss (a file-local there, so named by
+    // value here). Change one and change the other, or the two panels drift apart.
+    $slab: getmap($colour, light, 650); // the band, and what the fades and node mask must match
+    $ink: getmap($colour, primary, 700); // navy
+
+    &::before {
+        background: $slab;
+    }
+
+    &.has-multiple .c-method__viewport::after {
+        $half: math.div($c-method-slide, 2);
+        background: linear-gradient(to right,
+            $slab 0,
+            rgba($slab, 0) calc(50% - #{$half}),
+            rgba($slab, 0) calc(50% + #{$half}),
+            $slab 100%);
+    }
+
+    &.is-complete.has-multiple .c-method__viewport::after {
+        background: linear-gradient(to right,
+            $slab 0,
+            rgba($slab, 0) 6%,
+            rgba($slab, 0) 94%,
+            $slab 100%);
+    }
+
+    .c-method__track::before {
+        background: rgba($ink, 0.15); // the resting line, navy instead of white
+    }
+
+    .c-method__node {
+        border-color: rgba($ink, 0.26);
+        background: $slab; // masks the line behind, like the olive does on olive
+        color: rgba($ink, 0.6);
+    }
+
+    // The active node is unchanged: yellow with dark ink reads on either ground.
+
+    .c-method__display {
+        color: $ink;
+    }
+
+    .c-method__summary {
+        color: getmap($colour, light, 850); // the summaries' deep olive, as the page's standfirst
+    }
+
+    // The tan pill (palette a) is a shade off the cream band and vanished into it.
+    // A pale warm cream instead — a shade LIGHTER than the band rather than a
+    // shade darker, so it lifts off it the way the white and light-blue pills do,
+    // and warm enough to stay in the family of the band rather than read as white.
+    .c-method__item--a {
+        background-color: #ffeed1;
+        color: getmap($colour, light, 850); // the summary's warm grey, not the timeline's navy — a label, a step back
+    }
+}

@@ -1,0 +1,42 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  18ac88af-e25a-472f-837b-afde3a9a2d30:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-07-07T20:07:41+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: ac207a17-88ae-482b-b0b5-dfbf6ca6a970 # How I can help
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 83a6c6e2-e9d2-4ab8-a033-34e6a060d0ac
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: 2812d6dc-84e8-47c5-b9e5-e03513f8dde1
+        userCondition: null
+    thumbFieldKey: null
+handle: method
+hasTitleField: false
+icon: null
+name: Method
+showSlugField: false
+showStatusField: false
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

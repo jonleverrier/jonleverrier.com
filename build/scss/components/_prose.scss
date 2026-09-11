@@ -1,0 +1,209 @@
+/**
+ * COMPONENT: PROSE (shared)
+ *
+ * The answer-voice body copy — JonSonMono, calm rhythm — shared by the live
+ * Jonson response (.c-jonson__response) and the static .c-content block so they
+ * read as the same voice. Colour is deliberately NOT set here: each consumer
+ * supplies its own so the same prose stays legible on any background (cream
+ * text on olive, dark text on cream). Scoped to `> p` (direct children only) so
+ * it never bleeds into <p>s inside nested components.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// $marker: the colour of a list's bullets and numbers. Defaults to the sub-heading
+// grey (structure, not ink); the cream-slab pages pass the whisper blue so a list's
+// markers speak with the same voice as the page's eyebrow.
+@mixin prose-body($marker: getmap($colour, light, 880)) {
+    // The base rhythm: every block gets the paragraph gap from whatever is above
+    // it, whether or not this file has heard of it — a <pre> or a <blockquote>
+    // the editor emits inherits it the same as a <p>. The rules further down
+    // that name elements are OVERRIDES of this, not the source of spacing.
+    //
+    // Kept at the lowest specificity (0,1,0 once nested in a consumer) so a
+    // consumer can set its own base for its own children: .c-jonson__response
+    // gives its component panels a larger gap with a selector one step above
+    // this. base/_reset.scss zeroes every margin first, so nothing else joins in.
+    > * + * {
+        margin-top: rem(24);
+    }
+
+    > p {
+        @include typography(p);
+        font-family: $g-font-secondary; // JonSonMono
+        line-height: 1.6;
+    }
+
+    // Lists authored in a rich-text field. base/_reset.scss zeroes padding on ul/ol,
+    // which leaves an authored list with nowhere to hang its markers — so the indent
+    // has to come back here rather than being inherited from the browser.
+    //
+    // Body type, not the browser's: a list is prose in a different shape, and should
+    // read at the same size and rhythm as the paragraphs around it.
+    // ONE indent for both kinds, so a bulleted list and a numbered one start their
+    // text on the same line — switching a list's type in the editor shouldn't shift
+    // the copy sideways.
+    //
+    // Every list's TEXT lands on the same line, whatever the marker: the two numbers
+    // in each pair below add up to the same total, so switching a list's type in the
+    // editor doesn't shift the copy sideways.
+    //
+    // How that total is SPLIT decides where the marker sits. `outside` positioning
+    // lays a marker against the <li>'s content edge, so padding on the LIST moves the
+    // marker and the text together, while padding on the ITEM moves only the text and
+    // leaves the marker behind. A bullet wants to sit well left of its text; a number
+    // wants to sit close to it — and needs the width, since at 28px a numbered list
+    // read fine to 9 and then 10, 11, 12 hung off the left edge.
+    $prose-list-indent: rem(44);          // list + item padding, identical for both (was 52 — the marker sat a word's width off its text)
+    $prose-list-indent-nested: rem(34);
+    $prose-bullet-offset: rem(36);        // where a disc sits; the rest goes on the item — little, so the disc sits close to its text
+    $prose-number-offset: rem(42);        // wide enough for "12."
+    $prose-bullet-offset-nested: rem(26);
+    $prose-number-offset-nested: rem(32);
+
+    > ul,
+    > ol {
+        @include typography(p);
+        font-family: $g-font-secondary; // JonSonMono
+        // The same leading as a paragraph, so a wrapped item reads at the prose
+        // rhythm rather than as a tighter block. The separation between items comes
+        // from the gap below instead — spacing them apart rather than spacing every
+        // line apart, which is what leading would do.
+        line-height: 1.6;
+    }
+
+    // `> ul > li`, not `> ul li`: a nested list's items take their own pairing below,
+    // and an unscoped descendant rule would hand them the outer list's.
+    > ul { list-style: disc; padding-left: $prose-bullet-offset; }
+    > ol { list-style: decimal; padding-left: $prose-number-offset; }
+
+    > ul > li { padding-left: $prose-list-indent - $prose-bullet-offset; }
+    > ol > li { padding-left: $prose-list-indent - $prose-number-offset; }
+
+    // The full paragraph gap, not half of it. With the items set at the paragraph's
+    // own leading, a smaller gap left the space between two items barely wider than
+    // the space between two lines of one item, so a wrapped item read as two.
+    > ul li + li,
+    > ol li + li {
+        margin-top: rem(24);
+    }
+
+    // Markers in the sub-heading grey: structure, not ink — and not the link red,
+    // which means "this is interactive" everywhere else on the site; a bullet in it
+    // promised a click it couldn't keep. ::marker takes only a short list of
+    // properties; colour and font are both on it.
+    > ul li::marker,
+    > ol li::marker {
+        color: $marker;
+    }
+
+    // A disc is drawn as a fraction of the marker's font size, so scaling the type is
+    // the only way to grow it — there's no width on a ::marker. Bulleted lists only:
+    // the same rule on an <ol> would enlarge the numerals, which are read as content
+    // and should stay at body size. `em`, so it tracks the list's own type.
+    //
+    // The marker sits IN the line box, so the larger font grew it — an item went from
+    // 36.8px to 47.8px tall and a bulleted list no longer matched the paragraphs
+    // around it. Zero line-height takes the marker out of that calculation without
+    // touching how big the disc is drawn.
+    > ul li::marker {
+        font-size: 1.4em;
+        line-height: 0;
+    }
+
+    // Numbers hold their weight instead of their size — it gives them the presence a
+    // bigger disc gives a bullet, without pushing the numerals out of step with the
+    // body copy they sit beside.
+    > ol li::marker {
+        font-weight: 700;
+    }
+
+    // Nested lists change marker so the levels are distinguishable, and take the same
+    // split treatment on a narrower total — a lower-alpha marker is one glyph plus the
+    // stop, so it needs less room than a two-digit number.
+    > ul ul { list-style: circle; }
+    > ul ul ul { list-style: square; }
+    > ol ol { list-style: lower-alpha; }
+
+    // Scoped to lists sitting inside a PROSE list, like everything above. A bare
+    // `li ul` reaches any list nested in any list item anywhere in the response —
+    // including component markup that happens to use one. .c-method__items is a
+    // <ul> inside .c-method__phase (an <li>), so it was taking a prose indent it
+    // never asked for, despite setting `padding: 0` on itself.
+    //
+    // Scoped positively rather than excluding the components by name: a blocklist
+    // has to be extended every time a component nests a list, and the failure is
+    // silent when it isn't.
+    > ul ul, > ul ol,
+    > ol ul, > ol ol {
+        margin-top: rem(12);
+    }
+
+    > ul ul,
+    > ol ul {
+        padding-left: $prose-bullet-offset-nested;
+
+        > li { padding-left: $prose-list-indent-nested - $prose-bullet-offset-nested; }
+    }
+
+    > ul ol,
+    > ol ol {
+        padding-left: $prose-number-offset-nested;
+
+        > li { padding-left: $prose-list-indent-nested - $prose-number-offset-nested; }
+    }
+
+    // Headings authored in a rich-text field. Without these they fall to the browser
+    // default — an <h2> rendering at 24px next to 23px body copy, which reads as a
+    // slightly bold paragraph rather than a heading.
+    //
+    // Each drops a step from the page scale: an h2 inside a case study is a section
+    // marker within the page, not a rival to its h1, so it takes the h3 size and so
+    // on down. JonSonSans, the same face every other heading on the site uses.
+    //
+    // Colour is left alone here for the same reason as the body copy — the mixin is
+    // used on cream and on olive, so each consumer sets its own.
+    > h2,
+    > h3,
+    > h4 {
+        font-family: $g-font-primary; // JonSonSans
+        font-weight: 600;
+    }
+
+    > h2 { @include typography(h3); }
+    > h3 { @include typography(h4); }
+    > h4 { @include typography(p-lg); }
+
+    // Bound to what comes BEFORE, not after: a heading needs air above it to separate
+    // it from the previous section, and sits close to the copy it introduces. The
+    // first child gets nothing, so a block never opens with a gap.
+    > * + h2,
+    > * + h3,
+    > * + h4 {
+        margin-top: getmap($space, rhythm, 700);
+    }
+
+    > h2 + *,
+    > h3 + *,
+    > h4 + * {
+        margin-top: getmap($space, rhythm, 500);
+    }
+
+    // A heading directly under a heading — a section title with its first
+    // sub-heading straight after — gets more air than copy does, or the two read
+    // as one two-line heading. Two steps up: the same air a heading has above
+    // it. The sub-heading still sits closer to the copy it introduces (rhythm
+    // 500, above) than to the title over it, so it reads as attached to its own
+    // section rather than floating between the two.
+    //
+    // :where() on the first heading keeps this at the same specificity as the
+    // `* + h2` rules above it. It still wins over them here by coming later,
+    // but a consumer that sets its own heading rhythm (.c-case-content__text)
+    // can override every pairing with one rule instead of naming each one.
+    > :where(h2) + h3,
+    > :where(h3) + h4 {
+        margin-top: getmap($space, rhythm, 700);
+    }
+}

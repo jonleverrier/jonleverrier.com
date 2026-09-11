@@ -1,0 +1,263 @@
+/**
+ * BASE: HEADER
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.b-header {
+    position: absolute;
+    top: getmap($space, rhythm, 700);
+    left: 0;
+    right: 0;
+    z-index: getmap($z-index, xl);
+}
+
+// Jonson pages keep the header pinned as you scroll the conversation — but only
+// within the olive slab. `fixed` carried it on over the footer's white strip;
+// sticky stops it at the bottom of its containing block, which is exactly the end
+// of the green.
+//
+// This only works because .b-slab--p500 uses `overflow: clip` rather than `hidden`
+// — `hidden` would make the slab a scroll container and the header would never
+// move. If that ever reverts, this silently stops sticking.
+//
+// height: 0 with the bar absolutely positioned inside keeps it OUT OF FLOW, as the
+// `fixed` version was. A plain sticky header is in flow and grew the slab by its own
+// height (measured: 2184 → 2256), pushing the conversation down.
+//
+// No left/right inset needed any more: in flow the header spans the slab's content
+// box, which body > .b-wrap has already inset by rhythm500. The old fixed version
+// had to re-add that by hand.
+// The sticky offset is the height it settles at ONCE STUCK, and it's deliberately
+// tighter than where the header rests. At the top of the page the header sits at its
+// natural position (rhythm500 + rhythm700 down, matching the slab's own inset); as
+// you scroll it rises until it meets this offset and holds there, close to the top
+// of the window. Setting this to the resting offset — as it was — means it pins at
+// exactly the height it already sat at, so scrolling appears to do nothing.
+// Two different heights, which is the whole point:
+//
+//   at rest    rhythm500 (the wrap's inset) + rhythm700 — where the header has
+//              always sat, well clear of the slab's top edge
+//   stuck      2 × rhythm500 — tight to the top of the window, but still inset
+//              from the slab by as much as the slab is inset from the window, so
+//              it never touches the white margin
+//
+// Sticky clamps to max(natural position, top), and this element's natural position
+// is the slab's top edge — above the stuck offset — so it pins at the stuck height
+// immediately and can't travel. `top` therefore sets the STUCK height only; the
+// resting height comes from shifting the bar inside it (below), toggled by
+// sticky-header.js. Nudging the natural position with margins doesn't work: the
+// slab uses `overflow: clip`, which unlike `hidden` establishes no block formatting
+// context, so a top margin collapses through to the slab instead.
+.is-jonson .b-header {
+    position: sticky;
+    top: calc(2 * #{getmap($space, rhythm, 500)});
+    height: 0;
+}
+
+// The bar itself. At rest it's pushed down to the height the header has always sat
+// at; once stuck it slides up to the sticky offset, tight to the top of the window.
+// The difference between the two is the travel:
+//   rest  = rhythm500 (wrap inset) + rhythm700
+//   stuck = 2 × rhythm500
+// A transform, so the movement is compositor-only and — crucially — doesn't feed
+// back into the sticky calculation the way a `top` change would.
+.is-jonson .b-header > .b-wrap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    transform: translateY(
+        calc(#{getmap($space, rhythm, 500)} + #{getmap($space, rhythm, 700)} - 2 * #{getmap($space, rhythm, 500)})
+    );
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+// Set by sticky-header.js the moment the header actually pins.
+.is-jonson.is-header-stuck .b-header > .b-wrap {
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .is-jonson .b-header > .b-wrap { transition-duration: 1ms; }
+}
+
+.b-header__items {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: getmap($space, rhythm, 500);
+}
+
+.b-header__item {
+    display: flex;
+    align-items: center;
+    gap: getmap($space, rhythm, 400);
+}
+
+// While the nav panel is open the header is pinned to the WINDOW, not the page. The
+// panel covers the whole site, so a header still travelling with the scroll takes the
+// logo — and the close button — off screen with it, leaving no way out of the nav but
+// the keyboard.
+//
+// `fixed` re-parents left/right to the viewport, where `absolute` took them from the
+// slab; the slab's own rhythm500 inset has to be put back or the logo jumps left the
+// moment the panel opens. That is what the padding is for, rather than left/right
+// insets: it leaves the header's inner .b-wrap the same width it had inside the slab,
+// so its max-width cap and centring behave identically. (The old fixed sticky header
+// hit this same trap — see the note above it.)
+//
+// The offset is the header's resting height spelled out from the viewport: rhythm500
+// puts the slab below the window edge, rhythm700 puts the header below the slab's.
+.is-nav-open .b-header {
+    position: fixed;
+    top: calc(#{getmap($space, rhythm, 500)} + #{getmap($space, rhythm, 700)});
+    left: 0;
+    // Inset by the scrollbar the lock just removed, rather than padded by it. Locking
+    // the root with `overflow: hidden` takes the scrollbar away, which on a
+    // classic-scrollbar machine widens the viewport by ~15px — and a CENTRED box in a
+    // wider viewport shifts right by half of that. Narrowing the containing block here
+    // keeps the centre where it was; padding could not, because it moves the content
+    // without moving the box it is centred in.
+    //
+    // Measured in nav-panel.js and set on the root, because CSS cannot know it:
+    // `scrollbar-gutter: stable` reserves the gutter only while the page SCROLLS and
+    // drops it the instant overflow goes hidden (measured: 485 → 500, same as `auto`).
+    // Defaults to 0px, so overlay-scrollbar machines are unaffected.
+    right: var(--nav-scrollbar, 0px);
+    padding-inline: getmap($space, rhythm, 500);
+    // CAPPED AND CENTRED, exactly as `body > .b-wrap` is — the box this header sits in
+    // when it is `absolute`. Without these two lines the fixed header spans the whole
+    // viewport, and past the xxl cap that gives its inner .b-wrap MORE room than it had:
+    // measured at 1920, the wrap went 1694.3 → 1728 wide, so the items widened and the
+    // right-hand end (Contact, and the burger) slid outward by ~17px on open.
+    //
+    // Same max-width token the wrap uses, so the two can never disagree.
+    max-width: getmap($mq-breakpoints, xxl);
+    margin-inline: auto;
+}
+
+// Nothing scrolls behind the panel. It is opaque and covers the viewport, so any
+// scrolling under it is invisible while it's open and only shows up as the page
+// having moved once it closes. `overflow: hidden` on the root holds the position
+// rather than resetting it, which a fixed-body lock would not.
+.is-nav-open {
+    overflow: hidden;
+}
+
+// Phones don't get Contact in the bar. Two controls of near-equal weight at 375px
+// crowd the logo, and the burger is the one that can't be replaced — it's the only
+// way into the nav. The nav panel does NOT list Contact — the footer's quick links
+// are the only route left on a phone (contact-panel.js opens the side panel from any
+// link to /contact, so that footer link behaves exactly as this button did).
+//
+// The burger doesn't care: its 47px is stated on both axes (see below), not taken
+// from the row, so it keeps its size with nothing beside it.
+.b-header__contact {
+    @include mq(until, md) {
+        display: none;
+    }
+}
+
+// The menu button, to the right of Contact. Square, sized off the sm button's own
+// height so the two sit as a pair rather than one hanging below the other.
+.b-header__burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    // A SQUARE, at the Contact button's own radius — so the two read as a pair of
+    // controls rather than a button and a circle.
+    //
+    // Both axes stated, NOT `align-self: stretch` + `aspect-ratio: 1`. That was tried
+    // and half-worked: the height took the row (47px, set by the Contact button) but
+    // the width stayed at the SVG's 27px, because a flex item's main size comes from
+    // its content and an aspect-ratio can't override it.
+    //
+    // 47 is the sm button's height beside it. If that button's padding or type size
+    // changes, this needs changing with it — there is no way to derive it here that
+    // survives the flex main-size rule above.
+    width: rem(47);
+    height: rem(47);
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+    border-radius: $b-radius-200; // the .c-button radius, not a pill and not a circle
+    background-color: transparent;
+    color: getmap($colour, light, 100);
+    cursor: pointer;
+    transition: background-color 200ms ease;
+
+    &:hover,
+    &:focus-visible {
+        background-color: rgba(#fff, 0.14);
+    }
+
+    // On the cream pages the header sits on a light slab, so the white glyph would
+    // vanish. Follows the slab, the same way the logo does (see _logo.scss).
+    .b-slab--l600 &,
+    .b-slab--l100 & {
+        color: getmap($colour, primary, 700);
+
+        &:hover,
+        &:focus-visible {
+            background-color: rgba(#000, 0.08);
+        }
+    }
+}
+
+// The fold. Closed it's three bars; open, the outer two swing into a cross and the
+// middle one collapses out of the way. Driven off aria-expanded, so the button's
+// state and its appearance are the same fact — nothing in JS rewrites the icon.
+//
+// `transform-box: view-box` puts each bar's transform in the SVG's own coordinate
+// space, so `translateY(6px)` means six viewBox units — the exact distance from a bar
+// to the centre line — rather than six CSS pixels of the rendered element. Without it
+// the origin is each path's own tight bounding box, and a 24x0 line has no vertical
+// centre to rotate about.
+.b-header__burger-icon {
+    display: block;
+    overflow: visible; // the rotated arms reach past the box's corners
+}
+
+.b-header__burger-bar {
+    transform-box: view-box;
+    transform-origin: center;
+    transition:
+        transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 160ms ease;
+}
+
+.b-header__burger[aria-expanded='true'] {
+    // The panel behind is white whatever the page under it, so the cross is ink.
+    color: getmap($colour, primary, 700);
+
+    // ORDER MATTERS, and it is the opposite of how it reads. CSS composes transforms
+    // right-to-left, so `rotate(...) translateY(...)` moves the bar to the centre line
+    // FIRST and then spins it there. Written the other way round — translate then
+    // rotate — each bar swung about the box centre while still 6 units off it, landing
+    // its midpoint at x≈18.2 rather than 14 and at two different heights. The arms
+    // crossed off-centre and the cross looked like it had perspective on it.
+    .b-header__burger-bar--top {
+        transform: rotate(45deg) translateY(6px);
+    }
+
+    // Collapsed from its own centre rather than just faded — a bar that only fades
+    // leaves a ghost across the middle of the cross for the length of the transition.
+    .b-header__burger-bar--mid {
+        opacity: 0;
+        transform: scaleX(0.1);
+    }
+
+    .b-header__burger-bar--bot {
+        transform: rotate(-45deg) translateY(-6px);
+    }
+}
+
+// Motion off: the cross is simply there, no swing.
+@media (prefers-reduced-motion: reduce) {
+    .b-header__burger-bar {
+        transition: none;
+    }
+}

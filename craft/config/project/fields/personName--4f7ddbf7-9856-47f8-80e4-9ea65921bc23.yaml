@@ -1,0 +1,16 @@
+columnSuffix: null
+handle: personName
+instructions: null
+name: Name
+searchable: false
+settings:
+  byteLimit: null
+  charLimit: null
+  code: true
+  initialRows: 4
+  multiline: false
+  placeholder: null
+  uiMode: normal
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\PlainText

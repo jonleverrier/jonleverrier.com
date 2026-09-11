@@ -1,0 +1,13 @@
+columnSuffix: null
+handle: isHidden
+instructions: null
+name: 'Hidden?'
+searchable: false
+settings:
+  default: false
+  offLabel: null
+  onLabel: 'Yes'
+  showLabelsInCards: false
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Lightswitch

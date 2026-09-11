@@ -1,0 +1,76 @@
+/**
+ * COMPONENT: META
+ *
+ * Project facts as label/value rows — the "at a glance" column beside a case
+ * study's prose (see _components/project-meta.twig). A <dl>, styled so each
+ * term/description pair reads as one unit.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+@use 'accent-link' as *;
+
+$c-meta-label: getmap($colour, primary, 450); // blue — the same voice as a whisper
+$c-meta-value: getmap($colour, light, 900);   // near-black — matches body prose
+
+.c-meta {
+    margin: 0;
+    padding: 0;
+}
+
+// The gap between rows, not a margin on each: margins on <dd> are a browser-default
+// minefield (they carry an inline indent too), so both are zeroed below and the
+// spacing lives here where it can't be doubled.
+.c-meta__row + .c-meta__row {
+    margin-top: getmap($space, rhythm, 500);
+}
+
+.c-meta__label {
+    @include typography(whisper);
+    margin: 0 0 rem(6);
+    text-transform: uppercase;
+    font-weight: 600;
+    color: $c-meta-label;
+}
+
+.c-meta__value {
+    @include typography(p-sm);
+    margin: 0; // <dd> ships with margin-inline-start: 40px
+    font-family: $g-font-secondary; // JonSonMono, as the prose beside it
+    color: $c-meta-value;
+}
+
+// A row rendered from `values` is one <span class="c-meta__item"> per item. There's
+// no styling for them and deliberately no CSS separator: the commas are real text,
+// LEADING their item, so a crawler reads them and so the visible run never ends on a
+// dangling comma (see project-meta.twig — that's the whole reason they aren't a
+// ::after). The spans exist only so meta-more.js has something to hide, and so each
+// item's comma goes with it.
+
+// "+N more" / "Show less". Sits inline at the end of the list — it's part of the
+// sentence it opens, not a control beneath it.
+.c-meta__more {
+    // A <button> that reads as a link, nothing more: it's one more item in the
+    // sentence it opens, so it takes the prose's accent-link treatment (red, no
+    // underline at rest, underline on hover) and none of the pill's box. The
+    // button chrome is reset first so no border, padding or background survives.
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    // No margin-inline-start here for the comma-space gap: meta-more.js inserts a real
+    // space text node before the button instead. A margin survives a line break and
+    // showed as an indent whenever the button wrapped onto a line of its own; a space
+    // is collapsed away at the start of a line, which is exactly the behaviour wanted.
+
+    // Inherit the row's face, size and leading rather than restating them: the toggle
+    // stands in for the items it hides, so it sits in that line at their size — but
+    // bold, as the Read more control is, so the one interactive word in the row is
+    // marked by weight as well as colour.
+    font: inherit;
+    font-weight: 600; // the mono's bold face — see theme/_typography.scss
+
+    @include accent-link;
+}

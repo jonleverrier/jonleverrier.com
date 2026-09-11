@@ -1,0 +1,13 @@
+columnSuffix: null
+handle: enableSidebarSummary
+instructions: null
+name: 'Enable sidebar summary'
+searchable: false
+settings:
+  default: false
+  offLabel: null
+  onLabel: 'Yes'
+  showLabelsInCards: true
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Lightswitch

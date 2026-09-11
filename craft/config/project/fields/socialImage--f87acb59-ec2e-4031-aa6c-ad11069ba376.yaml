@@ -1,0 +1,36 @@
+columnSuffix: null
+handle: socialImage
+instructions: "The image shown when this page is shared — on LinkedIn, in a message, wherever a link unfurls. Optional: without one, the first image in the content is used, and failing that the site's default (set on Globals). Cropped to 1200 × 630 from the asset's focal point, so set the focal point if the crop lands badly."
+name: 'Open Graph Image'
+searchable: false
+settings:
+  allowSelfRelations: false
+  allowSubfolders: false
+  allowUploads: true
+  allowedKinds:
+    - image
+  branchLimit: null
+  defaultPlacement: end
+  defaultUploadLocationSource: 'volume:3e9036d0-de1a-4b49-a1fe-85cded2c7b73' # Local
+  defaultUploadLocationSubpath: null
+  maintainHierarchy: false
+  maxRelations: 1
+  minRelations: null
+  previewMode: thumbs
+  restrictFiles: true
+  restrictLocation: true
+  restrictedDefaultUploadSubpath: null
+  restrictedLocationSource: 'volume:3e9036d0-de1a-4b49-a1fe-85cded2c7b73' # Local
+  restrictedLocationSubpath: '{% set s = object.owner ?? object %}{{ (s.section.handle ?? s.slug)|kebab }}/social'
+  selectionLabel: null
+  showSearchInput: false
+  showSiteMenu: true
+  showUnpermittedFiles: false
+  showUnpermittedVolumes: false
+  sources: '*'
+  targetSiteId: null
+  validateRelatedElements: false
+  viewMode: thumbs
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Assets

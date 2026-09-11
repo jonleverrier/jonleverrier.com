@@ -1,0 +1,22 @@
+columnSuffix: null
+handle: topicSelector
+instructions: null
+name: 'Topic Selector'
+searchable: false
+settings:
+  allowSelfRelations: false
+  branchLimit: null
+  defaultPlacement: end
+  maintainHierarchy: false
+  maxRelations: 1
+  minRelations: null
+  selectionLabel: null
+  showSearchInput: true
+  showSiteMenu: true
+  source: 'group:56248dc5-d5bc-4930-84e1-33a86621fb8c' # Topics
+  targetSiteId: null
+  validateRelatedElements: false
+  viewMode: list-inline
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Categories

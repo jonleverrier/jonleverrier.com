@@ -1,0 +1,32 @@
+{#
+  A code snippet, as a panel.
+
+  Expects: code — the source, as typed (plain text; escaped here)
+           lang — the language, as the CMS names it: twig, php, js, html, shell,
+                  css, scss
+                  (see LANGS in build/js/components/code-highlighter.js for the
+                  aliases that also work). Anything else renders as plain text.
+           lineNumbers — true to number the lines (a CSS counter, see _code.scss).
+
+  Ships as a plain <pre><code> — readable, and styled as the panel, with no JS.
+  code-block.js colours it in once the Shiki chunk has arrived. `data-code` is
+  the hook; `data-code-lang` is what it reads; the label is what the visitor sees
+  in the panel's corner.
+
+  Leading blank lines and ALL trailing whitespace are trimmed (a trailing
+  space-only line would otherwise render as an empty numbered line); the first
+  line's own indentation and everything internal are kept exactly. NOT run through nl2br or any prose filter: a <pre>
+  keeps its line breaks on its own, and a <br> inside one would double them.
+
+  Each line is wrapped in a `span.line` — the SAME shape Shiki hands back once it
+  has coloured the block — so the line-number counter hangs off the same hook
+  before and after highlighting and nothing jumps when the colours arrive. The
+  lines are joined by a bare newline, exactly as Shiki joins them.
+#}
+{% set code = (code ?? '')|trim("\n\r", 'left')|trim(null, 'right') %}
+{% set lang = (lang ?? '')|trim|lower %}
+{% set lineNumbers = lineNumbers ?? false %}
+{% set labels = { twig: 'Twig', php: 'PHP', js: 'JavaScript', javascript: 'JavaScript', html: 'HTML', shell: 'Shell', bash: 'Shell', sh: 'Shell', shellscript: 'Shell', css: 'CSS', scss: 'SCSS' } %}
+{% if code %}
+    <pre class="c-code{{ lineNumbers ? ' has-line-numbers' }}" data-code data-code-lang="{{ lang }}"{% if labels[lang] is defined %} data-code-label="{{ labels[lang] }}"{% endif %} tabindex="0"><code>{% for line in code|split("\n") %}<span class="line">{{ line }}</span>{{ not loop.last ? "\n" }}{% endfor %}</code></pre>
+{% endif %}

@@ -1,0 +1,110 @@
+{#
+  /llms.txt — the site described in markdown, for a language model reading it.
+
+  The llmstxt.org convention: an H1 name, a blockquote summary, optional prose, then H2
+  sections of `- [Title](url): description`. A model landing here reads this instead of
+  crawling forty pages and guessing which matter.
+
+  GENERATED, NOT WRITTEN. Every line comes from the CMS, so publishing a case study adds
+  it and unpublishing removes it. A hand-written file at the webroot would be accurate
+  for a fortnight and quietly wrong after — worse than having none, because it would
+  feed a model stale claims about the work.
+
+  AUTOESCAPE OFF, and it has to be: this is a text document, not HTML. With escaping on,
+  "Design & Development" came out as "Design &amp; Development". There is no injection
+  risk to trade against — the response is text/plain, so nothing in it is ever parsed as
+  markup.
+
+  text/plain rather than text/markdown: the latter isn't a registered type, so browsers
+  download it instead of showing it. Plain text opens in a tab, which is what anyone
+  checking this wants.
+
+  Whitespace control throughout — the output IS the document, so a stray newline from a
+  `{% set %}` is a blank line in the markdown.
+#}
+{%- header "Content-Type: text/plain; charset=utf-8" -%}
+{%- set about = craft.entries().section('about').status('live').one() -%}
+{%- set caseStudyIndex = craft.entries().section('caseStudy').status('live').one() -%}
+{%- set notesIndex = craft.entries().section('note').status('live').one() -%}
+{%- set contact = craft.entries().section('contact').status('live').one() -%}
+{%- set studies = craft.entries().section('caseStudies').status('live').all() -%}
+{%- set notes = craft.entries().section('notes').status('live').orderBy('postDate DESC').limit(10).all() -%}
+{%- set pages = craft.entries().section('pages').status('live').all() -%}
+{#- ONE LINE, cleaned. Summaries are multi-paragraph and some are rich text, but a
+    description in this format has to be a single line — so: strip tags, take the first
+    paragraph, flatten any remaining newlines. -#}
+{#- The autoescape has to be INSIDE the macro. A Twig macro inherits the escaping
+    context where it is DEFINED, not where it is called — so with only the outer block
+    turned off, everything this returned still came back escaped and apostrophes landed
+    as `&#039;` in a plain-text file. The stored values are clean; the escaping was
+    entirely self-inflicted. -#}
+{%- macro line(text) -%}
+    {%- autoescape false -%}
+        {{- (text ?? '')|striptags|split("\n\n")|first|trim|replace({"\n": ' ', "\r": ''}) -}}
+    {%- endautoescape -%}
+{%- endmacro -%}
+{%- import _self as f -%}
+{% autoescape false %}
+# {{ siteName }}
+
+> {{ f.line(about.summary ?? '') ?: 'Design, development and maintenance of digital products.' }}
+
+{{ f.line(caseStudyIndex.summary ?? '') }}
+
+This site has an assistant on the homepage that answers questions about the work in Jon's
+own voice. Everything it draws on is published here, so the pages below are the source
+rather than a summary of it.
+
+## Start here
+
+- [Home]({{ siteUrl() }}): the front door, and the assistant — ask it anything about the work.
+{% if about %}- [{{ about.title }}]({{ about.url }}): {{ f.line(about.summary ?? '') }}
+{% endif %}
+{%- if caseStudyIndex %}- [{{ caseStudyIndex.title }}]({{ caseStudyIndex.url }}): {{ f.line(caseStudyIndex.summary ?? '') }}
+{% endif %}
+{%- if contact %}- [{{ contact.title }}]({{ contact.url }}): how to get in touch.
+{% endif %}
+
+{% if studies|length %}## Case studies
+
+{% for study in studies -%}
+{#- seoMetaDescription first: it is already a single sentence written to describe the
+    piece. caseSummary is CKEditor rich text and reads as the opening of the page rather
+    than a description of it, so it is the fallback rather than the first choice. -#}
+{%- set s = f.line(study.seoMetaDescription ?? '') ?: f.line(study.caseSummary ?? '') -%}
+- [{{ study.title }}]({{ study.url }}){% if s %}: {{ s }}{% endif %}
+
+{% endfor %}
+{%- endif %}
+{%- if notes|length %}
+
+## Notes
+
+{{ f.line(notesIndex.summary ?? '') }}
+
+{% for note in notes -%}
+{%- set s = f.line(note.summary ?? '') ?: f.line(note.seoMetaDescription ?? '') -%}
+- [{{ note.title }}]({{ note.url }}){% if s %}: {{ s }}{% endif %}
+
+{% endfor -%}
+{%- if notesIndex %}- [All notes]({{ notesIndex.url }}): the full archive, by year and by topic.
+{% endif %}
+{% endif %}
+
+## Optional
+
+{# "Optional" is the convention's own heading for what a model may skip when short of
+    context. Policies belong there — they matter, but they are not what anyone is asking
+    about. The AI policy is the one most worth reading, and it comes first by virtue of
+    being the only page in that section.
+
+    This comment sits BELOW its heading on purpose. Between the heading and the list
+    above it, its own `{#-` trim marker ate the blank line separating the two sections —
+    and every attempt to add one back was eaten the same way. Below, it is harmless. -#}
+{% for page in pages -%}
+{%- set s = f.line(page.summary ?? '') ?: f.line(page.seoMetaDescription ?? '') -%}
+- [{{ page.title }}]({{ page.url }}){% if s %}: {{ s }}{% endif %}
+
+{% endfor -%}
+- [Notes feed]({{ siteUrl('notes.rss') }}): RSS, the 20 most recent notes.
+{% endautoescape %}

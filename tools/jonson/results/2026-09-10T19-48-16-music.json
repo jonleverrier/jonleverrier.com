@@ -1,0 +1,433 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-10T19:47:34.301Z",
+  "scenarios": [
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "All sorts, honestly — I nearly always have something on while I work, cook or take photos. I lean towards trip-hop, drum and bass and a bit of hip-hop — Massive Attack, LTJ Bukem, that kind of thing — but it swings right through to old jazz like Ella Fitzgerald and plenty of indie and electronic in between.[[music]]\n\n[[next: does music influence how you work? @method | what got you into street photography? @photo:street-photo | did you really used to DJ? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Bit of a magpie, me — anything from The Beatles and Beastie Boys through to drum and bass like LTJ Bukem, and a lot of Massive Attack and Crazy P when I want something to sink into while I work. I used to DJ, so I've got a soft spot for anything with a good groove and a bit of soul to it.[[music]]\n\n[[next: what do you listen to while you work? @music | do you still DJ at all? @about | how does music fit into your photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Bit all over the place, honestly — Beatles and Beastie Boys have never left the rotation, and I lean into a lot of electronic and downtempo stuff: Massive Attack, LTJ Bukem, Crazy P, Justice when I need the energy up. There's usually something on while I'm working, cooking or out taking photos.[[music]]\n\n[[next: do you still DJ? | what do you listen to while shooting photos? | how does music fit into how you work? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "All sorts, honestly — I nearly always have something on while I work, cook or shoot. I lean towards hip hop, drum and bass, a bit of soul and electronica, and I'll happily swing back to the old guitar stuff too.[[music]]\n\nI used to DJ, which probably explains why it's such a fixed part of my day.\n\n[[next: did you DJ professionally? @about | do you listen to music while you shoot street photography? @photo:street-photo | what got you into street photography? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Loads, honestly — my taste is all over the place. I lean on a mix of hip-hop, drum and bass, electronic and soul when I'm working or out shooting; things like Massive Attack, LTJ Bukem, Crazy P and El Michels Affair keep me going, but I'll happily swing back to The Beatles or the Beastie Boys.[[music]]\n\nMusic's a big part of how I work and shoot — I almost always have something on.\n\n[[next: do you still DJ? @about | what do you listen to when you're out shooting? @photo:street-photo | how does music fit into how you work? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I'm one of those people who always has something on while I work, cook or take photos — my taste swings from The Beatles and Beastie Boys through to drum and bass like LTJ Bukem, a bit of Massive Attack and The Prodigy, some Ella Fitzgerald when I want to slow down.[[music]]\n\nBit all over the place, really, but that's how I like it.\n\n[[next: does music affect how you take photos? @note:last-stop-parvati | did you really used to DJ? @about | what do you shoot when you're out with your camera? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Always — it's on while I work, cook, or head out with a camera. My taste swings from hip hop and soul to drum and bass and electronic, with a soft spot for the classics too.[[music]]\n\n[[next: which artists do you have on most? @music | do you still DJ? @about | does music influence your design work? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Always — it's on while I work, when I'm cooking, when I'm out taking photos. My taste bounces around a fair bit: a lot of electronic and drum & bass, some hip hop, plenty of old soul and jazz, and the odd bit of guitar music when the mood takes me.[[music]]\n\n[[next: what kind of music suits you when you're deep in design work? | do you still DJ? | how does music connect with your street photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Constantly — it's on while I'm designing, cooking, out taking photos, pretty much whenever. My taste wanders from old soul and jazz through hip hop to drum and bass and electronica, depending on what the work needs.[[music]]\n\n[[next: what do you listen to when you're deep in design work? | how did you get into street photography? | how do you actually approach a new project? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Always — it's on while I'm working, cooking or out taking photos. My taste jumps around a bit, from hip-hop and soul to drum and bass and a fair amount of electronic stuff.[[music]]\n\n[[next: what kind of music do you play when you're designing? @music | did you really used to DJ? @about | how does music fit with your photography? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Always — it's on while I work, cook, or head out with the camera. My taste swings from hip-hop and old soul through to drum & bass and electronic, with a good chunk of guitar bands in the mix.[[music]]\n\n[[next: which artists are you into most? | do you find lyrics distracting while designing? | how does music fit into your street photography? @music]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Always — it's on while I work, cook or shoot. My taste roams a fair bit: The Beatles and Beastie Boys, drum & bass like LTJ Bukem, trip-hop from Massive Attack, some Ella Fitzgerald when I want to slow down.[[music]]\n\n[[next: what do you listen to when you're designing? | did you really used to DJ? | how does music tie into your street photography? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey",
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — though I'm originally from Jersey[[jersey]] and spent time in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a bit unusual for a designer.\n\nOutside of that, I'm a fairly obsessive street photographer[[street-photo]], I collect photography books, I love to cook, and I nearly always have music on while I work. Ask me about any of it.\n\n[[next: what do you shoot as a street photographer? | what kind of work do you do for clients? | what music do you put on while you work? @music]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "A pretty broad spread, really — from The Beatles and Beastie Boys to drum and bass like LTJ Bukem, plus Massive Attack, The Prodigy, Justice and a lot of soulful, funky stuff like Crazy P and El Michels Affair. Depends entirely on my mood and whether I'm working, cooking or out with the camera.[[music]]\n\nI used to DJ, so music's always been woven into how I do everything.\n\n[[next: what did you play when you were DJing? | how does music fit into the way you work? @method | what do you shoot as a street photographer? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux, though I'm originally from Jersey in the Channel Islands and spent a few years in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a slightly unusual combination for a designer.\n\nOutside of work I'm a fairly obsessive street photographer, I collect photography books, I love to travel — especially places with a bit of a bad reputation — and there's nearly always music on while I work.\n\n[[next: what kind of work do you do? @work | how did you get into web design? @cv | what do you shoot as a street photographer? @photo:street-photo]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A bit of everything, honestly — I lean towards trip-hop and electronic (Massive Attack, The Prodigy, LTJ Bukem, Justice), some hip-hop, and then old jazz like Ella Fitzgerald when I want something calmer. I used to DJ, so music's always been part of how I work, cook and shoot.[[music]]\n\n[[next: what's on while you're working? @music | did you DJ professionally? @about | how does music tie into your street photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": [
+        "T1 missing context (unmarked by model)"
+      ]
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — originally from Jersey[[jersey]], and I've lived in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, and I work right across the project — strategy, design and development, which is a bit unusual for a designer.\n\nOutside of that I'm a keen street photographer, I collect photography books, I used to DJ, and I love to travel — the more badly-behaved a city's reputation, the more it draws me.\n\n[[next: what kind of work do you do? @work | where have you travelled? @photo:street-photo | what do you listen to while you work? @music]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Bit of a magpie, really — I'll go from Massive Attack and LTJ Bukem to Ella Fitzgerald, then swing into Beastie Boys or the Arctic Monkeys. Drum and bass, trip-hop, soul, a bit of everything really — it's usually on while I work, cook or shoot.[[music]]\n\n[[next: did you really used to DJ? @about | how does music fit into how you work? @method | what do you shoot when you're out with your camera? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "I'm Jon — an independent web designer living in Bordeaux[[bordeaux]], originally from Jersey[[jersey]] in the Channel Islands. I've been doing this for over 25 years, working across strategy, design and development, which is a rare mix for a designer.\n\nOutside work I'm a keen street photographer, I collect photography books, I used to DJ, and I've done a fair bit of travelling — the kind of places that tend to have a bad reputation.\n\n[[next: what kind of work do you do? | what's your street photography like? | how did you get into web design? @cv]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Bit of a magpie, honestly — everything from The Beatles and the Beasties to drum and bass like LTJ Bukem, soul and jazz through Ella Fitzgerald and El Michels Affair, and plenty of electronic when I'm working or shooting.[[music]]\n\nMusic's nearly always on while I work, cook or take photos — leftover habit from my DJ days, I think.\n\n[[next: did you DJ professionally? | what do you listen to while you work? | what kind of work do you do? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey",
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon — an independant web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and lived in Paris and Brighton before settling in France. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a bit unusual for a designer.\n\nOutside work I'm a keen street photographer[[street-photo]] shooting with a Leica, I collect photography books, and I nearly always have music on while I work or cook. Anything in particular you'd like to know — the work, or the person behind it?\n\n[[next: what kind of work do you do? @work | who have you worked with over the years? @cv | what do you listen to while you work? @music]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A real mix, and it shifts with what I'm doing. There's a lot of hip-hop and electronic in there — Beastie Boys, The Prodigy, Justice, Massive Attack — plus older jazz like Ella Fitzgerald, and I used to DJ so drum and bass like LTJ Bukem still gets a lot of play.[[music]]\n\nMusic's on for almost everything — working, cooking, out taking photos. It sets the pace.\n\n[[next: how does music fit into how you work? @method | you used to DJ — what got you into that? @about | what kind of work do you take on? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — though I'm originally from Jersey[[jersey]] and have lived in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, and I work across the whole thing: strategy, design and development, which is a bit unusual for a designer.\n\nOutside work I'm a keen street photographer (Leica in hand), I collect photography books, and I nearly always have music on while I work or cook. I speak English and French and I've done a fair bit of travelling in my time.\n\n[[next: what kind of work do you do? @work | what got you into street photography? @about | what music do you listen to while you work? @music]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "A real mix, and it shifts with what I'm doing. There's a lot of hip-hop and electronic in there — Beastie Boys, LTJ Bukem, Massive Attack, Justice — but also jazz like Ella Fitzgerald when I'm cooking, and old faithfuls like The Beatles and the Chili Peppers. I used to DJ, so music's always been threaded through everything.[[music]]\n\n[[next: what did you play when you were DJing? @about | does music help you when you're designing? @method | what do you listen to while shooting street? @about]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

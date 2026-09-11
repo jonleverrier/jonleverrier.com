@@ -1,0 +1,122 @@
+{#
+  Ask bar for a static content page — the conversation footer's twin.
+
+  Reuses .c-jonson__footer's classes so the layout, input and submit come for free;
+  --light recolours it for the cream slab (see _jonson.scss).
+
+  The back arrow carries data-wipe-thread, exactly as the conversation footer's does.
+  It has to: without it the arrow navigates to `/`, thread-memory finds the snapshot
+  and redraws the old conversation, so the same icon in the same corner went home from
+  one page and back into the chat from another. It was the front door on the green
+  pages and a back button on the cream ones, with nothing to tell them apart.
+
+  The cost is a real one — leaving a case study this way ends the conversation rather
+  than parking it. That's the trade for the arrow meaning one thing. Browser-back still
+  returns to the thread intact, because a wipe only happens on a deliberate click.
+
+  The form doesn't post — ask-handoff.js intercepts it, stashes the question and sends
+  the visitor to the homepage, which asks it on arrival. Jonson only exists there, so
+  a form posting from here would have nowhere to render.
+
+  Optional: placeholder — defaults to the conversation's own wording.
+            up          — a URL: adds a back button after the home one that goes up a
+                          level (a note → the notes index). Plain navigation, no wipe:
+                          going up a level isn't leaving the site's conversation.
+            upLabel     — its accessible name; defaults to "Back".
+#}
+{# The "lost for words?" nudge tucked under the input — the front door's, reused,
+   band and all: it slides out from behind the field on hover or focus, the
+   homepage single's `prompts` land in the input, its `suggestions` reword the
+   button. Rendered hidden; lost-for-words.js reveals it. data-prompt-scope is
+   how the script finds this bar's input. #}
+{# On a note or case study the drawer holds the page's own questions (its
+   `prompts` rows, written on publish by the jonson module — see
+   services\NoteMemory) and nothing else: the homepage's default set is the
+   fallback for a page that has none (too thin to have been given any). #}
+{% set home = craft.entries().section('homepage').status('live').one() %}
+{% set own = (entry ?? null) and (entry.prompts ?? null) ? entry.prompts|map(row => row.prompt|trim)|filter(p => p) : [] %}
+{% set defaults = home ? (home.prompts ?? [])|map(row => row.prompt|trim)|filter(p => p) : [] %}
+{% set prompts = own|length ? own : defaults %}
+{% set nudges = home ? (home.suggestions ?? [])|map(row => row.suggestions|trim)|filter(n => n) : [] %}
+<footer class="c-jonson__footer c-jonson__footer--light" data-prompt-scope>
+    {# The buttons share one grid cell (the left gutter, from md) as a row. #}
+    <div class="c-jonson__nav">
+    <a class="c-jonson__home" href="{{ siteUrl('') }}" aria-label="Home" data-wipe-thread>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true" focusable="false">
+            <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z"/>
+            <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z"/>
+        </svg>
+    </a>
+    {% if up is defined and up %}
+        <a class="c-jonson__home c-jonson__home--up" href="{{ up }}" aria-label="{{ upLabel ?? 'Back' }}">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                <path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+    {% endif %}
+    </div>
+    {# The field wrapper: holds the form and, tucked behind it, the band with the
+       nudge — see .c-jonson__field. #}
+    <div class="c-jonson__field" data-lost-for-words-field>
+    <form class="c-jonson__form" method="get" action="{{ siteUrl('') }}" data-jonson-handoff>
+        {# Which page the question was asked from. The handoff carries it to the
+           Jonson page and on to the ask endpoint, which puts the page's text in
+           front of the model — "why did you make the plugin bring its own HTML?"
+           means nothing without the note it was asked under. #}
+        {% if (entry ?? null) and entry.id %}
+            <input type="hidden" name="from" value="{{ entry.id }}">
+        {% endif %}
+        <input
+            class="c-jonson__input"
+            type="text"
+            name="question"
+            placeholder="{{ placeholder ?? 'Ask me anything...' }}"
+            {# No ellipsis on the label — it's read aloud, where trailing dots are
+               noise rather than an invitation. #}
+            aria-label="{{ placeholder ?? 'Ask me anything' }}"
+            {# Matches AskController::MAX_QUESTION_CHARS. A courtesy, not a control —
+               the server truncates regardless, since anything can post to the endpoint.
+               This just stops an honest paste from being silently cut later. #}
+            maxlength="1000"
+            autocomplete="off"
+            required
+            data-jonson-input
+        >
+        <button class="c-jonson__submit" type="submit" aria-label="Submit">
+            {# Sparkles, not an arrow: this submits a question to Jonson, not a form. Filled
+               with currentColor, which the submit's own rule sets white on the red. #}
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" focusable="false">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M9 4.5a.75.75 0 0 1 .721.544l.813 2.846a3.75 3.75 0 0 0 2.576 2.576l2.846.813a.75.75 0 0 1 0 1.442l-2.846.813a3.75 3.75 0 0 0-2.576 2.576l-.813 2.846a.75.75 0 0 1-1.442 0l-.813-2.846a3.75 3.75 0 0 0-2.576-2.576l-2.846-.813a.75.75 0 0 1 0-1.442l2.846-.813A3.75 3.75 0 0 0 7.466 7.89l.813-2.846A.75.75 0 0 1 9 4.5ZM18 1.5a.75.75 0 0 1 .728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 0 1 0 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 0 1-1.456 0l-.258-1.036a2.625 2.625 0 0 0-1.91-1.91l-1.036-.258a.75.75 0 0 1 0-1.456l1.036-.258a2.625 2.625 0 0 0 1.91-1.91l.258-1.036A.75.75 0 0 1 18 1.5ZM16.5 15a.75.75 0 0 1 .712.513l.394 1.183c.15.447.5.799.948.948l1.183.395a.75.75 0 0 1 0 1.422l-1.183.395c-.447.15-.799.5-.948.948l-.395 1.183a.75.75 0 0 1-1.422 0l-.395-1.183a1.5 1.5 0 0 0-.948-.948l-1.183-.395a.75.75 0 0 1 0-1.422l1.183-.395c.447-.15.799-.5.948-.948l.395-1.183A.75.75 0 0 1 16.5 15Z"/>
+            </svg>
+        </button>
+    </form>
+    {% if prompts|length %}
+        {# The band behind the field: one box that holds two panels — the nudge's
+           label, and every prompt as a chip. Clicking the nudge slides the label
+           out to the left and the chips in from the right while the band grows to
+           fit them (see .c-jonson__band and lost-for-words.js). Picking a chip
+           types it into the field. The button ships hidden; the script reveals it. #}
+        <div class="c-jonson__band" data-lost-for-words-band>
+            <div class="c-jonson__band-label">
+                <button
+                    class="c-jonson__prompt"
+                    type="button"
+                    hidden
+                    data-lost-for-words='{{ prompts|values|json_encode|raw }}'
+                    data-lost-for-words-own="{{ own|length }}"
+                    data-lost-for-words-labels='{{ nudges|values|json_encode|raw }}'
+                    aria-expanded="false"
+                    aria-controls="lfw-{{ (entry ?? null) ? entry.id : 'page' }}"
+                >{{ nudges|first|default('Stuck for something to ask?') }}</button>
+            </div>
+            <div class="c-jonson__band-chips" id="lfw-{{ (entry ?? null) ? entry.id : 'page' }}" hidden data-lost-for-words-drawer>
+            <ul class="c-jonson__drawer-items">
+                {% for p in prompts %}
+                    <li class="c-jonson__drawer-item"><button type="button" class="c-jonson__suggestion c-jonson__drawer-chip" data-prompt="{{ p }}">{{ p }}</button></li>
+                {% endfor %}
+            </ul>
+            </div>
+        </div>
+    {% endif %}
+    </div>
+</footer>

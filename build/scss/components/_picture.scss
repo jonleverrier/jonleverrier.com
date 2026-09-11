@@ -1,0 +1,142 @@
+/**
+ * COMPONENT: PICTURE
+ *
+ * Base wrapper for the responsive <picture> emitted by the `media.picture`
+ * macro. Behaves as a block box; the image fills the wrapper's width at its own
+ * aspect ratio. width/height on the <img> reserve the space, so no layout shift
+ * before it loads.
+ *
+ * COLOUR REVEAL. Opt-in, and currently only the case study pages ask for it
+ * (`tone: true` on the macro). Everything else — the rail in a Jonson answer, the
+ * case study cards, logos — renders an ordinary image with none of the rules
+ * below applying, because `has-tone` is absent.
+ *
+ * Where it IS asked for, the macro puts the image's two dominant colours on the
+ * element as `--tone-a` / `--tone-b` and adds `has-tone`. A gradient between them
+ * fills the space the <img> has already reserved, so the box is never empty, and
+ * the photo fades in over it once it reaches the screen.
+ *
+ * A FLOURISH, not a feature — so: opacity only, no scale, no grade, and fast
+ * enough to be a beat rather than an event. The gradient is not trying to
+ * impersonate the photo; it's a coloured card the photo arrives on.
+ *
+ * The gradient is a PSEUDO-ELEMENT on the <picture>, not a spare <span>: it is
+ * decoration, it should not be in the DOM, and <picture> is an ordinary box that
+ * can carry ::before perfectly well (it's the <img> inside that's replaced, not
+ * the <picture> itself).
+ *
+ * `is-loaded` is put on by picture.js when the image has loaded AND the picture
+ * has scrolled into view. Without JS nothing adds it, so the base state here has
+ * to be the image VISIBLE, with the reveal applied only under `has-tone` — see
+ * the <noscript> fallback in _includes/page/head.twig.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// Fast on purpose. Long enough to register as a transition, short enough that
+// nobody waits through it. A little over a third of a second reads as smooth
+// where 320ms read as a switch being thrown.
+$c-picture-fade: 420ms;
+
+// Decelerating, with no ease-in at the front. A symmetric ease spends its first
+// frames barely moving, which on a fade from nothing looks like a delay followed
+// by a jump; starting at full rate and settling reads as one continuous motion.
+$c-picture-ease: cubic-bezier(0, 0, 0.2, 1);
+
+// A beat on the colour before the photo starts. Without it the gradient and the
+// image change hands in the same instant, so the colour never gets a moment of
+// its own — you see a photo arrive, not a card turning into a photo. This is the
+// pause; lengthen it to dwell on the colour, drop it to zero to go straight in.
+$c-picture-hold: 240ms;
+
+.c-picture {
+    display: block;
+}
+
+.c-picture__img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.c-picture.has-tone {
+    position: relative;
+    overflow: hidden; // keeps the gradient inside any rounded corners
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        // Off-axis so the two colours read as a wash rather than as two halves.
+        //
+        // DELIBERATELY STATIC. This was animated — first a drifting transform,
+        // then a rotating gradient angle — and both were removed. The rotation
+        // was genuinely visible when you froze frames across its cycle, but a
+        // placeholder is only ON SCREEN for about 560ms (the hold plus the fade),
+        // and a cycle slow enough to feel like a flourish advances a few percent
+        // in that time. It cost continuous style recalc on every unrevealed
+        // placeholder on the page — scaling with page length rather than with
+        // what's in view — to produce something nobody was in a position to see.
+        // Fast enough to read inside 560ms is a spinner. Don't re-add it without
+        // first checking how long the gradient is actually visible for.
+        background-image: linear-gradient(
+            135deg,
+            var(--tone-a) 0%,
+            var(--tone-b) 100%
+        );
+        // Clears after the photo has started, so the image is substantially
+        // opaque before the colour goes — otherwise the page shows through the
+        // gap between the two. Rides on the same hold, so lengthening the pause
+        // moves both ends together.
+        transition: opacity $c-picture-fade $c-picture-ease;
+        transition-delay: calc(
+            var(--tone-delay, 0ms) + #{$c-picture-hold + $c-picture-fade * 0.5}
+        );
+    }
+
+    // Above the gradient. Only positioned under `has-tone`, so an image without
+    // one keeps a completely untouched box.
+    .c-picture__img {
+        position: relative;
+        opacity: 0;
+        transition: opacity $c-picture-fade $c-picture-ease;
+        // The hold: the gradient is already on screen, and this is how long it
+        // keeps it to itself before the photo starts arriving.
+        transition-delay: calc(var(--tone-delay, 0ms) + #{$c-picture-hold});
+    }
+}
+
+.c-picture.has-tone.is-loaded {
+    .c-picture__img { opacity: 1; }
+
+    &::before { opacity: 0; }
+}
+
+// Failsafe end state, put on by picture.js a beat after the reveal should have
+// finished. `transition: none` is the point of it: it cancels a transition that
+// never got to run (a tab loaded in the background never fires rAF) and snaps to
+// the values below. When the reveal has played normally it changes nothing.
+//
+// Last in the file so it wins on order against the rules above, which carry the
+// same specificity.
+.c-picture.has-tone.is-developed {
+    .c-picture__img {
+        opacity: 1;
+        transition: none;
+    }
+
+    &::before {
+        opacity: 0;
+        transition: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-picture.has-tone .c-picture__img,
+    .c-picture.has-tone::before {
+        transition-duration: 120ms;
+        transition-delay: 0s;
+    }
+}

@@ -1,0 +1,922 @@
+{#
+  End-of-body scripts and structured data.
+
+  Included from _layouts/page.twig for EVERY page, so anything added here has to
+  say which pages it is for. Right now that's one thing: JSON-LD, on the three
+  page types that have something worth describing.
+
+  JSON-LD in the body rather than the head is deliberate and supported —
+  crawlers read `application/ld+json` wherever it sits, and down here it costs
+  the first paint nothing. (It is data, not a script: nothing executes it.)
+
+  WHAT EACH PAGE DESCRIBES
+
+  Every page carries the two nodes that don't change — the site and the person
+  whose site it is — and then whatever its own type warrants:
+
+    /                     ProfilePage   → the Person is the subject of the page,
+                          named and described from the entry's SEO tab
+    /case-studies         CollectionPage + ItemList of the studies, in the order
+                          the page shows them
+    /case-study/{slug}    WebPage (named and described from the entry's SEO tab,
+                          heading and Bio as fallbacks, the OG image as its image)
+                          + CreativeWork (the work), Organization (the client),
+                          Review (its testimonials)
+    /contact              ContactPage   → the Person is who you'd be contacting,
+                          named and described from the entry's SEO tab
+    /about                AboutPage     → the Person again, named and described
+                          from the entry's SEO tab (title, meta description, OG
+                          image) with the h1 and Summary as fallbacks
+    /{slug}               WebPage       → a standing page (a policy, a statement),
+                          named and described from its SEO tab
+    /notes                CollectionPage + ItemList of the notes on THIS page
+    /notes/{topic}        of the listing (six a page, newest first), each a
+    /notes/{year}         reference to the note's own BlogPosting node. The
+                          topic and year pages aren't entries — one is a
+                          category, the other a route — so they're picked out
+                          by what the view hands the layout, not by section
+    /notes/{slug}         WebPage + BlogPosting (the note: headline, dates, its
+                          pictures), by the Person, published by the site
+
+  Everything but the homepage also carries a BreadcrumbList. The homepage is the
+  root, and a one-item trail says nothing.
+
+  ONE <script> PER TYPE, tagged `data-schema="Review"` and so on, so a given
+  block can be found and read on its own rather than by scrolling one long blob.
+  Each block is a standalone document: it carries its own @context, and a type
+  with several nodes (Review, on a study with more than one quote) wraps them in
+  a @graph.
+
+  The cross-block @id references rely on the consumer merging every ld+json
+  block on the page into one dataset before it resolves them. Google, Bing and
+  the schema.org validator all do. A strict single-document JSON-LD processor
+  would not, and would see those as unresolved references. That's the price of
+  the split; put everything back in one @graph if you ever need to pay it back.
+
+  Every value comes from the CMS or from config. Nothing here is written twice:
+  the same `longTitle ?: title` fallback the views and FindContext use resolves
+  a study's name, a study's description is the entry's Bio (the field this entry
+  type uses for what other sections call `summary` — see FindContext), and the
+  profile URLs are the list the footer icons are built from.
+
+  WHAT IS DELIBERATELY ABSENT
+
+  · SearchAction on the homepage. The ask bar looks like a GET form, but
+    ask-handoff.js intercepts it and hands the question over in sessionStorage —
+    `/?question=…` is not a URL that does anything. A potentialAction pointing
+    at it would send crawlers somewhere that doesn't answer.
+  · VideoObject for a caseContent video block — we have the clip, the poster and
+    a date, but not a name or description of its own, and Google wants both.
+#}
+{% set schemaEntry = entry is defined and entry ? entry : null %}
+{% set schemaSection = schemaEntry ? schemaEntry.section.handle : null %}
+
+{# The notes listings. Three pages share one listing (_components/notes-index)
+   and one shape of structured data, but only one of them is an entry: /notes is
+   the `note` single, /notes/{topic} is a category in the Topics group, and
+   /notes/{year} is a route (config/routes.php) that hands the view a `year`.
+   Each is recognised by what it hands the layout, and reduced here to the
+   handful of facts the listing branch needs — where it lives, what it's called,
+   its standfirst, and the crumb it adds after "Notes". Null on every other page.
+
+   The notes index entry is looked up for the trail: its URL and its section's
+   name are what the topic and year pages show as their eyebrow and what a
+   crawler should see as the parent. #}
+{% set listing = null %}
+{% if schemaSection == 'note' or (category is defined and category and category.group.handle == 'topics') or (year is defined and year and notesQuery is defined) %}
+    {% set notesIndex = schemaSection == 'note' ? schemaEntry : craft.entries().section('note').status('live').one() %}
+    {% set notesUrl = notesIndex ? notesIndex.url : siteUrl('notes') %}
+    {% set notesName = notesIndex ? notesIndex.section.name : 'Notes' %}
+
+    {% if schemaSection == 'note' %}
+        {% set indexHeading = (schemaEntry.longTitle ?? '')|trim ?: schemaEntry.title|trim %}
+        {% set listing = {
+            url: schemaEntry.url,
+            name: (schemaEntry.seoCustomPageTitle ?? '')|trim ?: indexHeading,
+            heading: indexHeading,
+            description: (schemaEntry.seoMetaDescription ?? '')|trim ?: (schemaEntry.summary ?? ''),
+            share: schemaEntry,
+            modified: schemaEntry.dateUpdated,
+            crumbs: [],
+        } %}
+    {% elseif category is defined and category %}
+        {# The SEO tab first, read the way the head reads it: Custom Page Title,
+           else the h1; Meta Description, else the topic's Summary. `heading` keeps
+           the h1 whatever the page is titled for search. #}
+        {% set topicHeading = (category.longTitle ?? '')|trim ?: category.title|trim %}
+        {% set listing = {
+            url: category.url,
+            name: (category.seoCustomPageTitle ?? '')|trim ?: topicHeading,
+            heading: topicHeading,
+            description: (category.seoMetaDescription ?? '')|trim ?: (category.summary ?? ''),
+            share: category,
+            modified: category.dateUpdated,
+            crumbs: [{ name: category.title|trim, item: category.url }],
+        } %}
+    {% else %}
+        {# `share: null` — a year archive is a route, not an element, so there is
+           nothing to read a share image off. (Said here, not in the hash: a Twig
+           comment inside a hash literal is a parse error that 500s the page.) #}
+        {% set listing = {
+            url: notesUrl ~ '/' ~ year,
+            name: year ~ '',
+            heading: year ~ '',
+            description: '',
+            share: null,
+            modified: null,
+            crumbs: [{ name: year ~ '', item: notesUrl ~ '/' ~ year }],
+        } %}
+    {% endif %}
+{% endif %}
+
+{% if listing or schemaSection in ['homepage', 'caseStudy', 'caseStudies', 'contact', 'about', 'pages', 'notes'] %}
+    {% set globals = craft.entries().section('globals').one() %}
+    {% set strapline = globals ? (globals.strapline ?? '')|trim : '' %}
+    {% set siteName = craft.app.sites.currentSite.name %}
+    {% set language = craft.app.sites.currentSite.language %}
+
+    {% set homeUrl = siteUrl('') %}
+    {% set indexUrl = siteUrl('case-studies') %}
+    {% set personId = homeUrl ~ '#person' %}
+    {% set websiteId = homeUrl ~ '#website' %}
+    {% set pageId = schemaEntry ? schemaEntry.url ~ '#webpage' : null %}
+
+    {# `sameAs` — the profiles that identify this Jon Leverrier as opposed to any
+       other. That's the whole job of the property: an identity a search engine
+       or an AI system can reconcile against a profile it already knows.
+
+       Straight from craft/config/social.php, the same list the footer icons are
+       built from, so the schema can't claim a profile the page doesn't link to.
+       Null when the list is empty, so the key drops out rather than emitting [].
+
+       (Set out here, not inline — a Twig comment inside a hash literal is a
+       parse error that takes the whole page down with it. Same for every other
+       hoisted value below.) #}
+    {% set sameAs = craft.app.config.getConfigFromFile('social')|map(l => l.url)|values %}
+    {% set sameAs = sameAs|length ? sameAs : null %}
+
+    {# Every trail starts at Home; each page appends its own steps below. #}
+    {% set crumbs = [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: homeUrl },
+    ] %}
+
+    {# Email for the Person, read out of the globals single's CTAs — the
+       `mailto:` link the contact page already renders. Read rather than
+       retyped, so the schema can only ever offer a route the site itself
+       offers: change that CTA and this follows, remove it and the key drops
+       out.
+
+       It lands on the shared Person node, not on the contact page alone. It's
+       one @id describing one man, and a node that said different things on
+       different pages is a node a merging consumer has to pick between.
+
+       The `tel:` CTA is deliberately NOT read across. It's a personal mobile,
+       and structured data is the first format a harvester parses — putting it
+       on every page of the site is a different exposure from one anchor tag on
+       /contact, for no gain a visitor ever sees. The email is a work address
+       and answering strangers is the point of it. #}
+    {% set contactUrls = globals
+        ? globals.ctas.all()|map(c => c.ctaUrl.url ?? '')|filter(u => u)|values
+        : [] %}
+    {% set mailtos = contactUrls|filter(u => u starts with 'mailto:')|values %}
+    {% set email = mailtos|length ? mailtos|first|slice(7) : null %}
+
+    {# What the About page knows about the Person, read on EVERY page: the node
+       is one @id describing one man, so it has to say the same thing wherever
+       it appears, and the About page is where those facts live.
+
+       jobTitle is the first line of the header's role list (craft/config/roles.php)
+       — the same source, so the schema can't claim a title the site doesn't show.
+       knowsAbout is the method timeline's service names, the things the site says
+       he does, deduplicated. image is the About page's first large image, as an
+       original asset URL (a transform URL would have Craft render a file no
+       visitor loads). Each drops out when its source is empty. #}
+    {% set roles = craft.app.config.getConfigFromFile('roles') %}
+    {% set jobTitle = roles|length ? roles|first : null %}
+
+    {% set knowsAbout = [] %}
+    {% for phase in craft.frontend.methodology() %}
+        {% set knowsAbout = knowsAbout|merge(phase.services) %}
+    {% endfor %}
+    {% set knowsAbout = knowsAbout|unique|values %}
+    {% set knowsAbout = knowsAbout|length ? knowsAbout : null %}
+
+    {% set aboutEntry = craft.entries().section('about').status('live').one() %}
+    {% set portrait = null %}
+    {% if aboutEntry %}
+        {% for block in aboutEntry.caseContent.all() %}
+            {% if portrait is null and block.type.handle == 'largeImage' and block.largeImage.one() %}
+                {% set portrait = block.largeImage.one() %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    {% set portraitImage = portrait ? {
+        '@type': 'ImageObject',
+        url: portrait.url,
+        width: portrait.width,
+        height: portrait.height,
+    }|filter(v => v) : null %}
+
+    {% set schema = {} %}
+
+    {#  ————————————————————————————————————————————————————————————————
+        THE NOTES LISTINGS — /notes, /notes/{topic}, /notes/{year} (and /p2 …)
+        ———————————————————————————————————————————————————————————————— #}
+    {% if listing %}
+        {# Same shape as the case study index — CollectionPage framing an
+           ItemList — with one difference: these lists are paginated, so each
+           describes the notes on THIS page, not the whole set. Page 3 lists
+           different notes from page 1 and is canonical at its own /p3 address
+           (see head.twig), so its structured data says what that page shows, at
+           that URL.
+
+           The query is the view's own `notesQuery` — set at its top level, so
+           the layout sees it, the same way the head reads `pageCount` — cloned
+           before the offset is applied so the view's query isn't touched, and
+           offset by the request's page number the way `paginate` does it. If a
+           listing ever renders through this layout without setting the query,
+           the list is empty and the page still gets its CollectionPage. #}
+        {% set pageNum = craft.app.request.pageNum %}
+        {% set pageTrigger = craft.app.config.general.pageTrigger ?? 'p' %}
+        {% set pageUrl = pageNum > 1 ? listing.url ~ '/' ~ pageTrigger ~ pageNum : listing.url %}
+        {% set pageId = pageUrl ~ '#webpage' %}
+        {% set listId = pageUrl ~ '#notes' %}
+        {% set pageSize = perPage ?? 6 %}
+
+        {# The Open Graph image at the 1200×630 the og:image tag already rendered, so
+           no extra transform, with the site-wide fallback the head uses. Null on a
+           year archive, which is a route rather than an element. #}
+        {% set shareAsset = listing.share ? craft.frontend.socialImage(listing.share) : null %}
+        {% set shareImage = shareAsset ? {
+            '@type': 'ImageObject',
+            url: craft.frontend.socialImageUrl(shareAsset),
+            width: 1200,
+            height: 630,
+            caption: (shareAsset.alt ?? '')|trim,
+        }|filter(v => v) : null %}
+
+        {% set pageNotes = notesQuery is defined and notesQuery
+            ? clone(notesQuery).offset((pageNum - 1) * pageSize).all()
+            : [] %}
+
+        {# Each item points at the note's own BlogPosting node by @id — the one
+           its page defines — and carries the headline and URL inline so this
+           list still reads on its own. Positions count from where this page
+           starts in the whole listing, so a consumer that sees page 2 knows it's
+           looking at items seven to twelve, not one to six again. #}
+        {% set items = [] %}
+        {% for n in pageNotes %}
+            {% set items = items|merge([{
+                '@type': 'ListItem',
+                position: (pageNum - 1) * pageSize + loop.index,
+                item: {
+                    '@type': 'BlogPosting',
+                    '@id': n.url ~ '#post',
+                    headline: n.title|trim,
+                    url: n.url,
+                    datePublished: n.postDate ? n.postDate|atom : null,
+                }|filter(v => v),
+            }]) %}
+        {% endfor %}
+
+        {# The standfirst is the page's Summary, a plain-text field with blank
+           lines as paragraph breaks — one description, so the breaks collapse to
+           spaces. The year page has none. #}
+        {% set summary = listing.description|replace({"\n": ' '})|trim %}
+        {% set summary = summary|split(' ')|filter(w => w)|join(' ') %}
+
+        {# The trail: Home, Notes, then the topic or year if this is one. #}
+        {% set trail = [{ '@type': 'ListItem', position: 2, name: notesName, item: notesUrl }] %}
+        {% for c in listing.crumbs %}
+            {% set trail = trail|merge([{ '@type': 'ListItem', position: 2 + loop.index, name: c.name, item: c.item }]) %}
+        {% endfor %}
+
+        {% set schema = {
+            CollectionPage: [{
+                '@type': 'CollectionPage',
+                '@id': pageId,
+                url: pageUrl,
+                name: pageNum > 1 ? listing.name ~ ' — page ' ~ pageNum : listing.name,
+                headline: listing.heading,
+                image: shareImage,
+                description: summary,
+                inLanguage: language,
+                isPartOf: { '@id': websiteId },
+                author: { '@id': personId },
+                mainEntity: { '@id': listId },
+                breadcrumb: { '@id': pageId ~ '-breadcrumb' },
+                dateModified: listing.modified ? listing.modified|atom : null,
+            }|filter(v => v)],
+            ItemList: [{
+                '@type': 'ItemList',
+                '@id': listId,
+                name: listing.heading,
+                itemListOrder: 'https://schema.org/ItemListOrderDescending',
+                numberOfItems: items|length,
+                itemListElement: items,
+            }|filter(v => v)],
+            BreadcrumbList: [{
+                '@type': 'BreadcrumbList',
+                '@id': pageId ~ '-breadcrumb',
+                itemListElement: crumbs|merge(trail),
+            }],
+        } %}
+
+    {#  ————————————————————————————————————————————————————————————————
+        A SINGLE CASE STUDY — /case-study/{slug}
+        ———————————————————————————————————————————————————————————————— #}
+    {% elseif schemaSection == 'caseStudies' %}
+        {% set workId = schemaEntry.url ~ '#casestudy' %}
+        {% set clientId = schemaEntry.url ~ '#client' %}
+
+        {# One display name per project, resolved the way every other surface
+           resolves it — the card, the page heading and the model's background
+           list all land on the same string. Both names are the STUDY's own; the
+           client is a relation, and the long form is right here because the
+           Organization node below is the client itself, not a passing mention. #}
+        {% set heading = (schemaEntry.longTitle ?? '')|trim ?: schemaEntry.title|trim %}
+        {% set client = craft.frontend.caseStudyClientName(schemaEntry, true) %}
+
+        {# The entry's SEO tab first, read the way the head reads it so the two can't
+           disagree: the Meta Description when set, else Bio (the public one-line
+           blurb on this entry type), else Case Summary — CKEditor HTML, so it's
+           stripped back to text and capped rather than passed through; a
+           description is a sentence, not a document. #}
+        {% set summary = (schemaEntry.seoMetaDescription ?? '')|trim ?: (schemaEntry.bio ?? '')|trim %}
+        {% if not summary %}
+            {% set summary = (schemaEntry.caseSummary ?? '')|striptags|trim %}
+            {% set summary = summary|length > 300 ? summary|slice(0, 297)|trim ~ '…' : summary %}
+        {% endif %}
+
+        {# The page's name is the Custom Page Title when set (what the head puts in
+           <title>), else the heading; the heading stays as `headline`. The WORK keeps
+           the heading as its name either way — a study is called what it's called,
+           whatever the page is titled for search. The share image is the Open Graph
+           one at the 1200×630 the og:image tag already rendered (no extra transform),
+           with the site-wide fallback the head uses; primaryImageOfPage stays the
+           first picture in the study itself. #}
+        {% set seoTitle = (schemaEntry.seoCustomPageTitle ?? '')|trim %}
+        {% set shareAsset = craft.frontend.socialImage(schemaEntry) %}
+        {% set shareImage = shareAsset ? {
+            '@type': 'ImageObject',
+            url: craft.frontend.socialImageUrl(shareAsset),
+            width: 1200,
+            height: 630,
+            caption: (shareAsset.alt ?? '')|trim,
+        }|filter(v => v) : null %}
+
+        {# Skills and sectors are the same categories the page and the model
+           read. Merged into one keyword list: what the work involved and the
+           market it was for are both terms someone would search this study by. #}
+        {% set keywords = schemaEntry.skills.all()|map(c => c.title)
+            |merge(schemaEntry.sectorSelector.all()|map(c => c.title))|values %}
+
+        {# Post Date carries the year the project ran, not the publish day (see
+           the case study view). The "Date hidden?" switch drops the year from
+           the page for work old enough that dating it would undersell it — so
+           it drops out of the structured data too, rather than quietly telling
+           a crawler what the page declines to tell a visitor. #}
+        {% set published = (schemaEntry.hasDateHidden ?? false) or not schemaEntry.postDate
+            ? null
+            : schemaEntry.postDate|atom %}
+        {% set modified = schemaEntry.dateUpdated ? schemaEntry.dateUpdated|atom : null %}
+
+        {# The entry's Thumbnail first, then the Case Content imagery in author
+           order — the same assets the page shows, so what a crawler is told the
+           page contains is what it contains.
+
+           Branched on `block.type.handle` rather than testing whether a field
+           is there: a Matrix block only carries its own type's fields, and
+           reading a field a block type doesn't have throws.
+
+           Original asset URLs, not transforms. A transform URL here would have
+           Craft generate an image on page render that no visitor ever loads. #}
+        {% set assets = [schemaEntry.largeImage.one()] %}
+        {% for block in schemaEntry.caseContent.all() %}
+            {% if block.type.handle in ['largeImage', 'video'] %}
+                {% set assets = assets|merge([block.largeImage.one()]) %}
+            {% elseif block.type.handle == 'twoUpImage' %}
+                {% set assets = assets|merge([
+                    block.twoUpImagePrimary.one(),
+                    block.twoUpImageSecondary.one(),
+                ]) %}
+            {% endif %}
+        {% endfor %}
+
+        {% set images = [] %}
+        {% for asset in assets|filter(a => a) %}
+            {% set images = images|merge([{
+                '@type': 'ImageObject',
+                url: asset.url,
+                width: asset.width,
+                height: asset.height,
+            }|filter(v => v)]) %}
+        {% endfor %}
+
+        {# The client's logo, falling back to the study's own — the same order the
+           cards use, so the Organization's logo is the one on the page. #}
+        {% set logo = craft.frontend.caseStudyClientLogo(schemaEntry) %}
+
+        {# This study's testimonials — the ones PLACED on the page, as
+           caseTestimonial blocks in the Case Content, in page order. Placement is
+           the switch for a quote on a study (the view dropped the relation-driven
+           slider; see _views/structure/caseStudies), so the structured data reads
+           the same blocks the visitor reads and can never claim a review the page
+           doesn't show, or miss one it does. The Case Study Link relation still
+           says WHOSE quote it is — that's the author's Organization below — it
+           just no longer decides which quotes are here. A quote placed twice is
+           one Review.
+
+           `reviewBody` is plain text: the field is CKEditor, and schema.org
+           wants the words, not the markup wrapping them.
+
+           The author works for the client Organization already in the graph, so
+           `worksFor` points at that @id instead of restating the name.
+
+           No `reviewRating`: there's no rating field on a testimonial, and
+           inventing five stars nobody gave is exactly the kind of thing
+           structured data gets penalised for. That makes these ineligible for a
+           review rich result but perfectly valid as review data. Add a rating
+           field and they qualify.
+
+           No `datePublished` either. The only date a testimonial carries is its
+           entry's Post Date — the day the quote was added to the CMS, which is
+           not the day it was given. Close enough to look right and wrong often
+           enough to mislead, so it's better left unsaid than approximated. #}
+        {% set reviews = [] %}
+        {% set reviewed = [] %}
+        {% for block in schemaEntry.caseContent.all()|filter(b => b.type.handle == 'caseTestimonial') %}
+            {% set t = block.testimonial.one() %}
+            {% set body = t ? (t.blockquote ?? '')|striptags|trim : '' %}
+            {% if body and t.id not in reviewed %}
+                {% set reviewed = reviewed|merge([t.id]) %}
+                {% set reviews = reviews|merge([{
+                    '@type': 'Review',
+                    '@id': schemaEntry.url ~ '#review-' ~ t.id,
+                    itemReviewed: { '@id': workId },
+                    reviewBody: body,
+                    author: {
+                        '@type': 'Person',
+                        name: (t.personName ?? '')|trim,
+                        jobTitle: (t.jobTitle ?? '')|trim,
+                        worksFor: client ? { '@id': clientId } : null,
+                    }|filter(v => v),
+                }|filter(v => v)]) %}
+            {% endif %}
+        {% endfor %}
+
+        {# CreativeWork points at the quotes by @id rather than nesting them:
+           they are their own block, and a node can only be spelled out in one
+           place without the two copies drifting. #}
+        {% set reviewRefs = reviews|length ? reviews|map(r => { '@id': r['@id'] })|values : null %}
+
+        {% set schema = {
+            WebPage: [{
+                '@type': 'WebPage',
+                '@id': pageId,
+                url: schemaEntry.url,
+                name: seoTitle ?: heading,
+                headline: heading,
+                description: summary,
+                inLanguage: language,
+                isPartOf: { '@id': websiteId },
+                mainEntity: { '@id': workId },
+                breadcrumb: { '@id': pageId ~ '-breadcrumb' },
+                primaryImageOfPage: images|length ? images|first : null,
+                image: shareImage,
+                datePublished: published,
+                dateModified: modified,
+            }|filter(v => v)],
+            CreativeWork: [{
+                '@type': 'CreativeWork',
+                '@id': workId,
+                url: schemaEntry.url,
+                name: heading,
+                headline: heading,
+                description: summary,
+                inLanguage: language,
+                author: { '@id': personId },
+                creator: { '@id': personId },
+                about: client ? { '@id': clientId } : null,
+                keywords: keywords|length ? keywords : null,
+                image: images|length ? images : null,
+                review: reviewRefs,
+                datePublished: published,
+                dateModified: modified,
+                isPartOf: { '@id': pageId },
+            }|filter(v => v)],
+            Organization: client ? [{
+                '@type': 'Organization',
+                '@id': clientId,
+                name: client,
+                logo: logo ? {
+                    '@type': 'ImageObject',
+                    url: logo.url,
+                    width: logo.width,
+                    height: logo.height,
+                }|filter(v => v) : null,
+            }|filter(v => v)] : null,
+            Review: reviews,
+            BreadcrumbList: [{
+                '@type': 'BreadcrumbList',
+                '@id': pageId ~ '-breadcrumb',
+                itemListElement: crumbs|merge([
+                    { '@type': 'ListItem', position: 2, name: 'Case Studies', item: indexUrl },
+                    { '@type': 'ListItem', position: 3, name: heading, item: schemaEntry.url },
+                ]),
+            }],
+        } %}
+
+    {#  ————————————————————————————————————————————————————————————————
+        THE CASE STUDY INDEX — /case-studies
+        ———————————————————————————————————————————————————————————————— #}
+    {% elseif schemaSection == 'caseStudy' %}
+        {% set listId = schemaEntry.url ~ '#studies' %}
+        {% set heading = (schemaEntry.longTitle ?? '')|trim ?: schemaEntry.title|trim %}
+
+        {# The SAME query and ordering as the view — live only, structure order. An
+           ItemList that doesn't match the order on the page is describing a page that
+           doesn't exist, so this moved when the view stopped promoting the featured
+           ones. #}
+        {% set ordered = craft.entries().section('caseStudies').status('live').all() %}
+
+        {# Each item links to the study's own CreativeWork node by @id — the one
+           that page defines — and carries its name inline so this list still
+           says something on its own. #}
+        {% set items = [] %}
+        {% for s in ordered %}
+            {% set items = items|merge([{
+                '@type': 'ListItem',
+                position: loop.index,
+                item: {
+                    '@type': 'CreativeWork',
+                    '@id': s.url ~ '#casestudy',
+                    name: (s.longTitle ?? '')|trim ?: s.title|trim,
+                    url: s.url,
+                },
+            }]) %}
+        {% endfor %}
+
+        {% set schema = {
+            CollectionPage: [{
+                '@type': 'CollectionPage',
+                '@id': pageId,
+                url: schemaEntry.url,
+                name: heading,
+                description: (schemaEntry.summary ?? '')|trim,
+                inLanguage: language,
+                isPartOf: { '@id': websiteId },
+                about: { '@id': personId },
+                mainEntity: { '@id': listId },
+                breadcrumb: { '@id': pageId ~ '-breadcrumb' },
+                dateModified: schemaEntry.dateUpdated ? schemaEntry.dateUpdated|atom : null,
+            }|filter(v => v)],
+            ItemList: [{
+                '@type': 'ItemList',
+                '@id': listId,
+                name: heading,
+                numberOfItems: items|length,
+                itemListElement: items,
+            }|filter(v => v)],
+            BreadcrumbList: [{
+                '@type': 'BreadcrumbList',
+                '@id': pageId ~ '-breadcrumb',
+                itemListElement: crumbs|merge([
+                    { '@type': 'ListItem', position: 2, name: 'Case Studies', item: indexUrl },
+                ]),
+            }],
+        } %}
+
+    {#  ————————————————————————————————————————————————————————————————
+        CONTACT — /contact
+        ———————————————————————————————————————————————————————————————— #}
+    {% elseif schemaSection == 'contact' %}
+        {# ContactPage, the WebPage subtype that says what this page is FOR. The
+           person you'd be contacting is the mainEntity; the ways to do it are
+           already on the Person node (email, telephone, sameAs), so there's
+           nothing to restate here.
+
+           Named and described from the entry's SEO tab, read the way the head
+           reads it: Custom Page Title, else the h1 (which stays as `headline`);
+           Meta Description when there is one — this single has no Summary field,
+           so there's nothing else to fall back to and the key simply drops out.
+           The share image is the Open Graph one at the 1200×630 the og:image tag
+           already rendered, with the site-wide fallback the head uses. #}
+        {% set heading = (schemaEntry.longTitle ?? '')|trim ?: schemaEntry.title|trim %}
+        {% set seoTitle = (schemaEntry.seoCustomPageTitle ?? '')|trim %}
+        {% set shareAsset = craft.frontend.socialImage(schemaEntry) %}
+        {% set shareImage = shareAsset ? {
+            '@type': 'ImageObject',
+            url: craft.frontend.socialImageUrl(shareAsset),
+            width: 1200,
+            height: 630,
+            caption: (shareAsset.alt ?? '')|trim,
+        }|filter(v => v) : null %}
+
+        {% set schema = {
+            ContactPage: [{
+                '@type': 'ContactPage',
+                '@id': pageId,
+                url: schemaEntry.url,
+                name: seoTitle ?: heading,
+                headline: heading,
+                description: (schemaEntry.seoMetaDescription ?? '')|trim,
+                inLanguage: language,
+                isPartOf: { '@id': websiteId },
+                mainEntity: { '@id': personId },
+                image: shareImage,
+                breadcrumb: { '@id': pageId ~ '-breadcrumb' },
+                dateModified: schemaEntry.dateUpdated ? schemaEntry.dateUpdated|atom : null,
+            }|filter(v => v)],
+            BreadcrumbList: [{
+                '@type': 'BreadcrumbList',
+                '@id': pageId ~ '-breadcrumb',
+                itemListElement: crumbs|merge([
+                    { '@type': 'ListItem', position: 2, name: 'Contact', item: schemaEntry.url },
+                ]),
+            }],
+        } %}
+
+    {#  ————————————————————————————————————————————————————————————————
+        A NOTE — /notes/{slug}
+        ———————————————————————————————————————————————————————————————— #}
+    {% elseif schemaSection == 'notes' %}
+        {# BlogPosting, the Article subtype for a personal post, as the page's
+           mainEntity; the WebPage frames it, as on a case study. Headline is the
+           title; the description is the Summary the page opens with, falling back
+           to the Meta Description. Dates are the entry's own — postDate is what
+           the CMS calls the published date. Pictures are the note's imagery
+           blocks, in page order, as original asset URLs (a transform URL here
+           would have Craft render a file no visitor loads). #}
+        {% set postId = schemaEntry.url ~ '#post' %}
+        {% set headline = schemaEntry.title|trim %}
+        {% set summary = (schemaEntry.summary ?? '')|striptags|trim
+            ?: (schemaEntry.seoMetaDescription ?? '')|striptags|trim %}
+        {% set published = schemaEntry.postDate ? schemaEntry.postDate|atom : null %}
+        {% set modified = schemaEntry.dateUpdated ? schemaEntry.dateUpdated|atom : null %}
+
+        {% set assets = [] %}
+        {% for block in schemaEntry.caseContent.all() %}
+            {% if block.type.handle in ['largeImage', 'video'] %}
+                {% set assets = assets|merge([block.largeImage.one()]) %}
+            {% elseif block.type.handle == 'legacyImage' %}
+                {% set assets = assets|merge([block.legacyImage.one()]) %}
+            {% elseif block.type.handle == 'twoUpImage' %}
+                {% set assets = assets|merge([
+                    block.twoUpImagePrimary.one(),
+                    block.twoUpImageSecondary.one(),
+                ]) %}
+            {% endif %}
+        {% endfor %}
+        {% set images = [] %}
+        {% for asset in assets|filter(a => a) %}
+            {% set images = images|merge([{
+                '@type': 'ImageObject',
+                url: asset.url,
+                width: asset.width,
+                height: asset.height,
+            }|filter(v => v)]) %}
+        {% endfor %}
+
+        {% set schema = {
+            WebPage: [{
+                '@type': 'WebPage',
+                '@id': pageId,
+                url: schemaEntry.url,
+                name: headline,
+                description: summary,
+                inLanguage: language,
+                isPartOf: { '@id': websiteId },
+                mainEntity: { '@id': postId },
+                breadcrumb: { '@id': pageId ~ '-breadcrumb' },
+                primaryImageOfPage: images|length ? images|first : null,
+                datePublished: published,
+                dateModified: modified,
+            }|filter(v => v)],
+            BlogPosting: [{
+                '@type': 'BlogPosting',
+                '@id': postId,
+                url: schemaEntry.url,
+                headline: headline,
+                description: summary,
+                inLanguage: language,
+                author: { '@id': personId },
+                publisher: { '@id': personId },
+                image: images|length ? images : null,
+                datePublished: published,
+                dateModified: modified,
+                mainEntityOfPage: { '@id': pageId },
+                isPartOf: { '@id': websiteId },
+            }|filter(v => v)],
+            BreadcrumbList: [{
+                '@type': 'BreadcrumbList',
+                '@id': pageId ~ '-breadcrumb',
+                itemListElement: crumbs|merge([
+                    { '@type': 'ListItem', position: 2, name: schemaEntry.section.name, item: siteUrl('notes') },
+                    { '@type': 'ListItem', position: 3, name: headline, item: schemaEntry.url },
+                ]),
+            }],
+        } %}
+
+    {#  ————————————————————————————————————————————————————————————————
+        ABOUT — /about
+        ———————————————————————————————————————————————————————————————— #}
+    {% elseif schemaSection == 'about' %}
+        {# AboutPage: the WebPage subtype for a page about the site's subject. The
+           Person is the mainEntity, and the entry's SEO tab is read the same way
+           the head reads it, so the structured data and the <title>/meta tags can
+           never disagree:
+             · name        — the Custom Page Title when set (what the head puts in
+                             <title>), else the h1; the h1 stays as `headline`.
+             · description — the Meta Description when set, else the Summary (the
+                             standfirst) — the head's own fallback order.
+             · image       — the Open Graph image, at the 1200×630 the og:image tag
+                             already had rendered (so no extra transform), falling
+                             back to the site-wide one exactly as the head does.
+           primaryImageOfPage stays the portrait the Person node carries. #}
+        {% set heading = (schemaEntry.longTitle ?? '')|trim ?: schemaEntry.title|trim %}
+        {% set seoTitle = (schemaEntry.seoCustomPageTitle ?? '')|trim %}
+        {% set seoDescription = (schemaEntry.seoMetaDescription ?? '')|trim %}
+        {% set shareAsset = craft.frontend.socialImage(schemaEntry) %}
+        {% set shareImage = shareAsset ? {
+            '@type': 'ImageObject',
+            url: craft.frontend.socialImageUrl(shareAsset),
+            width: 1200,
+            height: 630,
+            caption: (shareAsset.alt ?? '')|trim,
+        }|filter(v => v) : null %}
+
+        {% set schema = {
+            AboutPage: [{
+                '@type': 'AboutPage',
+                '@id': pageId,
+                url: schemaEntry.url,
+                name: seoTitle ?: heading,
+                headline: heading,
+                description: seoDescription ?: (schemaEntry.summary ?? '')|trim,
+                inLanguage: language,
+                isPartOf: { '@id': websiteId },
+                mainEntity: { '@id': personId },
+                about: { '@id': personId },
+                primaryImageOfPage: portraitImage,
+                image: shareImage,
+                breadcrumb: { '@id': pageId ~ '-breadcrumb' },
+                dateModified: schemaEntry.dateUpdated ? schemaEntry.dateUpdated|atom : null,
+            }|filter(v => v)],
+            BreadcrumbList: [{
+                '@type': 'BreadcrumbList',
+                '@id': pageId ~ '-breadcrumb',
+                itemListElement: crumbs|merge([
+                    { '@type': 'ListItem', position: 2, name: schemaEntry.title|trim, item: schemaEntry.url },
+                ]),
+            }],
+        } %}
+
+    {#  ————————————————————————————————————————————————————————————————
+        A PLAIN PAGE — /{slug}  (AI Policy, Privacy Policy, …)
+        ———————————————————————————————————————————————————————————————— #}
+    {% elseif schemaSection == 'pages' %}
+        {# WebPage and nothing more. These are the site's own standing documents —
+           a policy, a statement — so there is no work, person or list to hang off
+           them; the shared WebSite and Person nodes below say whose site it is.
+           Named and described from the SEO tab, read the way the head reads it so
+           the two can't disagree: Custom Page Title, else the h1 (which stays as
+           `headline`); Meta Description, else the page's Summary. The share image
+           is the Open Graph one at the 1200×630 the og:image tag already rendered,
+           with the site-wide fallback the head uses. #}
+        {% set heading = (schemaEntry.longTitle ?? '')|trim ?: schemaEntry.title|trim %}
+        {% set seoTitle = (schemaEntry.seoCustomPageTitle ?? '')|trim %}
+        {% set seoDescription = (schemaEntry.seoMetaDescription ?? '')|trim %}
+        {% set shareAsset = craft.frontend.socialImage(schemaEntry) %}
+        {% set shareImage = shareAsset ? {
+            '@type': 'ImageObject',
+            url: craft.frontend.socialImageUrl(shareAsset),
+            width: 1200,
+            height: 630,
+            caption: (shareAsset.alt ?? '')|trim,
+        }|filter(v => v) : null %}
+
+        {% set schema = {
+            WebPage: [{
+                '@type': 'WebPage',
+                '@id': pageId,
+                url: schemaEntry.url,
+                name: seoTitle ?: heading,
+                headline: heading,
+                description: seoDescription ?: (schemaEntry.summary ?? '')|trim,
+                inLanguage: language,
+                isPartOf: { '@id': websiteId },
+                about: { '@id': personId },
+                image: shareImage,
+                breadcrumb: { '@id': pageId ~ '-breadcrumb' },
+                dateModified: schemaEntry.dateUpdated ? schemaEntry.dateUpdated|atom : null,
+            }|filter(v => v)],
+            BreadcrumbList: [{
+                '@type': 'BreadcrumbList',
+                '@id': pageId ~ '-breadcrumb',
+                itemListElement: crumbs|merge([
+                    { '@type': 'ListItem', position: 2, name: schemaEntry.title|trim, item: schemaEntry.url },
+                ]),
+            }],
+        } %}
+
+    {#  ————————————————————————————————————————————————————————————————
+        HOME — /
+        ———————————————————————————————————————————————————————————————— #}
+    {% else %}
+        {# ProfilePage, not WebPage: this page's subject IS the person, which is
+           what the type means and what `mainEntity` then confirms.
+
+           The h1 is the same fallback the view uses — the single is titled "Home",
+           a CMS label rather than a headline, so the TITLE is never the name. Over
+           that sits the SEO tab, read the way the head reads it: Custom Page Title,
+           else the h1 (which stays as `headline`); Meta Description, else the
+           site's strapline. The share image is the Open Graph one at the 1200×630
+           the og:image tag already rendered, with the site-wide fallback. #}
+        {% set heading = (schemaEntry.longTitle ?? '')|trim ?: 'Ask me anything' %}
+        {% set seoTitle = (schemaEntry.seoCustomPageTitle ?? '')|trim %}
+        {% set shareAsset = craft.frontend.socialImage(schemaEntry) %}
+        {% set shareImage = shareAsset ? {
+            '@type': 'ImageObject',
+            url: craft.frontend.socialImageUrl(shareAsset),
+            width: 1200,
+            height: 630,
+            caption: (shareAsset.alt ?? '')|trim,
+        }|filter(v => v) : null %}
+
+        {% set schema = {
+            ProfilePage: [{
+                '@type': 'ProfilePage',
+                '@id': pageId,
+                url: homeUrl,
+                name: seoTitle ?: heading,
+                headline: heading,
+                description: (schemaEntry.seoMetaDescription ?? '')|trim ?: strapline,
+                inLanguage: language,
+                isPartOf: { '@id': websiteId },
+                mainEntity: { '@id': personId },
+                image: shareImage,
+                dateModified: schemaEntry.dateUpdated ? schemaEntry.dateUpdated|atom : null,
+            }|filter(v => v)],
+        } %}
+    {% endif %}
+
+    {# The two nodes every page carries. Merged last so the page's own type leads
+       the markup, which is the order someone reading view-source wants. #}
+    {% set schema = schema|merge({
+        WebSite: [{
+            '@type': 'WebSite',
+            '@id': websiteId,
+            url: homeUrl,
+            name: siteName,
+            description: strapline,
+            inLanguage: language,
+            publisher: { '@id': personId },
+        }|filter(v => v)],
+        Person: [{
+            '@type': 'Person',
+            '@id': personId,
+            name: siteName,
+            url: homeUrl,
+            description: strapline,
+            jobTitle: jobTitle,
+            image: portraitImage,
+            knowsAbout: knowsAbout,
+            email: email,
+            sameAs: sameAs,
+        }|filter(v => v)],
+    }) %}
+
+    {# One block per type. A single node is emitted as itself with @context in
+       front; several of a type get wrapped in a @graph, since a JSON-LD document
+       is one node or a graph of them, never a bare array. A type whose list is
+       empty (Review, on a study with no quotes) gets no block at all.
+
+       JSON_HEX_TAG so a stray `</script>` in any field is encoded rather than
+       closing the block early; JSON_UNESCAPED_UNICODE so accented client names
+       stay readable instead of turning into \uXXXX. #}
+    {% for type, nodes in schema|filter(nodes => nodes|length) %}
+        <script type="application/ld+json" data-schema="{{ type }}">
+            {{- (nodes|length > 1
+                ? { '@context': 'https://schema.org', '@graph': nodes }
+                : { '@context': 'https://schema.org' }|merge(nodes|first))
+                |json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_UNESCAPED_UNICODE'))|raw -}}
+        </script>
+    {% endfor %}
+{% endif %}
+<script type="text/javascript">
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({'command': 'removeCaches'});
+            }
+        });
+        navigator.serviceWorker.getRegistrations().then(
+            function(registrations) {
+                for(let registration of registrations) {  
+                    registration.unregister();
+        
+                }
+        });
+    }
+</script>

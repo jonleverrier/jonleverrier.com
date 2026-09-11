@@ -1,0 +1,25 @@
+defaultPlacement: end
+enableVersioning: false
+entryTypes:
+  -
+    uid: edb0c911-caa4-4bb6-a805-e01e1ca27d71 # VIP
+handle: vip
+maxAuthors: 1
+minAuthors: 1
+name: VIP
+previewTargets:
+  -
+    label: 'Primary entry page'
+    refresh: '1'
+    urlFormat: '{url}'
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: true
+    template: _routers/structure.twig
+    uriFormat: 'vip/{slug}'
+structure:
+  maxLevels: 1
+  uid: 4e396609-afad-4512-b932-56b6e794401d
+type: structure

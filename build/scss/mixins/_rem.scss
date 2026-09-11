@@ -1,0 +1,22 @@
+/**
+ * MIXINS: REM
+ *
+ * Convert a pixel value to rem assuming the 62.5% trick on html
+ * (1rem = 10px). Accepts unitless or px-suffixed input.
+ *
+ *  font-size: rem(16);     // 1.6rem
+ *  font-size: rem(29px);   // 2.9rem
+ *
+**/
+
+@use 'sass:math';
+
+@function rem($px) {
+    @if math.unit($px) == 'px' {
+        $px: math.div($px, 1px);
+    } @else if math.unit($px) != '' {
+        @error 'mixins/_rem.scss: rem() expects a unitless or px value, got #{$px}';
+    }
+
+    @return math.div($px, 10) * 1rem;
+}

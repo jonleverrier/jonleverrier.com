@@ -1,0 +1,173 @@
+/**
+ * COMPONENT: NOTES (index list)
+ *
+ * The notes index at /notes: one card per note on the reading measure — the
+ * title as a link, the meta row a note carries under its own title (date,
+ * reading time, topic chip; see .c-content__meta-items), then the Summary — so the
+ * list and the note read as one thing.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+@use 'accent-link' as *;
+
+.c-notes {
+    width: 100%;
+    max-width: rem(740); // the reading measure — mirrors .c-case-content__text
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+}
+
+// Each note is a card on the ask bar's cream — the light pages' footer ground,
+// a shade deeper than the slab (see .c-jonson__footer--light) — with the same
+// corner radius as the other panels, so the list reads as a stack of cards
+// rather than headings on the slab. Cards sit a paragraph gap apart: close
+// enough to read as one list, far enough to count as separate.
+.c-notes__item {
+    position: relative; // the title link's stretched hit area is placed against the card
+    // Sides step in on a phone, where the card is barely wider than its meta
+    // row; from md they widen to the panel's usual inset.
+    padding: getmap($space, rhythm, 600);
+    border-radius: $b-radius-200;
+    background-color: getmap($colour, light, 650); // the ask bar's cream — $c-ask-cream
+
+    @include mq(from, md) {
+        padding: getmap($space, rhythm, 600) getmap($space, rhythm, 700);
+    }
+
+    & + & {
+        margin-top: rem(24);
+    }
+
+    // With a picture: the picture across the top, bleeding to the card's own
+    // edges — left, right and top — with the text beneath inside the padding.
+    // The same at every width. The card clips to its corners, so the picture
+    // takes the rounded top from the card rather than needing its own.
+    &--picture {
+        display: flex;
+        flex-direction: column;
+        gap: getmap($space, rhythm, 500);
+        overflow: hidden;
+    }
+
+    // The card lifts to white while its title link is hovered, so the whole
+    // card answers the pointer, not just the words. :has() reaches the parent
+    // from the link; the meta row, white itself, keeps its edge with a hairline
+    // so it doesn't sink into the card.
+    transition: background-color 200ms ease;
+
+    &:has(.c-notes__link:hover) {
+        background-color: getmap($colour, light, 100); // white
+
+        .c-notes__meta-items {
+            box-shadow: 0 0 0 rem(1) rgba(getmap($colour, light, 850), 0.18);
+        }
+    }
+}
+
+.c-notes__body {
+    min-width: 0; // so a long title wraps rather than pushing the picture out
+    flex: 1 1 auto;
+}
+
+// The picture: a 16:9 crop flush with the card's top and sides — negative
+// margins pull it out through the card's padding, which differs by breakpoint
+// (see .c-notes__item). No corner of its own: the card's clipping gives it
+// the card's. It doesn't lift with the card on hover — it's a photo; it just sits.
+.c-notes__picture {
+    display: block;
+    flex: none;
+    margin: -#{getmap($space, rhythm, 600)} -#{getmap($space, rhythm, 600)} 0;
+
+    @include mq(from, md) {
+        margin: -#{getmap($space, rhythm, 600)} -#{getmap($space, rhythm, 700)} 0;
+    }
+
+    .c-picture,
+    img {
+        display: block;
+        width: 100%;
+    }
+
+    img {
+        height: auto;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+    }
+}
+
+// The prose h3, in the section grey the prose gives its sub-headings, so a
+// note's title on the index sits at the weight and colour it has on its own page.
+.c-notes__title {
+    @include typography(h3);
+    margin: 0;
+    font-family: $g-font-primary;
+    font-weight: 600;
+    color: getmap($colour, light, 880); // the prose's sub-heading grey
+
+    // The heading step's leading (1.15) stacks a wrapped title's lines on top
+    // of each other; a card title wraps often, on a phone always, so it gets
+    // more air at every size.
+    line-height: 1.3;
+}
+
+// The whole title is the link. It keeps the heading's own colour at rest — a
+// stack of red headings reads as a stack of buttons (tried, and turned back) —
+// and takes the prose link's red on hover, so it still declares itself as one.
+.c-notes__link {
+    @include accent-link;
+    color: inherit;
+
+    // The card reads as one unit, so it acts as one: the link's hit area is
+    // stretched over the whole card with a pseudo-element (the card is the
+    // positioning context — see .c-notes__item). The topic chip in the meta row
+    // is lifted above it so it stays its own link. A side effect worth having:
+    // the card's white hover now answers the pointer anywhere on the card.
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+    }
+
+    &:hover {
+        color: $c-accent-link-ink; // the link red itself, not the prose link's darkened hover shade — the card going white is the hover
+        text-decoration: none; // and no underline on top of it: one signal too many
+    }
+}
+
+// The meta row exactly as the note has it — date, reading time, topic chip in
+// one white row under the title — hugging its content at the left rather than
+// centred on the measure.
+.c-notes__meta-items {
+    position: relative; // above the title link's stretched hit area, so the chip stays clickable
+    z-index: 1;
+    display: inline-flex;
+    justify-content: flex-start;
+    margin-top: rem(12);
+
+    // In a card on a phone the row has to wrap, and the hairline before the
+    // reading time — drawn for a row — would sit at the start of a wrapped
+    // line and push the text along. So below md it goes, and the items just
+    // stack; from md the row fits and it returns.
+    @include mq(until, md) {
+        .c-content__date + .c-content__read::before {
+            content: none;
+        }
+    }
+}
+
+// The Summary under the meta row: the note's standfirst, set as a standard
+// paragraph of prose — the same size, face and leading as body copy — in the
+// summary's own grey. On the note it's the statement the page opens on; here
+// it's the line that tells you whether to open the note.
+.c-notes__summary {
+    @include typography(p);
+    text-wrap: pretty; // a description: no lone short word on the last line
+    margin: rem(16) 0 0;
+    font-family: $g-font-secondary; // JonSonMono
+    line-height: 1.6;
+    color: getmap($colour, light, 850); // the summaries' grey
+}

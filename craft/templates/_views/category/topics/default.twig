@@ -1,0 +1,59 @@
+{#
+  A topic — one category in the Topics group, at /notes/{topic}: the notes index
+  filtered to the notes that carry it, through the same listing as /notes (see
+  _components/notes-index). The group's template setting points here (project
+  config, categoryGroups/topics).
+
+  Whisper is the notes index's section name; the h1 is the topic's Long title,
+  falling back to its title, as on the index. Six a page, at
+  /notes/{topic}/p2 and on, with the head's canonical and prev/next following.
+#}
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+
+{# Cream slab — the default is olive p500. #}
+{% set slabModifier = 'b-slab--l600' %}
+
+{% set perPage = 6 %}
+{% set notesQuery = craft.entries()
+    .section('notes')
+    .status('live')
+    .relatedTo(category)
+    .orderBy('postDate DESC')
+    .limit(perPage) %}
+{% set pageCount = (notesQuery.count() / perPage)|round(0, 'ceil') %}
+
+{% block siteContent %}
+    {# Past the last page, or a topic with nothing under it: a 404, not an empty
+       page at a live address. #}
+    {% if pageCount == 0 or craft.app.request.pageNum > pageCount %}
+        {% exit 404 %}
+    {% endif %}
+
+    {# The whisper is the notes INDEX's section name ("Notes", the `note`
+       single), the same eyebrow /notes wears — not the channel's, which is
+       named for one entry ("Note"). #}
+    {% set notesIndex = craft.app.entries.getSectionByHandle('note') %}
+
+    {# The topic's Summary as a standfirst, exactly as on /notes — when it has
+       one. Plain text, so escaped; blank lines become paragraph breaks and
+       single line breaks stay as breaks. #}
+    {% set summary = (category.summary ?? '')|trim %}
+    {% set standfirst = null %}
+    {% if summary %}
+        {% set standfirst %}
+            {% for para in summary|split("\n\n") %}
+                <p class="c-content__summary">{{ para|trim|nl2br }}</p>
+            {% endfor %}
+        {% endset %}
+    {% endif %}
+
+    {% include '_components/notes-index' with {
+        query: notesQuery,
+        whisper: notesIndex ? notesIndex.name : 'Notes',
+        title: category.longTitle ?: category.title,
+        standfirst: standfirst,
+        topic: category,
+    } only %}
+{% endblock %}

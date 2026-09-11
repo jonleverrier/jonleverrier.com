@@ -1,0 +1,67 @@
+{#
+  Context rail — a strip of real content surfaced by the find_context tool,
+  injected after the first paragraph of a Jonson answer.
+
+  Expects `items`: normalised maps from FindContext, each:
+    { kind, image?, title?, url?, summary?, quote?, cite? }
+  kind ∈ photo | project | casestudy | testimonial | process | experience
+#}
+{% import '_macros/media' as media %}
+{# The cards grow to fill the row, so each photo's rendered width tracks the
+   count: 1 → the answer measure (~740px), 2 → ~half, 3 → ~third, 4 → ~quarter of
+   the full-bleed rail. `sizes` must track that, or the browser picks a candidate
+   sized for a quarter-width slot and upscales it → fuzzy. Values err generous. #}
+{% set count = items is defined ? items|length : 0 %}
+{% set sizes = {
+    1: '(min-width: 46.5em) 740px, 92vw',
+    2: '(min-width: 48em) 50vw, 92vw',
+    3: '(min-width: 64em) 34vw, (min-width: 48em) 50vw, 92vw',
+}[count] ?? '(min-width: 64em) 25vw, (min-width: 48em) 50vw, 92vw' %}
+{# Rail is composed and revealed as one piece, so load eagerly (no lazy defer).
+   Extra-large candidates keep the wide 1-/2-up cases sharp on retina
+   (≈740px CSS × 2 dpr ≈ 1480). #}
+{% set imgopts = { loading: 'eager', widths: [320, 480, 640, 960, 1280, 1600] } %}
+
+{% if items is defined and items|length %}
+    <div class="c-rail js-observe" role="group" aria-label="Related to this answer">
+        <div class="c-rail__items">
+            {% for item in items %}
+                {% set kind = item.kind ?? 'photo' %}
+
+                {# NO colour placeholder in here. The macro's `tone` is off by default
+                   and the rail deliberately doesn't ask for it: these thumbnails sit
+                   beside an answer someone is reading, and a row of coloured blocks
+                   resolving into photos next to running text is a distraction, not a
+                   flourish. It belongs on the case study pages, where the image is
+                   what you came for. `--r` is left as the right-to-left index for
+                   whatever wants it — nothing reads it today (see _rail.scss). #}
+                {% if kind == 'photo' and item.image %}
+                    <div class="c-rail__item c-rail__item--photo" style="--i: {{ loop.index }}; --r: {{ loop.length - loop.index }}">
+                        {{ media.picture(item.image, sizes, imgopts) }}
+                    </div>
+
+                {% elseif kind in ['project', 'casestudy'] %}
+                    <a class="c-rail__item c-rail__item--project" style="--i: {{ loop.index }}" href="{{ item.url }}">
+                        {% if item.image %}{{ media.picture(item.image, sizes, imgopts) }}{% endif %}
+                        <span class="c-rail__body">
+                            <span class="c-rail__title">{{ item.title }}</span>
+                            {% if item.summary %}<span class="c-rail__meta">{{ item.summary }}</span>{% endif %}
+                        </span>
+                    </a>
+
+                {% elseif kind == 'testimonial' %}
+                    <div class="c-rail__item c-rail__item--quote" style="--i: {{ loop.index }}">
+                        <blockquote class="c-rail__quote">{{ item.quote ?? item.summary }}</blockquote>
+                        {% if item.cite %}<span class="c-rail__cite">{{ item.cite }}</span>{% endif %}
+                    </div>
+
+                {% elseif kind in ['experience', 'process'] %}
+                    <div class="c-rail__item c-rail__item--text" style="--i: {{ loop.index }}">
+                        <span class="c-rail__title">{{ item.title }}</span>
+                        {% if item.summary %}<span class="c-rail__meta">{{ item.summary }}</span>{% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}

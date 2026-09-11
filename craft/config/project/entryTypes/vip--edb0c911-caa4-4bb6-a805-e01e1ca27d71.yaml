@@ -1,0 +1,168 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  43351c61-d0e9-4f3e-b38a-38345cdc1765:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-09-06T20:11:44+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 6e43da47-a5d5-4d1c-a791-af7d18e9a2ac # First Name
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 78b487cd-92c6-49d7-b4ed-20bb05167d04
+            userCondition: null
+            warning: null
+            width: 50
+          -
+            dateAdded: '2026-09-06T20:11:44+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: f487c1d5-6e83-4e7f-9124-c60a7de99825 # Surname
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 798057f9-0096-4ff4-b826-ecbc81205f49
+            userCondition: null
+            warning: null
+            width: 50
+          -
+            dateAdded: '2026-09-06T19:41:00+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 85738cb0-617b-45ba-9842-28cb680b4591 # Company
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 716b0af4-1a28-47eb-8675-6b65cddeccd9
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-06T20:11:44+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 994d5070-7163-4d97-8082-568fdabea3f5 # Email
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 4c20f348-1401-4083-9901-901b1e1fcfef
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-06T22:01:44+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: fd87040d-8b86-4b1e-9263-61cc796304ff # Alt Slug
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 10a59f5d-f91b-42aa-8308-02c60ecc47ff
+            userCondition: null
+            warning: null
+            width: 100
+        name: Contact
+        uid: 71a5a935-6287-4b74-834b-c6162670f7b5
+        userCondition: null
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-09-06T21:39:00+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: ed50ab74-0966-4b8e-a313-53e039a800f9 # Purpose
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 81dc7b89-3e0e-4d8c-b640-822508e71bb3
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-06T19:32:07+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: e92bca2e-bd0c-44c9-b4ba-ed8c0f8a6f51 # Jonson Summary
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 06082028-ab41-4264-8567-82faabfb2071
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-06T22:16:31+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: da8e0e9f-3e2d-4127-a793-c4adaa4710d3 # URL Hits
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 10ec0351-23ef-43cd-96e4-814aa66a4066
+            userCondition: null
+            warning: null
+            width: 100
+        name: Intel
+        uid: 96fa9dea-bc16-414f-becf-0e459700e285
+        userCondition: null
+    thumbFieldKey: null
+handle: vip
+hasTitleField: false
+icon: null
+name: VIP
+showSlugField: true
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: '{firstName} {surname} {company}'
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

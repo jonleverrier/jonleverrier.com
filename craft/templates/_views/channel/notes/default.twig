@@ -1,0 +1,110 @@
+{#
+  A note — one entry in the `notes` channel at /notes/{slug}. Whisper, title, then
+  the entry's Case Content block by block: the same blocks a case study or the
+  About page has (prose, images, video, Lottie, a quote, the method timeline, a
+  code snippet), rendered by the same component so a note looks like the rest of
+  the site rather than a separate blog.
+
+  Directory is the section HANDLE — the channel router tries the kebab-cased name
+  first and the handle second (see _routers/channel.twig); both are `notes` here.
+#}
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+
+{# Cream slab — the default is olive p500. #}
+{% set slabModifier = 'b-slab--l600' %}
+
+{% block siteContent %}
+    {# The Summary as a standfirst, exactly as on About: at the head of the body,
+       on the same measure as the prose, in bold mono (see .c-content__summary).
+       Plain text field, so it's escaped here; blank lines become paragraph breaks
+       and single line breaks stay as breaks. #}
+    {% set summary = (entry.summary ?? '')|trim %}
+    {% set standfirst = null %}
+    {% if summary %}
+        {% set standfirst %}
+            {% for para in summary|split("\n\n") %}
+                <p class="c-content__summary">{{ para|trim|nl2br }}</p>
+            {% endfor %}
+        {% endset %}
+    {% endif %}
+
+    {# Case Content, block by block. Rendered to HTML first for the reason the case
+       study gives: _components/content takes finished markup and knows nothing
+       about block types. The list is kept as well, for the reading time below. #}
+    {% set blocks = entry.caseContent.all() %}
+
+    {# The "on this page" panel — only where the note's Enable Sidebar Summary
+       switch is on, and only with at least two h2s to list. The h2s get ids
+       (the anchored HTML goes back into the blocks) and the list becomes the
+       nav in the content's aside. #}
+    {% set anchors = (entry.enableSidebarSummary ?? false) ? craft.frontend.headingAnchors(blocks) : null %}
+    {% set toc = anchors and anchors.headings|length >= 2
+        ? include('_components/toc', { headings: anchors.headings }, with_context = false)
+        : null %}
+
+    {% set blocksHtml = include('_components/case-content', {
+        blocks: blocks,
+        anchoredHtml: toc ? anchors.html : {},
+    }, with_context = false) %}
+
+    {# Whisper is the section's name, so renaming it in the CMS carries here. The
+       title is the entry's own — a note has no long title. The standfirst is the
+       body; the blocks follow it, as on About. #}
+    {# The meta row under the title: the note's Topic (one category from the
+       Topics group) as a chip, the post date, and how long the note takes to read. #}
+    {% set topic = entry.topicSelector.one() %}
+    {% set posted = entry.postDate %}
+    {# "Last updated", at the foot of the note — only when the last change fell on a
+       later DAY than the post date, since "updated the moment it was posted"
+       says nothing. #}
+    {% set updated = (entry.dateUpdated and posted and entry.dateUpdated|date('Y-m-d') > posted|date('Y-m-d'))
+        ? entry.dateUpdated : null %}
+
+    {# Reading time — one calculation shared with the index (see
+       modules/frontend/helpers/Notes.php for what it counts). #}
+    {% set readingTime = craft.frontend.readingTime(entry) %}
+
+    {# The notes either side: next is the next older one, previous the next
+       newer, newest-first being the order the index lists them in — and each
+       wraps round at the end (past the oldest, the newest; before the newest,
+       the oldest), so there's always somewhere to go. A lone note gets neither. #}
+    {% set notesInOrder = craft.entries().section('notes').status('live').orderBy('postDate DESC') %}
+    {% set nextNote = entry.getNext(notesInOrder) ?: notesInOrder.one() %}
+    {% set prevNote = entry.getPrev(notesInOrder) ?: notesInOrder.orderBy('postDate ASC').one() %}
+    {% if nextNote and nextNote.id == entry.id %}
+        {% set nextNote = null %}
+    {% endif %}
+    {% if prevNote and prevNote.id == entry.id %}
+        {% set prevNote = null %}
+    {% endif %}
+
+    {% include '_components/content' with {
+        whisper: entry.section.name,
+        title: entry.title,
+        topic: topic ? topic.title : null,
+        topicUrl: topic ? topic.url : null,
+        posted: posted,
+        readingTime: readingTime,
+        body: standfirst,
+        blocks: blocksHtml|trim ? blocksHtml : null,
+        blocksAfterBody: true,
+        updated: updated,
+        updatedLabel: 'Note last updated on',
+        share: { url: entry.url, title: entry.title },
+        next: nextNote,
+        prev: prevNote,
+        aside: toc,
+    } only %}
+
+    {# Ask bar as a real footer — a SIBLING of .c-content, not a child, exactly as
+       on the case study index and About (see the note there). #}
+    {# With a back button up to the notes index, beside the home one. #}
+    {% set notesIndex = craft.entries().section('note').status('live').one() %}
+    {% include '_components/ask' with {
+        entry: entry,
+        up: notesIndex ? notesIndex.url : siteUrl('notes'),
+        upLabel: 'Back to notes',
+    } only %}
+{% endblock %}

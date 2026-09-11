@@ -1,0 +1,53 @@
+columnSuffix: null
+handle: test
+instructions: null
+name: Test
+searchable: false
+settings:
+  fieldLayouts:
+    __assoc__:
+      -
+        - 013c8e60-7a62-4690-8c54-9873c859e0a1
+        -
+          __assoc__:
+            0:
+              - tabs
+              -
+                -
+                  __assoc__:
+                    0:
+                      - name
+                      - Content
+                    1:
+                      - uid
+                      - 46baadf2-cc3f-43c8-919f-756142565c16
+                    4:
+                      - elements
+                      -
+                        -
+                          __assoc__:
+                            0:
+                              - type
+                              - craft\fieldlayoutelements\CustomField
+                            6:
+                              - required
+                              - false
+                            7:
+                              - width
+                              - 100
+                            8:
+                              - dateAdded
+                              - '2026-08-03T20:21:25+00:00'
+                            9:
+                              - uid
+                              - 84d94ec5-f886-4c5c-8f8a-54b281d1693b
+                            12:
+                              - fieldUid
+                              - 85738cb0-617b-45ba-9842-28cb680b4591 # Company
+            4:
+              - cardThumbAlignment
+              - end
+  viewMode: inline
+translationKeyFormat: null
+translationMethod: site
+type: craft\fields\ContentBlock

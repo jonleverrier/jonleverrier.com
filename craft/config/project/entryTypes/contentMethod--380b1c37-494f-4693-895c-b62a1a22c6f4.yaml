@@ -1,0 +1,25 @@
+allowLineBreaksInTitles: false
+color: cyan
+description: null
+fieldLayouts:
+  faa08264-2df6-41a3-9fe6-b80beb65faf6:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        name: Content
+        uid: 2c4afb0d-eb76-4383-b70d-51362593319c
+        userCondition: null
+    thumbFieldKey: null
+handle: contentMethod
+hasTitleField: false
+icon: null
+name: Method
+showSlugField: false
+showStatusField: false
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

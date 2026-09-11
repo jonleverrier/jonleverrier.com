@@ -1,0 +1,49 @@
+/**
+ * COMPONENT: READ MORE
+ *
+ * Collapses a block of prose to its opening paragraph, with a red outlined control
+ * beneath that opens it and removes itself (see build/js/components/read-more.js).
+ *
+ * NOTHING is hidden until `.is-collapsed` is set by that script, so the content is
+ * fully readable with JS off rather than truncated with no way to open it.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+@use 'accent-link' as *;
+
+// Everything after the opening block, EXCEPT the toggle itself — which the script
+// appends as the last child, so it would otherwise hide the only way back.
+.is-collapsed > :not(:first-child):not(.c-read-more) {
+    display: none;
+}
+
+.c-read-more {
+    // Reset the button chrome — the outline below is the whole of its styling.
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-block;
+    margin: getmap($space, rhythm, 600) 0 0; // two steps up from 400: a control after a paragraph wants a paragraph's worth of air, not a line's
+    background: none;
+
+    // Sits alone on its own line, so it takes .c-button--sm's padding whole — the
+    // stroke, radius and hover come from accent-pill below.
+    padding: rem(12) rem(16);
+
+    // The small button's step (p-sm, as .c-button--sm), not the prose's: bold and on
+    // its own line with rhythm 600 above it, it reads as a control now, and at the
+    // prose size it competed with the paragraph it opens.
+    @include typography(p-sm);
+    // Same face and size as the prose it opens, at the mono's bold: with the extra
+    // air above it now (rhythm 600) it sits as its own beat rather than a line of
+    // the paragraph, and the bold marks it as the control it is.
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 600; // the mono's bold face — see theme/_typography.scss
+    text-align: left;
+
+    // Stroke, radius, colour and focus ring — shared with the meta column's "+N more"
+    // so the two can't drift apart. AFTER typography(p), whose prose leading would
+    // otherwise overwrite the pill's line-height and leave the box sitting tall.
+    @include accent-pill;
+}

@@ -1,0 +1,684 @@
+/**
+ * COMPONENT: CASE CONTENT
+ *
+ * The body of a case study — the Case Content matrix rendered block by block
+ * (see _components/case-content.twig): Large Image, 2UP Image, Video and Content.
+ *
+**/
+
+@use 'sass:math';
+@use '../mixins' as *;
+@use '../theme' as *;
+@use 'prose' as *;
+@use 'accent-link' as *;
+
+// The gap the connector leaves above and below itself. Named because the stack gap
+// below reuses it: an image sits the same distance from the image above it as it does
+// from the end of a spine, so the rhythm doesn't change depending on what precedes it.
+$c-case-content-gap: rem(22);
+
+// The shape a full-width image takes — 3200×1800 sources, shown at 1600×900. A 2-up
+// pair is held to the same RATIO overall, so a pair and a single image are the same
+// height at the same width and the page keeps one horizon line. Each half is then
+// taller than it is wide, which is why the images inside a pair are cropped to fill.
+$c-case-content-ratio: math.div(16, 9);
+
+// The timeline connector, matching the ones _content.scss draws between its blocks.
+// Repeated here rather than shared, because there it's a fixed list of selectors and
+// this one is conditional — see the rule below.
+@mixin case-content-spine {
+    content: '';
+    display: block;
+    width: $spine-width;
+    height: $spine-length;
+    margin: $c-case-content-gap auto;
+    background: getmap($colour, light, 750); // the content spine
+}
+
+.c-case-content {
+    width: 100%;
+}
+
+// ---------------------------------------------------------------------------
+// SPACING BETWEEN BLOCKS
+//
+// Two families, three joins, one override — the whole model, so a new block type
+// is added to a family here and inherits its joins rather than getting rules of
+// its own.
+//
+//   PROSE    text, code, a legacy image (inline or breakout) — things that read
+//            as part of the story
+//   IMAGERY  a large image, a pair, a trio — a beat of its own
+//   (a quote or the method timeline belongs to neither: it is always a beat,
+//   with a spine on both sides, so it needs no family)
+//
+//   prose   after prose    the paragraph gap — they read as consecutive paragraphs
+//   imagery after imagery  the image-run gap, no spine — a sequence, not moments
+//   anything else          the spine
+//
+//   override: a prose block that OPENS with a heading takes the heading gap
+//   instead of the paragraph gap, so a new section has the air a heading has
+//   inside the prose.
+//
+// The spine is drawn on whichever side of the join can hold it. A text, code,
+// quote or method block paints no background of its own, so a ::before inside it
+// is just a line with air either side. A figure can't host one — it has a
+// background, a corner radius and overflow: clip, so the line would sit in a band
+// of the figure's own slab colour — and a pair or trio is a grid, where a ::before
+// becomes the first cell. So a join INTO imagery hangs off the outgoing block as
+// an ::after instead. The prose and the figures share one centre axis, so the
+// line lands in the same place either way.
+//
+// One join has no host on either side: a legacy image straight after imagery.
+// That is a picture after pictures, so it joins the image run.
+// ---------------------------------------------------------------------------
+
+$cc-gap-paragraph: rem(24);           // prose after prose — the prose's own p + p gap
+// Above any heading: the heading's own em, so it scales with the level, with a
+// floor. The floor is what makes a section read as a section: everything inside
+// one (heading → chip 12, chip → copy 24, copy → copy 24) has to be clearly
+// smaller than the break before the next heading, or a description groups with
+// the heading below it instead of its own. 44 is close to double the largest
+// gap inside a section.
+$cc-gap-heading:   max(0.8em, #{rem(44)});
+// EVERY gap and spine rule below is scoped with this. In Image Mode the blocks between
+// the pictures are `display: none` — but a sibling combinator does not care about that,
+// so a figure following hidden prose still took the prose-into-figure gap and the run
+// came out 44px at some joins and 22px at others.
+//
+// Opting those rules OUT is the fix, rather than overriding them from the image-mode
+// block: `:is()` takes the specificity of its most specific argument, so they weigh
+// (0,5,0), and beating them meant repeating the mode class until it stuck — an arms
+// race that breaks again the first time one of them gains a class. A rule that does not
+// match cannot be out-specified.
+$cc-flow: ':not(.is-images-only)';
+
+$cc-gap-image:     $c-case-content-gap; // between images in a run; also the spine's own air
+$cc-gap-figure:    rem(44);             // prose into a figure — the heading floor, so a picture gets the air a section break gets (measured: 22 read as tight against 44 everywhere else)
+
+$cc-prose:   '.c-case-content__text, .c-case-content__code, .c-case-content__figure--inline, .c-case-content__figure--backdrop';
+$cc-imagery: '.c-case-content__figure:not(.c-case-content__figure--inline, .c-case-content__figure--backdrop), .c-case-content__pair, .c-case-content__trio';
+$cc-hosts:   '.c-case-content__text, .c-case-content__code, .c-case-content__quote, .c-case-content__method'; // blocks that can carry the spine
+
+// The default: a join is a spine.
+.c-case-content#{$cc-flow} > * + :is(#{$cc-hosts})::before,
+.c-case-content#{$cc-flow} > :is(#{$cc-hosts}):has(+ :is(#{$cc-imagery}))::after {
+    @include case-content-spine;
+}
+
+// Prose after prose: the paragraph gap, and no spine.
+.c-case-content#{$cc-flow} > :is(#{$cc-prose}) + :is(#{$cc-prose}) {
+    margin-top: $cc-gap-paragraph;
+
+    &::before {
+        content: none;
+    }
+}
+
+// Imagery after imagery: the image-run gap. Scoped to direct children, so the
+// figures INSIDE a pair or trio — laid out by their grid — are left alone.
+.c-case-content#{$cc-flow} > :is(#{$cc-imagery}) + :is(#{$cc-imagery}, .c-case-content__figure--inline, .c-case-content__figure--backdrop) {
+    margin-top: $cc-gap-image;
+}
+
+// The override: a prose block opening with a heading contributes no gap of its
+// own — the heading carries its air above it, scaled to its size (see the
+// heading rhythm in .c-case-content__text). Last, and more specific than the
+// paragraph-gap rule, so it wins that tie. Where the join is a spine the spine
+// still draws; the heading's air then sits under it.
+.c-case-content#{$cc-flow} > * + .c-case-content__text:has(> :is(h2, h3, h4):first-child) {
+    margin-top: 0;
+}
+
+// …except at the very top of the content, where there is nothing to hold off.
+.c-case-content#{$cc-flow} > :first-child > :is(h2, h3, h4):first-child {
+    margin-top: 0;
+}
+
+// Prose into a prose block that OPENS WITH AN H2: a spine after all. Prose after
+// prose is normally one paragraph after another, but an h2 starts a new section,
+// and a section break is a beat — the same line every other beat gets. (An h3 is
+// a sub-heading and stays inside the section: paragraph gap, no line.) Later than
+// the prose-after-prose rule, and more specific, so it wins that tie.
+.c-case-content#{$cc-flow} > :is(#{$cc-prose}) + .c-case-content__text:has(> h2:first-child)::before {
+    @include case-content-spine;
+}
+
+// Prose into imagery: no spine either. A picture after the paragraph that
+// introduces it is that paragraph's illustration, not a new beat — the line
+// between them read as the text being shut off from what it was describing. The
+// join takes the figure gap — the same 44 an h3 gets above it after an image,
+// so a picture sits in symmetric air — without a line in it. (Imagery back into
+// prose still gets its spine, unless that prose opens with an h3 — see below.)
+.c-case-content#{$cc-flow} > .c-case-content__text:has(+ :is(#{$cc-imagery}))::after {
+    content: none;
+}
+
+.c-case-content#{$cc-flow} > .c-case-content__text + :is(#{$cc-imagery}) {
+    margin-top: $cc-gap-figure;
+}
+
+// Imagery into a prose block, UNLESS it opens with an h2: no spine. A paragraph
+// or a sub-heading after a picture continues the section the picture belongs
+// to, so a line between them read as the picture being cut off from its own
+// text. Only an h2 keeps the spine: that is a new section, and the beat is
+// right. The gap is the figure gap either way — a heading brings its own 44
+// (the override above), and a paragraph-led block gets the same 44 here, so a
+// figure sits in the same air whatever follows it.
+.c-case-content#{$cc-flow} > :is(#{$cc-imagery}) + .c-case-content__text:not(:has(> h2:first-child))::before {
+    content: none;
+}
+
+.c-case-content#{$cc-flow} > :is(#{$cc-imagery}) + .c-case-content__text:not(:has(> :is(h2, h3, h4):first-child)) {
+    margin-top: $cc-gap-figure;
+}
+
+// The slider measures every dimension it has in 100cqi — the card's width, the
+// track's offset, the peek either side. On a Jonson page .c-jonson answers that, and
+// at the foot of this page .c-content__quotes declares a container for exactly this
+// reason. In the flow there is nothing above it that does, so cqi would fall back to
+// the VIEWPORT and the card would size itself to the window and sit edge to edge.
+.c-case-content__quote {
+    container-type: inline-size;
+}
+
+// The method timeline in the flow (the contentMethod block). Two boxes, for the
+// reason _content.scss gives for .c-content__method: the timeline's breakout maths
+// assumes the COMPONENT is the reading measure wide and the CONTAINER it reads cqi
+// from is the full box around it. Outer = container, the whole block width; inner
+// = the measure, centred, so the phase text lines up with the prose around it.
+// The spine connector sits on the outer, above the band, like a quote's.
+.c-case-content__method {
+    width: 100%;
+    container-type: inline-size;
+}
+
+.c-case-content__method-inner {
+    width: 100%;
+    max-width: rem(740); // mirrors .c-case-content__text
+    margin-inline: auto;
+}
+
+// A code panel in the flow — full width, like an image, so a long line has room
+// before it has to scroll (and it scrolls inside the panel when it does, never
+// pushing the column wider). Not on the reading measure: unlike prose, code
+// doesn't get harder to read across a wide line, it gets easier.
+.c-case-content__code {
+    width: 100%;
+}
+
+// Two side by side from md, stacked below — a half-width image on a phone is too
+// small to be worth showing as a pair. The same gap as everything else here.
+//
+// `align-items: start` so a shorter image keeps its own height instead of being
+// stretched by its taller neighbour: these are separate pictures, not a filmstrip.
+.c-case-content__pair {
+    display: grid;
+    gap: $c-case-content-gap;
+
+    @include mq(from, md) {
+        grid-template-columns: 1fr 1fr;
+        // The whole pair takes the height a single full-width image would at this
+        // width — 900 at the 1600 display size. Set on the PAIR, not on each half:
+        // the two then share one box and can't disagree about where the bottom is,
+        // whatever their source images happen to be shaped like.
+        aspect-ratio: $c-case-content-ratio;
+    }
+
+    // Fill the cell. Each half is now portrait-ish (about 790 × 900 at the canvas)
+    // while the sources are landscape, so the images have to crop rather than letterbox
+    // — `cover` with a centred focal point.
+    .c-case-content__figure,
+    .c-picture,
+    .c-picture__img {
+        height: 100%;
+    }
+
+    .c-picture__img {
+        object-fit: cover;
+        object-position: center;
+    }
+}
+
+// Three across from md, stacked below it. Same gap as everything else here.
+//
+// Deliberately NO aspect-ratio on the row, where the pair has one. The pair sets it so
+// a pair and a single image share one horizon line, and each half is then cropped to
+// fill. Do that with three and each cell is 519 x 900 at the canvas — steeply portrait,
+// which crops the middle out of anything landscape and needs about three times the
+// source width to stay sharp. Letting each image keep its own ratio costs the shared
+// bottom edge and buys back the crop; a set shot to one shape lines up anyway.
+.c-case-content__trio {
+    display: grid;
+    gap: $c-case-content-gap;
+
+    @include mq(from, md) {
+        // minmax(0, 1fr), not 1fr: a wide image in a grid cell would otherwise refuse
+        // to shrink below its intrinsic width and push the row past the container.
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.c-case-content__text {
+    @include prose-body($marker: getmap($colour, primary, 450)); // bullets in the whisper blue ($c-content-whisper), on the cream
+    // The reading measure, centred — prose set to the full image width is unreadable,
+    // and the images either side are meant to be the wide thing on the page.
+    max-width: rem(740);
+    margin-inline: auto;
+    color: getmap($colour, light, 950); // the prose ink — neutral near-black, matching $c-content-ink
+
+    // Only the h2 takes the page title's navy: it's the section marker, and reads
+    // as the same voice as the h1. Set here rather than in prose-body, which also
+    // runs on the olive conversation slab where navy on olive would be unreadable.
+    //
+    // The h3 and h4 are the headings WITHIN a section, and sit a shade off the
+    // prose ink — a warm grey — so the hierarchy has a second axis besides size.
+    // With all three in navy, a two-line h3 carried more mass on the page than a
+    // one-word h2 above it and the levels read as equals; the grey steps the
+    // sub-headings back and lets the section title own the colour.
+    > h2 {
+        color: getmap($colour, primary, 700); // logo navy — same as .c-content__title
+
+        // An anchored heading (the "on this page" nav's target) lands below the
+        // sticky header, not under it.
+        &[id] {
+            scroll-margin-top: rem(120);
+        }
+    }
+
+    > h3,
+    > h4 {
+        color: getmap($colour, light, 880); // the sub-heading grey
+    }
+
+    // Heading rhythm, stated once and owning the block outright — prose-body has
+    // its own, but these come later in the source at the same specificity and
+    // take every pairing, heading-under-heading included, so nothing has to be
+    // spelt out per pair.
+    //
+    // ABOVE: every heading carries its own air, in its own em, so the gap scales
+    // with the level — a fixed 40px read as a modest step above an h2 and a
+    // chasm above an h4. It's on the heading whether or not it opens the block,
+    // which is why the block-join rules above give an opening heading no gap of
+    // their own. BELOW: one step per level; the bigger the heading, the further
+    // it holds its copy off. BELOW comes first in the source so that ABOVE wins
+    // where they meet — a heading straight under a heading keeps its own air.
+    > h2 + * { margin-top: rem(24); }
+    > h3 + * { margin-top: rem(16); }
+    > h4 + * { margin-top: rem(12); }
+
+    > :is(h2, h3, h4) {
+        margin-top: $cc-gap-heading;
+        text-wrap: balance; // a wrapped heading breaks into even lines, not a long one and a stub
+        overflow-wrap: break-word; // a camelCase handle as a heading breaks rather than escapes the column
+    }
+
+    // Natural sizes, undoing prose-body's step-down. That drop exists for prose
+    // beside a page title and inside a Jonson answer; here the blocks sit beside
+    // the method timeline, whose phase heading is an h3 at the h3 step, and a
+    // prose h3 a step below it read as the smaller heading of the two. Same
+    // element, same size, wherever it appears on the page.
+    > h2 { @include typography(h2); }
+
+    // The h3 sits between the scale's h3 and h4 steps from md up: at the full h3
+    // size a sentence-length sub-heading wraps to two lines and outweighs the
+    // section title; a notch down keeps it clearly above the h4 while giving the
+    // h2 room to be the biggest thing in the column. The size lives on the scale
+    // (h3-prose) so it moves with the rest; the heading line-height is the h3's.
+    > h3 {
+        @include typography(h3);
+        @include typography(h3-prose);
+    }
+
+    // The h4 takes the standfirst's size rather than its own step, so the run-in
+    // heading and the Summary above the page are the same measure of type — a
+    // hair either side of the h4 step it replaces. Its heading line-height stays.
+    > h4 {
+        @include typography(h4);
+        @include typography(standfirst); // = .c-content__summary
+    }
+
+    // Exactly the Read more treatment — one shared mixin, not a second copy of the
+    // same declarations. Descendant, not `>`, so a link works inside a paragraph, a
+    // list item or a heading.
+    a {
+        @include accent-link;
+    }
+
+    // A preformatted block from the editor (CKEditor's Code Block writes
+    // <pre><code>): a one-line signature or a short literal that belongs in the
+    // flow of the prose — real snippets go through the Code matrix block and
+    // its navy panel. So: the inline chip's white box and navy mono, as a block
+    // that hugs its content, with room inside so it doesn't read as a tag. The
+    // <code> inside gives up the inline chip's padding and box — the block IS
+    // the chip. Long lines wrap rather than scroll; it's prose, not a panel.
+    > pre {
+        @include typography(p-sm);
+        font-family: $g-font-secondary; // JonSonMono
+        font-weight: 600; // the mono's bold — a signature line reads as a label, set like the date labels
+        line-height: 1.6;
+        width: fit-content;
+        max-width: 100%;
+        padding: rem(8) rem(14);
+        border-radius: rem(6);
+        background-color: getmap($colour, light, 100);
+        color: getmap($colour, primary, 700); // navy on white
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+
+        > code {
+            padding: 0;
+            border-radius: 0;
+            background: none;
+            font: inherit;
+            color: inherit;
+        }
+    }
+
+    // Inline code in the prose: the same size and face as a code panel's lines
+    // (see _code.scss), so a name mentioned in a sentence matches the snippet it
+    // refers to below. Descendant, not `>`: it sits inside paragraphs and lists.
+    code {
+        @include typography(p-sm);
+        font-family: $g-font-secondary; // JonSonMono
+        // A white chip, so a name in a sentence reads as a token rather than a
+        // change of voice mid-line. Padding in em so it scales with the code's
+        // own size; the small radius matches the pills elsewhere.
+        padding: 0.15em 0.5em;
+        border-radius: rem(6);
+        background-color: getmap($colour, light, 100);
+        color: getmap($colour, primary, 700); // navy on white
+    }
+}
+
+// A self-hosted clip in a full-width figure. `height: auto` against the width/height
+// attributes the template sets from the poster is what gives it the poster's aspect
+// ratio; the fallback below only bites when there's no poster to take one from.
+.c-case-content__video {
+    display: block; // <video> is inline, so it would sit on a text baseline
+    width: 100%;
+    height: auto;
+
+    // Once video-autoplay.js takes the controls off, the clip itself is the
+    // play/pause target, so it has to look like something you can press. Keyed off
+    // the absence of the attribute rather than a class of our own: `controls` is
+    // reflected, so the JS setting it false removes it here — and that means the
+    // pointer appears only in the state where the click actually does something.
+    // While the bar is up (reduced motion, or an autoplay the browser refused) the
+    // controls are the target and the arrow is correct.
+    &:not([controls]) {
+        cursor: pointer;
+    }
+
+    // NO BACKGROUND OF ITS OWN, so the figure's slab colour below shows through.
+    // It used to be #000, for letterboxing if a clip didn't match its poster's
+    // shape — but a <video> paints its background whenever it has no frame to
+    // show, and that's a state this page reaches on purpose: the clip ships with
+    // no data (`preload="none"`) and Safari drops the poster the instant play() is
+    // called, so a fast scroll to a 19MB clip landed on a black box for as long as
+    // the download took. Measured in Safari: readyState 0, paused false, poster
+    // gone, box solid black. The same colour showed as a hairline along the box's
+    // top edge while scrolling, where the video's compositing layer rounds a device
+    // pixel short of the element.
+    //
+    // video-autoplay.js now holds the poster until there's a frame, which is the
+    // real fix; leaving the background transparent is the backstop — whatever ends
+    // up with nothing to paint, it paints the panel colour rather than a hole.
+    //
+    // The cost is that a clip which genuinely doesn't match its poster letterboxes
+    // in the slab colour rather than black. Match the clip to its poster instead;
+    // black bars around a rounded panel never looked deliberate here anyway.
+
+    &:not([poster]) {
+        aspect-ratio: $c-case-content-ratio;
+    }
+}
+
+// A Lottie animation in a full-width figure (see the lottie block in
+// case-content.twig). The box is the same panel as a full-width image — the column
+// at the page's 16/9 — and the animation sits centred inside it at the size it was
+// made, never scaled up: a composition stretched past its native size goes soft at
+// its embedded images and type. `--lottie-w` / `--lottie-h` come inline from the
+// template, read from the JSON. On a panel smaller than the composition it shrinks
+// to fit, keeping its shape (the player's `preserveAspectRatio: meet`).
+//
+// The player writes `width: 100%; height: 100%` INLINE on the SVG it builds, so the
+// size has to be asserted over that — hence the !important, which is the only way
+// to beat an inline style from a stylesheet. Without the custom properties the
+// SVG falls back to filling the panel.
+.c-case-content__lottie {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: $c-case-content-ratio;
+    // The font the composition's text is measured in — see the text rule below.
+    font-family: Arial, Helvetica, sans-serif;
+
+    svg {
+        display: block;
+        width: var(--lottie-w, 100%) !important;
+        height: var(--lottie-h, 100%) !important;
+        max-width: 100%;
+        max-height: 100%;
+
+        // Text layers. A composition exported without its glyphs names a font it
+        // expects to find on the machine — here a licensed one this site doesn't
+        // ship — and the browser then substitutes. Pin it to a plain sans instead.
+        //
+        // It has to be set in TWO places. The drawn text carries the named font as
+        // a presentation attribute, which this rule beats. But the player sizes its
+        // lines from a hidden helper <text> in the same SVG that carries
+        // `font-family: inherit` INLINE — which no stylesheet rule can beat — so
+        // the box above sets the same family for it to inherit. Miss either and the
+        // text is measured in one font and drawn in another, and the spacing is
+        // off. The weight is asserted as well: the player only recognises English
+        // style names, so a "Halbfett" (semibold) export lands as normal.
+        text,
+        tspan {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: 700;
+        }
+    }
+}
+
+.c-case-content__figure {
+    margin: 0; // <figure> ships with 40px inline margins
+
+    // Rounded to match the case study cards and the testimonial panel. `clip` rather
+    // than `hidden` so the box never becomes a scroll container — a corner radius
+    // shouldn't quietly change what the element is.
+    border-radius: $b-radius-200;
+    overflow: clip;
+
+    // The slab shows through while the image loads, so the rounded box is already
+    // the right shape and colour rather than a white rectangle that pops.
+    background-color: getmap($colour, light, 700);
+}
+
+// A legacy image without its breakout (AFTER the figure rule above, whose
+// `margin: 0` would otherwise beat the auto margins here): held to the reading measure and no wider
+// than the picture itself. `fit-content` hugs the image, so a 500px photo is a
+// 500px figure, centred — not a 740px slab with tan either side of it — and
+// the image never stretches past its own pixels.
+.c-case-content__figure--inline {
+    width: fit-content;
+    max-width: min(100%, #{rem(740)});
+    margin-inline: auto;
+
+    .c-picture__img {
+        width: auto;
+        max-width: 100%;
+    }
+}
+
+// A legacy image WITH its breakout: the figure runs the large image's full
+// width, filled by a blurred copy of the same picture, and the sharp copy sits
+// on top on the reading measure, centred, with its caption. So a modest photo
+// carries a full-width beat without being enlarged — the blur is its own
+// backdrop, not a stretched version of it.
+// The figure is a plain wrapper; the BOX is the blurred, rounded, clipped panel,
+// and the caption (if any) follows the box on the page. No room above or below:
+// the sharp copy runs the box's full height, so the blur shows only either side
+// of it, as wings.
+.c-case-content__figure--backdrop {
+    border-radius: 0;
+    overflow: visible;
+    background-color: transparent;
+
+    // Its caption sits on the measure under the box, like the inline version's
+    // under its picture.
+    > .c-case-content__caption {
+        max-width: rem(740);
+        margin-inline: auto;
+    }
+}
+
+.c-case-content__backdrop-box {
+    position: relative;
+    isolation: isolate; // the backdrop's z-index: -1 stays inside the box
+    padding: 0 getmap($space, rhythm, 500);
+    border-radius: $b-radius-200;
+    overflow: clip;
+    background-color: getmap($colour, light, 700);
+}
+
+.c-case-content__backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+
+    img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        // Overscaled so the blur's soft edges fall outside the box rather than
+        // showing the slab through them.
+        transform: scale(1.08);
+        filter: blur(10px);
+    }
+
+    // Taken down a touch, so the sharp picture and a white caption both read
+    // over whatever the blur happens to be.
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(#000, 0.22);
+    }
+}
+
+.c-case-content__figure-inner {
+    width: fit-content;
+    max-width: min(100%, #{rem(740)});
+    margin-inline: auto;
+
+    .c-picture {
+        border-radius: $b-radius-200;
+        overflow: clip;
+        background-color: getmap($colour, light, 700);
+    }
+
+    .c-picture__img {
+        width: auto;
+        max-width: 100%;
+    }
+}
+
+// A captioned figure: the rounded box, its clip and its tan loading slab move
+// from the figure onto the PICTURE, so the caption below sits on the page
+// rather than inside a box — a line of text under a photo, the way a caption
+// usually is. The figure itself becomes a plain wrapper. :has() rather than a
+// modifier, so a caption added or removed in the CMS never needs a class to
+// follow it. (Direct child only: a backdrop figure's caption sits inside its
+// inner box, and that figure keeps its clip for the blur.)
+.c-case-content__figure:has(> .c-case-content__caption) {
+    border-radius: 0;
+    overflow: visible;
+    background-color: transparent;
+
+    > .c-picture {
+        border-radius: $b-radius-200;
+        overflow: clip;
+        background-color: getmap($colour, light, 700);
+    }
+}
+
+// The caption under a legacy image: on the page beneath the picture, as wide
+// as the picture, its text starting at the picture's left edge. Small mono, like
+// the timeline's summaries, in the near-black the prose uses, stepped back.
+.c-case-content__caption {
+    display: flex;
+    align-items: baseline;
+    gap: rem(10);
+    padding: rem(12) 0 0;
+    @include typography(p-sm);
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 600; // the mono's bold face — see theme/_typography.scss
+    color: getmap($colour, light, 950); // the prose's own ink, not stepped back
+
+    // A small triangle pointing up at the picture, in the house red, before the
+    // text — a "this one" marker. A clipped box rather than the border trick, so
+    // it takes a real colour and scales cleanly; a pseudo-element rather than
+    // markup, since it's decoration.
+    &::before {
+        content: '';
+        flex: none;
+        width: rem(11);
+        height: rem(9);
+        background: getmap($colour, primary, 600); // the button and link red
+        clip-path: polygon(50% 0, 100% 100%, 0 100%);
+        // Sits on the text's baseline via the flex alignment; nudged so its base
+        // lines up with the x-height rather than hanging below it.
+        transform: translateY(-#{rem(1)});
+    }
+}
+
+/**
+ * IMAGE MODE — the writing hidden, the pictures kept (toggled from the section strip;
+ * see components/case-toc.js).
+ *
+ * GRID, not adjacency. Every gap in this file is `A + B` — imagery after imagery gets
+ * the image-run gap, prose into a figure gets the bigger figure gap — and a sibling
+ * combinator does not care that an element is `display: none`. Hide the prose and a
+ * figure that follows it STILL takes the prose-into-figure gap, so the run came out
+ * with 44px in some joins and 22px in others: the uneven spacing this mode was supposed
+ * to close up.
+ *
+ * A grid's `gap` only falls between rendered items, so a hidden block contributes
+ * nothing at all — one even rhythm, whatever was between the pictures. The children's
+ * own `margin-inline: auto` still centres them; auto margins work the same on a grid
+ * item as on a block.
+ *
+ * The quote stays: it is a portrait with words beside it, not a block of prose, and
+ * taking it out would remove a picture from a picture-only view.
+ */
+.c-case-content.is-images-only {
+    display: grid;
+    gap: $cc-gap-image;
+
+    .c-case-content__text {
+        display: none;
+    }
+
+    // The adjacency margins and the spine connectors both have to go, or they sit on
+    // top of the grid's own gap and draw lines between images that are now a run rather
+    // than a sequence of beats.
+    //
+    // THE CLASS IS REPEATED on purpose. The gap rules above are shaped
+    // `.c-case-content#{$cc-flow} > :is(…) + :is(…)`, and `:is()` takes the specificity of its
+    // most specific argument — so they weigh (0,3,0) and a plain
+    // `.c-case-content.is-images-only > *` weighs (0,2,0) and loses. Measured before
+    // this: gaps of 66px, which is this grid's 22 plus a 44 that refused to be
+    // overridden. Doubling the class matches their weight, and being later in the file
+    // settles the tie — which is the same result as !important with none of its reach.
+    > * {
+        margin-top: 0;
+
+        &::before {
+            content: none;
+        }
+    }
+}

@@ -1,0 +1,45 @@
+/**
+ * MIXINS: ICON
+ *
+**/
+@use 'sass:map';
+@use '../theme' as *;
+@use '../templates/sprite' as *;
+
+/**
+ * icon
+ *
+ * this mixin is a wrapper for /templates/_sprite.scss which is dynamically generated
+ * i have added a 5th parameter that allows me to prepend a #dir segment path
+ * todo: remove this duplicate code when vite-plugin-svg-spritemap reaches v2
+ *
+**/
+@mixin icon($name, $include-size: 'box', $type: 'uri', $mode: 'background') {
+    $sprite: map.get($sprites, $name);
+    $url: false;
+  
+    @if $type == 'fragment' {
+        // $dir prepended before the vite dynamic route, allows me to
+        // correct the path to sprite file
+        $url: '/__spritemap##{$sprites-prefix}#{$name}-view';
+    } @else if $type == 'uri' {
+        $url: map.get($sprite, uri);
+    } @else {
+        @error 'mixins/_icon.scss: $type must be either "fragment" or "uri"';
+    }
+  
+    @if $url {
+        #{$mode}: url($url) center no-repeat;
+  
+        @if $include-size {
+            @if $include-size == true {
+                #{$mode}-size: map.get($sprite, width) map.get($sprite, height);
+            } @else if $include-size == 'box' {
+                width: map.get($sprite, width);
+                height: map.get($sprite, height);
+                background-size: cover;
+            }
+        }
+    }
+}
+  

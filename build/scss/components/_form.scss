@@ -1,0 +1,261 @@
+/**
+ * COMPONENT: FORM
+ *
+ * The contact form — a solid green panel of fields (First name, Surname, Email,
+ * Message) that posts to the CRM channel. Cream labels, white fields with dark
+ * text for contrast on the green, a red submit that ties to the header CTA.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.c-form {
+    display: flex;
+    flex-direction: column;
+    gap: getmap($space, rhythm, 600);
+    padding: getmap($space, rhythm, 600);
+    @include mq(from, md) {
+        padding: getmap($space, rhythm, 700);
+    }
+    border-radius: $b-radius-200; // matches the CTA boxes
+    background-color: getmap($colour, primary, 500); // solid green
+    color: getmap($colour, light, 100);
+    text-align: left;
+}
+
+// Post-submit confirmation — replaces the form in its place (same green panel).
+.c-form--done {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: rem(200);
+}
+
+.c-form__thanks {
+    @include typography(p-lg);
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 700; // bold
+    margin: 0;
+}
+
+// The Send button animates its width (JS locks the start, then collapses it to a
+// circle around the spinner on submit — see contact-form.js).
+.c-form [type="submit"] {
+    transition:
+        width 360ms cubic-bezier(0.65, 0, 0.35, 1),
+        border-radius 360ms cubic-bezier(0.65, 0, 0.35, 1),
+        background-color 200ms ease,
+        color 200ms ease,
+        transform 200ms ease;
+}
+
+// Sending state — the label fades to nothing, the button collapses to a circle,
+// is disabled, and a spinner takes its place (JS adds .is-sending).
+.c-form.is-sending [type="submit"] {
+    position: relative;
+    color: transparent; // "Send" fades out
+    border-radius: 50%; // becomes a circle around the spinner
+    pointer-events: none;
+
+    &:disabled {
+        opacity: 1; // stay solid — the spinner shows the loading, not a dim
+    }
+
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        width: rem(28);
+        height: rem(28);
+        border: rem(4) solid rgba(#fff, 0.4); // faint track
+        border-top-color: #fff; // bright-white spinning arc
+        border-radius: 50%;
+        animation: c-form-spin 650ms linear infinite;
+    }
+}
+
+@keyframes c-form-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-form.is-sending [type="submit"]::after {
+        animation: none;
+    }
+}
+
+
+// Confirmation — the plane "landed"; text rises in.
+.c-form--done {
+    gap: getmap($space, rhythm, 400);
+    transition: opacity 400ms ease, transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.c-form--done.is-entering {
+    opacity: 0;
+    transform: translateY(rem(10));
+}
+
+.c-form__done-plane {
+    width: rem(40);
+    height: rem(40);
+    color: getmap($colour, light, 100);
+
+    svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+.c-form__thanks-sub {
+    @include typography(p-sm);
+    font-family: $g-font-secondary; // JonSonMono, regular weight
+    margin: 0;
+    color: getmap($colour, light, 300);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-form.is-sending [type="submit"]::after {
+        animation: none;
+    }
+
+    .c-form--done {
+        transition: none;
+    }
+
+    .c-form--done.is-entering {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.c-form__row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: getmap($space, rhythm, 600);
+    @include mq(from, md) {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.c-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: rem(8);
+}
+
+.c-form__label {
+    display: flex;
+    flex-direction: column; // field name, then any validation message beneath it
+    gap: rem(4);
+}
+
+.c-form__label-text {
+    @include typography(p-sm);
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 700;
+    color: getmap($colour, light, 700); // cream
+}
+
+.c-form__optional {
+    color: rgba(getmap($colour, light, 700), 0.6);
+}
+
+// Validation message under the label (e.g. "Verify your email address is
+// correct") — non-bold, cream.
+.c-form__error {
+    @include typography(p-sm);
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 400; // lighter than the label
+    color: getmap($colour, light, 700); // cream — same as the label
+}
+
+// Wraps a single-line input so the validation icon can overlay its right edge.
+.c-form__control {
+    position: relative;
+    display: block;
+}
+
+// Warning icon sitting inside an errored input, right side, red (stroke is
+// currentColor). pointer-events off so it never blocks typing/clicks.
+.c-form__input-icon {
+    position: absolute;
+    top: 50%;
+    right: rem(16);
+    transform: translateY(-50%);
+    width: rem(24);
+    height: rem(24);
+    color: getmap($colour, primary, 600); // red — matches the error border
+    pointer-events: none;
+}
+
+.c-form__field--error .c-form__input {
+    border-color: getmap($colour, primary, 600); // red — as on focus
+    padding-right: rem(48); // clear the overlaid warning icon on the right
+}
+
+.c-form__input {
+    width: 100%;
+    height: rem(55); // single-line inputs (the textarea overrides below)
+    padding: 0 rem(16); // single-line text centres vertically on its own
+    border: rem(2) solid transparent;
+    border-radius: $b-radius-100;
+    background-color: getmap($colour, light, 600); // cream — same as the page slab
+    color: getmap($colour, light, 900); // dark text
+    @include typography(p);
+    font-family: $g-font-secondary; // JonSonMono (after typography, which sets sans)
+    line-height: 1.4;
+    transition:
+        background-color 180ms ease,
+        border-color 180ms ease;
+
+    &::placeholder {
+        color: rgba(getmap($colour, light, 900), 0.5);
+    }
+
+    // Placeholder clears as soon as the field is focused (not only once you type).
+    &:focus::placeholder {
+        color: transparent;
+    }
+
+    &:focus {
+        outline: none;
+        background-color: getmap($colour, light, 100); // white while focused
+        border-color: getmap($colour, primary, 600); // red focus ring
+    }
+}
+
+.c-form__input--area {
+    height: auto; // grow with content, not the fixed single-line height
+    min-height: rem(130);
+    padding: rem(14) rem(16); // restore vertical padding for the multi-line box
+    resize: vertical;
+}
+
+// The submit uses the shared button component (c-button c-button--sm); it just
+// needs to sit left-aligned rather than stretch.
+.c-form .c-button {
+    align-self: flex-start;
+    margin-top: getmap($space, rhythm, 200);
+}
+
+// Flash messages (success / validation error), shown after the redirect.
+.c-form__flash {
+    color: getmap($colour, light, 100);
+    @include typography(p);
+    font-family: $g-font-secondary;
+}
+
+// Honeypot — present for bots, hidden from people (standard visually-hidden).
+.c-form__hp {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

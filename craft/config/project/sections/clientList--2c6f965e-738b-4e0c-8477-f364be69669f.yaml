@@ -1,0 +1,25 @@
+defaultPlacement: end
+enableVersioning: false
+entryTypes:
+  -
+    uid: da6a9fef-c7a8-4ba7-8aa8-7ba34cf486af # Client
+handle: clientList
+maxAuthors: 1
+minAuthors: 1
+name: 'Client List'
+previewTargets:
+  -
+    label: 'Primary entry page'
+    refresh: '1'
+    urlFormat: '{url}'
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: false
+    template: null
+    uriFormat: null
+structure:
+  maxLevels: 1
+  uid: ed70d784-54b6-432c-9461-b724a1feff60
+type: structure

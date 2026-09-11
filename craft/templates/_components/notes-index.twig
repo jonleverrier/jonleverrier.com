@@ -1,0 +1,38 @@
+{#
+  Notes index — the listing shared by /notes and the topic pages under it
+  (/notes/{topic}): whisper, title, an optional standfirst; the page's notes as
+  cards; the topics as a pill row; the pagination. One template, so the two
+  can't drift.
+
+    query      — the notes query, already filtered and ordered, with its limit
+                 set (the caller paginates through this include)
+    whisper    — the eyebrow
+    title      — the h1
+    standfirst — HTML for the standfirst, or null
+    topic      — the current topic category on a topic page, else null
+    allCurrent — whether "All notes" is the current view (true on /notes;
+                 false on a listing that's neither the index nor a topic,
+                 like a year)
+#}
+{% paginate query as pageInfo, notes %}
+
+{# The list, the topics and the pagination go through the content component as
+   one block, like About's case content, so they sit inside the timeline: the
+   trailing spine and end node come after them rather than hanging below. #}
+{# On a topic page every card would carry the same chip, so the list drops it. #}
+{# The topics sit between the list and the pagination in the flow, and on wide
+   screens float themselves out into the right-hand gutter as a boxed panel (the
+   Summary panel's placement, mirrored — see .c-topics). asideInset gives the
+   blocks the gutter layout that makes room for it. #}
+{% set blocks = include('_components/notes-list', { notes: notes, showTopic: not (topic ?? null) }, with_context = false)
+    ~ include('_components/topics', { current: topic ?? null, allCurrent: allCurrent ?? true }, with_context = false)
+    ~ include('_components/pagination', { pageInfo: pageInfo }, with_context = false) %}
+
+{% include '_components/content' with {
+    whisper: whisper,
+    title: title,
+    body: standfirst ?? null,
+    blocks: blocks|trim ? blocks : null,
+    blocksAfterBody: true,
+    asideInset: true,
+} only %}

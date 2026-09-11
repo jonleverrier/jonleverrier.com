@@ -1,0 +1,63 @@
+{#
+  Notes index — the `note` single, which owns /notes. The individual notes live in
+  the `notes` channel at /notes/{slug} and render from _views/channel/notes/default;
+  the topic pages at /notes/{topic} render from _views/category/topics/default,
+  through the same listing (see _components/notes-index).
+
+  NOTE the router keys off the section's NAME, kebab-cased (see _routers/single.twig),
+  not its handle — the section is named "Notes" and handled `note`, so this directory
+  is `notes`. Rename the section in the CMS and the directory has to follow.
+
+  Same shape as About: whisper, title, the Summary as a standfirst, on the cream slab
+  — then the notes, newest first, six a page. `status('live')` matches everywhere
+  else: disabled, future-dated and expired entries stay out.
+#}
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+
+{# Cream slab — the default is olive p500. #}
+{% set slabModifier = 'b-slab--l600' %}
+
+{# The listing query, at the top level so the head can know the page count for
+   its rel="next" (a child template's top-level `set`s run before the layout).
+   Six a page, newest first. count() ignores the limit, so it's the total. #}
+{% set perPage = 6 %}
+{% set notesQuery = craft.entries()
+    .section('notes')
+    .status('live')
+    .orderBy('postDate DESC')
+    .limit(perPage) %}
+{% set pageCount = (notesQuery.count() / perPage)|round(0, 'ceil') %}
+
+{% block siteContent %}
+    {# A page past the last is nothing to show, so it's a 404 — not an empty
+       page at a live address for a crawler to index. #}
+    {% if craft.app.request.pageNum > pageCount %}
+        {% exit 404 %}
+    {% endif %}
+
+    {# The Summary as a standfirst, exactly as on About. Plain text field, so it's
+       escaped here; blank lines become paragraph breaks and single line breaks stay
+       as breaks. #}
+    {% set summary = (entry.summary ?? '')|trim %}
+    {% set standfirst = null %}
+    {% if summary %}
+        {% set standfirst %}
+            {% for para in summary|split("\n\n") %}
+                <p class="c-content__summary">{{ para|trim|nl2br }}</p>
+            {% endfor %}
+        {% endset %}
+    {% endif %}
+
+    {% include '_components/notes-index' with {
+        query: notesQuery,
+        whisper: entry.section.name,
+        title: entry.longTitle ?: entry.title,
+        standfirst: standfirst,
+        topic: null,
+    } only %}
+
+    {# No ask bar here, unlike About: the index is a list to pick from, and the
+       timeline's end node closes the page on its own. A note carries the bar. #}
+{% endblock %}

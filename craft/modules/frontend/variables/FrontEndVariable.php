@@ -1,0 +1,431 @@
+<?php
+
+namespace modules\frontend\variables;
+
+use Craft;
+use craft\elements\Asset;
+use craft\elements\Entry;
+use modules\frontend\helpers\CaseStudies;
+use modules\frontend\helpers\Headings;
+use modules\frontend\helpers\Notes;
+use modules\frontend\helpers\Social;
+use modules\frontend\helpers\Testimonials;
+use modules\jonson\Jonson;
+use nystudio107\vite\Vite;
+
+/**
+ * Template helpers exposed as `craft.frontend`.
+ *
+ * @author You & Me Digital
+ * @since  1.0.0
+ */
+class FrontEndVariable
+{
+    /** Name of the cookie recording which build's critical CSS the visitor already has. */
+    private const CRITICAL_COOKIE = 'criticalcss';
+
+    /** Roughly three months. */
+    private const CRITICAL_COOKIE_LIFETIME = 7890000;
+
+    /**
+     * Has this visitor already been served the current build's critical CSS?
+     *
+     * Not a pure getter: a miss WRITES the cookie as well as reporting one, so the
+     * next page load is a hit. That's the whole mechanism — inline the critical CSS
+     * on the first view of a build, skip it on every view after.
+     *
+     * The cookie holds the hash of the bundled CSS, so a deploy invalidates it
+     * automatically: a new hash can't match the stored one, and the visitor gets the
+     * inline copy once more.
+     */
+    public function hasCriticalCssCookie(): bool
+    {
+        // Read out of the Vite manifest, so it's empty if the plugin is missing or the
+        // build hasn't been run. Either way the critical CSS just gets inlined every
+        // time, which is the safe way to be wrong.
+        $hash = Vite::$plugin?->helper->getCssHash('build/js/app.js') ?? '';
+
+        if (($_COOKIE[self::CRITICAL_COOKIE] ?? null) === $hash) {
+            return true;
+        }
+
+        // Set raw rather than through Craft's response cookies. Yii signs those with an
+        // HMAC when cookie validation is on, which would make the value unreadable to
+        // anything outside PHP — an edge cache or a bit of JS keying off the build hash.
+        // Nothing here needs tamper-proofing: the worst a forged value can do is skip an
+        // inline stylesheet the visitor would then load normally.
+        setcookie(self::CRITICAL_COOKIE, $hash, [
+            'expires' => time() + self::CRITICAL_COOKIE_LIFETIME,
+            'path' => '/',
+            // Chrome drops Secure cookies on plain http, so a hard-coded true would make
+            // this silently do nothing on any non-https environment.
+            'secure' => Craft::$app->getRequest()->getIsSecureConnection(),
+            'samesite' => 'Lax',
+        ]);
+
+        return false;
+    }
+
+    /**
+     * Read a cookie from the template, or null if it isn't set.
+     */
+    public function cookieValue(string $name): ?string
+    {
+        return $_COOKIE[$name] ?? null;
+    }
+
+    /**
+     * The client a testimonial belongs to — its linked case study's name, or the
+     * typed `company` when there's no link. See Testimonials::company().
+     *
+     * Templates reach it as `craft.frontend.testimonialCompany(t)`; the Jonson
+     * module calls the helper directly, so both sides give the same answer.
+     */
+    /**
+     * A note's reading time in whole minutes — one calculation, shared by the
+     * note itself and the index that lists it, so the two never disagree.
+     * Templates reach it as `craft.frontend.readingTime(entry)`.
+     */
+    /**
+     * The image a page shares with — its own Social Image, else the first in its
+     * content, else the site default — or null. See helpers/Social for the chain.
+     * Templates reach it as `craft.frontend.socialImage(element)`.
+     */
+    public function socialImage(?\craft\base\ElementInterface $element): ?Asset
+    {
+        return Social::image($element);
+    }
+
+    /**
+     * An element's own image — Social Image, else the first in its content — or
+     * null; no site default. For listing cards. `craft.frontend.ownImage(entry)`.
+     */
+    public function ownImage(\craft\base\ElementInterface $element): ?Asset
+    {
+        return Social::ownImage($element);
+    }
+
+    /** That image's URL at the share size (1200 × 630, cropped from the focal point). */
+    public function socialImageUrl(Asset $asset): string
+    {
+        return Social::url($asset);
+    }
+
+    /**
+     * The h2s across a set of content blocks, given ids and listed — for an
+     * "on this page" nav. Returns { headings: [{id, text}], html: {blockId: html} };
+     * see helpers/Headings. `craft.frontend.headingAnchors(blocks)`.
+     */
+    public function headingAnchors(iterable $blocks): array
+    {
+        return Headings::anchor($blocks);
+    }
+
+    public function readingTime(Entry $entry): int
+    {
+        return Notes::readingTime($entry);
+    }
+
+    public function testimonialCompany(?Entry $testimonial): string
+    {
+        return Testimonials::company($testimonial);
+    }
+
+    /**
+     * The Client List entry a case study was for, or null. See CaseStudies::client().
+     *
+     * Returned as the entry rather than a name so a caller that needs more than the
+     * name — the structured data wants an id to hang an Organization off — doesn't
+     * have to follow the relation a second time.
+     */
+    public function caseStudyClient(?Entry $study): ?Entry
+    {
+        return CaseStudies::client($study);
+    }
+
+    /**
+     * The client's name for a case study, '' when it has none. `long` asks for the
+     * Client Long Title, which falls back to the short name.
+     *
+     * Templates reach these as `craft.frontend.caseStudyClientName(entry)`; the
+     * Jonson module calls the helper directly, so both sides give the same answer.
+     */
+    public function caseStudyClientName(?Entry $study, bool $long = false): string
+    {
+        return CaseStudies::clientName($study, $long);
+    }
+
+    /** The client's logo for a case study, falling back to the study's own. */
+    public function caseStudyClientLogo(?Entry $study): ?Asset
+    {
+        return CaseStudies::clientLogo($study);
+    }
+
+    /** `studies` with the ones sharing this study's client first, order otherwise kept. */
+    public function caseStudiesBySharedClient(array $studies, ?Entry $study): array
+    {
+        return CaseStudies::orderBySharedClient($studies, $study);
+    }
+
+    /** A month. The probe encodes a tiny image, but there's no reason to repeat it
+     *  on every request — the answer can only change when the host does. */
+    private const AVIF_TTL = 2592000;
+
+    /**
+     * The quality AVIF transforms are encoded at.
+     *
+     * A number of its own, deliberately not derived from the `quality` the rest of
+     * the <picture> uses. An earlier version worked out an offset from that number,
+     * which was a mistake: the site's WebP quality is itself a hand-picked value, so
+     * anchoring to it only inherited a guess. This is the AVIF encoder's own
+     * setting and it's answerable on its own terms — how few bytes can it use and
+     * still be indistinguishable from the original.
+     *
+     * 72, with AVIF_CHROMA in play. The measurement below was taken at 70; 72 is
+     * that finding nudged up two points for headroom rather than a second
+     * measurement. Measured against a lossless render of the same transform, and
+     * then looked at 1:1 on the hardest thing on the site (fine coloured type on
+     * flat brand colour):
+     *
+     *   4:2:0 q78, what shipped before → 23,555 bytes, and visibly wrong: the red
+     *                                    full stop after a logotype goes dull and
+     *                                    bleeds into the navy behind it
+     *   4:4:4 q70                      → 17,642 bytes, and the dot is clean
+     *
+     * So it isn't a compromise between the two things — a quarter fewer bytes AND
+     * visibly better than what it replaces, because the chroma change more than
+     * pays for the lower number. Below about 65 the dotted texture inside the brand
+     * marks starts to soften, which is the first thing to go on this imagery, so
+     * there's a little room left but not much.
+     */
+    private const AVIF_QUALITY = 72;
+
+    /**
+     * Can this host actually encode AVIF?
+     *
+     * Asked because the failure mode is silent. ImageMagick reports AVIF in
+     * queryFormats() whenever it was built against libheif, but libheif keeps its
+     * codecs in separate plugin packages, and a build with only decoders can read
+     * AVIF while being unable to write a byte of it. Craft doesn't surface the
+     * difference: the transform is written, served as image/avif, and contains
+     * JPEG. So the only trustworthy question is whether an encode actually
+     * succeeds, which is what this does — on a 1×1 image, in memory.
+     *
+     * Called per <picture>, so it's cached; the answer is a property of the host.
+     */
+    public function supportsAvif(): bool
+    {
+        return (bool) Craft::$app->getCache()->getOrSet('supportsAvif', static function (): bool {
+            // GD can encode AVIF too, but Craft's transforms only reach for it when
+            // Imagick is absent, and answering for the driver that isn't doing the
+            // work would be answering the wrong question.
+            if (!Craft::$app->getImages()->getIsImagick()) {
+                return function_exists('imageavif');
+            }
+
+            try {
+                $im = new \Imagick();
+                $im->newImage(1, 1, new \ImagickPixel('white'));
+                $im->setImageFormat('avif');
+                // getImageBlob() runs the encoder, so a missing delegate throws here
+                // rather than reporting success and writing something else.
+                $blob = $im->getImageBlob();
+                $im->destroy();
+
+                return $blob !== '';
+            } catch (\Throwable $e) {
+                Craft::info('AVIF encoding unavailable: ' . $e->getMessage(), __METHOD__);
+
+                return false;
+            }
+        }, self::AVIF_TTL);
+    }
+
+    /**
+     * The quality to ask for when transforming to AVIF.
+     *
+     * Takes no argument on purpose. The macro's `quality` option is a WebP and JPEG
+     * setting; AVIF is encoded at its own measured value regardless, so raising the
+     * one doesn't quietly move the other.
+     */
+    public function avifQuality(): int
+    {
+        return self::AVIF_QUALITY;
+    }
+
+    /** Working size for the colour read. Big enough to be representative, small
+     *  enough that quantising it costs nothing. */
+    private const TONE_SIZE = 48;
+
+    /** How many colours to reduce the image to before picking. Few enough that
+     *  each one stands for a real region of the picture rather than a shade. */
+    private const TONE_COLOURS = 6;
+
+    /** A month. The image can't change without changing the cache key. */
+    private const TONE_TTL = 2592000;
+
+    /**
+     * The two dominant colours of an asset, as ['a' => '#rrggbb', 'b' => '#rrggbb'],
+     * or null if they can't be read.
+     *
+     * Used as a gradient standing in for the image until it loads. Deliberately
+     * NOT a miniature of the image: two hex strings are ~14 bytes inlined against
+     * ~200 for even a tiny encoded thumbnail, and a flat wash reads as a
+     * considered placeholder where a blurred thumbnail reads as a broken photo.
+     *
+     * Quantised rather than averaged. Averaging a picture collapses it toward
+     * mud — a red logo on a blue field averages to grey, which is the one colour
+     * that isn't in it. Reducing to a handful of colours and taking the two most
+     * common gives back colours that are actually present.
+     *
+     * Keyed by last-modified, so re-uploading an asset invalidates it by itself.
+     */
+    public function imageTones(?Asset $asset): ?array
+    {
+        // Only raster images have pixels to read. An SVG would sail through
+        // getCopyOfFile() and fail somewhere less obvious inside Imagick.
+        if (!$asset || $asset->kind !== Asset::KIND_IMAGE || $asset->getExtension() === 'svg') {
+            return null;
+        }
+
+        $key = 'tones:' . $asset->id . ':' . ($asset->dateModified?->getTimestamp() ?? 0);
+
+        return Craft::$app->getCache()->getOrSet($key, function () use ($asset): ?array {
+            $copy = null;
+            try {
+                $copy = $asset->getCopyOfFile();
+                $images = Craft::$app->getImages();
+
+                // Imagick only. GD has no quantiser worth the name here, and a host
+                // without Imagick simply gets no placeholder — the image then shows
+                // normally, which is a fine way to be missing a flourish.
+                if (!$images->getIsImagick()) {
+                    return null;
+                }
+
+                $im = new \Imagick($copy);
+                $im->stripImage();
+                $im->setImageColorspace(\Imagick::COLORSPACE_SRGB);
+                $im->scaleImage(self::TONE_SIZE, self::TONE_SIZE, true);
+                $im->quantizeImage(self::TONE_COLOURS, \Imagick::COLORSPACE_RGB, 0, false, false);
+
+                $counts = [];
+                foreach ($im->getImageHistogram() as $pixel) {
+                    $c = $pixel->getColor();
+                    $counts[] = [
+                        'n' => $pixel->getColorCount(),
+                        'rgb' => [$c['r'], $c['g'], $c['b']],
+                    ];
+                }
+                $im->destroy();
+
+                if (!$counts) {
+                    return null;
+                }
+
+                usort($counts, static fn($x, $y) => $y['n'] <=> $x['n']);
+
+                $a = $counts[0]['rgb'];
+
+                // Second colour: the most common one that is actually DISTINCT from
+                // the first. Quantising often returns near-neighbours at the top, and
+                // a gradient between two shades of the same colour is just a flat
+                // fill with extra steps.
+                $b = null;
+                foreach (array_slice($counts, 1) as $cand) {
+                    if (self::toneDistance($a, $cand['rgb']) > 60) {
+                        $b = $cand['rgb'];
+                        break;
+                    }
+                }
+
+                // Nothing distinct enough — a genuinely monochrome image. Derive the
+                // second end by shifting the first, so the gradient still has a
+                // direction to it instead of collapsing to one colour.
+                $b ??= self::toneShift($a, 0.82);
+
+                return ['a' => self::toneHex($a), 'b' => self::toneHex($b)];
+            } catch (\Throwable $e) {
+                Craft::error('imageTones ' . $asset->id . ': ' . $e->getMessage(), __METHOD__);
+
+                return null;
+            } finally {
+                if ($copy !== null) {
+                    @unlink($copy);
+                }
+            }
+        }, self::TONE_TTL);
+    }
+
+    /** A month. Keyed by last-modified, like the tones, so it can't go stale. */
+    private const LOTTIE_TTL = 2592000;
+
+    /**
+     * The composition size of a Lottie JSON asset, as ['w' => int, 'h' => int], or
+     * null if it can't be read.
+     *
+     * The template writes it as an aspect-ratio on the box, so the space is reserved
+     * before the player has loaded — the same job width/height do on an <img>. A
+     * Lottie's own `w`/`h` are the only place that ratio lives, and they're inside
+     * a file that can run to megabytes (embedded images are base64), so it's read
+     * once per asset version and cached rather than decoded on every page view.
+     */
+    public function lottieSize(?Asset $asset): ?array
+    {
+        if (!$asset || $asset->kind !== Asset::KIND_JSON) {
+            return null;
+        }
+
+        $key = 'lottie-size:' . $asset->id . ':' . ($asset->dateModified?->getTimestamp() ?? 0);
+
+        return Craft::$app->getCache()->getOrSet($key, static function () use ($asset): ?array {
+            try {
+                $data = json_decode($asset->getContents(), true);
+                $w = (int) ($data['w'] ?? 0);
+                $h = (int) ($data['h'] ?? 0);
+
+                return ($w > 0 && $h > 0) ? ['w' => $w, 'h' => $h] : null;
+            } catch (\Throwable $e) {
+                Craft::error('lottieSize ' . $asset->id . ': ' . $e->getMessage(), __METHOD__);
+
+                return null;
+            }
+        }, self::LOTTIE_TTL);
+    }
+
+    /**
+     * Jon's project journey for the method timeline — the same phases the [[method]]
+     * marker gives a Jonson answer, so a static page (About) can show the identical
+     * component. Delegates to the Jonson module's context finder, which owns the
+     * shape: a list of { title, summary, services }.
+     */
+    public function methodology(): array
+    {
+        return Jonson::getInstance()->findContext->methodology();
+    }
+
+    /** Straight-line distance in RGB. Crude next to a perceptual space, but this
+     *  only has to answer "are these two obviously different colours". */
+    private static function toneDistance(array $x, array $y): float
+    {
+        return sqrt(
+            ($x[0] - $y[0]) ** 2 +
+            ($x[1] - $y[1]) ** 2 +
+            ($x[2] - $y[2]) ** 2
+        );
+    }
+
+    /** Darken (factor < 1) or lighten (> 1), clamped. */
+    private static function toneShift(array $rgb, float $factor): array
+    {
+        return array_map(
+            static fn($v) => (int) max(0, min(255, round($v * $factor))),
+            $rgb,
+        );
+    }
+
+    private static function toneHex(array $rgb): string
+    {
+        return sprintf('#%02x%02x%02x', $rgb[0], $rgb[1], $rgb[2]);
+    }
+}

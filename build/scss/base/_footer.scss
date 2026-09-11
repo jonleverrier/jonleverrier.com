@@ -1,0 +1,143 @@
+/**
+ * BASE: FOOTER
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// Pale blue for the strapline, so it sits back from the white column headings without
+// going grey on the navy — grey is what a plain opacity or a mid-tone gives you here,
+// and it reads as disabled rather than secondary.
+$b-footer-strapline: getmap($colour, primary, 430);
+
+.b-footer__whisper {
+    @include typography(whisper);
+    text-transform: uppercase;
+    color: getmap($colour, primary, 430); // the light blue every whisper label now shares
+}
+
+// The site strapline, at the top of the footer's first column, above "Find me
+// elsewhere". Set at the `p` step — the size .b-logo__title ("Jon Leverrier") takes,
+// a step up from the description beneath it.
+//
+// Size only, not weight: the logo title is 600 because it's a name doing a logo's job,
+// and a whole sentence at that weight in the footer would shout over the column
+// headings next to it.
+.b-footer__strapline {
+    @include typography(p);
+    // No bottom margin: it's the first child of its column, and .b-footer__primary-col
+    // already spaces its children with `> * + *`. Setting one here would stack —
+    // the extra air below it is given to what FOLLOWS it (see the rule under the
+    // column's owl), so the two can't add up.
+    margin: 0;
+
+    // A measure, which is also what puts the break after "organisations" on the
+    // current copy: that line is 529px set, and adding "scale" takes it to 608px, so
+    // anything between the two breaks there. 560 sits in the middle with room either
+    // side for font loading and rounding.
+    //
+    // It earns its place beyond that one break, though — unclamped, this sentence is
+    // 993px on one line, and as the widest thing in the column it took so much of the
+    // flex row that "Quick Links" wrapped to two words a line. Below md the columns
+    // stack full width and this is wider than the screen, so it simply doesn't apply.
+    //
+    // Retune if the Strapline field changes materially — a much longer line will break
+    // wherever 560px lands, not after a word anyone chose.
+    max-width: rem(560);
+    // A touch more air than body copy's 1.4: white on the dark footer, and a
+    // two-line sentence sat beside column headings, reads tight at the body value.
+    line-height: 1.5;
+    color: getmap($colour, light, 100); // white — the one line in the footer set in the sans at reading size
+    // No `white-space: nowrap`, unlike the header's rotating description: that one
+    // holds a short role on a single line inside a fixed-height window, and this is a
+    // sentence that has to wrap.
+}
+
+.b-footer__primary {
+    padding: getmap($space, rhythm, 800) 0;
+}
+
+.b-footer__secondary {
+    padding: getmap($space, rhythm, 500) 0;
+}
+
+.b-footer__primary-cols {
+    // Mobile: stacked, with generous space between the columns.
+    display: grid;
+    gap: getmap($space, rhythm, 800);
+
+    // TABLET: two columns, not three. All three went inline at md, which is 768px —
+    // and the first column is a full sentence plus a row of social icons, so at a
+    // third of that it wrapped to four lines while the two link columns sat half
+    // empty beside it. Here the sentence takes the full width (see the span below)
+    // and the two link lists share the row under it.
+    @include mq(from, md) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: getmap($space, rhythm, 600);
+        row-gap: getmap($space, rhythm, 800);
+    }
+
+    // DESKTOP: all three inline. `auto` columns pushed apart by space-between is what
+    // the flex row did before, so this width is unchanged.
+    @include mq(from, lg) {
+        grid-template-columns: auto auto auto;
+        justify-content: space-between;
+        gap: getmap($space, rhythm, 600);
+    }
+}
+
+// The strapline column spans the full width while there are only two columns, and
+// goes back to being one of three once there is room for it.
+@include mq(from, md) {
+    .b-footer__primary-col:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@include mq(from, lg) {
+    .b-footer__primary-col:first-child {
+        grid-column: auto;
+    }
+}
+
+.b-footer__primary-col {
+    > * + * {
+        margin-top: getmap($space, rhythm, 600);
+    }
+
+    // …one step more after the strapline. It's a sentence, not a column heading,
+    // and it needs to finish before the "Find me elsewhere" list starts rather
+    // than sitting on the same rhythm as the items inside that list.
+    > .b-footer__strapline + * {
+        margin-top: getmap($space, rhythm, 700);
+    }
+}
+
+.c-footer__link {
+    color: getmap($colour, primary, 400);
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+        text-underline-offset: rem(4);
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid currentColor;
+        outline-offset: rem(2);
+    }
+}
+
+.c-footer__items {
+    list-style: none;
+}
+
+.c-footer__item + .c-footer__item {
+    margin-top: getmap($space, rhythm, 400);
+}
+
+.b-footer__copyright {
+    text-align: center;
+    @include typography(p-sm);
+}

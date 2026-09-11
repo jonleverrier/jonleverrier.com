@@ -1,0 +1,22 @@
+columnSuffix: null
+handle: skills
+instructions: null
+name: Skills
+searchable: false
+settings:
+  allowSelfRelations: false
+  branchLimit: null
+  defaultPlacement: end
+  maintainHierarchy: false
+  maxRelations: null
+  minRelations: null
+  selectionLabel: null
+  showSearchInput: true
+  showSiteMenu: true
+  source: 'group:53bb207c-9913-45d4-acf8-9f4cca3d76e2' # Skills
+  targetSiteId: null
+  validateRelatedElements: false
+  viewMode: list-inline
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Categories

@@ -1,0 +1,17 @@
+defaultPlacement: end
+enableVersioning: true
+entryTypes:
+  -
+    uid: 440d7004-304c-41ed-8c66-fb158ab8b52c # Personality
+handle: personality
+maxAuthors: 1
+minAuthors: 1
+name: Personality
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: false
+    template: null
+    uriFormat: null
+type: single

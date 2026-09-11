@@ -1,0 +1,268 @@
+{#
+  One segment's worth of the Jonson widget — rendered once per tab (All / General /
+  VIPs) by insights.twig, which owns the styles and the tab switching.
+
+  Takes `stats` for its own segment and `presence`, which is deliberately NOT
+  segmented: it is a count of who is on the site in the last five minutes, and the
+  presence table records no VIP flag. The same figure therefore shows on all three
+  tabs, which is honest — it is the same fact — but worth knowing before reading it as
+  "VIPs online now".
+#}
+
+{# Token counts run to the millions, and "77490" is harder to read at a glance than
+   "77k". A MACRO, not a `{% set %}` arrow function: Twig arrow functions only exist to
+   be handed to filters like map/filter, and calling one as fmt(...) is a syntax error.
+
+   Defined HERE, in the file that uses it. It lived in insights.twig before this was
+   split out, and an include does NOT inherit the parent's imports — so it survived the
+   split as a call to a macro that no longer existed anywhere. #}
+{% macro tokens(n) %}
+    {%- if n >= 1000000 -%}{{ (n / 1000000)|number_format(1) }}m
+    {%- elseif n >= 1000 -%}{{ (n / 1000)|round }}k
+    {%- else -%}{{ n }}
+    {%- endif -%}
+{% endmacro %}
+{% import _self as f %}
+{# The health line, and ONLY when there is something wrong. An always-visible row of
+       zeros trains you to stop reading it; a row that appears only when it matters gets
+       read. apiError means visitors saw the fallback copy instead of an answer. #}
+    {% if stats.apiErrors or stats.rateLimited %}
+        <div class="jonson-w__warn">
+            {% if stats.apiErrors %}{{ stats.apiErrors }} answer{{ stats.apiErrors == 1 ? '' : 's' }} failed — visitors saw the fallback{% endif %}
+            {% if stats.apiErrors and stats.rateLimited %} · {% endif %}
+            {% if stats.rateLimited %}{{ stats.rateLimited }} question{{ stats.rateLimited == 1 ? '' : 's' }} rate-limited{% endif %}
+        </div>
+    {% endif %}
+
+    <div class="jonson-w__stats">
+        {# "total" and "avg" spelled out, so the row reads as counts-then-average rather
+           than three numbers of unstated kind. The tooltips carry the period, which the
+           labels themselves deliberately don't — see the widget subtitle. #}
+        <div class="jonson-w__stat"><div class="jonson-w__n">{{ stats.chats }}</div><div class="jonson-w__label" title="Sessions in which at least one question was asked. A session is one tab, one sitting — it survives navigation and ends when the tab closes.">chat sessions</div></div>
+        <div class="jonson-w__stat"><div class="jonson-w__n">{{ stats.questions }}</div><div class="jonson-w__label" title="Questions asked across those sessions">total questions</div></div>
+        {# "avg questions", not "avg turns" — same number, but nobody has to ask what a
+           turn is. It is the drop-off read: how far a conversation gets before it stops. #}
+        <div class="jonson-w__stat"><div class="jonson-w__n">{{ stats.avgTurns }}</div><div class="jonson-w__label" title="Average questions per session — how far a conversation gets before it stops">avg questions</div></div>
+        {# No "suggestions taken" headline. It was totals over totals — chips offered on
+           one turn are pressed on the next, so it could never pair exactly — and the
+           Most suggested column below says the same thing properly, per chip, where a
+           0% row is actually actionable. One approximate number competing with an exact
+           list is worse than the list on its own. #}
+        {# "chat → work" to sit alongside "chat → lead": the two are the same shape of
+           measure — what share of conversations ended up somewhere that matters — so
+           they should read as a pair rather than as two unrelated numbers. #}
+        <div class="jonson-w__stat"><div class="jonson-w__n">{{ stats.toWork }}%</div><div class="jonson-w__label" title="Share of conversations that ended by clicking through to a SPECIFIC case study. The /case-studies index counts as browsing, not as work.">chat → work</div></div>
+        <div class="jonson-w__stat"><div class="jonson-w__n">{{ stats.toLead }}%</div><div class="jonson-w__label">chat → lead</div></div>
+    </div>
+
+    {# CHATS PER DAY — hidden for now, not deleted.
+
+       At current volume it is 29 bars on the 2% floor and one spike, which reads as a
+       flat line with a bump rather than as a chart. The thing it is actually good at —
+       making an outage or a sudden spike obvious without reading a number — only starts
+       working once there is daily traffic to have a shape.
+
+       `stats.daily` is still computed and still returned, so bringing it back is
+       deleting this comment and the {% raw %}{% if false %}{% endraw %} around it. #}
+    {% if false %}
+    {# LABELLED, not just tooltipped. It was neither, and an unlabelled row of bars with
+           no axis is a puzzle rather than a chart — the first question anyone asked of it
+           was "what is that?". The peak is named too, so the bars have a scale: heights are
+           relative to the busiest day, which is meaningless without knowing what that day
+           was. #}
+        {% if stats.daily|length %}
+            {% set peak = max(stats.daily|column('n')) %}
+            <div class="jonson-w__h">
+                Chats per day
+                {% if peak > 0 %}<span style="text-transform: none; letter-spacing: 0;">· busiest {{ peak }}</span>{% endif %}
+            </div>
+            <div class="jonson-w__spark" title="Conversations per day — hover a bar for the date">
+                {% for d in stats.daily %}
+                    {# A floor of 2% so a quiet day is still a visible tick rather than a gap
+                       the eye reads as missing data. #}
+                    <i style="height: {{ peak > 0 ? max(2, (d.n / peak * 100)|round) : 2 }}%" title="{{ d.day }}: {{ d.n }}"></i>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {# WHO CAME — full width, above the columns, because it is a table rather than a
+       ranked list: three fields per row don't fit a third of the widget without the
+       names truncating to nothing.
+
+       Only populated on the VIPs tab (see Analytics::vipRows), so on the others this
+       block simply isn't rendered rather than sitting there empty.
+
+       Ordered by questions: a door goes to one named person, so "did they engage" beats
+       "how often did they turn up". ✓ marks one that produced an enquiry. #}
+    {% if stats.vips|length %}
+        <div class="jonson-w__h">VIP</div>
+        {# A REAL <table>. This was a stack of CSS grids, one per row, each with `auto`
+           columns — and independent grids size their columns independently, so the
+           header's widths and the body's had no reason to match and didn't. A table
+           shares one set of column widths across every row by definition, which is the
+           entire problem solved. #}
+        <table class="jonson-w__table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Last seen</th>
+                    <th>Chat sessions</th>
+                    <th>Questions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vip in stats.vips %}
+                    {# `is-alt` from the loop index, NOT nth-child: a VIP owns one summary
+                       row plus one row per question, so counting children would stripe
+                       the wrong ones. The parent's index keeps a person's rows one
+                       shade together. #}
+                    <tr class="{{ loop.index is even ? 'is-alt' }}">
+                        <td title="{{ vip.name }}">
+                            {% if vip.asked|length %}
+                                <button type="button" class="jonson-w__vip" data-jonson-vip="{{ vip.id }}" aria-expanded="false">
+                                    <span class="jonson-w__caret" aria-hidden="true">▸</span>{{ vip.name }}
+                                </button>
+                            {% else %}
+                                {{ vip.name }}
+                            {% endif %}
+                            {%- if vip.lead %} <span class="jonson-w__nil" title="Sent an enquiry">✓</span>{% endif %}
+                        </td>
+                        {# Day/month/year, zero-padded, 24-hour. NOT |datetime('short'), which
+                           follows the control panel's locale and renders month-first — the
+                           same row would read 09/11 or 11/09 depending on who is logged in. #}
+                        <td>{{ vip.last ? vip.last|date('d/m/Y H:i') : '—' }}</td>
+                        <td>{{ vip.visits }}</td>
+                        <td>{{ vip.questions }}</td>
+                    </tr>
+
+                    {# ONE ROW PER QUESTION, sharing the table's own columns rather than a
+                       nested list inside a colspan — the question sits under Name and its
+                       timestamp under Last seen, so the detail lines up with the header
+                       instead of being a block that happens to sit beneath it.
+
+                       Rendered up front and toggled, like the tabs: a handful of lines
+                       each, and a panel that opens instantly beats one that fetches. #}
+                    {% set alt = loop.index is even %}
+                    {% for q in vip.asked %}
+                        <tr class="jonson-w__detail {{ alt ? 'is-alt' }}" data-jonson-vip-detail="{{ vip.id }}" hidden>
+                            <td>
+                                {# Tree connector: ├ while more follow, └ on the last, so a
+                                   run of questions reads as belonging to the name above
+                                   rather than as loose rows that happen to be indented. #}
+                                <span class="jonson-w__branch" aria-hidden="true">{{ loop.last ? '└' : '├' }}</span>
+                                {{- ' ' ~ q.question }}
+                                {%- if q.fromChip %} <span class="jonson-w__tag" title="They took a suggestion rather than typing it">chip</span>{% endif %}
+                                {%- if q.outcome != 'answered' %} <span class="jonson-w__tag" title="This turn was not answered by the model">{{ q.outcome }}</span>{% endif %}
+                            </td>
+                            <td>{{ q.at ? q.at|date('d/m/Y H:i') : '—' }}</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    {# Each column below hides itself when its own list is empty, so the panel never
+       shows a heading over a dash. But hiding ALL of them would leave a row of zeros
+       with nothing under it and no explanation, which reads as broken rather than new —
+       hence the single line when there is nothing at all. #}
+    {% if not stats.chats %}
+        <p class="jonson-w__empty">No data in this period</p>
+    {% endif %}
+
+    <div class="jonson-w__cols">
+
+        {% if stats.asked|length %}
+        <div class="jonson-w__col--zebra">
+            {# The qualifier lives on the tooltip, not in the heading: a column head
+               should name the column, and "· typed" was explaining the query rather
+               than labelling the list. #}
+            <div class="jonson-w__h" title="Questions people typed. Chip clicks are excluded — they record the chip's own wording.">Most asked</div>
+            {# Chip clicks are excluded deliberately: they record the CHIP's wording, so
+               including them would just reflect Jonson's own suggestions back. #}
+            {% for question, n in stats.asked %}
+                <div class="jonson-w__row">
+                    <span class="jonson-w__count">{{ n }}</span>
+                    <span class="jonson-w__txt" title="{{ question }}">{{ question }}</span>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if stats.suggested|length %}
+        <div class="jonson-w__col--zebra">
+            <div class="jonson-w__h" title="Chips Jonson offered, and how many were pressed. Offered ▸ taken.">Most suggested</div>
+            {# The 0% rows are why this panel exists: a suggestion shown twenty times and
+               never once pressed is one to rewrite. #}
+            {% for chip in stats.suggested %}
+                <div class="jonson-w__row">
+                    <span class="jonson-w__count">{{ chip.offered }}</span>
+                    <span class="jonson-w__count {{ chip.taken == 0 ? 'jonson-w__nil' }}">▸{{ chip.taken }}</span>
+                    <span class="jonson-w__txt" title="{{ chip.text }} — offered {{ chip.offered }}, taken {{ chip.taken }} ({{ chip.rate }}%)">{{ chip.text }}</span>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if stats.origins|length %}
+        <div>
+            {# PERCENTAGES, to match Ended by. Both columns partition the same thing —
+               every conversation starts in exactly one place and ends in exactly one
+               way, so both sets sum to 100% of chats — and showing one as counts and
+               the other as shares made them look like different kinds of measure.
+               The raw count is on the tooltip, which matters at low volume where "50%"
+               can mean one conversation out of two.
+
+               Most asked and Most suggested stay as counts on purpose: those are NOT
+               partitions. A question can appear in any number of conversations and a
+               chip can be offered many times over, so there is no whole for them to be
+               a share of. #}
+            <div class="jonson-w__h">Started from</div>
+            {% set startTotal = stats.chats ?: 1 %}
+            {% for path, n in stats.origins %}
+                <div class="jonson-w__row">
+                    <span class="jonson-w__count">{{ (n / startTotal * 100)|round }}%</span>
+                    <span class="jonson-w__txt" title="{{ n }} of {{ stats.chats }} conversations">{{ path }}</span>
+                </div>
+            {% endfor %}
+
+            <div class="jonson-w__h" style="margin-top: 14px;">Ended by</div>
+            {# ?: 1 so a period with no conversations divides by one rather than zero —
+               every row is 0% anyway, but Twig throws rather than shrugging. #}
+            {% set total = stats.chats ?: 1 %}
+            {# One list, commonest first — the ordering and the row-building both live in
+               Analytics::endingRows(). It used to render in a fixed funnel order, best
+               outcome down to worst, which read nicely but buried whatever actually
+               happened.
+
+               Every row is a share of all conversations, so the column sums to 100% —
+               the same partition Started from above uses, which is why both are shown
+               as percentages rather than counts.
+
+               "closed the tab" also covers "we never saw them go": the beacon can't fire
+               on a force-quit. Every other row is therefore a floor, not an exact rate. #}
+            {% for row in stats.endingRows %}
+                <div class="jonson-w__row">
+                    <span class="jonson-w__count">{{ (row.n / total * 100)|round }}%</span>
+                    <span class="jonson-w__txt" title="{{ row.label }} — {{ row.n }} of {{ stats.chats }} conversations">{{ row.label }}</span>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+
+    <div class="jonson-w__foot">
+        {# Tokens per chat uses the window; the month total is a CALENDAR month, because
+           that is the period a bill covers. Labelled so the two aren't read as one. #}
+        <strong>{{ f.tokens(stats.tokensPerChat) }}</strong> tokens per chat ·
+        <strong>{{ f.tokens(stats.tokensMonth) }}</strong> tokens this month
+        {% if stats.cacheReadMonth or stats.cacheWriteMonth %}
+            · cache {{ f.tokens(stats.cacheReadMonth) }} read / {{ f.tokens(stats.cacheWriteMonth) }} written
+        {% endif %}
+        · {{ stats.returning }} returning
+        {% if stats.junk %}· {{ stats.junk }} junk rejected{% endif %}
+    </div>

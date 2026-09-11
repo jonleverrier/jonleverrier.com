@@ -1,0 +1,260 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+{# "{Page} | Jon Leverrier" on inner pages (e.g. Contact); just the name on home.
+
+   Sections listed here get a third segment naming what the page IS, between the two:
+   "Vaiie Product Branding | Case Study | Jon Leverrier". A study's title is the short
+   name it's filed under, which on its own says nothing about the page in a search
+   result or a tab strip. Add a handle here to give another section the same treatment —
+   anything not listed keeps the plain two-part title. #}
+{% set sectionLabels = {
+    caseStudies: 'Case Study',
+    notes: 'Notes',
+} %}
+{% set pageEntry = (entry is defined and entry and entry.section.handle != 'homepage') ? entry : null %}
+{% set pageTitle = pageEntry
+    ? [
+        pageEntry.title,
+        sectionLabels[pageEntry.section.handle] ?? null,
+        'Jon Leverrier',
+    ]|filter(part => part)|join(' | ')
+    : 'Jon Leverrier' %}
+
+{# A category page — a topic under the notes — reads as the notes section's:
+   "Development | Notes | Jon Leverrier". Keyed by group handle, like the
+   sections above; a group not listed keeps the two-part title. #}
+{% set groupLabels = {
+    topics: 'Notes',
+} %}
+{% if category is defined and category %}
+    {% set pageTitle = [
+        category.title,
+        groupLabels[category.group.handle] ?? null,
+        'Jon Leverrier',
+    ]|filter(part => part)|join(' | ') %}
+{% endif %}
+
+{# A routed page with no element — a year of notes — names itself: it sets
+   `pageTitleParts` at its top level (e.g. ['2020', 'Notes']) and the site name
+   follows, as everywhere else. #}
+{% if pageTitleParts is defined and pageTitleParts %}
+    {% set pageTitle = (pageTitleParts|merge(['Jon Leverrier']))|join(' | ') %}
+{% endif %}
+
+{# An entry's Custom Page Title, when set, IS the title — used as written, with no
+   segments added, so the author decides whether the site name follows. Any entry,
+   the homepage included: that's the one page the assembled title doesn't name. #}
+{# Read from the CATEGORY too (a topic page has no entry) — the same field is on
+   the Topics group's SEO tab, and without this a topic's custom title was set in
+   the CMS and silently ignored. #}
+{% set titleElement = entry is defined and entry ? entry : (category is defined and category ? category : null) %}
+{% set customTitle = titleElement ? (titleElement.seoCustomPageTitle ?? '')|trim : '' %}
+{% if customTitle %}
+    {% set pageTitle = customTitle %}
+{% endif %}
+{# A paginated page leads with its number — "Page 3 | Notes | Jon Leverrier" —
+   the most specific part first, as the rest of the title is built, so pages 2
+   and 3 of a listing aren't three tabs and three search results with one name. #}
+{% if craft.app.request.pageNum > 1 %}
+    {% set pageTitle = 'Page ' ~ craft.app.request.pageNum ~ ' | ' ~ pageTitle %}
+{% endif %}
+<title>{{ pageTitle }}</title>
+
+{# Meta description, first of: the entry's own Meta Description field, its Summary
+   (a case study's is called Bio — see FindContext), then the site-wide one on the
+   globals single. Plain text only, so tags are stripped and the lot trimmed; when
+   every rung is empty no tag is emitted rather than an empty one. #}
+{# A category page — a topic — takes the same chain: its own Summary, then the
+   site-wide description. #}
+{% set metaEntry = entry is defined and entry ? entry : (category is defined and category ? category : null) %}
+{% set metaGlobals = craft.entries().section('globals').one() %}
+{% set metaCandidates = [] %}
+{% if metaEntry %}
+    {% set metaCandidates = [metaEntry.seoMetaDescription ?? '', metaEntry.summary ?? '', metaEntry.bio ?? ''] %}
+{% endif %}
+{% if metaGlobals %}
+    {% set metaCandidates = metaCandidates|merge([metaGlobals.seoMetaDescription ?? '']) %}
+{% endif %}
+{% set metaCandidates = metaCandidates|map(v => v|striptags|trim)|filter(v => v) %}
+{% set metaDescription = metaCandidates|length ? metaCandidates|first : '' %}
+{% if metaDescription %}
+<meta name="description" content="{{ metaDescription }}">
+{% endif %}
+{# The element's own URL, NOT the one the visitor arrived on. Those differ by
+   whatever is hanging off the end of it — a campaign tag, a share parameter, a
+   stray trailing segment — and each variant would otherwise nominate itself as a
+   separate page, splitting one page's ranking across however many links to it
+   exist in the wild.
+
+   `element` is what the layout already resolved (entry ?? product ?? variant),
+   so this follows whatever the page is rather than assuming an entry. The
+   fallback covers a template rendered without one, where the request path is the
+   best available answer — `pathInfo` and not the full request URL, because it
+   drops the query string, which is the whole point. #}
+{% set canonical = (element is defined and element and element.url) ? element.url : siteUrl(craft.app.request.pathInfo) %}
+{# A paginated page is its own page — page 3 of the notes lists different notes
+   from page 1 — so it's self-canonical, at its /p3 address, never folded into
+   the first page. The page number is read from the request (Craft strips the
+   trigger segment from the path). prev/next link the sequence for the crawlers
+   that still read them; next needs the page count, which a paginating template
+   sets at its top level as `pageCount` (see _views/single/notes). #}
+{% set pageNum = craft.app.request.pageNum %}
+{% set pageBase = canonical %}
+{% set pageTrigger = craft.app.config.general.pageTrigger ?? 'p' %}
+{% if pageNum > 1 %}
+    {% set canonical = pageBase ~ '/' ~ pageTrigger ~ pageNum %}
+{% endif %}
+<link rel="canonical" href="{{ canonical }}">
+{% if pageNum > 1 %}
+    <link rel="prev" href="{{ pageNum == 2 ? pageBase : pageBase ~ '/' ~ pageTrigger ~ (pageNum - 1) }}">
+{% endif %}
+{% if pageCount is defined and pageCount and pageNum < pageCount %}
+    <link rel="next" href="{{ pageBase ~ '/' ~ pageTrigger ~ (pageNum + 1) }}">
+{% endif %}
+{# The notes feed, advertised on EVERY page rather than only on the notes index: this
+   is how a reader discovers it — paste the site's address into a feed app and it reads
+   this tag to find the feed. Hiding it on the one page someone is least likely to have
+   open defeats the point. #}
+<link rel="alternate" type="application/rss+xml" title="{{ siteName }} — Notes" href="{{ siteUrl('notes.rss') }}">
+{# llms.txt — the site in markdown for a language model (_views/feeds/llms.twig).
+
+   There is NO standard rel for this. llmstxt.org defines the file and its well-known
+   path, not a discovery link, so anything reading it is looking at /llms.txt directly
+   and would find it without this tag. `alternate` is the closest honest fit — it is an
+   alternate representation of this site — and the type matches what is actually served.
+   Harmless if nothing ever reads it; there if something starts to. #}
+<link rel="alternate" type="text/plain" title="llms.txt" href="{{ siteUrl('llms.txt') }}">
+<link rel="icon" href="{{ craft.vite.asset('build/images/favicon.ico') }}" sizes="any">
+
+{# Open Graph and Twitter cards — what a link to this page looks like when it
+   unfurls in LinkedIn, a chat, a feed. Title and description are the ones
+   already built above (with the meta chain's description); the image is the
+   element's own Social Image, else the first image in its content, else the
+   site default on Globals (see helpers/Social), at 1200 × 630. No image at
+   all → no image tags, rather than a broken one. Notes are articles; the rest
+   is a website. #}
+{% set socialElement = element is defined and element ? element : (category is defined and category ? category : null) %}
+{% set socialImage = craft.frontend.socialImage(socialElement) %}
+<meta property="og:site_name" content="Jon Leverrier">
+<meta property="og:title" content="{{ pageTitle }}">
+{% if metaDescription is defined and metaDescription %}
+    <meta property="og:description" content="{{ metaDescription }}">
+{% endif %}
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:type" content="{{ entry is defined and entry and entry.section.handle == 'notes' ? 'article' : 'website' }}">
+{% if socialImage %}
+    <meta property="og:image" content="{{ craft.frontend.socialImageUrl(socialImage) }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    {% if socialImage.alt %}
+        <meta property="og:image:alt" content="{{ socialImage.alt }}">
+    {% endif %}
+    <meta name="twitter:card" content="summary_large_image">
+{% else %}
+    <meta name="twitter:card" content="summary">
+{% endif %}
+<meta name="twitter:title" content="{{ pageTitle }}">
+{% if metaDescription is defined and metaDescription %}
+    <meta name="twitter:description" content="{{ metaDescription }}">
+{% endif %}
+
+{# Has this visitor already seen this build? The cookie holds the hash of the
+   bundled CSS, so it only reads true for someone who has been here since the
+   last deploy — which is also the visitor whose HTTP cache still holds these
+   files. Called once: a miss sets the cookie as well as reporting one. #}
+{% set firstVisit = not craft.frontend.hasCriticalCssCookie() %}
+
+{% if firstVisit %}
+    {# Preloads are for the cold cache only. A returning visitor already has
+       these files and preloading them again just spends early bandwidth and
+       priority on requests the cache would have served anyway.
+
+       Fonts: the two woff2 faces of the display family only. JonSonSans is what
+       the h1 and the header button are set in, so it decides whether the first
+       paint looks right. The .otf copies are woff2 fallbacks — preloading them
+       makes every modern browser fetch the same face twice. JonSonMono is out on
+       purpose: nothing above the fold uses it and both weights ship as .ttf
+       (~115kB each), which would sit in front of the assets that do matter.
+
+       `crossorigin` is load-bearing, not decorative — fonts are fetched
+       anonymously, and a preload that doesn't match the real request is a second
+       download rather than a saved one. #}
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ craft.vite.asset('build/fonts/BaikalTrial-ExpandedLight.woff2') }}">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ craft.vite.asset('build/fonts/BaikalTrial-ExpandedBold.woff2') }}">
+
+    {{ craft.vite.includeCriticalCssTags(tplPath) }}
+    {{ craft.vite.script('build/js/app.js', true) }}
+
+{% else %}
+    {{ craft.vite.script('build/js/app.js', false) }}
+{% endif %}
+
+{# The point cloud's geometry, homepage only — 373kB, and no other page asks for
+   it. hero.js is a dynamic import, so without this the binary can't even be
+   requested until the JS bundle has parsed and the chunk has loaded.
+
+   OUTSIDE the firstVisit block above, unlike the fonts, and that difference is the
+   whole point. `firstVisit` answers "has this visitor been served this build's
+   CSS", which ANY page sets — and it stands in for "already cached" only for files
+   every page loads. This one is requested by a single page. A visitor who arrives
+   on a Jonson answer or a case study sets the cookie there, and by the time the
+   logo brings them here firstVisit is false while the binary has still never been
+   fetched: gated, the preload went missing on precisely the visit that needed it.
+
+   Ungated it costs nothing on a repeat homepage view — the preload resolves out of
+   the HTTP cache with no request. Placed after the block rather than in with the
+   fonts so the fonts and the critical CSS are still discovered first; this is a
+   backdrop, and it must not take early priority from what decides first paint.
+
+   `as="fetch"` + `crossorigin` to match what hero.js issues: a plain fetch(),
+   which is CORS mode with same-origin credentials. #}
+{% if entry is defined and entry and entry.section.handle == 'homepage' %}
+    <link rel="preload" as="fetch" crossorigin href="{{ craft.vite.asset('build/assets/hero.bin') }}">
+{% endif %}
+
+{# COLOUR-REVEAL INITIAL STATE — inline, on every page, deliberately duplicated
+   from _picture.scss.
+
+   These three rules have to exist at FIRST PAINT or the effect cannot happen at
+   all: they are what hides the image and paints the gradient in its place. If
+   they arrive even a moment late, the browser has already drawn the photo, and
+   there is nothing left to reveal — the image never appears to do anything.
+
+   They can't be left to the bundle, because the bundle is not reliably there in
+   time:
+     · in dev, Vite serves CSS through JavaScript, so the stylesheet does not
+       exist until app.js has been fetched, parsed and run. Measured on a cold
+       throttled load: the image was already painted at opacity 1 while still
+       downloading, because no rule had yet said otherwise.
+     · in production, the inlined critical CSS is only sent on a visitor's FIRST
+       page view of a build (see the cookie above). Every view after that waits
+       on the external stylesheet.
+
+   Everything else — the transitions, the staggering, `is-loaded`, `is-developed`
+   — stays in _picture.scss. Only the initial state is here, because only the
+   initial state is needed before the stylesheet lands. Keep the two in step. #}
+<style>
+    .c-picture.has-tone{position:relative}
+    .c-picture.has-tone::before{content:'';position:absolute;inset:0;background-image:linear-gradient(135deg,var(--tone-a) 0,var(--tone-b) 100%)}
+    .c-picture.has-tone .c-picture__img{position:relative;opacity:0}
+</style>
+{# Without JS nothing ever adds `is-loaded`, so the image would stay hidden behind
+   its own placeholder forever.
+
+   <noscript> and NOT the `.no-js` class that <html> carries: that class is on the
+   page for every visitor and is only removed once app.js runs, which is precisely
+   the window this whole block exists to cover. Keying the fallback off it made the
+   image visible during exactly the moment it needed to be hidden — the effect
+   couldn't fire, which is what it looked like from the outside. #}
+<noscript>
+    <style>.c-picture.has-tone .c-picture__img{opacity:1}</style>
+</noscript>
+<script>
+    // Set pre-paint so the incoming page starts hidden and warps in (no flash).
+    try {
+        if (sessionStorage.getItem('jonson-nav')) {
+            sessionStorage.removeItem('jonson-nav');
+            document.documentElement.classList.add('is-page-entering');
+        }
+    } catch (e) {}
+</script>

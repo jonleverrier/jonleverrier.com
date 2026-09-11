@@ -1,0 +1,85 @@
+{#
+  Contact panel — the ways in, as a side panel over the page rather than a trip to
+  /contact. Rendered once on every page (from _layouts/page.twig) and opened by
+  contact-panel.js, which intercepts any same-tab click on a link to the contact
+  page: the header's Contact button, the footer's link, the Jonson contact beat.
+  /contact itself stays the canonical route — no JS, a new tab, a shared link all
+  still land on the page, and on that page the links are left alone.
+
+  Two steps: the light ways in first (the globals' CTAs — the same list the contact
+  page and the footer use), and the form behind one more click, for the visitor
+  who wants to write. The form is the contact page's own component, so validation,
+  copy and the submit path are one thing; its hidden `redirect` is the current
+  page, so a no-JS submit lands back where the visitor was.
+
+  A native <dialog>: showModal() gives the top layer, the backdrop, Escape and the
+  inert page behind it for free.
+#}
+{% set contact = craft.entries().section('contact').status('live').one() %}
+{% set globals = craft.entries().section('globals').one() %}
+{% set ctas = globals ? globals.ctas.all() : [] %}
+{# The brands strip at the foot — the contact page's own: every client with a logo
+   that isn't switched Hidden (see the note there). #}
+{% set clients = [] %}
+{% for c in craft.entries().section('clientList').all() %}
+    {% set logo = c.logo.one() %}
+    {% if logo and not (c.isHidden ?? false) %}
+        {% set clients = clients|merge([{ name: c.title, logo: logo, summary: c.summary ?? '' }]) %}
+    {% endif %}
+{% endfor %}
+{% if contact %}
+<dialog class="c-contact-panel" data-contact-panel data-contact-url="{{ contact.url }}" aria-labelledby="contact-panel-title">
+    {# tabindex -1: a silent place for focus on a pointer open (see contact-panel.js). #}
+    <div class="c-contact-panel__inner" tabindex="-1">
+        <button type="button" class="c-contact-panel__close" data-contact-panel-close aria-label="Close">
+            {# The ask bar's back arrow, at its size and stroke, drawn as a cross. #}
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+        <p class="c-contact-panel__whisper">{{ contact.title }}</p>
+        {# A VIP gets the question asked of them by name, and asked for the reason the
+           door was made — "Want to talk about the role, Marcus?" for a hiring manager
+           (see services\Vip::contactLine; the single's own copy for anyone else). #}
+        <h2 class="c-contact-panel__title" id="contact-panel-title">{{ craft.app.getModule('jonson').vip.contactLine(contact.longTitle ?: contact.title) }}</h2>
+
+        {# The two steps share one stage (.c-contact-panel__steps): the ways in, and
+           the form. Pressing the button slides the first out to the left as the
+           second slides in from the right; closing the panel puts step one back.
+           Once a message has been sent this session there's no second step to
+           offer: the button goes, and that's all — the ways in stand alone. #}
+        {% set sent = craft.app.session.get('crmSubmitted') %}
+        <div class="c-contact-panel__steps" data-contact-panel-steps>
+            <div class="c-contact-panel__step c-contact-panel__step--ways" data-contact-panel-ways>
+                {% include '_components/ctas' with { ctas: ctas, heading: 'Drop me a line' } only %}
+                {% if not sent %}
+                    <div class="c-contact-panel__write">
+                        {% include '_components/button.twig' with {
+                            label: 'Or send me a message',
+                            type:  'button',
+                            size:  'sm',
+                            attrs: { 'data-contact-panel-form': '' },
+                        } only %}
+                    </div>
+                {% endif %}
+            </div>
+            {% if not sent %}
+                <div class="c-contact-panel__step c-contact-panel__step--form" hidden data-contact-panel-form-target>
+                    {% include '_components/form' %}
+                </div>
+            {% endif %}
+        </div>
+
+        {% if clients %}
+            {# Sits at the foot of the panel, under whichever step is showing. Built by
+               contact-panel.js on open — a strip measured while the dialog is closed
+               has no width to size its loop from. #}
+            <div class="c-contact-panel__clients">
+                <p class="c-contact-panel__clients-whisper">Trusted by</p>
+                {% include '_components/clients' with { clients: clients, contained: true, small: true } only %}
+            </div>
+        {% endif %}
+    </div>
+</dialog>
+{% endif %}

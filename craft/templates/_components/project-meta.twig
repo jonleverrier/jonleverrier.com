@@ -1,0 +1,67 @@
+{#
+  Project facts as a label/value list — the "at a glance" column beside a case
+  study's prose.
+
+  Expects:
+    items — a list of maps, each with a `label` and EITHER:
+              value  — a finished string, rendered as-is; or
+              values — a list of strings, rendered as individual items joined by
+                       commas (the separator is CSS, see _meta.scss). Use this for
+                       anything countable, so a long list can be capped: pass
+                       `limit` alongside it and meta-more.js collapses the row to
+                       that many with a "+N more" toggle.
+            Rows with neither are dropped, so a caller can pass every row it knows
+            about and let the ones without content fall away rather than testing
+            each one first.
+
+  EVERY item ships in the HTML, including the ones past `limit` — the collapse is
+  done on mount by meta-more.js, never in CSS. So a crawler (and a visitor with JS
+  off) gets the full list, exactly as the Read more control works.
+
+  A <dl>, not a table or a stack of <p>s: these genuinely are term/description
+  pairs, and the grouping <div> around each pair is valid inside a dl (it's what
+  lets each row be styled as a unit).
+#}
+{# `?? null` on both, not a bare `i.value`: a row carries one key or the other, and
+   under strict_variables reading the absent one is a runtime error, not an empty. #}
+{% set items = (items ?? [])|filter(i =>
+    (i.value ?? null) is not empty or (i.values ?? null) is not empty
+) %}
+{% if items %}
+    <dl class="c-meta">
+        {% for item in items %}
+            <div class="c-meta__row">
+                <dt class="c-meta__label">{{ item.label }}</dt>
+                {% if (item.values ?? null) is not empty %}
+                    {# The separator is REAL TEXT and it LEADS its item — ", Front-end",
+                       not "Front-end, ". Two things fall out of that, and both are the
+                       reason it isn't a CSS ::after:
+
+                       No trailing comma, ever. Whichever item ends the visible run has
+                       nothing after it. When the list is capped, meta-more.js adds its
+                       own ", " before the "+N more" toggle — so the toggle reads as the
+                       list's last item — and removes it again on reveal, so the open
+                       list never ends on a dangling comma either. A separator baked in
+                       here would need the last VISIBLE item found and stripped, which
+                       moves as the row toggles.
+
+                       And a crawler still reads the commas. It parses text nodes and
+                       ignores generated content, so a ::after would hand it
+                       "Front-endCraft CMSSupport" as one run-on token.
+
+                       The spans are emitted tight against each other (`{%- -%}`): the
+                       space after each comma lives INSIDE the span, which is also what
+                       gives the line somewhere to wrap. #}
+                    <dd class="c-meta__value"
+                        {%- if item.limit ?? false %} data-meta-more="{{ item.limit }}"{% endif %}>
+                        {%- for v in item.values -%}
+                            <span class="c-meta__item">{{ loop.first ? '' : ', ' }}{{ v }}</span>
+                        {%- endfor -%}
+                    </dd>
+                {% else %}
+                    <dd class="c-meta__value">{{ item.value }}</dd>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </dl>
+{% endif %}

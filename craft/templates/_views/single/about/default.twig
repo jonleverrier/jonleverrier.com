@@ -1,0 +1,65 @@
+{#
+  About — the `about` single at /about. Same shape as a generic page (see
+  _views/structure/pages/default.twig): whisper, title, then the CKEditor body, on
+  the cream slab. Kept as its own template rather than routed through the pages one
+  so it can grow its own furniture later without touching every plain page.
+
+  Directory is the section's kebab-cased NAME, which is what the single router keys
+  off (see _routers/single.twig) — "About" → `about`.
+#}
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+
+{# Cream slab — the default is olive p500. #}
+{% set slabModifier = 'b-slab--l600' %}
+
+{% block siteContent %}
+    {# `|trim ? … : null` rather than a plain truthiness test: a CKEditor field returns
+       a Markup object, which is always truthy even when it holds nothing — an empty
+       field would otherwise render an empty prose block. #}
+    {% set prose = entry.content|trim ? entry.content : null %}
+
+    {# The Summary as a standfirst: the one line about who this is, at the head of
+       the body so it sits on the same measure as the prose that follows it — not in
+       the column band, which runs to the title's width. Plain text field, so it's
+       escaped here and blank lines become paragraph breaks; single line breaks stay
+       as breaks. Set in bold mono (see .c-content__summary) so it reads as a
+       statement rather than the opening of the prose. #}
+    {% set summary = (entry.summary ?? '')|trim %}
+    {% set standfirst = null %}
+    {% if summary %}
+        {% set standfirst %}
+            {% for para in summary|split("\n\n") %}
+                <p class="c-content__summary">{{ para|trim|nl2br }}</p>
+            {% endfor %}
+        {% endset %}
+    {% endif %}
+
+    {# Whisper is the section's name; Long title is the h1, falling back to Title. On
+       a single named "About" with no long title set, those two are the same word —
+       give the entry a long title and the whisper reads as the eyebrow it's meant
+       to be. #}
+    {# Case Content, block by block, below the prose — the same blocks a case study
+       has (images, video, Lottie, a quote, more prose), rendered by the same
+       component so they look and space themselves identically here. Rendered to HTML
+       first for the same reason the case study does it: _components/content takes
+       finished markup and knows nothing about block types. #}
+    {% set blocks = include('_components/case-content', {
+        blocks: entry.caseContent.all(),
+    }, with_context = false) %}
+
+    {% include '_components/content' with {
+        whisper: entry.section.name,
+        title: entry.longTitle ?: entry.title,
+        body: (standfirst or prose) ? ((standfirst ?? '') ~ (prose ?? '')) : null,
+        blocks: blocks|trim ? blocks : null,
+        blocksAfterBody: true,
+    } only %}
+
+    {# Ask bar as a real footer — a SIBLING of .c-content, not a child, exactly as on
+       the case study index: the timeline's end node is .c-content::after, so anything
+       inside would sit above it, and out here it spans the slab without negative
+       margins. Light dress for the cream slab (see _components/ask). #}
+    {% include '_components/ask' only %}
+{% endblock %}

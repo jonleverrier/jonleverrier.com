@@ -1,0 +1,188 @@
+/**
+ * BASE: LOGO
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.b-logo {
+    display: flex;
+    align-items: center;
+    gap: getmap($space, rhythm, 500);
+}
+
+.b-logo__roundel {
+    flex: 0 0 auto;
+    max-width: rem(65);
+    width: 100%;
+    aspect-ratio: 1 / 1;
+
+    // Own compositing layer. The roundel doesn't move — its box is identical frame to
+    // frame — but it sits at a fractional offset directly above the hero's WebGL
+    // canvas, which repaints continuously. Sharing a layer with that means it's
+    // re-rasterised every frame, and sub-pixel rounding lands slightly differently
+    // each time: the mark appears to wiggle while standing still. Promoted, it's
+    // rasterised once and only composited after.
+    transform: translateZ(0);
+}
+
+// Two marks in the one link — the roundel on the front, the illustrated portrait
+// on the back — and the coin FLIPS on hover / focus. Both are inline SVGs (see
+// logo.twig for why not the spritemap), stacked in the same box; each face hides
+// its back, the link supplies the perspective, and the two rotate together so
+// the portrait arrives as the roundel leaves. The link is the hover target, not
+// the mark, so the flip holds while the pointer is anywhere on the roundel and
+// the keyboard gets it too. With reduced-motion set there's no rotation — the
+// faces just swap.
+$b-logo-flip-duration: 380ms; // brisk — a coin, not a door; 520 read as sluggish
+$b-logo-flip-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+.b-logo__link {
+    position: relative;
+    display: block;
+    perspective: rem(320); // shallow enough to read as a coin, not a card sailing past
+}
+
+.b-logo__mark {
+    display: block;
+    width: 100%;
+    height: auto;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: rotateY(0deg);
+    transition: transform $b-logo-flip-duration $b-logo-flip-ease;
+
+    &--portrait {
+        position: absolute;
+        inset: 0;
+        transform: rotateY(-180deg); // starts face-down, behind the roundel
+    }
+}
+
+.b-logo__link:hover,
+.b-logo__link:focus-visible {
+    .b-logo__mark--roundel { transform: rotateY(180deg); }
+    .b-logo__mark--portrait { transform: rotateY(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .b-logo__mark {
+        transition: none;
+        transform: none;
+        backface-visibility: visible;
+
+        &--portrait { opacity: 0; }
+    }
+
+    .b-logo__link:hover,
+    .b-logo__link:focus-visible {
+        .b-logo__mark--roundel { transform: none; opacity: 0; }
+        .b-logo__mark--portrait { transform: none; opacity: 1; }
+    }
+}
+
+.b-logo__meta {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.b-logo__title {
+    @include typography(p);
+    color: getmap($colour, light, 100);
+    font-weight: 600;
+}
+
+.b-logo__items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    // Every line in ONE grid cell, rather than absolutely positioned inside a box of
+    // a stated height. Same stack, but the row now sizes itself to the TALLEST line —
+    // so a line that wraps to two rows makes the band two rows deep, where the old
+    // `height: 1.5em` held it to one and the mask below sliced the rest off.
+    //
+    // Grid rather than a taller height at a breakpoint: the lines come from the CMS,
+    // so any number written here is a guess against content that can change without
+    // this file — and it would have to be the tallest line at the NARROWEST width.
+    // Sizing to the content is the same answer at every width, for any list.
+    //
+    // `position: relative` has gone with the absolute children; nothing else was
+    // positioned against it.
+    display: grid;
+    overflow: hidden; // the mask the lines slide through — see the ticker below
+}
+
+// A vertical ticker through the mask above: the leaving line slides up and out
+// while the next slides up and in, on the SAME curve and duration, so it reads
+// as one line pushing the other out rather than two effects. No opacity — the
+// mask edge makes the cut, which is what gives it its snap. Ease-in-out (slow
+// off the mark, slow to settle): a one-second move, a one-second hold — the
+// duration here, the beat in cycle-logo-description.js. The 110% travel clears
+// the descenders past the mask edge, where 100% leaves them peeking.
+//
+// Idle lines (neither current nor leaving) have NO transition: a line that has
+// just left sits above the mask and has to get back below it for its next turn,
+// and with a transition on that state it would ride down through the visible
+// band on its way. Each state carries its own transition, so the jump back is
+// instant and only the two live moves animate.
+$b-logo-ticker-duration: 1000ms;
+$b-logo-ticker-ease: cubic-bezier(0.65, 0, 0.35, 1);
+
+.b-logo__item {
+    @include typography(p-sm);
+    color: getmap($colour, light, 100);
+    margin: 0;
+    // Wraps. It was `nowrap`, and the mask above then cut the line off mid-word: the
+    // header genuinely runs out of width for "Street Photographer" on a phone, and a
+    // silent slice is a worse answer than a second row.
+    //
+    // `anywhere`, NOT `break-word`, and the difference is the whole point here. A grid
+    // column can't size below its min-content, which is its longest WORD — at 320
+    // "Photographer" (132px) held the column wider than the 107px the header can give
+    // it, and the mask cut it again. `break-word` breaks such a word when it's laid
+    // out but does NOT lower min-content, so the column stayed 132px wide and nothing
+    // changed (measured). `anywhere` lowers it, which is what lets the column fit.
+    //
+    // It engages only when a single word genuinely cannot fit the box: from 375 up
+    // nothing here breaks.
+    overflow-wrap: anywhere;
+
+    // All the lines in the same cell, stacked, as the absolute `inset: 0` had them.
+    // They stretch to the row's height (grid's default), so every line travels the
+    // same distance whichever one is currently the tallest, and a one-row line sits
+    // at the TOP of a two-row band — the first row's baseline stays put as the
+    // ticker turns over, which centring would take away.
+    grid-area: 1 / 1;
+    transform: translateY(110%);
+
+    &.is-current {
+        transform: translateY(0);
+        transition: transform $b-logo-ticker-duration $b-logo-ticker-ease;
+    }
+
+    &.is-leaving {
+        transform: translateY(-110%);
+        transition: transform $b-logo-ticker-duration $b-logo-ticker-ease;
+    }
+}
+
+// On the eggshell slab the white logo text washes out — switch the title and
+// description to the logo navy. Scoped to the slab, so dark pages keep white
+// and any future light page inherits this automatically.
+.b-slab--l600 {
+    .b-logo__title,
+    .b-logo__item {
+        color: getmap($colour, primary, 700);
+    }
+}
+
+// No-JS / pre-mount fallback — show all descriptions stacked so the content
+// is visible to crawlers and users without JS.
+.no-js {
+    .b-logo__item {
+        grid-area: auto; // out of the shared cell and back into a real stacked list
+        transform: none;
+    }
+}

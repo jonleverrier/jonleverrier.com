@@ -1,0 +1,24 @@
+{#
+  On this page — the note's h2s as a nav of anchors, for a panel beside the
+  prose (see .c-content__aside / _toc.scss). Real links, so it works without
+  JS; toc.js marks the section in view.
+
+  A <details>, so on a phone — where it sits in the flow above the prose — it
+  can fold to its one-line title and be opened on tap. It ships OPEN: without
+  JS the list is simply there; toc.js closes it on narrow screens and keeps it
+  open on wide ones, where the summary is just the panel's title.
+
+    headings — [{ id, text }] from craft.frontend.headingAnchors
+#}
+{% if headings is defined and headings|length %}
+    <nav class="c-toc" aria-label="Summary" data-toc>
+        <details class="c-toc__details" open>
+            <summary class="c-toc__whisper">Summary</summary>
+            <ol class="c-toc__items">
+                {% for h in headings %}
+                    <li class="c-toc__item"><a class="c-toc__link" href="#{{ h.id }}">{{ h.text }}</a></li>
+                {% endfor %}
+            </ol>
+        </details>
+    </nav>
+{% endif %}

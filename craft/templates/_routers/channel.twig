@@ -1,0 +1,9 @@
+{#
+    Channel Template Router
+#}
+
+{% include [
+    "_views/channel/#{entry.section.name|kebab|lower}/#{entry.type}",
+    "_views/channel/#{entry.section.handle|lower}/default",
+    "_views/channel/default",
+] %}

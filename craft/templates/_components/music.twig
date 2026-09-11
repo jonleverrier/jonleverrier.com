@@ -1,0 +1,23 @@
+{#
+  "On heavy rotation" — a strip of Jon's current top artists with their Spotify
+  artwork (see services/Spotify.php). A personality beat surfaced via the
+  [[music]] marker. Expects: artists — a list of { name, image }.
+#}
+{% if artists is defined and artists %}
+    <div class="c-music" role="group" aria-label="Artists Jon is into right now">
+        <p class="c-music__whisper">What I'm listening to right now…</p>
+        <ul class="c-music__list">
+            {% for a in artists|slice(0, 12) %}
+                {% if a.image %}
+                    <li class="c-music__artist">
+                        <span class="c-music__art">
+                            <img src="{{ a.image }}" alt="" width="112" height="112"
+                                loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                            <span class="c-music__name">{{ a.name }}</span>
+                        </span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}

@@ -1,0 +1,158 @@
+defaultPlacement: end
+fieldLayouts:
+  3dcee6f8-f857-4f23-ba5b-377ac910f9b9:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            autocapitalize: true
+            autocomplete: false
+            autocorrect: true
+            class: null
+            dateAdded: '2026-09-03T20:01:39+00:00'
+            disabled: false
+            elementCondition: null
+            id: null
+            inputType: null
+            instructions: null
+            label: null
+            max: null
+            min: null
+            name: null
+            orientation: null
+            placeholder: null
+            readonly: false
+            requirable: false
+            size: null
+            step: null
+            tip: null
+            title: null
+            type: craft\fieldlayoutelements\TitleField
+            uid: 7ba9d338-4d41-4bc3-be57-dc9fc8f5e123
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-05T17:52:09+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 6ad25872-242d-49e3-b49d-89a6b3cba5a7 # Long title
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 8829f07b-c3bc-46fd-8806-b2610ac0c424
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-05T17:54:06+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 76c638b1-cf43-42a7-9c63-56cb5ffa05b5 # Summary
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: eebb6416-7c87-487a-a177-28b2228b3046
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: 0a6e7888-dda0-4f9d-b7bd-f2b99b6818e4
+        userCondition: null
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-09-10T14:17:40+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 00fcf05d-4b96-4b68-a24b-e8699a932153 # Custom Page Title
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 7cd6ed5b-e4fb-4fcd-86a3-47636fac796d
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-10T14:17:40+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 58bd7782-6a62-4253-8045-4bd40e0bf7a3 # Meta Description
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 6cee0461-c0eb-4775-8a28-bb3ee43511a2
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-10T14:17:40+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: f87acb59-ec2e-4031-aa6c-ad11069ba376 # Open Graph Image
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 0e415cf1-1dc1-4d12-8a26-8be404832d2f
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-10T14:17:40+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: c086bc81-8c0a-4abb-bd0d-4d8b7ff54040 # Exclude from sitemap?
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 97773c81-efb7-4622-b9ad-f4f0bf4f9f8c
+            userCondition: null
+            warning: null
+            width: 100
+        name: SEO
+        uid: f96d3b20-a5b2-4330-868d-7a347fe814a7
+        userCondition: null
+    thumbFieldKey: null
+handle: topics
+name: Topics
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    hasUrls: true
+    template: _views/category/topics/default
+    uriFormat: 'notes/{slug}'
+structure:
+  maxLevels: 1
+  uid: ae543e6e-7496-48b6-a4a9-de19e3cb1446

@@ -1,0 +1,58 @@
+{#
+  Notes list — every note as a card: the title, linked; the meta row a note
+  carries under its own title (date, reading time, topic chip — exactly as on
+  the note); then its Summary — so the index and the note read as one thing. A
+  note with a picture of its own shows it across the top of the card.
+
+    notes     — the entries to list (already filtered and ordered by the caller)
+    showTopic — whether each card's meta row carries its topic chip (default
+                true; off on a topic page, where every card would carry the same one)
+#}
+{% import '_macros/media' as media %}
+{% if notes is defined and notes %}
+    <ol class="c-notes">
+        {% for note in notes %}
+            {% set topic = note.topicSelector.one() %}
+            {# The note's own picture, when it has one — its Social Image, else the
+               first image in its content (see helpers/Social) — across the top of
+               the card, above the title, at every width. Cropped 16:9 from the
+               focal point, with candidates up to 2× the card's 740px measure for
+               dense screens. Decorative here: the title is the link, so the
+               picture is empty-alt and outside the tab order. #}
+            {% set picture = craft.frontend.ownImage(note) %}
+            <li class="c-notes__item{{ picture ? ' c-notes__item--picture' : '' }}">
+                {% if picture %}
+                    {# Through the media.picture macro like every other image on the
+                       site — AVIF and WebP sources with a fallback — as a 16:9 crop. #}
+                    <a class="c-notes__picture" href="{{ note.url }}" tabindex="-1" aria-hidden="true">
+                        {{ media.picture(picture, '(min-width: 980px) 740px, calc(100vw - 80px)', {
+                            widths: [400, 740, 1110, 1480],
+                            fallback: 740,
+                            ratio: 16 / 9,
+                            alt: '',
+                        }) }}
+                    </a>
+                {% endif %}
+                <div class="c-notes__body">
+                <h3 class="c-notes__title"><a class="c-notes__link" href="{{ note.url }}">{{ note.title }}</a></h3>
+                <ul class="c-content__meta-items c-notes__meta-items">
+                    {% if note.postDate %}
+                        <li class="c-content__meta-item c-content__date"><time datetime="{{ note.postDate|atom }}">{{ note.postDate|date('d F Y') }}</time></li>
+                    {% endif %}
+                    <li class="c-content__meta-item c-content__date c-content__read">{{ craft.frontend.readingTime(note) }} min read</li>
+                    {% if topic and (showTopic ?? true) %}
+                        <li class="c-content__meta-item"><a class="c-content__topic" href="{{ topic.url }}">{{ topic.title }}</a></li>
+                    {% endif %}
+                </ul>
+                {# The note's Summary, under the title — the first paragraph of it,
+                   since the field can hold several and a list wants one line's worth.
+                   Plain text, so escaped; kept as a single paragraph. #}
+                {% set summary = (note.summary ?? '')|trim|split("\n\n")|first|trim %}
+                {% if summary %}
+                    <p class="c-notes__summary">{{ summary|nl2br }}</p>
+                {% endif %}
+                </div>
+            </li>
+        {% endfor %}
+    </ol>
+{% endif %}

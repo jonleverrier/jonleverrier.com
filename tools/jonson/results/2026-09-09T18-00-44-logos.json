@@ -1,0 +1,64 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 3,
+  "started": "2026-09-09T18:00:37.387Z",
+  "scenarios": [
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I've done a fair bit of logo work over the years — from a logo development for Jersey Post to product branding, plus a collection of used and unused marks I've kept together.\n\n[[casestudies]]\n\nIf there's a particular kind of mark or industry you're curious about, tell me and I'll point you to the closest thing I've done.\n\n[[next: what was the thinking behind the Vaiie brand? | how do you approach a logo project? | can we talk about a logo for my business? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I've done a fair bit of logo and identity work over the years, from record label marks to full product brand systems.\n\n[[casestudies]]\n\nIf you're after the pure logo stuff specifically, there's a collection of used and unused marks in there worth a look — the range gives a decent sense of how I approach it.\n\n[[next: what was the thinking behind the Vaiie identity? @study:vaiie-product-branding | how do you approach a logo design from scratch? @method | can I see the full collection of logos? @study:logos]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I've done a fair bit of logo and identity work over the years — from a standalone collection of used and unused marks to full product branding.\n\n[[casestudies]]\n\nThe Vaiie branding was a nice one: the mark came from the word itself — Jersey French for \"to see\" — worked into an iris device. And there's a set of odds and ends, logos that made it out and some that didn't, if you fancy a rummage.\n\n[[next: how did the Vaiie iris idea come about? | what's in the unused logos collection? | do you do branding as well as logos? @study:vaiie-product-branding | @study:logos | @method]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  350ccbec-7138-4313-80df-188962bbb333:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-09-02T09:50:43+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 27e9120b-2988-4328-b1a1-00f9aea77134 # Lottie JSON
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 14081659-f25c-46e4-8ab4-83605619dad3
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-02T09:50:43+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: f1afd6d8-432a-42e7-b160-a811467114bb # Background Colour
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: f7156596-bf8f-46a3-97f5-a301e024b358
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-02T12:16:38+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 20283626-153e-4279-aec4-3b29e5285338 # Loop Animation?
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 7366ce55-ee27-4045-956f-2636ae70debe
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: 83bbd57f-8f17-454d-a967-a5ff9fb759a1
+        userCondition: null
+    thumbFieldKey: null
+handle: lottie
+hasTitleField: false
+icon: null
+name: Lottie
+showSlugField: true
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

@@ -1,0 +1,13 @@
+columnSuffix: null
+handle: isPresent
+instructions: 'Toggle this to show "{pubDate} - present"'
+name: 'Is present?'
+searchable: false
+settings:
+  default: false
+  offLabel: null
+  onLabel: 'Yes'
+  showLabelsInCards: true
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Lightswitch

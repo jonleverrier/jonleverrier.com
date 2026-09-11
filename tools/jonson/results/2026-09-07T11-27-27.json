@@ -1,0 +1,2778 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-07T11:23:24.679Z",
+  "scenarios": [
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey",
+            "brighton",
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and spent time in Paris and Brighton[[brighton]] along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a bit unusual for a designer.\n\nOutside of that I'm a keen street photographer[[street-photo]], I collect photography books, and I nearly always have music on while I work or cook. I love to travel too — I'm drawn to places with a bit of a reputation.\n\n[[next: what kind of work do you take on? @work | how did you get into web design? @cv | what do you like to photograph? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and lived in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, and I work right across a project: strategy, design and development, which is a bit unusual for a designer.\n\nOutside work I'm a street photographer with a soft spot for places that have a bad reputation, I collect photography books, and I nearly always have music on while I'm working or shooting.\n\n[[next: what kind of work do you take on? @work | how did you get into web design? @about | what do you shoot as a street photographer? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey",
+            "france",
+            "brighton"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and spent a few years in Paris[[france]] and Brighton[[brighton]] along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a slightly odd combination for a designer but one I rather like.\n\nOutside the work, I'm a street photographer, I collect photography books, and I've done a fair bit of travelling — the kind of places people tell you to avoid, usually.\n\n[[next: what kind of work do you do? @work | where have you travelled? @photo:street-photo | how did you get into web design? @cv]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux"
+          ],
+          "imgs": 1,
+          "chips": 3,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey and have lived in Paris and Brighton along the way. I've been designing and building digital products for over 25 years, working across strategy, design and development, which is a bit unusual for a designer.\n\nAway from the screen I'm a keen street photographer, I collect photography books, I cook, and I used to DJ — so there's usually music on wherever I am.\n\n[[next: what kind of work do you take on? @work | what do you shoot with your camera? @photo:street-photo | what music are you into? @music]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independant web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and lived a few years in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a bit rare for a designer.\n\nOutside of work I'm a keen street photographer, a shameless Leica devotee, I collect photography books, and I nearly always have music on whilst I work or cook. I love to travel too — I'm drawn to places with a bit of a bad reputation.\n\n[[next: what kind of work do you take on? @work | how did you get into web design? @cv | what got you into street photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — originally from Jersey[[jersey]], and I've lived in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a slightly unusual mix for a designer.\n\nOutside the work I'm a keen street photographer, I collect photography books, I used to DJ, and I love to cook and travel — I'm drawn to places with a bit of a reputation, oddly enough.\n\n[[next: what kind of work do you take on? @work | where have you travelled? @photo:street-photo | what's your street photography like? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo",
+            "bordeaux"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "Photography is a big part of it — I shoot street[[street-photo]], mostly with a Leica rangefinder, and I collect photography books to the point where the shelves are groaning. Beyond that I love to travel (I'm drawn to places with a bit of a bad reputation), I cook a lot, and I've always got music on — I used to DJ, so sound is never far away. I'm also raising a family here in Bordeaux[[bordeaux]], which keeps the days full.\n\n[[next: what got you into street photography? @photo:street-photo | what music do you have on while you work? @music | where's the most memorable place you've travelled? @note:last-stop-parvati]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo",
+            "bordeaux"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "Quite a bit, honestly. I'm a fairly obsessive street photographer[[street-photo]] — I shoot with a Leica rangefinder and collect photography books. I love to cook, usually with music on, and I've travelled a fair amount; I lived in Paris and Brighton before settling in Bordeaux[[bordeaux]], where I am now.\n\n[[next: what got you into street photography? @photo:street-photo | what's on when you're shooting or cooking? @music | why did you settle in Bordeaux? @photo:bordeaux]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "A fair bit, honestly. I'm big into street photography — I shoot with a Leica rangefinder and spend a lot of time wandering cities with a bad reputation, camera in hand[[street-photo]]. I collect photography books, I nearly always have music on while I'm working or cooking, and I love to travel — I once spent a year making my way through South East Asia and India.\n\n[[next: what draws you to street photography? @photo:street-photo | which places have you travelled to? @note:last-stop-parvati | what do you listen to while you work? @music]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "A fair bit, honestly. Street photography is the big one — I shoot with a Leica rangefinder and wander cities looking for those small everyday miracles that mostly don't happen but occasionally do[[street-photo]]. I also collect photography books, love cooking, and I've got music on for pretty much all of it, having spent years DJing.\n\nAnd I travel — I'm drawn to places with a rough reputation, which tends to make for better stories.\n\n[[next: what places have you travelled to? @note:last-stop-parvati | what do you listen to while you work? @music | what draws you to street photography? @study:streetpal-ios-app-design-development]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo",
+            "bordeaux"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "A fair bit, honestly. I'm big into street photography — I shoot with a Leica rangefinder and I'm forever chasing that one good frame that mostly never comes[[street-photo]]. I collect photography books, I love to cook, I used to DJ, and I'm always listening to music while I do any of it.\n\nI also live in Bordeaux with a young family, so plenty of my time goes on them and the odd weekend escape into the French countryside[[bordeaux]].\n\n[[next: what got you into street photography? @photo:street-photo | what music do you put on while you shoot or cook? @music | where have your travels taken you? @note:last-stop-parvati]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo",
+            "bordeaux"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "A fair bit, honestly. I'm big into street photography — I shoot with a Leica rangefinder and I'm always out looking for that one lucky frame that mostly never comes[[street-photo]]. I collect photography books, I love to cook, I used to DJ, and I've done a good chunk of travelling over the years — I currently live in Bordeaux[[bordeaux]] after stints in Paris and Brighton.\n\n[[next: what draws you to street photography? @photo:street-photo | what kind of music are you into? @music | where have you travelled? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "france",
+            "brighton",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm in Bordeaux[[bordeaux]], down in the south-west of France — been in France for over ten years now. Before that I lived in Paris[[france]] and Brighton[[brighton]], and I'm originally from Jersey[[jersey]] in the Channel Islands.\n\nI work remotely, which in my experience is no different to being on-site — if anything, a bit more productive.\n\n[[next: what's it like working with you remotely? @method | how did you end up in Bordeaux? @about | do you take on clients outside France? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm in Bordeaux[[bordeaux]], down in the south-west of France — been in France over ten years now, though I'm originally from Jersey[[jersey]] in the Channel Islands. I work with clients wherever they are, on-site or remote; where you are makes no odds to me.\n\n[[next: how do you find working remotely? @method | what took you from Jersey to France? @about | can we work together if I'm not in France? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "I'm in Bordeaux[[bordeaux]], in the south-west of France — been in France over ten years now. Originally I'm from Jersey[[jersey]] in the Channel Islands, and I spent a stint in Paris and a year in Brighton along the way. Work-wise I'm entirely happy remote, so location's rarely a barrier.\n\n[[next: how did you end up living in Bordeaux? | do you work with clients outside France? | what took you from Jersey to France? @cv]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey",
+            "france",
+            "brighton"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "I'm in Bordeaux[[bordeaux]], in the south-west of France — been living here a good while now. Originally I'm from Jersey[[jersey]] in the Channel Islands, and I've had spells in Paris[[france]] and Brighton[[brighton]] along the way.\n\n[[next: how long have you lived in France? | do you work remotely with clients? | what took you from Jersey to Bordeaux? @about]]\n\nOh, one of those prompts is missing a citation — let me redo that.\n\n[[next: how long have you lived in France? @about | do you work remotely with clients? @method | what took you from Jersey to Bordeaux? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "france",
+            "jersey",
+            "brighton"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm in Bordeaux[[bordeaux]] these days — been in France[[france]] for over ten years now. Originally I'm from Jersey[[jersey]] in the Channel Islands, and I had a stint in Paris and a year in Brighton[[brighton]] along the way.\n\n[[next: what's it like working with you remotely? @method | what took you from Jersey to Bordeaux? @about | do you work with clients outside France? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "france",
+            "brighton",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm in Bordeaux[[bordeaux]], in the south-west of France — been in the country over ten years now. Before this I lived in Paris[[france]] for a spell and Brighton[[brighton]] for a year, and I'm originally from Jersey[[jersey]] in the Channel Islands.\n\n[[next: what's it like working with a designer remotely? @method | do you work with clients outside France? @contact | what took you from Jersey to Bordeaux? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 3,
+          "answer": "Jersey's where I'm from — born there in 1982 and grew up on the island[[jersey]]. Trinity's my favourite parish, and I still get a proper pang for the place; there's a lot of my early work tied up there too.\n\n[[next: what work have you done in Jersey? @client:Government of Jersey | do you still go back often? @about | where do you live now? @photo:bordeaux]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 3,
+          "answer": "Jersey's home — I was born there and grew up on the island[[jersey]]. Trinity's my favourite parish, and I still feel the pull of the place even after living in France for over a decade.\n\n[[next: what do you love about Jersey? @photo:jersey | where in France do you live now? @photo:bordeaux | what kind of work have you done for Jersey clients? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 3,
+          "answer": "I was born there — on Jersey[[jersey]], in the Channel Islands — so yes, plenty. I lived and worked on the island early in my career before moving away, and it still has a strong pull on me; Trinity's my favourite parish, for what it's worth.\n\n[[next: what work did you do while you were in Jersey? | why did you leave Jersey? | where do you live now?]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 2,
+          "answer": "Jersey's home — I was born there, on the island, back in '82.[[jersey]] Trinity's my favourite parish, and I still get a proper pang of nostalgia whenever I go back. It's a small place but it shaped a lot of who I am.\n\n[[next: what took you from Jersey to France? @about | have you worked with any Jersey clients? @cv | do you still shoot photos when you're back on Jersey? @photo:jersey]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 2,
+          "answer": "Jersey's home — I was born there, on the island, back in 1982.[[jersey]] Trinity's my favourite parish, if you want the honest local answer, and I still get back when I can. It's a beautiful spot, and it shaped a fair bit of my early work too.\n\n[[next: what work have you done for Jersey clients? @study:vaiie-identify-product-design | where else have you lived? @about | what drew you to street photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 2,
+          "answer": "Jersey's home — I was born there, on the island, and it's still where a lot of me is rooted[[jersey]]. Trinity's my favourite parish, if you want to know where I'd point you. I've lived in Paris, Brighton and now Bordeaux, but Jersey's the constant.\n\n[[next: what took you from Jersey to Bordeaux? @about | do you still shoot photos in Jersey? @photo:jersey | have you worked with clients on Jersey? @client:Government of Jersey]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "A Leica M11-P with a 35mm f/1.4 Summilux — my dream setup, and yes, I know, a Leica shooting street[[street-photo]] is a bit of a cliché. Sorry not sorry.\n\n[[next: what kind of street photography do you shoot? | who are your favourite street photographers? | how did you get into photography? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "A Leica M11P with a 35mm f/1.4 Summilux — my dream setup, if I'm honest, and I'll happily take the \"sorry not sorry\" ribbing for shooting rangefinder. Mostly I use it for street photography[[street-photo]], which is by far the hardest thing to do well — you head out hoping a miracle happens and mostly it doesn't.\n\n[[next: what draws you to street photography? @photo:street-photo | who are your photography influences? @about | where do you like to shoot? @photo:bordeaux]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "A Leica M11-P with a 35mm f/1.4 Summilux — my dream setup, and yes, I know how that sounds coming from a Leica person. I shoot mostly street[[street-photo]], which is the hardest kind of photography there is: you go out hoping a good frame happens and mostly it doesn't.\n\n[[next: who are your street photography influences? @about | where do you take your photos? @photo:bordeaux | have you photographed while travelling? @note:last-stop-parvati]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "A Leica M11P with a 35mm Summilux — the f/1.4 ASPH. It's my dream setup, honestly, and I mostly point it at street[[street-photo]] stuff: people, moments, the small odd things that happen when you're paying attention.\n\n[[next: what draws you to street photography? @photo:street-photo | who are your favourite photographers? @about | do you have a project involving photography? @study:streetpal-ios-app-design-development]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "A Leica M11P with a 35mm f/1.4 Summilux — my dream setup, honestly. I mostly shoot street[[street-photo]], which is the hardest kind of photography there is: you head out hoping a good frame happens, and mostly it doesn't.\n\n[[next: who are your favourite street photographers? | do you collect photography books? | where do you like to shoot? @photo:bordeaux]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "A Leica M11P with a 35mm f/1.4 Summilux — my dream setup, honestly. I shoot street[[street-photo]] mostly, which is the hardest thing to get right: you head out hoping a good photograph happens, and mostly it doesn't. That's the addiction of it.\n\n[[next: who are your street photography influences? | what draws you to street photography? | where do you like to shoot? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I loved Japan — I spent a few weeks there towards the end of a long trip through Asia, and it completely got under my skin. What struck me most was slowing down: staying put longer, getting to know a few people and places properly rather than rushing between sights.\n\nThere was a real generosity to the people I met too — architects in Kyoto who took me in, translated for me at dinners, and gave me a window into how a creative collective actually lives and works. Inspiring stuff.\n\n[[next: what were the Kyoto architects like to be around? @note:lost-in-conversation-kyoto | did you take photos while you were in Japan? @photo:street-photo | how did that whole Asia trip come about? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "Loved it, genuinely. I spent a stretch there towards the end of a long trip through Asia[[street-photo]] and it was the place where I stopped rushing — stayed put, got to know people and let the days breathe rather than ticking off sights.\n\nThere's something about the attention to craft and detail there that stuck with me — it seeps into how I think about design.\n\n[[next: what were you doing travelling around Asia? @note:last-stop-parvati | how does street photography connect to your design work? @photo:street-photo | how did Japan shape the way you design? @about]]"
+        }
+      ],
+      "failures": [
+        "T1 showed context"
+      ]
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "Loved it. I spent a stretch there once — Tokyo, Kyoto, up to Akita — after a long run through South East Asia, and it was the place I slowed right down and actually got to know people rather than ticking off sights.[[street-photo]]\n\nThere's a real craft culture there that stuck with me — everything from printing and typography to how one architecture collective I stayed with worked and lived together. Very much my kind of thing.\n\n[[next: what happened when you stayed with the architects in Kyoto? @note:lost-in-conversation-kyoto | how did that trip shape the way you work? @about | what did you get up to in Tokyo? @note:making-friends-in-tokyo]]"
+        }
+      ],
+      "failures": [
+        "T1 showed context"
+      ]
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I loved it — I spent a good stretch there once, and it left a real mark. What got me wasn't the sightseeing so much as slowing down and staying put long enough to actually know some people; I ended up hanging out with a studio of architects in Kyoto and it was some of the most inspiring time of the whole trip.\n\nI shoot a lot of street photography, and Japan is heaven for that — the visual density, the little everyday moments.\n\n[[next: what kind of street photography do you shoot? @photo:street-photo | where else have you travelled? @note:last-stop-parvati | what camera do you use? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Loved it. I spent a good stretch there once, after a long run through South East Asia — and after all that constant moving it was the first place where I wanted to slow right down, stay put and actually get to know people and places properly.\n\nKyoto especially got under my skin, largely thanks to some architects who took me in and let me hang around their studio. That kind of connection, working across a language barrier, ends up teaching you more than any sight.\n\n[[next: what were you doing in South East Asia? @note:last-stop-parvati | do you still travel much these days? @photo:street-photo | what draws you to a place? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "Loved it. I spent a stretch there once after a long run through South East Asia — Tokyo[[street-photo]], Kyoto, up north to Akita — and it was the one place I stopped rushing and actually got to know some people and places properly.\n\nKyoto especially got under my skin: I ended up staying with a collective of architects and designers, being translated at dinners, hanging out in the studio late into the night. Inspiring bunch.\n\n[[next: what were you doing in Kyoto? @note:lost-in-conversation-kyoto | did you take photos while travelling? @photo:street-photo | what got you into street photography? @about]]"
+        }
+      ],
+      "failures": [
+        "T1 showed context"
+      ]
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I've done a fair bit of logo and identity work over the years — some for real projects, some experiments that never saw daylight. There's a collection of used and unused marks I've put together if you fancy a browse.[[casestudies]]\n\n[[next: what was the thinking behind the Vaiie product branding? | can you tell me more about the StreetPal logo? | how do you approach a logo project? @study:vaiie-product-branding | @study:streetpal-ios-app-design-development | @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I've done a fair bit of logo work over the years, from product branding to little side projects — there's a collection of used and unused marks I've put together.\n\n[[casestudies:logos]]\n\n[[next: what was the thinking behind the Vaiie branding? | do you offer logo design on its own? | how do you approach a logo project? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've done a fair bit of logo work over the years — some of it made it out into the world, plenty didn't. There's a collection of used and unused marks I've put together, alongside a few product brands I built from scratch.\n\n[[casestudies]]\n\n[[next: what was the Vaiie product branding about? @study:vaiie-product-branding | how do you approach a logo when starting from nothing? @method | what other kinds of work have you done? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I've done a fair few logos over the years — some that made it into the wild, plenty that didn't. There's a collection of used and unused marks worth a look, plus branding work I did for a few products.\n\n[[casestudies]]\n\n[[next: what was the thinking behind the Vaiie branding? | which logos never got used and why? | how do you approach a logo brief? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I've done a fair amount of logo and identity work over the years, from product branding to a whole collection of used and unused marks — some made it into the wild, some never saw daylight.[[casestudies]]\n\nIf there's a particular kind you're after — product branding, a startup identity, something playful — let me know and I can point you to the closest fit.\n\n[[next: can you walk me through the Vaiie product branding? | what happened to the unused logos in your collection? | how do you approach a new logo project? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've done a fair bit of logo work over the years — from full product branding to a collection of logos that never quite made it into the wild.\n\n[[casestudies]]\n\nThe Vaiie product branding is probably the fullest example, and there's a whole set of used and unused marks I've pulled together too. Have a browse and see what resonates.\n\n[[next: What was the thinking behind the Vaiie branding? @study:vaiie-product-branding | Why did some of those logos never get used? @study:logos | How do you approach a branding project? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper is a UK CPD conference provider that's been running for over twenty years, connecting business professionals with expert speakers. They came to me to replace an ageing bespoke system that handled their admin, website and bookings all at once — technology had moved on and it no longer fit. [[casestudies:white-paper-booking-engine-design-development]]\n\nI took it right across the life cycle: research and personas, logo and UI design, then the front-end build on Craft CMS, a custom booking engine and an on-demand platform — plus server setup and technical SEO. It's the kind of end-to-end job I enjoy, where strategy, design and code all have to talk to each other.\n\n[[next: how did you approach the booking engine? @study:white-paper-booking-engine-design-development | what does an on-demand platform involve? @study:white-paper-booking-engine-design-development | how do you work across strategy, design and build? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper are a UK CPD conference provider — 20 years running, getting business professionals in front of expert speakers. Their brief was to replace an ageing bespoke system that handled office admin, the website and bookings all at once, which had simply been outpaced by better technology. [[casestudies:white-paper-booking-engine-design-development]]\n\nI took it right across the lifecycle — the review and persona work up front, through logo, IA, wireframing and UI design, into the front-end build on Craft CMS, server setup and technical SEO. The result was a proper booking engine plus an on-demand platform to replace the old application.\n\n[[next: what was the hardest part of that build? @study:white-paper-booking-engine-design-development | how do you usually approach a project like that? @method | have you done other e-commerce work? @sector:E-commerce]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper are the UK's leading provider of CPD conferences for legal and business professionals — I've been their design and technology consultant for a long stretch now. Their big challenge was an ageing bespoke system that ran the office admin, the website and the bookings all at once, and technology had simply outgrown it. I replaced it with a proper booking engine and an on-demand platform, handling everything from the persona work and IA through to the front-end and Craft CMS build.[[casestudies]]\n\n[[next: how did you replace the old booking system? @study:white-paper-booking-engine-design-development | what's the on-demand platform for? @study:white-paper-booking-engine-design-development | what other e-commerce work have you done? @sector:E-commerce]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper are a UK CPD conference company who've been running for around 20 years, connecting business professionals with expert speakers. The brief was to replace an ageing bespoke system that handled their office admin, website and bookings all at once — I designed and built a new booking engine plus an on-demand platform, doing everything from the research through to the front-end and CMS.[[casestudies]]\n\nIt's a long-running relationship — I've looked after their brand and platforms for a good while now, so it's a project I know inside out.\n\n[[next: how did you approach replacing the old booking system? @study:white-paper-booking-engine-design-development | what does your process look like on a project like this? @method | have you done other e-commerce work? @sector:E-commerce]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper is the UK's leading provider of legal and business CPD conferences — I've looked after their design and digital experience for over ten years now. The big piece was replacing an ageing bespoke system with a proper booking engine and on-demand platform, plus the branding and front-end around it. [[casestudies]]\n\nI took it right across the lifecycle — persona work, information architecture, the UI, the front-end build in Craft CMS, server setup and technical SEO — which is the kind of end-to-end thing I enjoy most.\n\n[[next: why did they need to replace the old system? @study:white-paper-booking-engine-design-development | how do you approach a booking engine build? @method | what other e-commerce work have you done? @sector:E-commerce]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies",
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper are a CPD conference provider — they've been running for around 20 years, getting business professionals in front of expert speakers. The brief was to replace an ageing bespoke system that handled their office admin, website and bookings all at once, so I designed and built a new booking engine plus an on-demand platform to go with it.[[casestudies:white-paper-booking-engine-design-development]]\n\nIt's actually a relationship that's run a long time — I've looked after their brand and platforms for over a decade, which tells you something about how they've found working together.[[testimonial]]\n\n[[next: what did rebuilding the booking engine involve? @study:white-paper-booking-engine-design-development | how do you approach a project like that? @method | have you done other e-commerce work? @sector:E-commerce]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I worked with Vaiie in two stints. First as a design consultant in regtech, then I was brought in-house as Head of Design to lead things off the back of that. We did product branding, a multi-jurisdictional onboarding platform and an identity verification tool.[[casestudies]]\n\n[[next: what was the identity verification product like? @study:vaiie-identify-product-design | how did you approach the product branding? @study:vaiie-product-branding | what does building design culture in-house involve? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I worked with Vaiie for a good stretch, first as a design consultant and later brought in-house as Head of Design. It's regtech: customer onboarding and identity verification tools for regulated, multi-jurisdictional firms. I designed the onboarding and identity products, handled the product branding, and built a design culture across the org.[[casestudies]]\n\n[[next: what did the identity verification work involve @study:vaiie-identify-product-design | how do you approach 0 to 1 product design @method | what was it like establishing a design culture there @study:vaiie-product-branding]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — Vaiie's a regtech company, and I worked with them across a good stretch of time, first as a design consultant and later brought in-house as Head of Design. I designed a multi-jurisdictional client onboarding platform and an identity verification tool, handled the product branding, and helped establish a proper design culture across the organisation.[[casestudies]]\n\n[[next: how did you approach the identity verification design? @study:vaiie-identify-product-design | what was the product branding work like? @study:vaiie-product-branding | what's it like designing for regulated industries? @sector:RegTech]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I worked with Vaiie over a good stretch, first as a design consultant and then brought in-house as Head of Design. It's regtech: customer onboarding and identity verification for regulated, multi-jurisdictional firms.[[casestudies]]\n\nI did a fair bit there — product branding, the onboarding platform, and an identity verification workflow (which the Government of Jersey used), plus building a design culture across the org.\n\n[[next: what did the identity verification work involve? @study:vaiie-identify-product-design | how did you approach the product branding? @study:vaiie-product-branding | what's it like designing for a regtech startup? @study:vaiie-onboard-product-design]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I worked with Vaiie for a good while, first as a design consultant and later brought in-house as Head of Design. It's regtech: customer onboarding and identity verification for regulated, multi-jurisdictional firms.[[casestudies]]\n\nI designed the onboarding and identity verification products, led the repositioning of the website, and pulled all their regulatory products together under one brand.\n\n[[next: what did the identity verification work involve? @study:vaiie-identify-product-design | how do you approach designing complex products? @method | what other regtech or financial work have you done? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I worked with Vaiie over a few years. I started out as a design consultant on their regtech products, then was brought in-house as Head of Design to lead things properly, evolving the onboarding and identity verification tools and building a design culture across the org.[[casestudies]]\n\n[[next: what did you design for the onboarding product? @study:vaiie-onboard-product-design | how did you approach the identity verification workflow? @study:vaiie-identify-product-design | what's it like designing for regulated businesses? @sector:RegTech]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies",
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Financial services has been a big part of my career — I've done conversion-led work for banking clients, redesigned expat banking platforms and worked deep in regtech, designing a multi-jurisdictional onboarding platform and an identity verification tool.[[casestudies]]\n\nSo while \"fintech\" as a label spans a lot, the underlying problems — trust, compliance, making something regulated feel simple to use — are very much my territory.[[testimonial]]\n\n[[next: what did the onboarding platform involve? @study:vaiie-onboard-product-design | how do you make regulated products feel simple? @study:vaiie-identify-product-design | what sectors have you worked across? @sector:RegTech]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies",
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Financial services, yes — I've done conversion-led digital work for banking clients and looked after the international website side for a couple of banks, so I'm comfortable with regulated, compliance-heavy environments. I've also spent a good stretch in regtech, designing an onboarding and identity verification product used by a government.[[casestudies]]\n\nFintech proper isn't a label I'd claim to have lived in, but the concerns overlap heavily — trust, clarity, getting complex flows to feel simple — and that transfers cleanly.[[sectors]]\n\n[[next: what did the identity verification product involve? @study:vaiie-identify-product-design | how do you make complex flows feel simple? @method | which banks have you worked with? @client:Lloyds Bank International]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies",
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes, quite a bit — financial services runs through a good chunk of my career. I've redesigned and built front-ends for the likes of Lloyds Bank International and HSBC International, and more recently spent years in regtech designing a client onboarding platform and an identity verification tool.[[casestudies]]\n\nThe regulatory side especially taught me how to make genuinely complex, compliance-heavy products feel simple for the people actually using them.[[sectors]]\n\n[[next: how did you simplify the onboarding product? @study:vaiie-onboard-product-design | what did the Lloyds work involve? @client:Lloyds Bank International | how do you approach a project like this? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies",
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Financial services has been a big part of my work over the years — I've designed and built front-ends for banking clients and international banking platforms, and more recently spent a good stretch in regtech, working on client onboarding and identity verification products for regulated firms. [[casestudies]]\n\nSo while \"fintech\" isn't a label I'd slap on myself, the underlying problems — trust, compliance, making something complex feel simple enough that people actually complete it — are very much home turf. [[testimonial]]\n\n[[next: what did you do on the Vaiie onboarding product? @study:vaiie-onboard-product-design | how do you approach making complex products feel simple? @method | which banks and financial clients have you worked with? @client:Lloyds Bank International]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Financial services, yes — I've done a fair bit. Redesigned and built front-ends for HSBC International and Lloyds Bank International, and more recently spent a good stretch in regtech designing a multi-jurisdictional onboarding platform and an identity verification tool used by the Government of Jersey.[[casestudies]]\n\nSo while \"fintech\" as a label spans a lot, the meat of it — regulated products, compliance workflows, getting complex financial journeys to feel simple — is very much home turf for me.\n\n[[next: what did the Vaiie onboarding work involve? | how do you make complex financial products feel simple? | what other sectors have you worked in? @sector:Financial Services]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "shown": [
+            "casestudies",
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "sectors",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Financial services is one of the sectors I've spent real time in — I've done conversion-led digital work for banking clients, redesigned an expat banking site to increase leads and account openings, and delivered a booking and payments engine from scratch. [[sectors]]\n\nClosest to fintech proper is my work in regtech — building a client onboarding platform and an identity verification tool for regulated businesses, which is very much the compliance side of that world. [[casestudies]]\n\n[[next: what did the identity verification work involve? @study:vaiie-identify-product-design | how do you approach a 0 to 1 product? @method | who have you worked with in financial services? @client:Lloyds Bank International]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A real mix over 25 years — booking engines and on-demand platforms, ecommerce brands and front-ends, regtech onboarding and identity products, an iOS app for street photographers, and 0-to-1 branding for startups.[[casestudies]]\n\nThe through-line is I work across the whole life cycle — strategy, design and build — which is a bit rare for a designer. Anything in particular you're weighing up?\n\n[[next: how do you work across strategy, design and build? @method | can you tell me more about the regtech work? @study:vaiie-onboard-product-design | what industries have you worked in? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A real mix over the years — booking and on-demand platforms, ecommerce front-ends, regulatory and identity products, an estate agency rebrand, even an iPhone app for street photographers. I tend to work across the whole life cycle: strategy, design and build, which is a bit unusual for a designer.[[casestudies]]\n\n[[next: How did the White Paper booking engine come together? @study:white-paper-booking-engine-design-development | What did you do for Vaiie's regulatory products? @study:vaiie-onboard-product-design | Which sectors have you worked in? @sector:Regulatory]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I've worked across quite a range — from booking engines and on-demand platforms to regulatory compliance products, ecommerce sites, an online estate agency, and even an iPhone app for street photographers. Most of it lives somewhere between strategy, design and build.[[casestudies]]\n\nBroadly, I gravitate towards two kinds of thing: taking a complex product and making it genuinely usable, or helping a startup turn an idea into something real that stands out.\n\n[[next: how did you approach the White Paper booking engine? @study:white-paper-booking-engine-design-development | what did you do for Vaiie? @study:vaiie-onboard-product-design | which sectors have you worked in? @sector:Regulatory]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Broadly three flavours: helping organisations simplify complex products so people actually engage with them, getting startups from a strong idea to something real, and stepping in as a reliable pair of hands for agencies. In practice that's spanned booking engines, ecommerce, regtech onboarding tools, estate agency platforms and even a companion app for street photographers.\n\n[[casestudies]]\n\nHave a poke through these — happy to go deeper on any of them.\n\n[[next: how did the White Paper booking engine come together? @study:white-paper-booking-engine-design-development | what did you do for Vaiie? @study:vaiie-onboard-product-design | what's the story behind the street photography app? @study:streetpal-ios-app-design-development]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "A real spread over the years — startup brands built from nothing, e-commerce front-ends, regulatory products, booking engines, even an iPhone app for street photographers. I tend to work across the whole life cycle, from strategy and branding through to design and front-end build.\n\n[[casestudies]]\n\nHave a look through these — they'll give you a feel for the range better than I can describe it.\n\n[[next: how did the White Paper booking engine project come about? @study:white-paper-booking-engine-design-development | what did you do for Vaiie? @study:vaiie-onboard-product-design | which sectors have you worked in? @sector:Regulatory]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A real mix over 25-odd years — booking and on-demand platforms, ecommerce front-ends, regulatory onboarding and identity products, brand and logo work, even the odd side project like an iOS app for street photographers. Here's a spread of it.[[casestudies]]\n\nThe common thread is I tend to work across the whole thing — strategy, design and build — rather than just one slice.\n\n[[next: how do you approach a new project? @method | can you tell me more about the White Paper booking engine? @study:white-paper-booking-engine-design-development | what sectors have you worked in? @sector:Regulatory]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I've been lucky to work with a good spread of clients over 25 years — some well-known names across banking, telecoms, ecommerce and government, alongside startups and agencies. [[clients]]\n\nIf it's useful, I can also show you the sectors I've touched, or a few actual case studies. [[sectors]]\n\n[[next: can I see some of your case studies? @work | which sectors have you worked in? @sector:E-commerce | what's your experience with startups? @sector:Startup]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Over 25 years I've worked with a real range — everything from banks and telecoms to ecommerce startups and government bodies, some well-known names among them.[[clients]]\n\nThat's spanned a fair few sectors too, whether in-house, at agencies or on my own.[[sectors]]\n\n[[next: what kind of work did you do for those clients? @work | which sectors have you worked in most? @sector:E-commerce | can I see some examples of your work? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "casestudies",
+            "clients",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've been at this over 25 years, so I've had the good fortune to work with a real range — from banking and telecoms names to ecommerce startups and government bodies, across agencies, in-house teams and directly as myself.[[clients]]\n\nIf it's helpful, I can show you a few write-ups of specific projects too — some product design, some ecommerce, some 0-to-1 work.[[casestudies]]\n\n[[next: what kinds of sectors have you worked in? @sectors | can you tell me more about the Vaiie work? @study:vaiie-product-branding | how do you usually approach a project? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "suggestions"
+          ],
+          "marked": [
+            "clients"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I've had the luck to work with a real spread over the years — international banks, telecoms, ecommerce startups, government, plus regulatory and events clients more recently.[[clients]]\n\nThe kinds of problems have ranged just as widely, from repositioning brands to designing products from scratch. Happy to point you at specific projects if there's a sector or type of work you're curious about.\n\n[[next: what sectors have you worked in? | can I see some of your case studies? | what kind of projects do you take on now? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "suggestions"
+          ],
+          "marked": [
+            "clients"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Over 25 years I've worked with a real mix — big banks, telecoms, government, ecommerce startups and regulatory tech firms, both in agencies and in-house. [[clients]]\n\nA few that stand out: I looked after design and platforms for a UK CPD conference provider for over a decade, helped deliver some of the first Government of Jersey websites, and did brand and front-end work for early ecommerce and fintech names.\n\n[[next: what kinds of sectors have you worked in? @sector:Technology | can you show me some of your actual work? @work | what was the White Paper project about? @study:white-paper-booking-engine-design-development]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "shown": [
+            "clients",
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I've been lucky to work with a good spread of well-known names over the years — banking and financial services, telecoms, ecommerce brands, government, plus a fair few startups. [[clients]]\n\nThe range spans quite a few sectors too. [[sectors]]\n\n[[next: can I see some of your actual work? @work | which sectors have you worked in most? @sector:E-commerce | what was your work for Lloyds Bank International like? @study:urban-co-uk-product-branding]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Quite a spread over the years — everything from regulated fintech and compliance work through to e-commerce, property and telecoms, plus a fair bit of early-stage startup and 0-to-1 product work.[[sectors]]\n\nThat said, I'm not precious about sector labels — the way I work carries across industries pretty well, so if yours isn't on there it's rarely a problem.\n\n[[next: can you show me examples of your regtech work? | how does your experience transfer to a new sector? | which clients have you worked with? @client:Vaiie]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I've worked across a fair spread over the years — everything from finance and telecoms to beauty, property and regulatory tech, plus a good deal of early-stage startup and 0-to-1 work.[[sectors]]\n\nThat's a representative sample rather than the full extent — and honestly, the way I work carries over between industries well, so I'm not too precious about labels.\n\n[[next: how does your experience transfer to a new sector? | can you show me some of the work you've done? | who have you worked with over the years? @client:Vaiie]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I've worked across a fair spread over the years — from finance and telecoms to beauty ecommerce, property, regulatory software and a good few startups taking something from zero to one.[[sectors]]\n\nI'm honestly not too precious about sector labels though — the way I work tends to carry across industries, so if yours isn't on that list it's rarely a problem.\n\n[[next: can you show me work from one of those sectors? @work | how do you adapt when it's a sector you haven't done? @method | have you worked much in regtech? @sector:RegTech]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Quite a spread over the years — everything from banking and regulatory software to beauty ecommerce and property startups.[[sectors]]\n\nI'm not precious about sector labels, mind — the way I work carries across industries far more than the specific vertical does. So if yours isn't obviously on that list, it rarely matters.\n\n[[next: how do you approach a sector you haven't worked in before? @method | can you show me some of your work? @work | what was the regulatory software project? @study:vaiie-onboard-product-design]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I've worked across a fairly broad spread over the years — everything from regulatory and property tech to e-commerce, financial services and telecoms, plus a good deal of early-stage 0-to-1 and startup work.[[sectors]]\n\nI'm not too precious about sector labels, mind — the way I work tends to carry over between industries, so if yours isn't on that list it's rarely a real gap.\n\n[[next: can you show me some of your regtech work? @study:vaiie-onboard-product-design | how does your approach transfer to a sector you haven't done? @method | what kinds of clients have you worked with? @cv]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "shown": [
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Quite a spread over the years — everything from regulated fintech and property to beauty ecommerce, telecoms and event tech.[[sectors]]\n\nI'm not precious about sector labels, mind — the way I work carries across industries pretty happily, so if yours isn't on that list it's rarely a problem.\n\n[[next: can you show me work in fintech? @study:vaiie-onboard-product-design | have you done much ecommerce? @study:urban-co-uk-product-branding | what if my sector isn't one you've done? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "One thing that's stuck with me: a CEO I worked with on an online estate agency said I challenged their thinking and got them considering ideas they'd never had from anyone before, and that the outcome went way beyond expectations. That challenging-but-collaborative bit is probably the truest thing anyone's said about how I work.[[testimonial]]\n\nAnother client kept me looking after their brand and platforms for over ten years, which I take as a quiet vote of confidence.[[casestudies]]\n\n[[next: what was that estate agency project about? @study:urban-co-uk-product-branding | how do you actually approach a new project? @method | who else have you worked with over the years? @cv]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "clients"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "One thing that's stuck with me came from Oliver, the CEO at Urban.co.uk — he said I challenged their thinking and got them considering options and ideas they'd never had from anyone they'd worked with before, and that the outcome went way beyond what they expected.[[testimonial]]\n\nMore broadly, people tend to describe me as reliable, adaptable and genuinely invested in doing excellent work — one client kept me on for over ten years to look after their brand and platforms, which probably says more than any single quote.[[clients]]\n\n[[next: what did the Urban.co.uk project involve? @study:urban-co-uk-product-branding | who else have you worked with over the years? @cv | how do you approach a new project? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "One of the nicest bits of feedback I've had was from a CEO I worked with on an online estate agency — he said I challenged their thinking and got them considering ideas they'd never had from anyone before, and that the outcome went way beyond expectations. That kind of thing means more to me than any polished testimonial.[[testimonial]]\n\nAnother client kept me on for over ten years to look after their brand and platforms, which probably says more about how I work than anything I could tell you myself.\n\n[[next: what was the estate agency project? @study:urban-co-uk-product-branding | how do you approach a new project? @method | who else have you worked with? @cv]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "One that sticks with me is a startup CEO who said I challenged their thinking and got them weighing up options and ideas they'd never had from anyone they'd worked with before — that's the kind of thing I'm proudest of. Reliable, adaptable and genuinely caring about the work is roughly the thread that runs through it.[[testimonial]]\n\n[[next: can I see the work behind that? @work | what's your process on a project? @method | who else have you worked with? @cv]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "clients"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "One of the loveliest bits of feedback I've had came from a startup CEO — he said I challenged their thinking and got them considering options and ideas they'd never had from anyone they'd worked with before, and that the outcome went way beyond what they expected.[[testimonial]]\n\nI tend to hear words like reliable, adaptable and genuinely caring about doing excellent work — one client kept me on their team for over a decade to look after their brand and platforms, which I think says more than any single quote.[[clients]]\n\n[[next: can I see the work behind that testimonial? @study:urban-co-uk-product-branding | what's it actually like to work with you day to day? @method | who else have you worked with over the years? @cv]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "clients"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "One thing I hear often is that I challenge the thinking rather than just take the brief and run — the CEO of an online estate agency I worked with said I got them considering options and ideas they'd never had from anyone before, and that the outcome went beyond expectations.[[testimonial]]\n\nThe other thing is that people tend to stick around — one client kept me on for over a decade to look after their brand and platforms, which probably says more than any single quote.[[clients]]\n\n[[next: can I see the estate agency project? @study:urban-co-uk-product-branding | how do you approach a new project? @method | what kinds of clients do you usually work with? @cv]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "My process runs roughly research and planning, then branding, then design, then development — but I stay flexible, because sometimes you have to adapt to get the right solution.[[method]]\n\nThe nice thing about working across the whole life cycle — strategy, design and development — is that nothing falls through the cracks between disciplines. It's rare for a designer, and it means I can carry an idea from a rough sketch all the way to something live.\n\n[[next: how do you handle the research and planning stage? @method | can I see a project you took through this whole process? @study:white-paper-booking-engine-design-development | do you work with agencies who are short on resource? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I work across the whole arc — research and planning, branding, design, then development — which is a bit unusual for a designer, most stop at one or two of those. I keep the methodology consistent but stay flexible, because sometimes you have to adapt to reach the right solution.[[method]]\n\nThe short version: understand the problem properly before designing, design before building, and stay hands-on right through the code.\n\n[[next: which part do you enjoy most? @method | can you show me a project that went through this? @work | how do you handle a project remotely? @cv]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I work across the whole life cycle — research and planning first, then branding, design, and development — which is a bit unusual for a designer, but it means I can carry an idea from a rough plan through to something real and shipped.[[method]]\n\nThat said, I keep it flexible. The steps are a tried-and-tested backbone, not a rigid script — sometimes you have to adapt to land the right solution.\n\n[[next: how did that process play out on a real project? @study:vaiie-onboard-product-design | do you do the development yourself too? @cv | how do we get started working together? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I work across the whole life cycle — research and planning first, then branding, design, and development — which is a bit unusual for a designer, but it means I can carry an idea all the way through without handing it off and hoping it survives.[[method]]\n\nThat said, I keep it flexible. The methodology is there from experience, but every project has its quirks and sometimes you have to adapt to land the right solution.\n\n[[next: which part of the process do you enjoy most? | how do you handle a project where the brief keeps changing? | can I see an example of this process on a real project? @study:white-paper-booking-engine-design-development]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I work across the whole life cycle, which is a bit unusual for a designer — I can take something from research and planning right through branding, design and development.[[method]]\n\nBroadly it runs research and planning first, then branding, then design, then build. That said, I keep it flexible; sometimes you have to adapt the route to get to the right solution.\n\n[[next: which phase do you spend the most time on? | can you show me a project that went through this whole process? | how do you handle projects where the brief keeps changing? @study:white-paper-booking-engine-design-development]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I've got a tried-and-tested way of working, but I keep it flexible — sometimes you have to adapt to land the right solution. Broadly it runs from research and planning, into branding, then design, then development, and I can pick up any part of that or the whole thing.[[method]]\n\nWhat's rare for a designer is that I work right across that life cycle — strategy, design and development — so nothing gets lost in a handover.\n\n[[next: which part do you get involved in most? @method | can you just do the design and hand it over? @method | can I see a project you took end to end? @study:white-paper-booking-engine-design-development]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "marked": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Simplest way is just to get in touch and tell me a bit about what you're working on — where you are, what you're trying to solve, roughly when. From there we'd have a proper conversation to see if it's a good fit before anything's committed.[[contact]]\n\n[[next: what does your process look like once we start? | can I see examples of your work first? | what kinds of projects do you take on? @method @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "marked": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Simplest way is to just get in touch and tell me a bit about what you're trying to do — where you are, what the challenge is, roughly what you're hoping for. From there we'd have a proper conversation to work out whether I'm the right fit and how I can help.\n\n[[contact]]\n\n[[next: what happens after i get in touch @method | what do you need to know about my project @method | are you available for new work right now @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "marked": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Simplest way is to just get in touch and tell me a bit about what you're working on — where you are with it, what you're trying to solve. From there we'd have a proper chat, and if it feels like a fit we take it forward.\n\n[[contact]]\n\n[[next: what does your process look like once we start? @method | what kinds of projects do you take on? @work | can you help if we're just starting out with an idea? @sector:Startup]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "marked": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Simplest way is just to get in touch and tell me a bit about what you're trying to do — no need for a polished brief, a rough idea of the problem is plenty and we can shape it from there.[[contact]]\n\n[[next: what does your process look like once we start? | can I see examples of your work first? | do you take on small projects too? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "marked": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Simplest way is just to get in touch and tell me a bit about what you're working on — no formality needed. From there we'd have a proper conversation about the problem, and I'll be honest about whether and how I can help.\n\n[[contact]]\n\n[[next: what happens after I first reach out? @method | are you available to take on new work right now? @contact | what kinds of projects do you take on? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "shown": [
+            "contact"
+          ],
+          "marked": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Simplest way is to just drop me a line and tell me a bit about what you're working on — no formal brief needed, a few sentences about the problem is plenty to get a proper conversation going.[[contact]]\n\nFrom there we'd have a chat, work out whether it's a fit, and I'd suggest how I'd approach it.\n\n[[next: what does your process look like once we start? @method | what kinds of projects do you take on? @work | are you available for new work right now? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole life cycle — strategy, design and build — which is rare for a designer, so you're not stitching together three different people who don't quite talk to each other. I've been doing this over 25 years, for agencies, in-house teams and myself, and clients tend to describe me as reliable and adaptable — one kept me on for over a decade looking after their brand and platforms.[[testimonial]]\n\nIf it helps, here's some of the work behind that.[[casestudies]]\n\n[[next: what kinds of businesses do you usually work with? | how do you approach a new project? | who have you worked with before?]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "clients",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A few honest reasons: I've been doing this for over 25 years, I work across the whole life cycle — strategy, design and development — which is rare for one person, and clients tend to stick around. One kept me on their team for over a decade to look after their brand and platforms.[[clients]]\n\nI care about doing excellent work, and I'd rather show it than claim it — so here's a taste of the kind of thing I've delivered.[[casestudies]]\n\n[[next: how do you work on a project? @method | what do your clients say about working with you? @work | which sectors have you worked in? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole arc of a project — strategy, design and development — which is unusual for one person, so you're not handing off between three different people who each half-understand the goal. I've been doing this over 25 years, for agencies, in-house teams and myself, and clients tend to describe me as reliable and adaptable — one kept me on for over a decade. [[testimonial]]\n\nWorth a look at some of the actual work, since it says more than I can. [[casestudies]]\n\n[[next: how do you approach a new project? | who have you worked with over the years? | what sectors have you worked in?]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole life cycle — strategy, design and development — which is rare for a designer, so you're not stitching three people together to get one coherent thing. Over 25 years I've done this for startups finding their feet, agencies short on hands, and organisations with complex products that need simplifying. Clients tend to describe me as reliable and adaptable — one kept me on for over a decade.[[testimonial]]\n\nHappy to show you the actual work if that's more useful than me telling you.[[casestudies]]\n\n[[next: what kinds of clients have you worked with? | how do you actually approach a project? | which sectors have you worked in? @sector:Regulatory]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Because I work right across the project life cycle — strategy, design and development — which is genuinely rare in one person, so you're not handing off between three sets of hands and hoping they join up. I've spent over 20 years doing this for agencies, in-house teams and directly for clients, one of whom kept me on to look after their brand and platforms for over a decade.[[testimonial]]\n\nIf it's useful, I'm happy to show you the actual work rather than just claim it.[[casestudies]]\n\n[[next: what kinds of clients have you worked with? @cv | how do you approach a new project? @method | can you show me the full portfolio? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Because I work across the whole thing — strategy, design and development — which means fewer handoffs and someone who can actually make what they design. I've been at it over 25 years, for agencies, in-house teams and myself, and clients tend to describe me as reliable, adaptable and genuinely bothered about doing good work. [[testimonial]]\n\nHappy to show you some of it so you can judge for yourself rather than take my word.[[casestudies]]\n\n[[next: how do you approach a new project? | who have you worked with over the years? | what sectors have you worked in? @method | @cv | @sector:Technology]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "All sorts, but the through-line is stuff with groove and atmosphere — Massive Attack, LTJ Bukem, Crazy P, El Michels Affair — plus a soft spot for The Beatles and Beastie Boys that never really goes away.[[music]]\n\nI usually have something on while I work, cook or shoot — it sets the tempo for the day.\n\n[[next: did you really used to DJ? @about | what do you listen to while designing? @music | what got you into street photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "All sorts, and it shifts with what I'm doing. There's a jazz and soul side — Ella Fitzgerald, El Michels Affair — and then a much noisier, beat-driven side for when I'm working or shooting: Beastie Boys, The Prodigy, Justice, some old drum and bass like LTJ Bukem.[[music]]\n\nMusic's rarely off when I'm working, cooking or out with a camera — I used to DJ, so it's baked in.\n\n[[next: did you really used to DJ? | what do you put on when you're deep in design work? | how does music connect to your street photography? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "All sorts, honestly — depends what I'm doing. When I'm working I lean towards things with a bit of texture and groove: Massive Attack, LTJ Bukem, Crazy P, El Michels Affair. But I'll happily jump from the Beatles to the Beastie Boys to Ella Fitzgerald in the same afternoon.[[music]]\n\nI used to DJ, so music's always on while I'm designing, cooking or out taking photos.\n\n[[next: did you dj professionally? @about | what do you listen to while shooting street photography? @photo:street-photo | how does music fit into how you work? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I lean all over the place, honestly — old soul and jazz like Ella Fitzgerald sat next to Beastie Boys and Arctic Monkeys, then drum and bass and electronica when I want to lose myself in the work. I used to DJ, so anything with a proper groove tends to win me over.[[music]]\n\n[[next: does music help you when you're designing? @about | do you still DJ these days? @about | what got you into street photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Bit of everything, honestly — I lean on music whenever I'm working, cooking or out with a camera. My tastes swing from The Beatles and Beastie Boys to trip-hop like Massive Attack, drum and bass, a bit of Ella Fitzgerald and some jazzier, dustier stuff. I used to DJ, so a good bit of it is dancefloor-adjacent.[[music]]\n\n[[next: do you still DJ? @about | how does music fit into how you work? @method | what got you into street photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Loads of different stuff, honestly — it shifts with what I'm doing. There's a lot of hip-hop and electronic in there — Beastie Boys, LTJ Bukem, Justice, The Prodigy — but also plenty of soul and jazz, Ella Fitzgerald, El Michels Affair. Whatever's on, it's usually got a groove to it, especially when I'm working or cooking.[[music]]\n\n[[next: does music help you work or distract you? | did you really used to DJ? @about | what do you like to cook? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Almost always — it's on while I work, cook, or head out with my camera. I lean towards a broad mix: hip hop and soul, some drum and bass and electronic when I need momentum, and plenty of the old classics when I want to think.[[music]]\n\n[[next: what genres do you reach for when you're designing? | do you still DJ? | how does music tie into your photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Always — it's on whenever I'm working, cooking or out taking photos. My taste jumps around a fair bit, from old soul and jazz to drum and bass, downtempo and a good chunk of electronic stuff.[[music]]\n\n[[next: what artists do you listen to most? | did you really used to DJ? | does music affect how you shoot photos? @music]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Constantly — it's on while I work, cook, or head out with the camera. My taste sprawls a bit: hip-hop and soul one minute, drum & bass or something electronic the next, then back to the classics.[[music]]\n\n[[next: what music do you play while shooting photos? | who are your favourite artists? | did you really used to DJ? @music]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "Always — music's on whenever I'm designing, cooking or out taking photos. My taste jumps around a fair bit: some proper old drum and bass, a bit of hip hop, some Massive Attack when I need to sink into something, and plenty else besides.[[music]]\n\n[[next: what do you put on when you're deep in design work? @music | do you still DJ? @about | how does music fit with your street photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Always — I've got something on whenever I'm working, cooking or out taking photos. My taste swings a fair bit: a lot of downtempo and drum and bass when I want to focus, and something with more attitude when I need a lift.[[music]]\n\n[[next: what genres get you into a focused state? | do you ever shoot street photography to music? | did DJing shape what you listen to now?]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Always — it's on whether I'm designing, writing code, cooking or out shooting. My taste wanders a fair bit: hip hop, drum and bass, a bit of soul, some heavier stuff when I need to push through something.[[music]]\n\n[[next: what artists are you into most? | do you find music helps you focus while coding? | were you always a music person? @music]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 2,
+          "answer": "Jersey's home — I was born there, on the island, back in 1982. Trinity's my favourite parish, and even living in France now I still get a real pull back to the place.[[jersey]]\n\n[[next: what took you from Jersey to France? @about | do you still shoot photos when you're back in Jersey? @photo:street-photo | have you worked with clients on the island? @client:Government of Jersey]]"
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "It's a small island in the Channel Islands, closer to France than to England, which makes it a funny little in-between place — very much its own thing. I grew up there before Paris, then Brighton, and now Bordeaux, but it's where a lot of me comes from. I did a fair bit of early work rooted on the island too, before I ever ended up abroad.[[jersey]]\n\nIf you're after the feel of it — Trinity in the north is green and quiet, and the whole place has that odd charm of somewhere with a bit of history and a bit of edge.\n\n[[next: what work did you do on Jersey? | do you still do work for clients there? | where else have you lived? @photo:france]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 3,
+          "answer": "A fair bit — I was born there, on the island, back in 1982[[jersey]]. My favourite parish is Trinity, and it's still where family are, so I get back when I can.\n\n[[next: what's your favourite parish about Jersey? @photo:jersey | did you do web work in Jersey? @cv | where do you live now? @about]]"
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "It's a small place with a lot of character — quiet parishes, big tides, a landscape that shifts completely depending on the weather. I'm drawn to Trinity in particular, out in the greener north of the island.\n\nThere's a nice bit of history to it too: 9 May is Liberation Day, when the Channel Islands were freed at the end of the war — a day after everyone else, which always makes me smile. And it's got a genuine creative scene bubbling away — I've worked with friends there on music and record label bits over the years.\n\n[[next: what work have you done in Jersey? @study:vaiie-onboard-product-design | what draws you to photographing places like that? @photo:street-photo | where else have you lived? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 3,
+          "answer": "I was born there — on the island, in the Channel Islands — and grew up before I moved away, so it's very much home in that bone-deep way. Trinity's my favourite parish, and I still get back when I can[[jersey]].\n\n[[next: what's it like living in Bordeaux now? | have you done work for clients on Jersey? | do you shoot street photography there too? @photo:street-photo]]"
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "It's a small island but it packs a lot in — that mix of proper British character with a French edge, given how close it sits to the French coast. Lots of coastline, quiet parishes inland, and a surprisingly rich creative and finance scene for somewhere its size.\n\nI cut my teeth there early too — I set up my first web design company at 18, and a fair bit of my early work was for island businesses and even the Government of Jersey.\n\n[[next: what work have you done in Jersey? @study:urban-co-uk-product-branding | do you still do street photography there? @photo:jersey | where else have you lived? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 2,
+          "answer": "I was born there, on the island — grew up in the Channel Islands before I ever lived anywhere else.[[jersey]] Trinity's my favourite parish, if you want the local's answer. I've done a fair bit of work tied to the island over the years too, though these days I'm based in Bordeaux.\n\n[[next: what work have you done in Jersey? @study:vaiie-onboard-product-design | why did you leave Jersey for France? @about | what do you shoot when you photograph Jersey? @photo:jersey]]"
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "It's a small island in the Channel, closer to France than to England — which shows in everything from the place names to the food. I grew up there before Paris, Brighton and now Bordeaux, so it's home in that bones-deep way even though I left.[[jersey]]\n\nIt's the kind of place that rewards wandering — quiet lanes, coast, and Trinity in particular. A lot of my early web work started there too, back when I set up my first company at eighteen.\n\n[[next: what was your first web design company like? @cv | what work have you done for Jersey clients? @client:Government of Jersey | why did you leave for France? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 1,
+          "answer": "Jersey's home — I was born there, on the island, and grew up with it. My favourite parish is Trinity[[jersey]], and I still get back when I can.\n\n[[next: what do you love about Trinity? | do you still have work ties to Jersey? | where else have you lived? @note:last-stop-parvati]]\n\nWait, let me fix those citations.\n\n[[next: what's your favourite thing about Jersey? @photo:jersey | have you worked with clients in Jersey? @client:Government of Jersey | where else have you lived? @about]]"
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "It's a small Channel Island off the coast of France — where I'm from originally. Trinity's my favourite parish, all green lanes and quiet coast, and the whole place has this odd anglo-french mix that I think shaped how I see things.\n\nI've done a fair bit of work rooted there too over the years, from the Government of Jersey through to local businesses — so it's home in more ways than one.\n\n[[next: what work have you done in Jersey? @study:vaiie-identify-product-design | do you photograph Jersey much? @photo:jersey | why did you leave Jersey for France? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey"
+          ],
+          "imgs": 3,
+          "chips": 2,
+          "answer": "Jersey's home — I was born and grew up there, on the island in the Channel Islands.[[jersey]] Trinity's my favourite parish, if you ever want a tip. I've lived away for years now — Paris, Brighton, and Bordeaux where I am these days — but I still get back and it's shaped a lot of who I am.\n\n[[next: what work have you done for clients in Jersey? @study:vaiie-identify-product-design | where else have you lived? @about | what draws you to street photography? @photo:street-photo]]"
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo"
+          ],
+          "imgs": 3,
+          "chips": 2,
+          "answer": "It's a small island but it packs a lot in — proper cliff paths, quiet parishes and a slightly odd relationship with both England and France that I think rubbed off on me, being from an anglo-french family. Trinity in the north is my favourite corner; greener, quieter, lovely light.\n\nA fair bit of my early career happened there too — my first web company, and agency work on the island before I moved away. It's also where a lot of my street photography started to take shape.[[street-photo]]\n\n[[next: what got you into street photography? @photo:street-photo | did you work on any Jersey projects? @client:Government of Jersey | why did you leave Jersey for France? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey",
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and spent time in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a slightly unusual combination for a designer.\n\nOutside the work, I'm a keen street photographer[[street-photo]], I collect photography books, and I nearly always have music on while I'm working or cooking. Anything in particular you'd like to know?\n\n[[next: what kind of work do you do? @work | what got you into street photography? @photo:street-photo | how did you end up in Bordeaux? @photo:bordeaux]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "A pretty broad spread — I lean towards trip-hop and electronic bits like Massive Attack, Crazy P and BT, but I'll just as happily have The Beatles, Beastie Boys or some Ella Fitzgerald on. I used to DJ, so a good groove always pulls me in.[[music]]\n\n[[next: what kind of music did you play as a DJ? @about | how does music fit into the way you work? @method | what do you shoot as a street photographer? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — originally from Jersey[[jersey]], with stints living in Paris and Brighton along the way. I've been designing and building for the web for over 20 years, working across strategy, design and development, which is a bit unusual for a designer.\n\nOutside work I'm a street photographer with a Leica habit I'm not sorry about, I collect photography books, I used to DJ, and I love to travel — especially to places with a bit of a bad reputation.\n\n[[next: what kind of work do you take on? @work | where have you travelled? @photo:street-photo | who have you worked with? @cv]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A pretty broad spread — I grew up on The Beatles and the Beastie Boys, love a bit of Massive Attack and Ella Fitzgerald, and I've always got time for drum and bass like LTJ Bukem, or something with a groove like Crazy P and El Michels Affair.[[music]]\n\nIt's usually on whenever I'm working, cooking or out taking photos — comes from my DJing days, I think.\n\n[[next: what did you play when you were DJing? @about | how did you get into street photography? @about | what kind of work do you take on? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and lived in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, and I work right across a project — strategy, design and development — which is a bit unusual for a designer.\n\nOutside the work I'm a fairly obsessive street photographer, I collect photography books, and I've done a fair bit of travelling — I once spent a year working my way around South East Asia and India. What would you like to dig into?\n\n[[next: what kind of work do you take on? @work | where do you shoot your street photography? @photo:street-photo | what took you to Bordeaux? @about]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A broad mix, really — from The Beatles and Beastie Boys through to drum and bass like LTJ Bukem, plus a lot of soul, funk and downtempo stuff I put on while I'm working or cooking. I used to DJ, so anything with a good groove tends to win me over.[[music]]\n\n[[next: what do you photograph on the street? @photo:street-photo | did you make anything for musicians? @study:streetpal-ios-app-design-development | how do you like to work on a project? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "france",
+            "brighton"
+          ],
+          "imgs": 3,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey and spent time in Paris[[france]] and Brighton[[brighton]] along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a slightly unusual mix for a designer.\n\nAway from the screen I'm a street photographer — I shoot with a Leica and I'm a bit of a photography book hoarder — and I love travel, cooking and music. Anything in particular you'd like to know?\n\n[[next: what kind of work do you do? @work | what got you into street photography? @photo:street-photo | how did you end up living in Bordeaux? @about]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A real mix — I grew up on The Beatles and the Beastie Boys, but I lean heavily on stuff that's good to work or shoot to: Massive Attack, LTJ Bukem, Crazy P, El Michels Affair. A bit of drum and bass, some soul, some downtempo. I used to DJ, so music's always on when I'm designing or cooking.[[music]]\n\n[[next: what kind of stuff do you play while you design? @music | did you DJ professionally or just for fun? @about | how does music tie into your street photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], originally from Jersey[[jersey]] in the Channel Islands. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a slightly unusual mix for a designer.\n\nOutside of work I'm a street photographer (I shoot with a Leica), a music obsessive who always has something on while I work, and I love to travel — I'm drawn to places with a bit of a bad reputation. And I've now lived in France for over a decade.\n\n[[next: what kind of work do you do? @work | what got you into street photography? @about | what have you been listening to lately? @music]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "All over the place, but there are a few constants — a lot of trip-hop and downtempo, some hip-hop, drum and bass, a bit of electronic and dance, and then old classics I keep coming back to. It shifts with what I'm doing: cooking, shooting or working all pull out different moods.[[music]]\n\n[[next: how does music fit into the way you work? @method | what got you into street photography? @about | can i see some of your photography? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon, an independant web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] and lived in Paris and Brighton before settling in France. I've been doing this for over 25 years — strategy through to design and development, which is a bit unusual for a designer.\n\nOutside work I'm a keen street photographer, I collect photography books, I used to DJ, and I've done a fair bit of travelling — I once spent a year working my way across Asia. Happy to go deeper on any of it.\n\n[[next: what kind of work do you do? @work | where have you travelled? @photo:street-photo | what got you into web design? @about]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "All sorts, really — I nearly always have something on while I work, cook or shoot. I lean towards hip-hop, electronica and drum & bass, but there's plenty of soul, funk and old classics in the mix too.[[music]]\n\nComes from my DJing days, I think — I never settled on one genre.\n\n[[next: what did you play when you were DJing? @about | how does street photography fit into your life? @photo:street-photo | what kind of work do you take on these days? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I keep a tried-and-tested methodology but stay flexible — sometimes you have to adapt to get the right solution. Broadly it runs from research and planning, through branding, into design, then development, so each stage is grounded in the one before it.[[method]]\n\nWhat's rare for a designer is that I work across the whole life cycle — strategy, design and development — so nothing gets lost in a handover.\n\n[[next: how do you approach the research and planning stage? @method | can you show me a project that used this process? @study:white-paper-booking-engine-design-development | how do we get started working together? @contact]]"
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [],
+          "marked": [],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad that helped — shout if anything else comes up.\n\n[[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I keep a tried and tested methodology, but I stay flexible with it — sometimes you have to adapt to get the right solution. Broadly it runs from research and planning, through branding, into design, and then development.[[method]]\n\nThe bit people often overlook is the front — the review, the persona and journey work — but that's where a lot of the value gets decided before a single screen is drawn.\n\n[[next: how do you handle the research and planning phase? @method | do you do both design and development yourself? @cv | can I see an example of a project run this way? @study:white-paper-booking-engine-design-development]]"
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [],
+          "marked": [],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad that helped — shout if anything else comes up.\n\n[[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I like to start by understanding the problem before jumping to solutions — research and planning, so I actually know who we're designing for and why. From there it moves through branding, into design, then development, and I'm hands-on across the whole thing rather than handing off at each stage.[[method]]\n\nThat said, I keep it flexible — the shape adapts to what the project actually needs rather than forcing every phase every time.\n\n[[next: which stage do most projects spend the longest in? | can you handle both design and development yourself? | how would you start on a brand new product? @study:vaiie-onboard-product-design]]"
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [],
+          "marked": [],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad it helped — shout if anything else comes up.\n\n[[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I keep a tried-and-tested methodology, but stay flexible — sometimes you have to adapt to get the right solution. Broadly it runs from research and planning, into branding, then design, then development, so nothing gets designed or built before we understand who it's for and what problem it's solving.[[method]]\n\n[[next: how do you handle research and planning? | can you show me a project done this way? | do you work remotely or on-site? @method]]"
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [
+            "contact"
+          ],
+          "marked": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad that helped — shout if you ever want to talk something through.[[contact]]\n\n[[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I work across the whole life cycle, which is a bit unusual for a designer — I start with research and planning, then branding, then design, then development, so nothing gets built on a shaky foundation.[[method]]\n\nThat said, I keep it flexible. The methodology is tried and tested, but sometimes you have to adapt to reach the right solution, so I don't force a project through rigid stages just for the sake of it.\n\n[[next: which stage matters most for a new product? @method | can you handle both design and development? @cv | how do we start working together? @contact]]"
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [],
+          "marked": [],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad that helped — shout if anything else comes up.\n\n[[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I like to run a project through four stages: figure out the problem, get the brand and identity right, design the thing, then build it. In practice it's rarely that neat — I keep flexible and adapt where the project needs it, but that's the shape.[[method]]\n\nThe bit people often underrate is the first stage — research and planning. Getting the problem clear up front saves a lot of pain later.\n\n[[next: how do you handle the research and planning stage? @method | can I see a project you took through this process? @work | how do we get started working together? @contact]]"
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "shown": [],
+          "marked": [],
+          "imgs": 0,
+          "chips": 0,
+          "answer": "Glad that helped — shout if anything else comes up.\n\n[[next: none]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

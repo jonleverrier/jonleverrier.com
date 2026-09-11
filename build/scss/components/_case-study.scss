@@ -1,0 +1,952 @@
+/**
+ * COMPONENT: CASE STUDY
+ *
+ * Discovery cards linking to full case study pages. `.c-case-study` is one card —
+ * media, client eyebrow, title, blurb, skill chips — and the whole card is the link.
+ * `.c-case-studies` is the panel around them, which has two layouts doing two
+ * different jobs:
+ *
+ *   __feature   one or two studies, chosen for relevance — evidence for a point the
+ *               answer just made. The [[casestudies]] marker.
+ *   --marquee   the whole catalogue, featured first, drifting and draggable — reads
+ *               as volume and breadth rather than any one project. The
+ *               [[casestudies:all]] marker, and the /case-studies index page.
+ *
+ * Rendered by _components/case-studies.twig + _components/case-study.twig.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// REMOVED: the hover focus blur. Hovering a card used to drop a viewport-wide
+// `backdrop-filter: blur()` over everything behind it, leaving that card alone in
+// focus. Both backdrop layers are now gone — this one and the .c-content__work::before
+// twin on the case study page (see the note further down, which went first).
+//
+// A backdrop filter samples the composited PAGE rather than element boxes, and it
+// re-samples every frame. Neither is a problem over still content, but the clients
+// strip behind it never stops moving, and both of its failure modes trace back to the
+// same place:
+//
+//   - Its white logo panels smeared past the strip's `overflow: hidden` clip — which
+//     does not constrain backdrop sampling — and painted a bright halo around the
+//     strip's outline on the olive slab.
+//   - Re-blurring a moving marquee every frame made the logos crawl in Chrome.
+//
+// Every containment that clipped the halo (`contain: paint`, `clip-path`,
+// `overflow: clip`) worked by forcing the strip onto its own compositing surface,
+// which is exactly what destabilised the per-frame blur. Pausing the marquee settled
+// the blur but dropped that surface, so the halo returned. Clip it and it crawls; hold
+// it still and it glows. There was no setting that got both across engines.
+//
+// So the effect went instead of being propped up. Cards now step back on OPACITY alone
+// — the conclusion the marquee's own slides had already reached further down, for the
+// same reason. If a focus effect is ever wanted back here, do it without a backdrop
+// filter over the clients strip.
+
+$c-case-studies-gap: rem(8); // matches $c-rail-gap so card widths equal the rail's
+// The shared wide measure — same box as a lone testimonial and .c-content__body.
+$c-case-studies-wide: $g-measure-wide;
+
+// Logo chip dimensions — mirror $c-clients-card-w / -h in _clients.scss (private to
+// that partial, so kept in step by hand). The text column matches the height so it
+// can centre against the chip.
+$c-case-study-logo-w: rem(260);
+$c-case-study-logo-h: rem(160);
+
+// How far the meta panel slides up behind the image below xl. Twice the corner
+// radius, not once: at exactly the radius the panel's own rounded top corners land
+// on the image's bottom edge and read as a seam. Going deeper puts them properly
+// behind it. The panel's top padding adds the same amount back.
+$c-case-study-tuck: $b-radius-200 * 2;
+
+// ── Panel: the feature card(s) inside a Jonson answer ───────────────────────
+.c-case-studies {
+    position: relative; // stacking context the focus layer and raised card share
+    // Break out of the centred answer measure to the c-jonson content box, like
+    // the rail. 100cqi tracks the section's inline size; the negative margin
+    // re-centres. No viewport units → no scrollbar overflow.
+    width: 100cqi;
+    margin-inline: calc((100% - 100cqi) / 2);
+
+    // From xl, stop at the testimonial's width rather than running the full
+    // content box: a stack of full-bleed cards reads as a wall on a wide screen,
+    // and the two panels are meant to sit on the same measure when an answer
+    // surfaces both. Below xl (980–1280 is too narrow for 1110) the 100cqi
+    // breakout above still applies, matching the testimonial's own threshold.
+    @include mq(from, xl) {
+        width: min(100cqi, #{$c-case-studies-wide});
+        margin-inline: calc((100% - min(100cqi, #{$c-case-studies-wide})) / 2);
+    }
+}
+
+// The FEATURE layout — not a grid, despite the flex-wrap. The selection ladder in
+// FindContext::caseStudies() usually returns one study, occasionally two, so what this
+// renders in practice is a single card spanning the panel: a considered pick backing
+// the point the answer just made. It caps at 2-up (see __item) and never tiles beyond
+// that; the catalogue view is the marquee's job.
+//
+// Scoped to the modifier rather than styling `__items` bare: the element name says
+// WHAT it is (the list of cards), the modifier says WHICH layout it's in. The marquee
+// keeps its own list element for now, but if the two ever converge on `__items` this
+// rule won't leak onto it.
+.c-case-studies--feature .c-case-studies__items {
+    display: flex;
+    flex-wrap: wrap;
+    // Split, because the two axes answer to different things now.
+    //
+    // ROW gap is the only one that shows: `__item` is `flex: 0 1 100%`, so the cards
+    // stack one per row and this is the space between them. It belongs on the rhythm
+    // scale, and $c-case-studies-gap — rem(8) — is not on it. That value is a COLUMN
+    // measurement, inherited from when these tiled 2-up and the gap had to match
+    // $c-rail-gap for card widths to line up with the rail. As row spacing between
+    // full-width cards it was never sized for the job.
+    //
+    // One step under the 800 that .c-jonson__response puts between its blocks, so a
+    // pair of cards reads as one panel rather than as two separate answers.
+    row-gap: getmap($space, rhythm, 700);
+    // Kept on the rail-matching value so the width relationship still holds if these
+    // ever go side by side again. Unused while they are one per row.
+    column-gap: $c-case-studies-gap;
+    align-items: stretch;
+    justify-content: flex-start;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+// Nothing sits between the feature panel and the page any more — see the note at the
+// top of this file for why the focus blur went. The card's own hover reveal (the meta
+// overlay further down) is what answers a hover now.
+//
+// Removed with it: the `z-index: 2` raises on the hovered feature card and on the
+// marquee track. Both existed solely to lift content clear of the blur layer, and with
+// no layer to clear they were raising things above their siblings for no reason.
+
+// Tiles once there's more than one. A single card keeps the full measure — that's
+// the curated [[casestudies]] case, where one full-width card reads as a considered
+// pick. Several means [[casestudies:all]], and five full-width cards at a 3:2 well
+// is ~4000px of scroll inside one answer, so they wrap into columns instead.
+//
+// flex-grow 0, so a part-filled last row stays on the column width and sits
+// left-aligned rather than stretching its cards wider than the ones above.
+.c-case-studies--feature .c-case-studies__item {
+    display: flex; // let the card fill the item's height
+    // ONE PER ROW at every width — a stack, not a grid. Featured studies are the
+    // considered picks backing the point an answer just made, and they read as a list
+    // of them; side by side they read as a catalogue, which is the marquee's job.
+    //
+    // (This was 2-up from xl, on the reasoning that the overlay needs ~397px for the
+    // logo chip, gap and padding before a single character of the title, so a
+    // half-width card at the 1110 panel left only ~150 for text. Full width removes
+    // that constraint entirely.)
+    flex: 0 1 100%;
+}
+
+// ── Marquee variant ─────────────────────────────────────────────────────────
+// [[casestudies:all]] — the whole catalogue drifting past, featured first, rather
+// than a grid you have to scroll. Shares clients-marquee.js for the fill/clone/
+// duration logic, so the two can't drift apart.
+// Same step the clients strip puts between its cards — not the grid's rem(8), which
+// exists there only to make card widths line up with the photo rail's columns.
+$c-case-studies-marquee-gap: getmap($space, rhythm, 500);
+
+// Two slides plus the gap between them come to the shared wide measure, so a pair of
+// case studies spans exactly what a testimonial does. Derived rather than the flat
+// rem(538) it was, so it stays true if either the measure or the gap moves.
+//
+// HALF a gap comes off each slide, not a whole one: two cards have only one gap
+// between them. Taking a full gap off each gives rem(538) — the old value — and lands
+// the pair at 1093, 17px short of the measure.
+$c-case-studies-slide: calc((#{$g-measure-wide} - #{$c-case-studies-marquee-gap}) / 2);
+
+// Doubled class to out-specify the base panel's xl width cap regardless of source
+// order once the media queries are sorted — the same trick _clients.scss uses.
+// The grid stops at the shared measure so it lines up with a testimonial; the
+// marquee instead full-bleeds to the section content box like the logo strip, so
+// the catalogue runs edge to edge.
+.c-case-studies.c-case-studies--marquee {
+    width: 100cqi;
+    margin-inline: calc((100% - 100cqi) / 2);
+    overflow: hidden;
+
+    // Edge fade as a STATIC overlay, not a mask — a mask over a forever-animating
+    // track re-rasterises every frame, which is what made the clients strip jitter
+    // in Safari (see _clients.scss). This never moves, so there's nothing to
+    // re-raster. It also sits above the track, hence the z-index.
+    //
+    // 3 rather than 1, with room left under it: the track used to be raised to 2 on
+    // hover to clear the focus blur layer, and at equal z-index the track would win as
+    // a later-painted child and swallow the fade. Both the blur and that raise are
+    // gone, so the track is back to `auto` and any value above it would do — left at 3
+    // so the gap stays available if anything is ever layered in between.
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+        // Fades to the SAME colour at zero alpha, never to `transparent`. The
+        // keyword is rgba(0, 0, 0, 0), so a gradient into it interpolates through
+        // semi-transparent black — which over an image reads as a washed grey band
+        // at the point the fade meets the card. Same colour, zero alpha, interpolates
+        // cleanly.
+        background: linear-gradient(
+            to right,
+            #{getmap($colour, primary, 500)} 0,
+            #{rgba(getmap($colour, primary, 500), 0)} 6%,
+            #{rgba(getmap($colour, primary, 500), 0)} 94%,
+            #{getmap($colour, primary, 500)} 100%
+        );
+    }
+}
+
+// Slide-level focus. The unhovered siblings step back so the one under the pointer
+// reads as picked out. Opacity ONLY — and now the only focus effect anywhere in this
+// file, since the feature panel's page-behind blur went the same way.
+//
+// (For the record, since the reasoning outlived the effect: the backdrop layer that
+// used to sit above blurred the PAGE, but it could never isolate one slide from its
+// neighbours. The track carries a transform — that's how it moves — and a transform
+// makes it a stacking context, so nothing inside it can be raised above a layer
+// outside it. A per-slide filter was the only mechanism, which is why it existed.)
+@media (hover: hover) and (min-width: #{getmap($mq-breakpoints, xl)}) {
+    .c-case-studies--marquee .c-case-studies__item {
+        transition: opacity 260ms ease;
+    }
+
+    html:not(.has-stale-hover) .c-case-studies--marquee .c-case-studies__items:hover .c-case-studies__item:not(:hover) {
+        opacity: 0.55;
+    }
+}
+
+// Static variant — the marquee on a plain content page (the caseStudy single) rather
+// than inside a Jonson answer. The Jonson one breaks out with 100cqi, which needs
+// .c-jonson's container-type; there's no container here, so it full-bleeds off the
+// viewport instead. Same trick .c-clients--static uses for the logo strip.
+// Focus blur for the static strip. It CANNOT live on .c-case-studies::after the way
+// the Jonson one does: that pseudo sits inside the marquee, which is overflow:hidden,
+// so here it gets clipped to the strip's own box and then hidden entirely behind the
+// track that hover raises. Nothing appeared to blur at all.
+//
+// .c-content__work is the full-bleed wrapper outside that clip, so the layer covers
+// the page from there. .c-content carries `isolation: isolate`, which makes it the
+// backdrop root — so the blur samples the page content and stops at the header,
+// leaving the logo and Contact button sharp. That's the behaviour on the other pages.
+// REMOVED: the page-behind blur that fired when a card in this strip was hovered.
+// .c-content__work only ever wraps the marquee, so the whole block went with the
+// marquee's blur rather than being opted out like the Jonson one above.
+//
+// It took the .c-content__work-inner z-index raise with it: that existed solely to
+// keep the strip crisp above the blur layer, and with no layer there is nothing to
+// clear. Raising it for its own sake would create a stacking context over the page
+// for no reason.
+
+.c-case-studies.c-case-studies--static {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+
+    // The edge fade has to match the slab it sits on — cream here, not the olive of
+    // the conversation view. Same colour at zero alpha rather than `transparent`,
+    // which would interpolate through black and leave a grey fringe.
+    &::before {
+        background: linear-gradient(
+            to right,
+            #{getmap($colour, light, 600)} 0,
+            #{rgba(getmap($colour, light, 600), 0)} 6%,
+            #{rgba(getmap($colour, light, 600), 0)} 94%,
+            #{getmap($colour, light, 600)} 100%
+        );
+    }
+}
+
+.c-case-studies__track {
+    display: flex;
+    width: max-content; // both runs sit on one line; the track sizes to content
+    // Own GPU layer, so the scroll is composited rather than repainted per frame.
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+// NO CSS animation here. The position is written by case-study-marquee.js on every
+// frame, because a keyframed transform has no value you can take hold of — there'd be
+// nothing to drag. One number owns the offset and both the idle drift and the pointer
+// write to it, so a drag doesn't fight the animation, it is the animation. Pausing on
+// hover happens there too, for the same reason.
+//
+// Grab affordance: the strip advertises that it can be thrown.
+.c-case-studies--marquee.is-draggable {
+    cursor: grab;
+
+    // Kill the native link/image drag outright, not just while a gesture is running.
+    // Every slide is an <a>, and the browser's own drag-and-drop steals the pointer
+    // the moment you move — the strip then refuses to budge in either direction.
+    a,
+    img {
+        -webkit-user-drag: none;
+        user-select: none;
+    }
+}
+
+.c-case-studies--marquee.is-dragging {
+    cursor: grabbing;
+
+    * { user-select: none; }
+
+    img { -webkit-user-drag: none; }
+
+    // NOTE: hiding the meta mid-drag lives with the hover reveal further down, not
+    // here. Unscoped it also fired on tablet, where the meta is permanently visible
+    // and has no hover state to suppress — so dragging the strip made every card's
+    // title and client disappear until you let go.
+}
+
+.c-case-studies--marquee .c-case-studies__items {
+    display: flex;
+    flex: none;
+    align-items: stretch;
+    gap: $c-case-studies-marquee-gap;
+    margin: 0;
+    padding: 0;
+    padding-right: $c-case-studies-marquee-gap; // hold the gap across the seam
+    list-style: none;
+}
+
+.c-case-studies--marquee .c-case-studies__item {
+    display: flex;
+    flex: none;
+    width: $c-case-studies-slide;
+}
+
+// These cards carry no logo chip, so the text column has nothing to centre
+// against — the min-height and centring it inherits exist purely to line the text
+// up with a 160px chip. Left as-is, a title-only card floats in the middle of that
+// empty box while a card with an eyebrow sits lower. Bottom-align instead, so every
+// slide's last line lands on the same baseline whatever it contains.
+.c-case-studies--marquee .c-case-study__text {
+    justify-content: flex-end;
+    min-height: 0;
+}
+
+// Stacked, not scrolling: below lg, on any touch/coarse device, or under reduced
+// motion. A strip that drifts on its own can't be paused without hover and can't be
+// read; one you swipe hides most of the work behind a gesture. Stacking just shows
+// it.
+//
+// The width test matters as much as the pointer one — a narrow desktop window still
+// reports `hover: hover` and `pointer: fine`, so keying on pointer alone left the
+// marquee running at phone widths whenever it wasn't an actual phone.
+//
+// md, not lg. Slides are a fixed 538px, so md (768) shows one and a bit rather than
+// two — worth knowing if it stops reading as a strip: the fix is a narrower slide
+// below lg, not a higher threshold.
+//
+// clients-marquee.js mirrors this exact condition, so the run isn't cloned and
+// `is-ready` — which the animation depends on — is never set. Keep the two in step:
+// if the JS ran here you'd get every case study twice down the stack.
+$c-case-studies-stack-max: getmap($mq-breakpoints, md) - 0.01em;
+
+@media (max-width: #{$c-case-studies-stack-max}), (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+    .c-case-studies.c-case-studies--marquee {
+        overflow: visible;
+    }
+
+    .c-case-studies--marquee .c-case-studies__track {
+        display: block;
+        width: 100%;
+        // Drop the layer promotion with the animation — nothing moves here, and a
+        // permanent GPU layer this size is pure cost on the devices least able to
+        // carry it.
+        will-change: auto;
+        transform: none;
+    }
+
+    .c-case-studies--marquee .c-case-studies__items {
+        flex-direction: column;
+        padding-right: 0; // the seam gap only exists for a horizontal loop
+    }
+
+    // Full width rather than the fixed slide width.
+    .c-case-studies--marquee .c-case-studies__item {
+        width: 100%;
+    }
+
+    // The edge fade is a left/right gradient — meaningless on a stack.
+    .c-case-studies--marquee::before {
+        display: none;
+    }
+
+    // Give the page gutter back. Running off both edges is a MARQUEE affordance — it
+    // reads as a strip that carries on past the window. A stack of cards doing it just
+    // reads as broken layout, with the titles hard against the glass.
+    //
+    // Two boxes have to be undone, because the bleed is built in two stages: the
+    // wrapper is 100vw (and centred by the grid), and the strip breaks out again
+    // inside it. Undo one and the other still reaches the edge.
+    //
+    // Scoped through .c-content to out-specify _content.scss's own `.c-content__work`,
+    // which is imported after this file and would otherwise win on source order.
+    .c-content > .c-content__work {
+        width: 100%;
+    }
+
+    .c-case-studies.c-case-studies--static {
+        width: 100%;
+        margin-inline: 0;
+    }
+}
+
+// ── Card ────────────────────────────────────────────────────────────────────
+// The meta is lifted out of flow and laid over the media on hover, so the card is
+// its image and nothing else at rest. Two things fall out of that: every card is
+// exactly the well's height, so a study with a long title no longer sets the height
+// of the whole row; and the panel reads as a set of images rather than a stack of
+// unevenly-filled records.
+.c-case-study {
+    position: relative; // containing block for the meta overlay
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    text-decoration: none;
+    color: inherit;
+}
+
+// Media well — holds the <picture>; a faint tint shows an empty slot before an
+// image field (and asset) exist, so the card still has shape while it's meta-only.
+.c-case-study__media {
+    position: relative;
+    overflow: hidden;
+    // The well sets the shape, not the image. Its children are width/height 100% with
+    // object-fit: cover, so the `width`/`height` attributes on the <img> only describe
+    // the source for aspect-ratio inference — they can't change the box, and a source
+    // that doesn't match this ratio is cropped rather than fitted. Change it here.
+    aspect-ratio: 3 / 2;
+    border-radius: $b-radius-200;
+    background-color: rgba(0, 0, 0, 0.06);
+    // Paints above the meta so the panel's top edge and corners disappear behind
+    // it. Both are in flow and the meta comes later, so without this the panel
+    // would sit on top and the tuck would read as an overlap.
+    z-index: 1;
+
+    img,
+    .c-picture,
+    .c-picture__img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+// Hover darkening, BELOW xl only. From xl the meta overlays the image and brings its
+// own scrim with it, so the card already answers a hover; below that the meta sits in
+// flow underneath and nothing happens at all, which leaves a card-sized link with no
+// feedback. A slight dim is the whole affordance.
+//
+// The upper bound mirrors the xl hover query exactly — the two must not both apply, or
+// a card would carry two scrims at once.
+//
+// A pseudo rather than a filter on the image: `filter` on the <img> would re-rasterise
+// the picture on every frame of the transition, and this well can hold a 2220px source.
+// Clipped by the well's own overflow, so it follows the corner radius for free.
+//
+// A GRADIENT, not a flat wash — the same bottom-weighted ink the xl overlay uses, at
+// lower strength since there's no white text to carry here. Flat darkening reads as
+// the image being dimmed; the gradient reads as the same scrim the wide cards have,
+// which is what makes the two sizes feel like one component.
+//
+// OPACITY is what transitions, not background-image: a gradient can't be interpolated
+// on the compositor, and animating one re-rasterises it every frame — the exact fault
+// that caused the c-method Safari jitter, and the reason the xl scrim animates a
+// transform rather than its own background.
+@media (hover: hover) and (max-width: #{getmap($mq-breakpoints, xl) - 0.01em}) {
+    .c-case-study__media::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: linear-gradient(
+            to top,
+            rgba(20, 22, 12, 0.62) 0%,
+            rgba(20, 22, 12, 0.42) 45%,
+            rgba(20, 22, 12, 0.10) 80%,
+            rgba(20, 22, 12, 0) 100%
+        );
+        opacity: 0;
+        transition: opacity 220ms ease;
+    }
+
+    .c-case-study:hover .c-case-study__media::after,
+    .c-case-study:focus-visible .c-case-study__media::after {
+        opacity: 1;
+    }
+}
+
+// Below xl the meta sits OUTSIDE the well, in normal flow beneath the image. There's
+// no hover to reveal it with at that size (see the hover query), so laying it over
+// the picture would just mean permanently dimming the photograph to read text that
+// could simply sit under it. Chip on the left, text to its right, as above.
+.c-case-study__meta {
+    display: flex;
+    flex-direction: row;
+    // TOP, at this size. The panel below xl uses `flex: 1` to fill whatever height is
+    // left in the card so a row of cards ends level — which means on a card with a
+    // short title the panel is taller than its own text, and bottom-alignment dropped
+    // that text to the foot of an otherwise empty box. Aligned to the top it sits
+    // directly under the image it belongs to, and the slack falls below it.
+    //
+    // The overlay at xl wants the opposite and sets flex-end back (see the xl block).
+    align-items: flex-start;
+    justify-content: flex-start;
+    // No gap: the logo chip is display:none at this size, so the row holds only the
+    // text column and there's nothing to space. The gap returns at xl with the chip.
+    gap: 0;
+    // Tucked under the image: pulled up by exactly the corner radius so its top
+    // edge and both top corners hide behind the well, which keeps its full radius.
+    // The padding adds that same amount back, so the text still clears the image.
+    // Same darker-olive fill the testimonial and footer use.
+    margin-top: -#{$c-case-study-tuck};
+    padding: calc(#{$c-case-study-tuck} + #{getmap($space, rhythm, 700)}) getmap($space, rhythm, 600) getmap($space, rhythm, 700);
+    background-color: getmap($colour, light, 800);
+    border-radius: $b-radius-200;
+    // Fills whatever height is left in the card, so a row of cards ends on one line.
+    // The slides already stretch to the tallest of them, but the panel sat at its own
+    // content height inside that — and since the card itself has no background, a
+    // two-line title simply stopped short and left the row's bottom edge ragged.
+    // Growing the panel instead of clamping the title keeps every word.
+    //
+    // No effect from xl, where the meta is an absolutely-positioned overlay and
+    // flex-grow has nothing to grow within.
+    flex: 1;
+}
+
+// How much of the scrim shows before a hover, as a fraction of the card's height.
+// Enough to ground the card and hint that something is under there; short of the
+// point where it starts dimming the picture it's laid over.
+$c-case-study-scrim-rest: 0.28;
+
+// How far the client eyebrow drops toward the card's edge before a hover. Enough to
+// read as sitting ON the base of the card rather than floating above it; short of
+// crowding the rounded corner.
+$c-case-study-client-drop: rem(22);
+
+// From xl it becomes the overlay: laid over the media, revealed on hover.
+// Bottom-aligned so the text rises off the lower edge rather than floating in the
+// middle of the picture, and carrying its own scrim — white text straight onto an
+// unknown photograph is a coin toss.
+@include mq(from, xl) {
+    .c-case-study__meta {
+        position: absolute;
+        inset: 0;
+        // Back to the BOTTOM here. This is an overlay covering the whole image, and the
+        // text belongs at the foot of it, over the heaviest part of the scrim — the
+        // base rule's flex-start is for the panel that sits under the picture below xl.
+        align-items: flex-end;
+        z-index: 2; // clears the well's z-index: 1 — the overlay sits over the image
+        margin-top: 0; // no longer tucked; it covers the well entirely
+        background-color: transparent; // the gradient below is the only fill here
+        gap: getmap($space, rhythm, 800); // same step as this box's own padding
+        // Matches .c-testimonial's rhythm-800 padding, but uniform: the testimonial
+        // bumps its right side to 900 to keep a long quote off the cycle control,
+        // and there's no control here to clear.
+        padding: getmap($space, rhythm, 800);
+        border-radius: $b-radius-200; // match the well it covers
+        color: getmap($colour, light, 100);
+        // Clips the scrim to these corners, which is the only thing that keeps them
+        // round while it's part-scaled. The scrim inherits this radius, but scaleY
+        // squashes a radius along with the box — at the resting 0.28 a 12.5px corner
+        // becomes a 3.5px ellipse, so its bottom corners sat almost square inside the
+        // card's rounded ones. Invisible while the whole overlay was hidden at rest;
+        // the moment the band showed, so did they.
+        //
+        // Clipping rather than compensating in the radius itself: the correction
+        // would have to be a different number at every point in the transition.
+        overflow: hidden;
+    }
+
+    // The scrim lives on a pseudo-element so its growth can be a transform.
+    // Animating background-size instead (the earlier approach) re-rasterises the
+    // gradient on every frame — it can't be composited — and this codebase has
+    // already been bitten by that: the c-method Safari jitter was a gradient
+    // re-rasterising its layer. scaleY is visually identical here, because scaling
+    // the box stretches the gradient exactly as resizing it did, but it runs on the
+    // compositor and never repaints.
+    //
+    // No will-change: it's only warranted for continuously-running animation (see
+    // the note at _method.scss:141). Promoting 15 permanent layers across five
+    // cards, for a hover that may never happen, costs more than it saves — and
+    // transform/opacity are already on the fast path without it.
+    .c-case-study__meta::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1; // behind the text, inside the overlay's own stacking context
+        pointer-events: none;
+        border-radius: inherit;
+        // Weighted to the bottom where the text sits; the top stays close to clear
+        // so the image still reads while the overlay is up.
+        background-image: linear-gradient(
+            to top,
+            rgba(20, 22, 12, 0.92) 0%,
+            rgba(20, 22, 12, 0.72) 45%,
+            rgba(20, 22, 12, 0.15) 80%,
+            rgba(20, 22, 12, 0) 100%
+        );
+        // Grows upward from the base. Bottom origin keeps the dark end pinned to
+        // the foot of the card the whole way — scaling from the top would park a
+        // dark band across the middle mid-transition (tried, rejected).
+        //
+        // The resting value is what's visible BEFORE a hover: the gradient squashed
+        // into a band along the bottom edge, so a card is grounded and reads as
+        // having something under it rather than sitting on the photo as a bare
+        // rectangle. It used to be 0.87 — nearly the full scrim — which was fine
+        // only because the whole overlay was held at opacity 0 on top of it. That
+        // master fade has gone (see the hover query), so this number is now doing
+        // the hiding on its own and has to be small enough to read as a hint.
+        transform: scaleY($c-case-study-scrim-rest);
+        transform-origin: bottom;
+    }
+}
+
+// Only hide it where there's a pointer to hover with AND room to justify it. Touch
+// has no hover state to discover the meta with, and below xl the cards are 1-up and
+// full-width — a whole card reduced to a bare image, with its title only reachable
+// by hovering, is worse than simply showing the meta. So both conditions, combined
+// in one query rather than nested: this file already nests a reduced-motion query
+// inside, and the media-query sorter hoists nested ones unpredictably.
+@media (hover: hover) and (min-width: #{getmap($mq-breakpoints, xl)}) {
+    // NO master opacity on .c-case-study__meta any more. It used to fade the whole
+    // overlay in as one, which is incompatible with a scrim that shows at rest — a
+    // parent's opacity can't be undone by a child, so the resting band would have
+    // been hidden along with everything else. The pieces inside carry their own
+    // reveal instead (the logo chip and the text lines, both below), which they
+    // already did; the master fade was a second layer on top of that.
+
+    // The scrim grows up the card, so the darkening reads as a deliberate move
+    // rather than switching on. Slower than the lines so it's still settling as they
+    // arrive.
+    .c-case-study__meta::before {
+        transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    // :focus-visible on the card too — the whole card is the link, so a keyboard
+    // user tabbing through must see what they're about to open.
+
+    .c-case-study:hover .c-case-study__meta::before,
+    .c-case-study:focus-visible .c-case-study__meta::before {
+        transform: scaleY(1);
+    }
+
+    // The chip slides in from the left first, with no delay, so it's in place
+    // before the lines start sliding out of it — the origin has to exist before
+    // things can appear to come from it. Same axis as the text, so the whole
+    // overlay resolves left to right.
+    .c-case-study__logo {
+        opacity: 0;
+        transform: translateX(-#{rem(18)});
+        transition:
+            opacity 300ms ease,
+            transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .c-case-study:hover .c-case-study__logo,
+    .c-case-study:focus-visible .c-case-study__logo {
+        opacity: 1;
+        transform: none;
+    }
+
+    // Each line slides out from behind the logo chip as the overlay fades up.
+    // Horizontal because the chip is a fixed anchor immediately to the left, so the
+    // motion has a visible origin — and it runs with the reading direction, so the
+    // stagger and the travel pull the same way. The column clips (see __text), which
+    // is what turns a slide into an emergence: the line is hidden until it clears
+    // the column's left edge, and the chip appears to be the source.
+    //
+    // The client eyebrow is exempt: it's on show at rest, so a card says who it was
+    // for before anyone touches it. It's the one line that's useful without the rest
+    // — a name you either recognise or don't — and it's short enough not to compete
+    // with the picture. Everything else still waits for the hover.
+    //
+    // Excluded here rather than overridden below, so it never takes the hidden state
+    // in the first place — an override would still leave it transitioning on hover.
+    // It keeps its place as nth-child(1), so the stagger below now starts at the
+    // second line: 90ms goes unused and the sequence begins at 160ms.
+    // Sits lower than the collapse alone leaves it. With the box below it at zero
+    // height the client lands on the overlay's own bottom padding, which is sized for
+    // a full stack of lines and holds a single one further off the edge than it wants
+    // to be. Nudged down at rest and released on hover, in step with the collapse
+    // that's moving it the rest of the way.
+    //
+    // A transform, not a smaller padding: padding would move the whole column and
+    // change the layout the collapse is already animating.
+    //
+    // On __text and NOT on the client itself — __text clips (that's what makes the
+    // lines emerge from the chip's edge), so a client nudged down inside it is simply
+    // cut off. Moving the column moves its one visible line, and __meta doesn't clip,
+    // so it has somewhere to go. At rest the column IS just the client; on hover this
+    // releases as the collapse pushes the rest back in.
+    .c-case-study__text {
+        transform: translateY($c-case-study-client-drop);
+        transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .c-case-study:hover .c-case-study__text,
+    .c-case-study:focus-visible .c-case-study__text {
+        transform: none;
+    }
+
+    // Collapsed to nothing at rest, so the only line with height is the client — and
+    // __text is bottom-aligned in the marquee, so that lands it on the scrim at the
+    // foot of the card. On hover the row grows to its content and pushes the client
+    // back up to where it has always sat, above the title.
+    //
+    // grid-template-rows and not max-height: a max-height needs a number bigger than
+    // the tallest card, and everything shorter then spends part of the transition
+    // easing through empty space — the lines appear to arrive late, at a different
+    // speed on every card. 0fr → 1fr eases through the real height, whatever it is.
+    .c-case-study__reveal {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 340ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .c-case-study__reveal-inner {
+        min-height: 0; // or the content sets the row's floor and it never collapses
+        overflow: hidden;
+    }
+
+    .c-case-study:hover .c-case-study__reveal,
+    .c-case-study:focus-visible .c-case-study__reveal {
+        grid-template-rows: 1fr;
+    }
+
+    .c-case-study__reveal-inner > * {
+        opacity: 0;
+        transform: translateX(-#{rem(24)});
+        transition:
+            opacity 300ms ease,
+            transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .c-case-study:hover .c-case-study__reveal-inner > *,
+    .c-case-study:focus-visible .c-case-study__reveal-inner > * {
+        opacity: 1;
+        transform: none;
+    }
+
+    // The feature card — one study on its own — keeps its client line for the
+    // hover like every other line. The eyebrow-at-rest is a marquee idea: a strip
+    // of cards scrolling past needs a name on each to be scannable without
+    // stopping on one. A single card fills its row and has nothing to be scanned
+    // against, so at rest it's just the picture and the overlay arrives as one.
+    // Same treatment as the reveal lines, and it takes the first stagger slot,
+    // which the marquee leaves unused. The column clips, so this emerges from the
+    // chip's edge like the rest.
+    .c-case-studies--feature .c-case-study__client {
+        opacity: 0;
+        transform: translateX(-#{rem(24)});
+        transition:
+            opacity 300ms ease,
+            transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .c-case-studies--feature .c-case-study:hover .c-case-study__client,
+    .c-case-studies--feature .c-case-study:focus-visible .c-case-study__client {
+        opacity: 1;
+        transform: none;
+        transition-delay: 90ms;
+    }
+
+    // Delays live on the hover state only, so the lines stagger IN but drop out
+    // together — a staggered exit reads as the card being slow to let go.
+    // nth-child rather than a --i custom property: it needs no markup, and the
+    // column is only ever a few lines deep.
+    .c-case-study:hover .c-case-study__reveal-inner > *:nth-child(1),
+    .c-case-study:focus-visible .c-case-study__reveal-inner > *:nth-child(1) { transition-delay: 90ms; }
+    .c-case-study:hover .c-case-study__reveal-inner > *:nth-child(2),
+    .c-case-study:focus-visible .c-case-study__reveal-inner > *:nth-child(2) { transition-delay: 160ms; }
+    .c-case-study:hover .c-case-study__reveal-inner > *:nth-child(3),
+    .c-case-study:focus-visible .c-case-study__reveal-inner > *:nth-child(3) { transition-delay: 230ms; }
+    .c-case-study:hover .c-case-study__reveal-inner > *:nth-child(4),
+    .c-case-study:focus-visible .c-case-study__reveal-inner > *:nth-child(4) { transition-delay: 300ms; }
+
+    @media (prefers-reduced-motion: reduce) {
+
+        // No travel, no stagger — the overlay simply appears. The scrim still has
+        // its two states (a card has to look different at rest and on hover), it
+        // just snaps between them instead of growing.
+        .c-case-study__meta::before {
+            transition-duration: 1ms;
+        }
+
+        .c-case-study__logo,
+        .c-case-study__reveal-inner > *,
+        .c-case-studies--feature .c-case-study__client {
+            transform: none;
+            transition-duration: 1ms;
+        }
+
+        // The column keeps its drop — that's a resting POSITION, not motion — but it
+        // snaps between the two rather than sliding.
+        .c-case-study__text {
+            transition-duration: 1ms;
+        }
+
+        // The collapse is a size change rather than travel, but it's the largest
+        // movement on the card — so it snaps too instead of growing.
+        .c-case-study__reveal {
+            transition-duration: 1ms;
+        }
+
+        .c-case-study:hover .c-case-study__reveal-inner > *,
+        .c-case-study:focus-visible .c-case-study__reveal-inner > *,
+        .c-case-studies--feature .c-case-study:hover .c-case-study__client,
+        .c-case-studies--feature .c-case-study:focus-visible .c-case-study__client {
+            transition-delay: 0s;
+        }
+    }
+
+    // Kill the hover reveal mid-throw — overlays firing on each card as it passes
+    // under a held pointer is noise.
+    //
+    // Scoped to this query, because it's only meaningful where the meta is hidden by
+    // default. Below xl the meta is permanently on show, and this same declaration
+    // applied there made the titles vanish while dragging on tablet.
+    //
+    // LAST in the block on purpose: it has the same specificity as the
+    // `.c-case-study:hover .c-case-study__meta` reveal above, so source order is the
+    // only thing that lets it win.
+    .c-case-studies--marquee.is-dragging .c-case-study__meta {
+        opacity: 0;
+    }
+}
+
+// The text column beside the chip. min-width: 0 so a long title wraps inside the
+// remaining space instead of forcing the row wider and pushing the chip off.
+//
+// Given the chip's height and told to centre its own content, so the text sits on
+// the chip's vertical midline. The row is bottom-aligned, so matching heights is
+// what puts the two in the same band — align-self would centre it in the whole
+// overlay box instead, which is much taller than the chip.
+.c-case-study__text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: rem(6);
+    min-width: 0;
+}
+
+// The collapsing box and its clip. Two elements, because the 0fr → 1fr row is what
+// animates and the child is what hides the overflow while it does — a single box
+// can't do both, since the row's height IS the thing being changed.
+//
+// Inert below xl: no grid, no collapse, just the column of lines the meta has always
+// shown in normal flow under the image.
+.c-case-study__reveal-inner {
+    display: flex;
+    flex-direction: column;
+    gap: rem(6);
+}
+
+// Clips the slide-in so each line appears from the chip's edge rather than gliding
+// across the gap beside it. Only from xl: below that nothing animates, and the clip
+// would just truncate a title that has room to wrap.
+@include mq(from, xl) {
+    .c-case-study__text {
+        overflow: hidden;
+        // Matches the chip's height so the text centres against it. Only from xl —
+        // below that the chip is display:none, and the min-height was padding the
+        // green panel out to 160px for a chip that isn't there.
+        min-height: $c-case-study-logo-h;
+    }
+
+    // The chip only earns its place once the meta is an overlay on the image.
+    .c-case-study__logo {
+        display: flex;
+    }
+}
+
+// Logo chip — matches .c-clients__item's dimensions and .c-clients__logo's inner
+// sizing, so a mark reads identically here and in the marquee. Values mirror
+// $c-clients-card-w / -h in _clients.scss; they're partial-private, so keep the
+// two in step by hand.
+// Hidden below xl. At that size the meta sits under the image in normal flow, so a
+// 260×160 white panel next to the client name is a second, competing block rather
+// than a mark tucked into the corner of a photograph — and the image above it is
+// already doing the visual work.
+.c-case-study__logo {
+    display: none;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: $c-case-study-logo-w;
+    height: $c-case-study-logo-h;
+    background-color: getmap($colour, light, 100); // white
+    border-radius: $b-radius-200;
+
+    img,
+    .c-picture,
+    .c-picture__img {
+        display: block;
+        max-height: rem(64);
+        max-width: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        padding-inline: getmap($space, rhythm, 500);
+    }
+}
+
+// Same treatment as .c-jonson__suggestions-whisper — the eyebrow above a group, in
+// JonSonSans rather than the mono prose, uppercase and flat white.
+.c-case-study__client {
+    @include typography(whisper);
+    margin: 0;
+    font-family: $g-font-primary;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, light, 100);
+    // Carries its own contrast, because from xl this line is the one part of the
+    // overlay on show before a hover — and up there it sits around the middle of the
+    // card, above the resting scrim rather than on it. What's behind it is whatever
+    // the thumbnail happens to have there: fine over the dark audience on the White
+    // Paper card, invisible over the pale desk on the Vaiie identity one.
+    //
+    // A shadow rather than a taller scrim: the scrim is the hover gesture and
+    // growing it to reach this line would dim half of every thumbnail permanently.
+    // Tight and soft enough to disappear against a dark backdrop, so it only shows
+    // up where it's needed.
+    text-shadow: 0 1px 3px rgba(20, 22, 12, 0.65);
+}
+
+.c-case-study__title {
+    @include typography(p-lg);
+    margin: 0;
+    color: getmap($colour, primary, 400); // house yellow, as links use
+}
+
+.c-case-study__summary {
+    @include typography(p-sm);
+    margin: 0;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.c-case-study__skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: rem(8);
+    margin: rem(4) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.c-case-study__skill {
+    @include typography(p-sm);
+    font-family: $g-font-secondary; // JonSonMono
+    padding: rem(4) rem(10);
+    border-radius: $b-radius-100;
+    background-color: getmap($colour, light, 700); // cream chip
+    color: getmap($colour, primary, 700); // navy text
+}

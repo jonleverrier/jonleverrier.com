@@ -1,0 +1,54 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  08b2c635-5869-44f8-b272-55e263ce6f2b:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            autocapitalize: true
+            autocomplete: false
+            autocorrect: true
+            class: null
+            dateAdded: '2026-08-03T20:27:55+00:00'
+            disabled: false
+            elementCondition: null
+            id: null
+            inputType: null
+            instructions: null
+            label: null
+            max: null
+            min: null
+            name: null
+            orientation: null
+            placeholder: null
+            readonly: false
+            required: true
+            size: null
+            step: null
+            tip: null
+            title: null
+            type: craft\fieldlayoutelements\entries\EntryTitleField
+            uid: b0aff237-166b-46ef-a9aa-19df4dd78a92
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: 0e1ad6cc-f7e2-46ed-977c-c1fdf22d1454
+        userCondition: null
+    thumbFieldKey: null
+handle: caseContent
+hasTitleField: true
+icon: null
+name: 'Case Content'
+showSlugField: true
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

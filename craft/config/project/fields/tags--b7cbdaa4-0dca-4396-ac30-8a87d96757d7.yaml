@@ -1,0 +1,22 @@
+columnSuffix: null
+handle: tags
+instructions: null
+name: Tags
+searchable: false
+settings:
+  allowSelfRelations: false
+  branchLimit: null
+  defaultPlacement: end
+  maintainHierarchy: false
+  maxRelations: null
+  minRelations: null
+  selectionLabel: null
+  showSearchInput: true
+  showSiteMenu: true
+  source: 'taggroup:38c53f0d-1602-478d-87f7-ad35b7b0211f' # Personality
+  targetSiteId: null
+  validateRelatedElements: false
+  viewMode: list
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Tags

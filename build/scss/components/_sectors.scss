@@ -1,0 +1,96 @@
+/**
+ * COMPONENT: SECTORS
+ *
+ * The industries Jon has worked in, shown as a row of small tags at
+ * experience/industry moments (the [[sectors]] marker). Non-interactive —
+ * quiet supporting validation alongside the clients marquee / testimonials.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.c-sectors {
+    // Match .c-clients' top/bottom feel — and give the tags' hover pop room to
+    // grow into, like the clients marquee.
+    padding-block: rem(28);
+}
+
+// Scoped so it out-specifies `.c-jonson__response p` (the mono prose rule),
+// matching the whisper label style like .c-jonson__whisper.
+.c-sectors .c-sectors__whisper {
+    @include typography(whisper);
+    margin: 0 0 rem(14);
+    font-family: $g-font-primary; // JonSonSans, not the mono prose
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, light, 100);
+}
+
+.c-sectors__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: rem(10);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+// Same resting shape as .c-jonson__suggestion. Colour comes from a --a…--e
+// modifier (assigned in the template); the transparent border keeps the size.
+.c-sectors__tag {
+    padding: rem(16) rem(30);
+    border: rem(2) solid transparent;
+    border-radius: rem(999); // pill
+    background-color: getmap($colour, light, 700); // cream fallback if no modifier
+    color: getmap($colour, primary, 700);
+    font-family: $g-font-secondary; // JonSonMono — matches the response voice
+    @include typography(p-sm);
+    line-height: 1.2;
+    cursor: default; // labels, not buttons
+    // Springy pop on hover — the overshoot easing gives it a fun "boing". The
+    // lift/scale/tilt/speed vary per tag (random custom props set in the template).
+    transition: transform var(--tag-dur, 400ms) cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    &:hover {
+        transform:
+            translateY(var(--tag-lift, -5px))
+            scale(var(--tag-scale, 1.1))
+            rotate(var(--tag-rot, -3deg));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-sectors__tag {
+        transition: none;
+
+        &:hover {
+            transform: none;
+        }
+    }
+}
+
+// Two calm tones on the olive, both with navy text.
+// Each palette carries its marker before the label — the same three shapes
+// as the method timeline's service pills (see mixins/_pill-marker), so the
+// two sets read as one family wherever they appear.
+.c-sectors__tag--a { // beige / navy
+    background-color: getmap($colour, light, 700);
+    color: getmap($colour, primary, 700);
+
+    &::before { @include pill-marker(triangle); }
+}
+
+.c-sectors__tag--e { // white / navy
+    background-color: getmap($colour, light, 100);
+    color: getmap($colour, primary, 700);
+
+    &::before { @include pill-marker(pacman); }
+}
+
+.c-sectors__tag--f { // light blue / navy
+    background-color: getmap($colour, primary, 410);
+    color: getmap($colour, primary, 700);
+
+    &::before { @include pill-marker(diamond); }
+}

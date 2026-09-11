@@ -1,0 +1,303 @@
+/**
+ * COMPONENT: CASE STUDY SECTION STRIP
+ *
+ * The second TOC (_components/case-toc.twig). The notes' "on this page" panel is a
+ * column beside the prose; on a case study — which is mostly full-bleed imagery — a
+ * column sits ON the work. This solves the same problem from the other direction: a bar
+ * pinned to the top of the window that appears once the reader is into the body, and
+ * occupies nothing at all until then.
+ *
+ * The list it opens is a PANEL, not a fixture: it exists while it is being read and is
+ * gone the moment it isn't, which is the whole reason this can live on a page of
+ * pictures where the other one couldn't.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$c-case-toc-ms: 260ms;
+
+// The width of the number column — the counter in the bar and the numbers in the list
+// share it, which is what lands every section title on the same left edge. Wide enough
+// for "10/12" so a long case study doesn't knock the column out of step with itself.
+$c-case-toc-num: rem(34);
+
+.c-case-toc {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    // Under the nav panel and the contact panel (lg), over the page. It is furniture,
+    // not an overlay — anything that covers the viewport should cover this too.
+    z-index: getmap($z-index, md);
+
+    // Off screen until the body reaches the top. Transform rather than display, so it
+    // slides rather than appearing, and `hidden` (set in JS) takes it out of the tab
+    // order at the same time — a bar that has slid away but whose buttons are still
+    // tabbable is worse than one that never moved.
+    transform: translateY(-100%);
+    transition: transform $c-case-toc-ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    &.is-in {
+        transform: none;
+    }
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+// IMAGE MODE — the section nav goes, the toggle and the progress stay.
+//
+// The counter and the title name a section, and in this mode the headings are hidden;
+// worse, the list behind the title cannot navigate to them at all, because a
+// display:none heading has no box for scrollIntoView to find. So the whole control
+// goes rather than the two labels, which would have left a caret opening a list that
+// silently did nothing.
+//
+// The toggle is pushed to its own end so the bar doesn't collapse to a button floating
+// at the left — the title's `flex: 1 1 auto` was what held that end before.
+.c-case-toc.is-images-only {
+    .c-case-toc__count,
+    .c-case-toc__title {
+        display: none;
+    }
+
+    .c-case-toc__mode {
+        margin-left: auto;
+    }
+}
+
+.c-case-toc__bar {
+    // No bottom border. The progress track below already draws a full-width line under
+    // the bar, so a hairline as well was two rules where the page needed one.
+    background-color: getmap($colour, light, 100);
+}
+
+// The OUTER inset: the same one `body > .b-wrap` puts between the viewport and the
+// slab, capped and centred the same way. The inner .b-wrap in the markup supplies the
+// second — together they land this strip's contents on the logo's own left edge at
+// every breakpoint.
+.c-case-toc__page {
+    max-width: getmap($mq-breakpoints, xxl);
+    margin-inline: auto;
+    padding-inline: getmap($space, rhythm, 500);
+}
+
+.c-case-toc__inner {
+    display: flex;
+    align-items: center;
+    gap: getmap($space, rhythm, 400);
+    padding-block: rem(10);
+}
+
+// The part that survives truncation: on a phone a long h2 loses its end, and this is
+// what still says where you are. Tabular figures so it doesn't reflow as it counts.
+.c-case-toc__count {
+    flex: 0 0 auto;
+    min-width: $c-case-toc-num;
+    @include typography(p-sm);
+    // The sans AND the title's ink, because the two read as one phrase — "2/3 A
+    // prototype real enough to get feedback". A different typeface or a lighter grey
+    // made the counter look like a different kind of thing from the words it counts;
+    // matched, it reads as the start of the sentence rather than a label stuck in front
+    // of one.
+    font-family: $g-font-primary;
+    font-weight: 600;
+    color: getmap($colour, primary, 700);
+    font-variant-numeric: tabular-nums;
+}
+
+.c-case-toc__title {
+    // Takes the slack, and is the ONLY thing here allowed to shrink — min-width 0 is
+    // what lets a flex child truncate at all.
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: rem(6);
+    // ZERO inline padding, stated — not merely omitted. A <button> carries a UA default
+    // of `padding: 1px 6px`, so dropping the declaration handed the 6px straight back to
+    // the browser and the bar's title stayed 6px off the column the list titles sit on.
+    padding: rem(4) 0;
+    border: 0;
+    border-radius: $b-radius-200;
+    background: none;
+    color: getmap($colour, primary, 700);
+    font-family: $g-font-primary;
+    @include typography(p-sm);
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+
+    // No hover fill. A grey slab behind the section title made the strip's main label
+    // look like a button among buttons; the caret beside it is what says it opens, and
+    // it colours on hover instead (below).
+    &:focus-visible { outline: rem(2) solid getmap($colour, primary, 600); outline-offset: rem(-2); }
+}
+
+.c-case-toc__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// The caret is the only thing announcing that the title opens, so it carries the whole
+// affordance now the hover fill has gone: bigger than the label it sits beside, and the
+// brand red rather than a grey that reads as decoration.
+.c-case-toc__caret {
+    flex: 0 0 auto;
+    // Well above the label it sits beside. It is the only thing announcing that the
+    // title opens — the hover fill that used to say so is gone — so it has to read as
+    // a control from across the bar, not as punctuation after a word.
+    //
+    // line-height 0 with a fixed width, so growing it can neither push the bar taller
+    // nor nudge the title: a box-drawing glyph at 26px otherwise sets the line box for
+    // the whole row.
+    font-size: rem(26);
+    line-height: 0;
+    width: rem(18);
+    text-align: center;
+    color: getmap($colour, primary, 600);
+    transition: transform 160ms ease;
+
+    .c-case-toc__title:hover & {
+        color: getmap($colour, primary, 650);
+    }
+
+    // Ships pointing right; a quarter turn takes it to down. Rotating rather than
+    // swapping the character keeps it the same object moving, and means the turn can
+    // be animated — 180° on a triangle that already pointed down was a flip with
+    // nothing to watch.
+    .c-case-toc__title[aria-expanded='true'] & {
+        transform: rotate(90deg);
+    }
+}
+
+.c-case-toc__mode {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: rem(6);
+    // The voice button's treatment (see .c-voice in _field.scss): a tinted wash of the
+    // navy rather than an outline, and its raised bottom edge. Borrowed rather than
+    // reinvented so the two read as the same kind of control — a small square-ish
+    // toggle that sits in a bar — and so this one stops looking like a form field's
+    // outline dropped into a nav strip.
+    //
+    // Tighter block padding than .c-voice, which is a 44px control sized to stand
+    // beside an input. This sits in a 10px-padded strip and would make the bar taller
+    // than the header it replaces.
+    padding: rem(4) rem(12);
+    border: 0;
+    border-radius: $b-radius-200;
+    background: rgba(getmap($colour, primary, 700), 0.08);
+    color: getmap($colour, primary, 700);
+    // The darker bottom edge .c-button and .c-voice both wear — the SAME navy as the
+    // fill at a heavier alpha, not black, which lands as a hard grey rule over a tint
+    // this pale. Inset, so it follows the radius and costs no layout.
+    box-shadow: inset 0 rem(-3) 0 rgba(getmap($colour, primary, 700), 0.18);
+    font-family: $g-font-secondary;
+    @include typography(p-sm);
+    cursor: pointer;
+    transition: background-color 200ms ease, color 200ms ease;
+
+    &:hover { background-color: rgba(getmap($colour, primary, 700), 0.14); }
+    &:focus-visible { outline: rem(2) solid getmap($colour, primary, 600); outline-offset: rem(2); }
+
+    // Pressed reads as ON — filled solid, not merely a deeper tint, because this mode
+    // changes what the whole page shows and the control should look as committed as the
+    // change is. The raised edge goes with it: a pressed toggle is down, not proud.
+    &[aria-pressed='true'] {
+        background-color: getmap($colour, primary, 700);
+        color: getmap($colour, light, 100);
+        box-shadow: none;
+    }
+
+    // HIDDEN below md for now. "Image Mode: Off" is three words competing with a section
+    // title in a bar that has one line, and on a phone the title is what a reader
+    // actually needs there — a case study is a scroll, not a gallery you dip into. It
+    // also matters less on a narrow screen, where the images are already stacked at full
+    // width and the prose between them is a swipe rather than a wall.
+    //
+    // `display: none`, so the button leaves the tab order with the paint: a control that
+    // cannot be seen but can still be reached by Tab is worse than one that is simply
+    // not offered.
+    @include mq(until, md) {
+        display: none;
+    }
+}
+
+// Reading progress. scaleX from the left, so it animates on the compositor rather than
+// relaying out a width on every scroll frame.
+.c-case-toc__progress {
+    height: rem(2);
+    background-color: getmap($colour, light, 700);
+
+    > i {
+        display: block;
+        height: 100%;
+        background-color: getmap($colour, primary, 600);
+        transform-origin: left center;
+        transform: scaleX(0);
+    }
+}
+
+// The list, on demand. Sits under the bar rather than over the page, and is gone the
+// moment it is not being read — which is the one thing the notes panel cannot do, and
+// the reason that panel could not be used here.
+.c-case-toc__list {
+    margin-block: 0;
+    padding-block: rem(8) rem(14);
+    list-style: none;
+    background-color: getmap($colour, light, 100);
+    // The shadow is what lifts this sheet off the page; a border under it as well drew
+    // a hard edge that fought the soft one.
+    box-shadow: 0 rem(12) rem(24) rgba(#000, 0.06);
+
+    &[hidden] { display: none; }
+}
+
+.c-case-toc__link {
+    display: flex;
+    // The bar's own gap, so number-plus-gap is identical in both places.
+    gap: getmap($space, rhythm, 400);
+    // No horizontal padding — it existed to give the hover slab room, and that slab is
+    // gone. With it, the row numbers sat 6px right of the counter above them and so
+    // missed the logo's edge that everything else in this strip lines up on.
+    padding-block: rem(7);
+    border-radius: $b-radius-200;
+    @include typography(p-sm);
+    // The mono, at the summaries' grey — the same treatment .c-toc__link wears on a
+    // note. The two panels look nothing alike by necessity (a column there, a dropped
+    // sheet here), but a list of sections is a list of sections, and the type is where
+    // that can be said.
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 600;
+    color: getmap($colour, light, 850);
+    text-decoration: none;
+    transition: color 200ms ease;
+
+    // No hover fill, matching the title above: these rows are a list of sections, not
+    // a stack of buttons, and a grey slab under each made the panel read as a menu.
+    // The ink shifting to the link red is the feedback.
+    &:hover { color: getmap($colour, primary, 600); }
+
+    // The section you are in, painted from aria-current — the state announced and the
+    // state seen are the same fact, as in the nav panel. Weight can't carry it, since
+    // every row is 600 now, so colour does: the brand red the caret also wears.
+    &[aria-current='true'] {
+        color: getmap($colour, primary, 600);
+    }
+}
+
+.c-case-toc__n {
+    flex: 0 0 auto;
+    min-width: $c-case-toc-num;
+    // No colour of its own at all — it simply takes the row's ink, grey at rest and red
+    // when the row is current or hovered. It was a shade lighter than its title, which
+    // made each row read as two pieces rather than one line, and left the number
+    // looking dimmed rather than deliberate.
+    font-variant-numeric: tabular-nums;
+}

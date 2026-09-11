@@ -1,0 +1,42 @@
+{#
+  Testimonials wrapper — one or more client pull-quotes surfaced at a
+  credibility moment (the [[testimonial]] marker). One by default; more when the
+  answer's context matches several (see FindContext::testimonials). With more
+  than one, the cards lay out as a horizontal strip (styled in _testimonial.scss).
+
+  Expects: items — a list of { quote, name, role, company, image } maps.
+#}
+{% if items is defined and items %}
+    {% set multiple = items|length > 1 %}
+    <div class="c-testimonials js-testimonial{% if multiple %} has-multiple{% endif %}"
+        {%- if multiple %} tabindex="-1" role="group" aria-roledescription="carousel" aria-label="Client testimonials"{% endif %}>
+        <div class="c-testimonials__viewport">
+            <div class="c-testimonials__track">
+                {% for t in items %}
+                    {{ include('_components/testimonial', t, with_context = false) }}
+                {% endfor %}
+            </div>
+        </div>
+        {% if multiple %}
+            <div class="c-testimonials__controls">
+                <div class="c-testimonials__dots">
+                    {% for t in items %}
+                        <button type="button" class="c-testimonials__dot{% if loop.first %} is-active{% endif %}" aria-label="Show testimonial {{ loop.index }}"></button>
+                    {% endfor %}
+                </div>
+                <div class="c-testimonials__nav">
+                    <button type="button" class="c-testimonials__cycle c-testimonials__cycle--prev" aria-label="Show the previous testimonial" disabled>
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                            <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="c-testimonials__cycle c-testimonials__cycle--next" aria-label="Show the next testimonial" aria-keyshortcuts="ArrowLeft ArrowRight">
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                            <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}

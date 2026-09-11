@@ -1,0 +1,196 @@
+/**
+ * COMPONENT: VIP BADGE
+ *
+ * A small fixed disc in the bottom-right corner for a visitor who came in through a
+ * VIP link — a white crown over "VIP" on the yellow. Pressing it unfolds a greeting
+ * pill to its left ("Great to have you here, Marcus"), which tucks itself away again
+ * after a moment (vip.js). On every page of the visit (see _components/vip-strip
+ * for when it renders).
+ *
+ * Fixed to the viewport, outside the warped .b-wrap. The greeting grows LEFT out of
+ * the disc: the disc stays put, the pill unfolds from the disc's edge, and the words
+ * arrive a beat after the pill so they never read as sliding in from off-screen.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$c-vip-size: rem(65);
+$c-vip-ease: cubic-bezier(0.16, 1, 0.3, 1); // the site's settle curve (see _jonson.scss)
+
+// Where the header's Contact button sits in from the viewport's right edge: the
+// outer page padding (body > .b-wrap) plus the inner wrap's, which steps up at md
+// and lg. Past the design canvas the page centres and the slab's edge moves in by
+// half the surplus — the max() term follows it. The disc's right edge lands on the
+// button's right edge at every width.
+$c-vip-outer: getmap($space, rhythm, 500);
+@function vip-right($inner) {
+    @return calc(max(0px, (100vw - #{getmap($mq-breakpoints, xxl)}) / 2) + #{$c-vip-outer} + #{$inner});
+}
+
+.c-vip {
+    position: fixed;
+    right: vip-right(getmap($space, rhythm, 500));
+    @include mq(from, md) {
+        right: vip-right(getmap($space, rhythm, 600));
+    }
+    @include mq(from, lg) {
+        right: vip-right(getmap($space, rhythm, 800));
+    }
+    // The header's inset from the top, mirrored at the bottom (outer padding + the
+    // header's own top offset), so the disc sits where the Contact button would if
+    // the header ran along the foot of the slab. Clear of a notched phone's home bar.
+    bottom: calc(#{$c-vip-outer} + #{getmap($space, rhythm, 700)} + env(safe-area-inset-bottom, 0px));
+    // Above the sticky header (xl) would be wrong — this is chrome, not a dialog.
+    // Under the contact panel, which lives in the top layer regardless.
+    z-index: getmap($z-index, lg);
+
+    display: flex;
+    align-items: center;
+    gap: getmap($space, rhythm, 300);
+}
+
+.c-vip__disc {
+    // Button reset — it's a control now.
+    appearance: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+
+    flex: none;
+    width: $c-vip-size;
+    height: $c-vip-size;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column; // the crown over the word
+    align-items: center;
+    justify-content: center;
+    gap: rem(1);
+    background-color: getmap($colour, primary, 400); // the yellow
+    color: getmap($colour, primary, 700); // the navy
+    // Lifts it off both slabs — the olive and the cream — without a border.
+    box-shadow: 0 rem(2) rem(10) rgba(0, 0, 0, 0.18);
+    user-select: none;
+    transition: transform 240ms $c-vip-ease, box-shadow 240ms $c-vip-ease;
+
+    &:hover,
+    &:focus-visible {
+        transform: translateY(rem(-2)) scale(1.04);
+        box-shadow: 0 rem(6) rem(16) rgba(0, 0, 0, 0.22);
+    }
+
+    &:active {
+        transform: scale(0.97);
+        transition-duration: 80ms;
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, light, 100);
+        outline-offset: rem(3);
+    }
+}
+
+.c-vip__crown {
+    display: block;
+    width: rem(18);
+    height: rem(18);
+    color: getmap($colour, light, 100); // white, over the navy word
+    transform-origin: 50% 100%;
+}
+
+// The crown hops and wobbles as the greeting opens — up, a hard tilt one way, a
+// rock back the other, settling in a couple of diminishing swings. Pivoting on its
+// base, so it rocks like a crown knocked askew rather than spinning on its centre.
+.c-vip.is-open .c-vip__crown {
+    animation: c-vip-crown-hop 900ms $c-vip-ease;
+}
+
+@keyframes c-vip-crown-hop {
+    15%  { transform: translateY(rem(-7)) rotate(-22deg); }
+    32%  { transform: translateY(rem(-4)) rotate(18deg); }
+    50%  { transform: translateY(rem(-1)) rotate(-12deg); }
+    68%  { transform: translateY(0) rotate(7deg); }
+    84%  { transform: rotate(-3deg); }
+    100% { transform: none; }
+}
+
+.c-vip__tag {
+    @include typography(whisper);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    // The tracking adds space after the last letter; nudge back so the word sits
+    // optically centred in the disc.
+    margin-right: -0.14em;
+}
+
+// The greeting: a navy pill that unfolds leftwards out of the disc. Two things
+// move on different clocks — the pill (clip + a small scale from the disc's edge)
+// and the words inside it (a fade + a short slide), the words trailing the pill.
+.c-vip__greeting {
+    margin: 0;
+    padding: rem(14) rem(22) rem(15);
+    border-radius: rem(999);
+    display: flex;
+    flex-direction: column;
+    gap: rem(3);
+    background-color: getmap($colour, primary, 700); // the navy
+    color: getmap($colour, light, 100);
+    // Set outright, not via typography(p): that mixin steps the size up at each
+    // breakpoint (2.1rem, 2.3rem) and those rules win over a base size here.
+    font-size: rem(14);
+    font-weight: 500;
+    font-family: $g-font-secondary;
+    line-height: 1.3;
+    white-space: nowrap;
+    box-shadow: 0 rem(2) rem(10) rgba(0, 0, 0, 0.18);
+
+    transform-origin: 100% 50%; // grows out of the disc's side
+    // Closed: clipped to nothing at the disc's edge, a touch smaller, and out of
+    // the way of the pointer and the accessibility tree (aria-hidden is toggled by
+    // vip.js alongside).
+    clip-path: inset(0 0 0 100% round rem(999));
+    transform: scale(0.94);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+        clip-path 380ms $c-vip-ease,
+        transform 380ms $c-vip-ease,
+        opacity 200ms ease 60ms,
+        visibility 0s 380ms;
+
+    .c-vip.is-open & {
+        clip-path: inset(0 0 0 0 round rem(999));
+        transform: none;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition:
+            clip-path 420ms $c-vip-ease,
+            transform 420ms $c-vip-ease,
+            opacity 160ms ease,
+            visibility 0s;
+    }
+}
+
+.c-vip__greeting-lead {
+    font-weight: 700;
+}
+
+.c-vip__greeting-sub {
+    color: getmap($colour, primary, 430); // the light blue of the Jonson whisper and suggestions title
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-vip__disc,
+    .c-vip__greeting {
+        transition-duration: 0s;
+        transition-delay: 0s;
+    }
+    .c-vip.is-open .c-vip__crown {
+        animation: none;
+    }
+}

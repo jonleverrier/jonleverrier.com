@@ -1,0 +1,408 @@
+{#
+  A case study's Case Content matrix, block by block.
+
+  Expects: blocks — the caseContent entries, in author order.
+  Optional: anchoredHtml — { blockId: html } for content blocks whose h2s have been
+            given ids (see the note view); a block not in it renders its own field.
+
+  All the block types are built out: largeImage, legacyImage, twoUpImage, threeUpImage,
+  video, lottie, caseTestimonial, contentMethod, code and content. An unknown type falls through and renders nothing rather than erroring
+  — which is how caseTestimonial went missing for a while: the block was in the field,
+  no branch matched it, and it simply vanished from the page it was placed on.
+
+  Consecutive images run as one block with no timeline connector between them — the
+  spine only reappears where the KIND of content changes (see _case-content.scss). A
+  connector between every image would chop a sequence into unrelated beats. A video
+  counts as imagery for that: it's a <figure> like the rest, so it inherits the same
+  spacing and spine rules without any of them naming it.
+
+  Images go through the media.picture macro, which emits a WebP srcset with a fallback
+  and puts width/height on the <img> so nothing shifts as it loads.
+#}
+{% import '_macros/media.twig' as media %}
+
+{% set blocks = blocks ?? [] %}
+
+{# True until the first block has rendered. The block at the top of the page is the
+   only one that can be in the first viewport, so it's the only one that ships eager
+   with a high fetch priority — everything below stays lazy. Cleared by ANY block,
+   not just an image: a study that opens with prose or a video has its first image
+   somewhere down the page, where promoting it would take priority from the fonts
+   and CSS that decide first paint.
+
+   A <link rel="preload"> would be the wrong tool here — the <picture> below carries
+   AVIF, WebP and a fallback behind calc() sizes, and a preload that doesn't match
+   the source the browser picks is a second download rather than a saved one. #}
+{% set leading = true %}
+
+{% if blocks|length %}
+    <div class="c-case-content">
+        {% for block in blocks %}
+            {% if block.type.handle == 'largeImage' %}
+                {% set image = block.largeImage.one() %}
+                {% if image %}
+                    {# `sizes` describes the slot, and the slot is the full content box
+                       — the viewport less the slab inset (2 × rhythm 500) and
+                       .c-content's own inline padding, which steps up at md and lg.
+                       Getting this wrong is what makes a browser fetch a 3200px file
+                       for a 500px slot, or a 640px one for a 1600px slot.
+
+                       Candidates run to 3200 for retina. `w` descriptors already
+                       account for device pixel ratio — the browser multiplies `sizes`
+                       by the DPR itself — so there's no `2x` to declare, only a large
+                       enough candidate to pick. The slot maxes at ~1600 on the xxl
+                       design canvas, so 3200 is that at 2×; source images should be
+                       3200×1800 for a 1600×900 display size.
+
+                       Craft won't upscale (upscaleImages is off in general.php), so a
+                       candidate wider than the source just resolves to the source. A
+                       1920px original tops out there — no error, no giant file, just
+                       no retina above 1.2×.
+
+                       quality 90 is above the site default of 82: on a case study the
+                       image IS the work being shown, and it's displayed large, where
+                       compression artefacts in flat colour and type would be obvious.
+
+                       `tone: true` opts into the colour placeholder, which is off
+                       everywhere else on the site. These pages are the case for it:
+                       full-bleed work the visitor is scrolling through to look at,
+                       one image at a time, where a photo arriving on a card of its
+                       own colours reads as part of the work. In a Jonson answer the
+                       same effect fires next to running text and just flickers.
+
+                       `sizes` is in px, not rem, on purpose: the preload scanner
+                       resolves rem in a `sizes` attribute against the browser's
+                       initial 16px, not this site's 10px root, so `12.6rem` would
+                       declare a 201px inset for a 126px one. The 1600px `min()` is
+                       the content column's cap. Same numbers in the pair and trio
+                       strings below.
+
+                       (All of this lives OUTSIDE the options hash below — a Twig
+                       comment inside a hash literal is a parse error that takes the
+                       whole page down with it.) #}
+                    <figure class="c-case-content__figure">
+                        {{ media.picture(
+                            image,
+                            '(min-width: 62em) min(100vw - 126px, 1600px), (min-width: 48em) calc(100vw - 81px), calc(100vw - 68px)',
+                            {
+                                widths: [480, 640, 960, 1280, 1600, 2000, 2400, 3200],
+                                fallback: 960,
+                                quality: 90,
+                                tone: true,
+                                loading: leading ? 'eager' : 'lazy',
+                                fetchpriority: leading ? 'high' : null,
+                            }
+                        ) }}
+                    </figure>
+                    {% set leading = false %}
+                {% endif %}
+            {% elseif block.type.handle == 'legacyImage' %}
+                {# An older, smaller picture — a photo from a note, not a 3200px piece
+                   of work. The picture ALWAYS sits on the reading measure with the
+                   prose, at its own size when it's narrower than that, never
+                   stretched: the ladder is cut to the widths the source actually
+                   has, so nothing is upscaled into softness.
+
+                   Has breakout? doesn't enlarge it. It puts a second layer BEHIND
+                   it — the same picture, small and blurred, filling the large
+                   image's full width — so a modest photo can still hold a full-width
+                   beat without being blown up. The sharp copy and its caption sit
+                   on top, on the measure. Same tone placeholder and eager/lazy rule
+                   as the other imagery; the blurred copy is a small lazy WebP, since
+                   nothing sharp survives the blur. #}
+                {% set image = block.legacyImage.one() %}
+                {% if image %}
+                    {% set breakout = block.hasBreakout ?? false %}
+                    {% set legacySizes = '(min-width: 48em) min(740px, 100vw - 81px), calc(100vw - 68px)' %}
+                    {% set legacyLadder = [480, 740, 1480]|filter(w => w <= (image.width ?? 0)) %}
+                    {% set legacyLadder = legacyLadder|length ? legacyLadder : [image.width] %}
+                    {% set legacyFallback = min(740, image.width) %}
+                    {% set caption = (block.caption ?? '')|trim %}
+                    {% set legacyPicture %}
+                        {{ media.picture(image, legacySizes, {
+                            widths: legacyLadder,
+                            fallback: legacyFallback,
+                            quality: 90,
+                            tone: true,
+                            loading: leading ? 'eager' : 'lazy',
+                            fetchpriority: leading ? 'high' : null,
+                        }) }}
+                    {% endset %}
+                    {% set legacyCaption %}
+                        {% if caption %}
+                            <figcaption class="c-case-content__caption">{{ caption }}</figcaption>
+                        {% endif %}
+                    {% endset %}
+                    {# The caption is a direct child of the figure either way, BELOW
+                       the blurred box on the breakout — on the page, never over the
+                       blur — so the same :has() rule strips the figure's own box and
+                       the caption sits on the cream under the picture in both cases. #}
+                    {% if breakout %}
+                        <figure class="c-case-content__figure c-case-content__figure--backdrop">
+                            <div class="c-case-content__backdrop-box">
+                                <div class="c-case-content__backdrop" aria-hidden="true">
+                                    <img src="{{ image.getUrl({ width: min(640, image.width), format: 'webp', quality: 60 }) }}"
+                                        alt="" loading="lazy" decoding="async">
+                                </div>
+                                <div class="c-case-content__figure-inner">{{ legacyPicture }}</div>
+                            </div>
+                            {{ legacyCaption }}
+                        </figure>
+                    {% else %}
+                        <figure class="c-case-content__figure c-case-content__figure--inline">{{ legacyPicture }}{{ legacyCaption }}</figure>
+                    {% endif %}
+                {% endif %}
+                {% set leading = false %}
+            {% elseif block.type.handle == 'twoUpImage' %}
+                {% set pair = [block.twoUpImagePrimary.one(), block.twoUpImageSecondary.one()]|filter(a => a) %}
+                {% if pair|length %}
+                    {# HALF the slot from md up, where the pair sits side by side, less
+                       half the gap each. Below md they stack full width.
+
+                       That assumes the source is cut for this slot — 1600 × 1800, for
+                       a 789 × 900 cell at 2×. Feed it a wide landscape image instead
+                       and `cover` will scale it up until its height fits before
+                       cropping, which needs roughly double these widths; `sizes` only
+                       describes layout width, so the browser can't know that and the
+                       image comes back soft. Shoot the pair to shape.
+
+                       One image on its own still takes a half cell, so a part-filled
+                       pair doesn't silently become a full-width block. #}
+                    <div class="c-case-content__pair">
+                        {% for image in pair %}
+                            <figure class="c-case-content__figure">
+                                {{ media.picture(
+                                    image,
+                                    '(min-width: 62em) calc((min(100vw - 126px, 1600px) - 22px) / 2), (min-width: 48em) calc((100vw - 81px - 22px) / 2), calc(100vw - 68px)',
+                                    {
+                                        widths: [480, 640, 800, 1024, 1280, 1600],
+                                        fallback: 800,
+                                        quality: 90,
+                                        tone: true,
+                                        loading: leading ? 'eager' : 'lazy',
+                                        fetchpriority: leading ? 'high' : null,
+                                    }
+                                ) }}
+                            </figure>
+                        {% endfor %}
+                    </div>
+                    {% set leading = false %}
+                {% endif %}
+            {% elseif block.type.handle == 'threeUpImage' %}
+                {# Three separate single-asset fields, the same shape the pair uses —
+                   left, middle and right as named slots rather than one ordered list.
+
+                   NOT one field placed three times, which is where this started: Craft
+                   keys relational data on fieldId alone, with no column naming the
+                   instance, so three instances of the same field all wrote into a
+                   single pool and only the first read back.
+
+                   Filtered, so a part-filled trio renders what it has rather than
+                   holding an empty cell — the same courtesy the pair extends. #}
+                {% set trio = [
+                    block.threeUpImagePrimary.one(),
+                    block.threeUpImageSecondary.one(),
+                    block.threeUpImageTertiary.one()
+                ]|filter(a => a) %}
+                {% if trio|length %}
+                    {# A THIRD of the slot from md up, less two gaps rather than the
+                       pair's one — three columns have two gutters between them, and
+                       subtracting one is the mistake that makes every image in the row
+                       come back a third too small.
+
+                       Cells are about 519 at the design canvas (1600 less 2 x 22),
+                       so 1040 covers them at 2x. The ladder still runs to 1600 because
+                       the WIDEST case is not the desktop cell at all — it is a phone,
+                       where these stack full width and a 390pt screen at 3x wants
+                       ~1170. Sizing the ladder to the desktop grid is what leaves
+                       mobile soft.
+
+                       No aspect-ratio on the row, unlike the pair. Held to the pair's
+                       16/9 a cell would be 519 x 900 — a 0.58 portrait — and `cover`
+                       would have to scale a landscape source to ~1600 wide before it
+                       was tall enough to crop, needing roughly three times the pixels
+                       `sizes` describes. Width-only transforms keep each image's own
+                       ratio instead, which is also the right call for logos, where a
+                       crop is never what you want. The cost is that three images of
+                       different shapes leave a ragged bottom edge — shoot the set to
+                       one shape. #}
+                    <div class="c-case-content__trio">
+                        {% for image in trio %}
+                            <figure class="c-case-content__figure">
+                                {{ media.picture(
+                                    image,
+                                    '(min-width: 62em) calc((min(100vw - 126px, 1600px) - 44px) / 3), (min-width: 48em) calc((100vw - 81px - 44px) / 3), calc(100vw - 68px)',
+                                    {
+                                        widths: [320, 480, 640, 800, 1040, 1280, 1600],
+                                        fallback: 520,
+                                        quality: 90,
+                                        tone: true,
+                                    }
+                                ) }}
+                            </figure>
+                        {% endfor %}
+                    </div>
+                    {% set leading = false %}
+                {% endif %}
+            {% elseif block.type.handle == 'video' %}
+                {# Self-hosted clip, with the block's Large Image as its poster — the
+                   same field the largeImage block uses, so a poster is prepared and
+                   sized like any other full-width image.
+
+                   It plays on loop while it's on screen — but there's no `autoplay`
+                   attribute, deliberately. That would start the download at page load
+                   wherever the block sits, and this one is most of a page down. The
+                   markup ships inert and video-autoplay.js starts it on view, which
+                   also leaves a sane no-JS state: a poster with controls.
+
+                   `preload="none"` for the same reason — tens of megabytes (Urban's is
+                   19MB), and even `metadata` opens the connection and pulls the file's
+                   head on every page view.
+
+                   `muted` is not a style choice: browsers refuse autoplay with sound.
+                   (These clips have no audio track anyway.)
+
+                   `controls` IS in the markup, and video-autoplay.js takes it away —
+                   the same direction as Read more, and for the same reason. Shipped
+                   without them, a visitor with no JS gets a poster and no way to play
+                   it. Shipped with them, the fallback is a working player, and the
+                   only browsers that keep it are the ones that were never going to
+                   autoplay: reduced motion, or an autoplay refusal (Safari's Low
+                   Power Mode blocks even a silent clip). Where the loop does run, a
+                   silent clip playing in place reads as a moving image and has
+                   nothing to operate, so the controls go.
+
+                   `playsinline` keeps iOS from taking the video fullscreen on play.
+
+                   width/height come from the POSTER, not the video — Craft records no
+                   dimensions for a video asset. Browsers derive the aspect ratio from
+                   these exactly as they do on an <img>, so the box is reserved before
+                   anything loads. Without a poster there's nothing to derive it from,
+                   and the CSS falls back to the page's 16/9 (see _case-content.scss). #}
+                {% set clip = block.video.one() %}
+                {% set poster = block.largeImage.one() %}
+                {% if clip %}
+                    <figure class="c-case-content__figure">
+                        <video
+                            class="c-case-content__video"
+                            data-autoplay-video
+                            muted
+                            loop
+                            controls
+                            playsinline
+                            preload="none"
+                            {%- if poster %}
+                                poster="{{ poster.getUrl({ width: 1600, format: 'webp', quality: 90 }) }}"
+                                width="{{ poster.width }}"
+                                height="{{ poster.height }}"
+                            {%- endif %}>
+                            <source src="{{ clip.url }}" type="{{ clip.mimeType }}">
+                        </video>
+                    </figure>
+                {% endif %}
+                {% set leading = false %}
+            {% elseif block.type.handle == 'lottie' %}
+                {# A Lottie animation in a full-width figure, played by lottie-block.js
+                   while it's on screen and paused when it isn't — the same rhythm as
+                   the video block. The markup ships as an empty box: the player and
+                   the JSON are only fetched when the block nears the viewport, so a
+                   page that has one costs nothing extra above the fold.
+
+                   The figure is the same panel as a full-width image: the column's
+                   width at the page's 16/9. The animation plays INSIDE it at the
+                   size it was made, centred — a composition scaled up goes soft at
+                   its embedded images and type — and only ever scales down, on a
+                   panel smaller than it. Its size is read from the JSON once and
+                   cached (see lottieSize()) and handed to the CSS as custom
+                   properties; without them the animation fills the panel.
+
+                   Background Colour is the ground the animation plays on: a Lottie
+                   composition is normally transparent, so without one it would sit on
+                   the figure's tan slab. Set inline on the figure, so the loading
+                   state is already the right colour.
+
+                   Loop Animation? decides what happens at the end: on, it cycles
+                   while on screen; off, it plays through once each time it comes
+                   into view and holds its last frame.
+
+                   The asset's Alt Text makes it an image to a screen reader; with
+                   none it's decorative and hidden from one — the animation itself
+                   carries no text. #}
+                {% set anim = block.lottieJson.one() %}
+                {% if anim %}
+                    {% set size = craft.frontend.lottieSize(anim) %}
+                    {% set bg = block.backgroundColour.hex ?? null %}
+                    <figure class="c-case-content__figure"{% if bg %} style="background-color: {{ bg }}"{% endif %}>
+                        <div
+                            class="c-case-content__lottie"
+                            data-lottie="{{ anim.url }}"
+                            {%- if block.hasLoopedAnimation %} data-lottie-loop{% endif %}
+                            {%- if size %} style="--lottie-w: {{ size.w }}px; --lottie-h: {{ size.h }}px"{% endif %}
+                            {%- if anim.alt %} role="img" aria-label="{{ anim.alt }}"{% else %} aria-hidden="true"{% endif %}></div>
+                    </figure>
+                {% endif %}
+                {% set leading = false %}
+            {% elseif block.type.handle == 'caseTestimonial' %}
+                {# A quote placed in the flow, where the author put it, rather than in
+                   the slider at the foot of the page. Same component either way, so it
+                   looks the same wherever it's met, and the same field mapping the page
+                   template uses — company through craft.frontend.testimonialCompany, so
+                   a client can't be named one way here and another below.
+
+                   The page template drops any testimonial placed here from that bottom
+                   slider; without that the same quote appears twice on the page. #}
+                {% set quoted = block.testimonial.one() %}
+                {% if quoted and (quoted.blockquote ?? '') %}
+                    <div class="c-case-content__quote">
+                        {% include '_components/testimonials' with { items: [{
+                            quote: quoted.blockquote,
+                            name: quoted.personName ?? '',
+                            role: quoted.jobTitle ?? '',
+                            company: craft.frontend.testimonialCompany(quoted),
+                            image: quoted.profileImage.one() ?? null,
+                        }] } only %}
+                    </div>
+                {% endif %}
+                {% set leading = false %}
+            {% elseif block.type.handle == 'contentMethod' %}
+                {# "How I can help" — the method timeline, placed in the flow where the
+                   author put it. The block carries no fields: the phases are the
+                   methodology single's, the same ones a Jonson answer shows for
+                   [[method]], so the timeline reads identically wherever it's met.
+                   Light dress for the cream slab. The outer box is the container the
+                   timeline measures itself against, the inner is the reading measure
+                   the phase text lines up on — see .c-case-content__method. #}
+                {% set method = craft.frontend.methodology() %}
+                {% if method %}
+                    <div class="c-case-content__method">
+                        <div class="c-case-content__method-inner">
+                            {% include '_components/method' with { method: method, light: true } only %}
+                        </div>
+                    </div>
+                {% endif %}
+                {% set leading = false %}
+            {% elseif block.type.handle == 'code' %}
+                {# A code snippet — `codeSnippet` is the source (plain text,
+                   multiline), `codeLanguage` the dropdown naming it. Rendered by
+                   _components/code-block, on the reading measure, like prose. #}
+                <div class="c-case-content__code">
+                    {% include '_components/code-block' with {
+                        code: block.codeSnippet ?? '',
+                        lang: block.codeLanguage ?? '',
+                        lineNumbers: block.hasLineNumbers ?? false,
+                    } only %}
+                </div>
+                {% set leading = false %}
+            {% elseif block.type.handle == 'content' %}
+                {# A caller that built an "on this page" nav passes the block's HTML
+                   back with ids on its h2s (anchoredHtml, keyed by block id — see
+                   craft.frontend.headingAnchors); otherwise the field's own. #}
+                {% set prose = (anchoredHtml ?? {})[block.id ?? ''] ?? (block.content ?? '') %}
+                {% if prose|trim %}
+                    <div class="c-case-content__text">{{ prose|raw }}</div>
+                {% endif %}
+                {% set leading = false %}
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}

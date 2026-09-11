@@ -1,0 +1,200 @@
+/**
+ * COMPONENT: CODE
+ *
+ * A code snippet as a panel: navy, rounded like the other panels, mono type, with
+ * the language named in the top corner. Served plain and readable; code-block.js
+ * colours the tokens with Shiki once its chunk arrives, adding `is-highlighted`.
+ *
+ * The panel is OURS, not the theme's: Shiki's own <pre> and its background are
+ * discarded and only the coloured spans are kept, so the block looks the same
+ * before and after highlighting — same box, same type, same background — and the
+ * colours just switch on. The theme (github-dark) was picked for a dark ground;
+ * the navy is darker than its own, which only helps the contrast.
+ *
+**/
+
+@use 'sass:color';
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.c-code {
+    position: relative;
+    margin: 0;
+    // Equal above and below, so a one-line snippet sits centred in its panel,
+    // and a step more than the sides: the panel runs full width, and the code
+    // wants more air over and under it than beside it. The corner control
+    // doesn't get its own headroom: it hangs off the top edge as a tab (see
+    // .c-code__copy) and is shallower than the padding.
+    padding: getmap($space, rhythm, 700) getmap($space, rhythm, 600);
+    border-radius: $b-radius-200; // match the figures and the quote panel
+    background-color: getmap($colour, primary, 700); // navy — the footer's ground
+    color: getmap($colour, light, 600); // eggshell: the plain text before colouring
+    font-family: $g-font-secondary; // JonSonMono
+    @include typography(p-sm);
+    font-weight: 600; // the mono's bold face: at 16px the Light face thins out (weight 400+ is the floor below 18px)
+    line-height: 1.6;
+    tab-size: 4;
+
+    // The language, as the template labels it, in the corner — the same whisper
+    // the section eyebrows use, stepped back so it reads as a tag, not a title.
+    // This is the NO-JS label: once code-block.js has put the copy control in
+    // the same corner (which carries the name itself), this one steps down.
+    // The corner things sit at the right edge of the CODE box, not of the panel —
+    // the panel runs the block's full width, the code sits on the measure inside
+    // it. The offset is the panel's side padding plus half of whatever room is
+    // left either side of the measure (none, once the panel is narrower than it).
+    // 100% here is the panel's padding box, which is what an absolutely
+    // positioned child measures against.
+    $code-corner-right: calc(#{getmap($space, rhythm, 600)} + max(0px, (100% - 2 * #{getmap($space, rhythm, 600)} - #{rem(740)}) / 2));
+
+    &[data-code-label]::before {
+        content: attr(data-code-label);
+        position: absolute;
+        top: rem(6); // clear of the first line, inside the panel's padding
+        right: $code-corner-right;
+        @include typography(whisper);
+        font-family: $g-font-primary;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.19em;
+        color: rgba(getmap($colour, light, 600), 0.45);
+    }
+
+    &:has(.c-code__copy)::before {
+        display: none;
+    }
+
+    // The panel breaks out to the block's full width, like an image; the code
+    // inside stays on the reading measure, centred, so its left edge lines up
+    // with the prose above and below — the same arrangement as every other
+    // breakout on the site. Long lines scroll inside THIS box, never the page.
+    //
+    // Each line is a span.line — the template writes them and Shiki keeps the
+    // same shape when it colours the block.
+    code {
+        display: block;
+        max-width: rem(740); // mirrors .c-case-content__text
+        margin-inline: auto;
+        font: inherit;
+        white-space: pre;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    // Line numbers (the block's Line Numbers switch): a CSS counter on the line
+    // spans, so they exist before Shiki has run and don't change when it has.
+    // Not selectable, so copying the snippet doesn't copy the numbers with it.
+    // Right-aligned in a fixed column so the code's own indentation stays true.
+    &.has-line-numbers code {
+        counter-reset: line;
+
+        .line::before {
+            counter-increment: line;
+            content: counter(line);
+            display: inline-block;
+            width: 3ch;
+            margin-right: 2ch;
+            text-align: right;
+            color: rgba(getmap($colour, light, 600), 0.35);
+            user-select: none;
+        }
+    }
+
+    // Where the panel is wider than the measure, the numbers hang in the gutter
+    // to its left, so the CODE's left edge is the one that lines up with the
+    // prose — the numbers are furniture, not content. Below lg the gutter is
+    // gone and they sit inline, taking their column from the measure instead.
+    //
+    // The gutter is INSIDE the scroll box, not outside it: the box grows by the
+    // gutter's width (the numbers' 3ch column and 2ch gap), slides left by the
+    // same so its right edge stays put, and pads the code back onto the
+    // measure. Letting the box overflow visibly instead — so numbers outside
+    // it weren't clipped — let a long line run straight out of the panel.
+    @include mq(from, lg) {
+        &.has-line-numbers code {
+            $gutter: 5ch;
+            max-width: calc(#{rem(740)} + #{$gutter});
+            padding-left: $gutter;
+            transform: translateX(calc(#{$gutter} / -2)); // margin auto centres the wider box, which moves its left edge half the gutter; this moves the other half
+
+            .line::before {
+                margin-left: -$gutter; // into the padding — still inside the box, so still inside the scroll
+            }
+        }
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 400);
+        outline-offset: rem(2);
+    }
+}
+
+// The corner control (added by code-block.js): the language name and the copy
+// icon in one box, and the box is the button — in the button red, so it reads
+// as the same kind of thing as every other button on the site rather than as a
+// caption, with the same raised bottom edge as .c-button.
+//
+// It hangs off the panel's top edge as a TAB — flush to the top, square on
+// top, rounded below — rather than floating in the corner. That way the panel's
+// padding can be the same above and below the code (a one-line snippet sits
+// centred) without the control needing headroom of its own: at 24px it is
+// shallower than the padding, so it clears the first line. Hover darkens
+// instead of lifting, since a docked tab has nowhere to lift to. The tick and
+// "Copied" take over the label while the copy is fresh; the colour stays put
+// so the corner doesn't flash.
+.c-code__copy {
+    position: absolute;
+    top: 0;
+    right: calc(#{getmap($space, rhythm, 600)} + max(0px, (100% - 2 * #{getmap($space, rhythm, 600)} - #{rem(740)}) / 2)); // the code box's right edge — see .c-code
+    display: inline-flex;
+    align-items: center;
+    gap: rem(8);
+    height: rem(30); // taller than it strictly needs: still shallower than the panel's top padding, so it clears the first line
+    padding: 0 rem(10);
+    border: 0;
+    border-radius: 0 0 rem(6) rem(6);
+    background: getmap($colour, primary, 600); // button red
+    color: getmap($colour, light, 100);
+    // A <button> doesn't inherit font: without these the language label set in
+    // the browser's default (Arial 13.33px) — the only Arial on the page.
+    font-family: $g-font-secondary; // JonSonMono, as the panel
+    font-size: rem(13);
+    font-weight: 600;
+    line-height: 1;
+    box-shadow: inset 0 rem(-2) 0 rgba(#000, 0.3); // the .c-button raised edge, scaled down
+    cursor: pointer;
+    transition: background-color 200ms ease;
+
+    svg {
+        display: block;
+    }
+
+    // The clipboard at rest, the tick while copied — both are in the markup and
+    // the state picks one, so the swap is a class change and nothing re-renders.
+    .c-code__copy-icon--done { display: none; }
+
+    &:hover {
+        background-color: color.scale(getmap($colour, primary, 600), $lightness: -12%); // as .c-content__topic
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid currentColor;
+        outline-offset: rem(2);
+    }
+
+    &.is-copied {
+        .c-code__copy-icon--copy { display: none; }
+        .c-code__copy-icon--done { display: block; }
+    }
+}
+
+.c-code__copy-label {
+    @include typography(whisper);
+    font-family: $g-font-primary;
+    text-transform: uppercase;
+    font-weight: 600;
+    // No tracking. The whisper mixin sets some for a standalone eyebrow; on a
+    // two-word button label it just pushed the words apart from the icon.
+    letter-spacing: 0;
+    line-height: 1;
+}

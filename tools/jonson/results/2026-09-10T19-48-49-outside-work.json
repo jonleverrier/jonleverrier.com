@@ -1,0 +1,119 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-10T19:48:36.379Z",
+  "scenarios": [
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A fair bit, honestly. I'm big into street photography — I wander cities with a Leica and hope a good frame turns up, which mostly it doesn't, but that's the game. I also collect photography books, listen to a lot of music, cook, and I love to travel — I'm drawn to places with a rough reputation.\n\n[[next: what kind of street photography do you shoot? @photo:street-photo | what music are you into? @music | where have you travelled? @note:last-stop-parvati]]"
+        }
+      ],
+      "failures": [
+        "T1 missing context (unmarked by model)"
+      ]
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A fair bit, honestly. I'm big into street photography — I wander cities with a Leica and hope a good frame turns up, which mostly it doesn't, but that's the game. Beyond that there's cooking, always music on while I do it, travel (I've a soft spot for places with a dodgy reputation), and life in Bordeaux with my family.\n\n[[next: what kind of street photography do you shoot? @photo:street-photo | where have you travelled? @note:last-stop-parvati | what music do you put on while you work? @music]]"
+        }
+      ],
+      "failures": [
+        "T1 missing context (unmarked by model)"
+      ]
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo",
+            "bordeaux"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "Photography is the big one — I shoot street with a Leica rangefinder, which is the hardest kind to do well because you're relying on a moment to just happen in front of you.[[street-photo]] I collect photography books, I love to cook, I used to DJ, and I've done my share of travelling — twelve months around South East Asia and India once, which I still think about.\n\nLiving in Bordeaux these days keeps me close to good food and wine too, which suits me fine.[[bordeaux]]\n\n[[next: what got you into street photography? @photo:street-photo | what music are you into? @music | where did all that travelling take you? @note:last-stop-parvati]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux"
+          ],
+          "imgs": 1,
+          "chips": 2,
+          "answer": "A few things keep me busy. I'm big into street photography — I wander cities with a Leica looking for those small human moments, which mostly means coming home with nothing, but the odd keeper makes it worth it. I collect photography books too, and I usually have music on while I shoot or cook.\n\nThere's also family life — I live in Bordeaux[[bordeaux]] now, after stints in Paris and Brighton, and I love to travel, especially to places with a slightly dodgy reputation.\n\n[[next: what kind of street photography are you into? @photo:street-photo | what music do you put on while you work? @music | why places with a bad reputation? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux"
+          ],
+          "imgs": 1,
+          "chips": 2,
+          "answer": "Bit of a mix. I'm really into street photography — I shoot with a Leica rangefinder and spend a fair bit of time wandering cities with it, plus I collect photography books. Music's always on, whether I'm working, cooking or out taking pictures, and I love to travel — I'm drawn to places with a bit of a rough reputation.\n\nI also live in Bordeaux[[bordeaux]] with my family, so a good chunk of life outside work is the ordinary anglo-french domestic stuff too.\n\n[[next: what got you into street photography? @about | what kind of music do you listen to? @music | where have your travels taken you? @note:last-stop-parvati]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Photography's the big one — I shoot street with a Leica rangefinder, which is the hardest kind of photography there is: you go out hoping a miracle happens and mostly it doesn't. I also collect photography books, cook, and always have music on while I do most things. And I love to travel, especially to places with a bit of a bad reputation.\n\n[[next: what got you into street photography? @photo:street-photo | what kind of music do you have on while you work? @music | which places with a bad reputation have you travelled to? @about]]"
+        }
+      ],
+      "failures": [
+        "T1 missing context (unmarked by model)"
+      ]
+    }
+  ]
+}

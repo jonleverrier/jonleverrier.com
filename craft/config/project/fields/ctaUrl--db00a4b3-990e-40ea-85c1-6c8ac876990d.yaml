@@ -1,0 +1,31 @@
+columnSuffix: null
+handle: ctaUrl
+instructions: null
+name: URL
+searchable: false
+settings:
+  fullGraphqlData: true
+  maxLength: 255
+  showLabelField: true
+  typeSettings:
+    __assoc__:
+      -
+        - url
+        -
+          __assoc__:
+            -
+              - allowRootRelativeUrls
+              - ''
+            -
+              - allowAnchors
+              - ''
+            -
+              - allowCustomSchemes
+              - ''
+  types:
+    - url
+    - email
+    - tel
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Link

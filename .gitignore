@@ -1,0 +1,61 @@
+# ---------------------------------------------------------------------------
+# EDITOR / OS
+# ---------------------------------------------------------------------------
+.DS_Store
+.idea
+.vscode
+
+# ---------------------------------------------------------------------------
+# DEPENDENCIES — installed, never committed. Both are rebuilt on deploy from
+# their lockfiles, and between them they are ~500MB of other people's code.
+# (craft/vendor is also ignored by craft/.gitignore; kept here so the root file
+# tells the whole story.)
+# ---------------------------------------------------------------------------
+node_modules
+craft/vendor
+
+# ---------------------------------------------------------------------------
+# SECRETS — the reason to read this file before the first commit.
+#
+# craft/.env holds the Anthropic API key, the Spotify client secret and refresh
+# token, and the database credentials. craft/.env.example is the committed
+# version: keys with no values. (Also in craft/.gitignore.)
+# ---------------------------------------------------------------------------
+craft/.env
+.ddev/.env.web
+
+# ---------------------------------------------------------------------------
+# CRAFT RUNTIME — logs, caches, compiled templates, database backups.
+#
+# Ignored for size (224MB) and for content: storage/logs/phperrors.log dumps the
+# entire environment on a fatal error, API key included, so committing this
+# directory would publish the secrets that craft/.env carefully does not.
+#
+# Craft recreates everything in here on demand. Nothing in it is source.
+# ---------------------------------------------------------------------------
+craft/storage/*
+!craft/storage/.gitkeep
+
+# ---------------------------------------------------------------------------
+# GENERATED WEBROOT
+#
+# cpresources  — control panel assets Craft republishes itself
+# dist         — the Vite build; built on the server at deploy time
+# ---------------------------------------------------------------------------
+public/cpresources/*
+!public/cpresources/.gitkeep
+public/dist
+
+# ---------------------------------------------------------------------------
+# UPLOADED ASSETS — 292MB of photography, and NOT source code.
+#
+# These are content, not code: they arrive through the control panel, and on
+# Forge they live in a `shared/assets` directory symlinked into each release,
+# which is what lets generated image transforms survive a deploy. Committing
+# them would put the same files under two systems of record and make every
+# clone a 300MB download.
+#
+# CONSEQUENCE, worth knowing: a fresh server starts with no images. Copy them up
+# once, out of band (rsync to the shared directory), not through git.
+# ---------------------------------------------------------------------------
+public/assets

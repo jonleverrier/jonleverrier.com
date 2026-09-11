@@ -1,0 +1,22 @@
+columnSuffix: null
+handle: sectorSelector
+instructions: null
+name: 'Sector Selector'
+searchable: false
+settings:
+  allowSelfRelations: false
+  branchLimit: null
+  defaultPlacement: end
+  maintainHierarchy: false
+  maxRelations: null
+  minRelations: null
+  selectionLabel: null
+  showSearchInput: false
+  showSiteMenu: true
+  source: 'group:6f442111-71d2-4463-8956-38dd8146f3de' # Sector Experience
+  targetSiteId: null
+  validateRelatedElements: false
+  viewMode: list-inline
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Categories

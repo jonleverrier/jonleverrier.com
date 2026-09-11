@@ -1,0 +1,292 @@
+/**
+ * COMPONENT: CLIENTS
+ *
+ * A slowly auto-scrolling marquee of client logos ("worked with"), surfaced at
+ * credibility moments (the [[clients]] marker). Full-bleeds to the section
+ * content box like the rail; jonson-ask.js fills + duplicates one "run" of logos
+ * for a seamless loop and sets the scroll speed (--c-clients-duration) + is-ready.
+ *
+ * Logos are shown muted; supply light/white transparent logos for best results
+ * on the olive background.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.c-clients {
+    // Break out to the section content box, like the rail (100cqi tracks
+    // .c-jonson's container-type). No viewport units, so no scrollbar overflow.
+    position: relative; // anchor the edge-fade overlay
+    width: 100cqi;
+    margin-inline: calc((100% - 100cqi) / 2);
+    overflow: hidden;
+    // Background colour behind the marquee — the overlay fades the edges to it.
+    --c-clients-band: #{getmap($colour, primary, 500)}; // olive (the .c-jonson slab)
+}
+
+// Edge fade as a STATIC overlay, NOT a `mask` on the marquee. A mask over a
+// track that transform-animates forever re-rasterises the masked buffer every
+// frame; in Safari, at the component's fractional page offset, that re-raster
+// snaps by a sub-pixel and the whole region jitters (it also nudged the method
+// pulse below). This overlay sits above the track but never moves — nothing to
+// re-raster. Same fix _method.scss already uses for its own gutter fade. Band
+// colour → transparent centre → band, so the middle logos stay crisp.
+.c-clients::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2; // above the track (promoted via will-change) so the fade shows
+    pointer-events: none;
+    background: linear-gradient(
+        to right,
+        var(--c-clients-band) 0,
+        transparent 6%,
+        transparent 94%,
+        var(--c-clients-band) 100%
+    );
+}
+
+// Static variant (e.g. the contact page). The parent (.c-content__clients) is
+// already the full-bleed 100vw box, so the marquee just fills it — no container-
+// query breakout (.c-content sets no container-type, which the base 100cqi needs).
+.c-clients--static {
+    width: 100%;
+    margin-inline: 0;
+    margin-block: getmap($space, rhythm, 400);
+    --c-clients-band: #{getmap($colour, light, 600)}; // cream (the contact slab)
+}
+
+// Wide, fixed fade band on the full-viewport contact strip — a small % would
+// barely ease the logos before the edge. Same static-overlay technique.
+.c-clients--static::after {
+    background: linear-gradient(
+        to right,
+        var(--c-clients-band) 0,
+        transparent #{rem(220)},
+        transparent calc(100% - #{rem(220)}),
+        var(--c-clients-band) 100%
+    );
+}
+
+// No pause on hover here (unlike the interactive Jonson rail) — it just scrolls.
+// Double .c-clients to out-specify the base pause rule regardless of source order.
+.c-clients.c-clients--static.is-ready:hover .c-clients__track {
+    animation-play-state: running;
+}
+
+.c-clients__track {
+    display: flex;
+    width: max-content; // runs sit in one line; track sizes to content
+    // Promote to its own GPU layer so the scroll is composited (no paint/layout
+    // per frame) — buttery even with many logos.
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+// Animate only once the JS has duplicated the run (a single run would jump).
+.c-clients.is-ready .c-clients__track {
+    animation: c-clients-scroll var(--c-clients-duration, 30s) linear infinite;
+}
+
+// Off-screen (set by pause-offscreen.js): stop the infinite scroll so it doesn't
+// keep the compositor busy when it's not visible.
+.c-clients.is-anim-paused .c-clients__track {
+    animation-play-state: paused;
+}
+
+.c-clients.is-ready:hover .c-clients__track {
+    animation-play-state: paused; // let people read a logo
+}
+
+.c-clients__items {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: getmap($space, rhythm, 500);
+    margin: 0;
+    padding: 0;
+    padding-right: getmap($space, rhythm, 500); // keep the gap across the seam
+    list-style: none;
+}
+
+// Card dimensions — the panel height must match the card height for the swap.
+$c-clients-card-w: rem(260);
+$c-clients-card-h: rem(160);
+
+// The outer item handles size; the inner clips the summary swap.
+.c-clients__item {
+    flex: none;
+    position: relative;
+    width: $c-clients-card-w;
+    height: $c-clients-card-h;
+    border-radius: $b-radius-200;
+}
+
+// Clips the panel stack to the card.
+.c-clients__inner {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+}
+
+// The stack: a white "logo" panel on top, a yellow "summary" panel below. On
+// hover of a summary card it slides up one card-height — the logo rides off the
+// top and the summary panel rises into view beneath it.
+.c-clients__slider {
+    display: flex;
+    flex-direction: column;
+    transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.c-clients__item.has-summary:hover .c-clients__slider {
+    transform: translateY(-#{$c-clients-card-h});
+}
+
+// Each panel fills the card exactly, centring its content.
+.c-clients__face {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: $c-clients-card-h;
+}
+
+.c-clients__face--logo {
+    background-color: getmap($colour, light, 100); // white
+}
+
+.c-clients__face--summary {
+    background-color: getmap($colour, light, 700); // cream (#f1eada)
+    padding-inline: getmap($space, rhythm, 600);
+}
+
+// Greyscale in the flow of a page, colour where the logos ARE the point. A wall
+// of full-colour marks is a lot of competing brand palettes at once, and sat
+// inside a page's prose they pull the eye off the words they're meant to back
+// up. Two places earn their real colours: the contact panel, where they're the
+// last thing a visitor sees before writing a message, and a Jonson answer, where
+// the strip is the answer to "who have you worked with" rather than a decoration
+// beside it.
+//
+// filter, not a desaturated copy of each asset: one rule, and it follows a logo
+// wherever it's used. The white panel behind it is unaffected.
+.c-clients__logo {
+    filter: grayscale(1);
+    display: block;
+    // Fit within the panel, keeping aspect: 64px tall unless a wide logo needs
+    // to scale down to fit the width.
+    max-height: rem(64);
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    padding-inline: getmap($space, rhythm, 500);
+}
+
+// The two exceptions, named by where they are rather than by a layout class, so
+// the marquee stays greyscale if it's ever used somewhere new.
+.c-contact-panel__clients .c-clients__logo,
+.c-jonson .c-clients__logo {
+    filter: none;
+}
+
+// Small variant (--small) — narrower, shorter cards so about eight logos show across
+// the full-bleed strip at once. The __face height must track the item height or the
+// logo panel would overflow its (now shorter) card.
+//
+// FIXED width, not `100vw / 8`. Tying it to the viewport kept the count at eight by
+// shrinking the cards, so narrowing the window shrank every logo with it — at 760px
+// they were half the size they are on a desktop, and the logos are the one thing on
+// the strip that should look the same everywhere. A fixed card lets the count fall
+// instead, which is what a marquee is for; the loop doesn't care, since it translates
+// by a percentage rather than an absolute width.
+//
+// Sized so SIX cards span the shared wide measure — the width of a testimonial, and of
+// two case study slides. Five gaps, not six: the gaps sit BETWEEN the cards, so a run
+// of six has one fewer. Derived from the measure and the gap so it holds if either
+// moves.
+$c-clients-gap: getmap($space, rhythm, 500);
+$c-clients-card-h--small: rem(120);
+$c-clients-card-w--small: calc((#{$g-measure-wide} - 5 * #{$c-clients-gap}) / 6);
+
+.c-clients--static.c-clients--small .c-clients__item {
+    width: $c-clients-card-w--small;
+    height: $c-clients-card-h--small;
+}
+
+.c-clients--static.c-clients--small .c-clients__face {
+    height: $c-clients-card-h--small;
+}
+
+.c-clients--static.c-clients--small .c-clients__logo {
+    max-height: rem(48);
+    padding-inline: getmap($space, rhythm, 400);
+}
+
+.c-clients__summary {
+    @include typography(p-sm); // the small text size in the type scale
+    margin: 0;
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 500;
+    text-align: center;
+    color: getmap($colour, primary, 700); // navy (#162C41) on the cream
+}
+
+// A small red dot hints that a summary card is interactive; it sits above the
+// inner (outside its clip) and fades out on hover once the panel takes over.
+.c-clients__item.has-summary::after {
+    content: '';
+    position: absolute;
+    right: rem(14);
+    bottom: rem(14);
+    width: rem(16);
+    height: rem(16);
+    border-radius: 50%;
+    background-color: getmap($colour, primary, 400); // yellow
+    z-index: 2;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+}
+
+.c-clients__item.has-summary:hover::after {
+    opacity: 0;
+}
+
+
+@keyframes c-clients-scroll {
+    // Starts a run in and travels back to 0, so the logos drift LEFT TO RIGHT — the
+    // opposite of the usual marquee, and of the case study strip on the same pages,
+    // which now goes right to left (DIRECTION in case-study-marquee.js). The two
+    // deliberately oppose each other: they're different kinds of thing, and a page
+    // where every strip slides the same way reads as one long conveyor.
+    //
+    // The two runs are identical, so any offset between -50% and 0 is a seamless
+    // frame — the direction is free and the seam doesn't move with it.
+    from { transform: translate3d(-50%, 0, 0); }
+    to { transform: translate3d(0, 0, 0); } // one run — seamless against its clone; 3d = GPU-composited
+}
+
+// NOTE: this strip briefly carried containment (`contain: paint` / `clip-path`) and a
+// hover step-back, both only ever there to survive the case study focus blur passing
+// over it. That blur has been removed (see _case-study.scss), so nothing here needs to
+// defend against it and the workarounds went with it. Don't reintroduce a
+// backdrop-filter over this strip: it never stops moving, and re-blurring it every
+// frame made the logos crawl in Chrome while its white panels bled past the
+// `overflow: hidden` clip and haloed the slab.
+
+@media (prefers-reduced-motion: reduce) {
+    .c-clients {
+        overflow-x: auto; // no auto-scroll; let people scroll the strip themselves
+    }
+    .c-clients.is-ready .c-clients__track {
+        animation: none;
+    }
+    // Snap the hover swap/scale instantly rather than animating.
+    .c-clients__item,
+    .c-clients__slider {
+        transition: none;
+    }
+}

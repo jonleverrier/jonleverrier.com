@@ -1,0 +1,36 @@
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+
+{# Recolour the slab directly below <main> for this page (default is p500). #}
+{% set slabModifier = 'b-slab--l600' %}
+
+{% block siteContent %}
+    {# CTAs live on the globals single (same source the footer uses). #}
+    {% set globals = craft.entries().section('globals').one() %}
+    {% set ctas = globals ? globals.ctas.all() : [] %}
+
+    {# Client logos → "Brands I have worked with" marquee. Same source as the Jonson rail: only
+       clients that actually have a logo asset. #}
+    {% set clients = [] %}
+    {% for c in craft.entries().section('clientList').all() %}
+        {% set logo = c.logo.one() %}
+        {# Two gates, both meaning "not in the strip": no logo asset, or the client's
+           own Hidden? switch. Hidden is the deliberate one — a client whose mark you
+           hold but aren't free to fly. Tested here rather than in the query because
+           the switch is null on every entry saved before the field existed, and a
+           `isHidden(false)` filter drops those instead of keeping them. #}
+        {% if logo and not (c.isHidden ?? false) %}
+            {% set clients = clients|merge([{ name: c.title, logo: logo, summary: c.summary ?? '' }]) %}
+        {% endif %}
+    {% endfor %}
+
+    {% include '_components/content' with {
+        whisper: entry.title,
+        title: craft.app.getModule('jonson').vip.contactLine(entry.longTitle ?: entry.title),
+        ctas: ctas,
+        ctasHeading: 'Drop me a line',
+        form: true,
+        clients: clients,
+    } only %}
+{% endblock %}

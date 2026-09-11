@@ -1,0 +1,142 @@
+/**
+ * COMPONENT: CTAS
+ *
+ * CTA chips (from the `ctas` Matrix field) styled like .c-jonson__suggestion —
+ * pills that hug their text, stacked one per row, with a red "→" that pops in
+ * and a highlight that spins around the border on hover (extending the pill to
+ * make room). Uses the content page's own colours (navy label, tan border on
+ * the eggshell) rather than the chip's green/cream. Reuses the shared
+ * @property --c-chip-angle + c-jonson-chip-spin keyframe.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$c-ctas-border: getmap($colour, light, 750); // matches the content-page spine
+
+.c-ctas {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; // each chip hugs its text, one per row
+    gap: rem(14);
+    padding: getmap($space, rhythm, 600);
+    border-radius: $b-radius-200; // matches the form panel
+    background-color: getmap($colour, light, 100); // white column
+}
+
+// Jonson variant — the CTA beat inside a response, on the olive slab: one
+// prominent "Get in touch" button + a light mention of the other ways. Drop the
+// white panel (it sits directly on the conversation).
+.c-ctas--jonson {
+    background: transparent;
+    padding: 0;
+}
+
+// Small label above the chips — like .c-jonson__suggestions-whisper.
+.c-ctas__whisper {
+    @include typography(whisper);
+    margin: 0 0 rem(4);
+    font-family: $g-font-primary; // JonSonSans, like the whisper
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, primary, 450); // blue — matches the whisper
+}
+
+.c-ctas__item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: rem(12) rem(22);
+    border: rem(2) solid $c-ctas-border;
+    border-radius: rem(999); // pill
+    background-color: getmap($colour, light, 600); // eggshell (covers the dot grid)
+    color: getmap($colour, primary, 700); // navy label
+    font-family: $g-font-secondary; // JonSonMono
+    @include typography(p-sm);
+    font-weight: 600; // the mono's bold face — the Light face thins out at 16px
+    line-height: 1.2;
+    text-align: left;
+    text-decoration: none;
+    transition:
+        border-color 220ms ease,
+        padding-right 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 200ms ease; // the release after a press
+
+    // Press: the shared button's squeeze (see _button.scss) — instant down, eased up.
+    &:active {
+        transform: scale(0.96);
+        transition-duration: 220ms, 300ms, 0ms;
+    }
+
+    // Circular "→" tucked at the right edge — hidden until the pill extends.
+    &::after {
+        content: '→';
+        position: absolute;
+        top: 50%;
+        right: rem(6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: rem(28);
+        height: rem(28);
+        border-radius: 50%;
+        background-color: getmap($colour, primary, 600); // button red
+        color: getmap($colour, light, 100);
+        font-size: rem(15);
+        line-height: 1;
+        opacity: 0;
+        transform: translateY(-50%) scale(0.4);
+        transition:
+            opacity 220ms ease,
+            transform 300ms cubic-bezier(0.34, 1.4, 0.7, 1); // slight overshoot
+        pointer-events: none;
+    }
+
+    // On hover the pill extends, the arrow pops in, and a navy highlight spins
+    // around the border. Solid fill in the padding box, conic gradient in the
+    // (transparent) border box; the angle animates for the spin.
+    &:hover,
+    &:focus-visible {
+        border-color: transparent;
+        padding-right: rem(50);
+        background:
+            linear-gradient(getmap($colour, light, 600), getmap($colour, light, 600)) padding-box,
+            conic-gradient(
+                from var(--c-chip-angle),
+                rgba(getmap($colour, primary, 700), 0.1),
+                getmap($colour, primary, 700) 50%,
+                rgba(getmap($colour, primary, 700), 0.1)
+            ) border-box;
+        animation: c-jonson-chip-spin 1.4s linear infinite;
+    }
+
+    &:hover::after,
+    &:focus-visible::after {
+        opacity: 1;
+        transform: translateY(-50%) scale(1);
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 700);
+        outline-offset: rem(2);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-ctas__item {
+        transition: border-color 220ms ease;
+    }
+
+    .c-ctas__item::after {
+        transition: none;
+    }
+
+    .c-ctas__item:hover,
+    .c-ctas__item:focus-visible {
+        padding-right: rem(22); // no extend
+        animation: none; // no spin — a static navy stroke instead
+        border-color: getmap($colour, primary, 700);
+    }
+}

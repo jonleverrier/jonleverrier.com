@@ -1,0 +1,18 @@
+/**
+ * MIXINS: PROPS
+ *
+**/
+
+/**
+ * propValue
+ *
+ * loops through a map and outputs each key/value
+ * as a css property/value.
+**/
+@mixin props($map) {
+
+    @each $prop, $value in $map {
+        #{$prop}: #{$value};
+    }
+
+}

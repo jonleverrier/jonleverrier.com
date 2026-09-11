@@ -1,0 +1,10 @@
+{#
+    Product Template Router
+#}
+
+{% include
+    [
+        "_views/product/#{product.type.handle}",
+        "_views/product/default",
+    ]
+%}

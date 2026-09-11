@@ -1,0 +1,475 @@
+/**
+ * COMPONENT: TESTIMONIAL
+ *
+ * A single client pull-quote, surfaced inline in a Jonson answer at credibility
+ * moments (the [[testimonial]] marker). Deliberately quieter than the photo
+ * rail — it's social proof standing behind a point Jon just made, not a hero.
+ * A left accent rule marks it off from the surrounding prose; the parent's
+ * reveal (is-pending / is-revealed, in _jonson.scss) fades it in.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// Wrapper around one or more testimonial cards. The viewport + track are
+// transparent (display: contents) with a single card, so it keeps its
+// full-panel look.
+.c-testimonials__viewport,
+.c-testimonials__track {
+    display: contents;
+}
+
+// A single testimonial (viewport/track are display:contents above, so the card is
+// the flow child) breaks out past the 740 thread measure to the width of the static
+// content reveal — .c-content__body / .c-content__reveal — so a lone quote gets the
+// same room as the page body on wide viewports. Same breakout mechanism as
+// .c-jonson__question. The multi-quote carousel below (and its controls) is a
+// separate, already-wider layout and is left untouched.
+$c-testimonials-wide: $g-measure-wide; // the shared wide measure (.c-content__body's box)
+
+// $c-testimonials-wide is the width of the PANEL YOU SEE, not of this box. The card
+// inside pulls its fill out by its own horizontal padding either side (see
+// .c-testimonial's margin-inline below), so the box has to be that much narrower for
+// the visible edge to land on the shared measure. Sizing the box at the full measure
+// instead rendered the quote ~91px wider than everything else on the page.
+$c-testimonials-bleed: getmap($space, rhythm, 800);
+$c-testimonials-box: calc(#{$c-testimonials-wide} - 2 * #{$c-testimonials-bleed});
+
+.c-testimonials:not(.has-multiple) {
+    // Only from xl, where 1110 actually fits with room; below that it stays at the
+    // 740 thread measure (lg is 980px — too narrow for the wide width).
+    @include mq(from, xl) {
+        width: min(100cqi, #{$c-testimonials-box});
+        margin-inline: calc((100% - min(100cqi, #{$c-testimonials-box})) / 2);
+    }
+}
+
+// With several, it's a slider: the first quote sits in place at the response
+// measure, the next peeks in the gutter to its right, and the cycle button
+// slides the next one into place (the current moves off to the left). The
+// measure below matches $c-jonson-measure in _jonson.scss.
+$c-testimonials-slide: rem(740);
+
+.c-testimonials.has-multiple {
+    position: relative;
+}
+
+.c-testimonials.has-multiple .c-testimonials__viewport {
+    display: block;
+    position: relative; // anchor the edge-fade overlay
+    // Break out to the section content box on BOTH sides so a slide is visible
+    // in either gutter — the incoming one peeking right, the outgoing one
+    // sliding off left — rather than clipping at the response edge.
+    width: 100cqi;
+    margin-inline: calc((100% - 100cqi) / 2);
+    overflow: hidden; // the track slides behind this window; peeks show in the gutters
+    // The current slide width (mirrors the card flex-basis) — the edge-fade keys its
+    // geometry off this so the fade always lands exactly on the gutter.
+    --slide: min(#{$c-testimonials-slide}, 100cqi);
+    @include mq(from, xl) {
+        --slide: min(#{$c-testimonials-wide}, 100cqi);
+    }
+}
+
+// Fade the peeking slides out at both edges. A STATIC overlay, not a `mask` (see the
+// same fix in _clients.scss): a mask over the sliding track re-rasterises every frame
+// and, in Safari at a fractional page offset, snaps by a sub-pixel. The overlay never
+// moves. The fade spans EXACTLY the gutter on each side (not a fixed %, which
+// under-covered the peek once the gutter grew past 20% — just below xl, and on very
+// wide screens): slab colour at the screen edge → transparent at the active card's
+// edge. With no gutter (mobile: slide fills the viewport) it collapses to nothing.
+.c-testimonials.has-multiple .c-testimonials__viewport::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2; // above the track (promoted via will-change)
+    pointer-events: none;
+    // Band colour is a custom property so the slab underneath can set it — the
+    // default is the olive .c-jonson slab; .c-content overrides it to cream. Same
+    // approach as --c-clients-band on the logo strip.
+    //
+    // The mid stops fade to the band at ZERO ALPHA, never to `transparent`: that
+    // keyword is rgba(0,0,0,0), so interpolating into it passes through
+    // semi-transparent black and leaves a grey fringe over the peeking slides.
+    --band: #{getmap($colour, primary, 500)};
+    --band-0: #{rgba(getmap($colour, primary, 500), 0)};
+    --gutter: max(0px, calc((100cqi - var(--slide)) / 2));
+    background: linear-gradient(
+        to right,
+        var(--band) 0,
+        var(--band-0) var(--gutter),
+        var(--band-0) calc(100% - var(--gutter)),
+        var(--band) 100%
+    );
+}
+
+.c-testimonials.has-multiple .c-testimonials__track {
+    display: flex;
+    gap: 0;
+    // Offset the first slide back to the response measure (the left gutter width),
+    // so it sits exactly where a single testimonial would while the viewport
+    // still extends left for the outgoing slide to slide into.
+    padding-left: calc((100cqi - min(#{$c-testimonials-slide}, 100cqi)) / 2);
+    // From xl the slide widens to the content-reveal width (see the card rule
+    // below), so recompute the centring offset to match.
+    @include mq(from, xl) {
+        padding-left: calc((100cqi - min(#{$c-testimonials-wide}, 100cqi)) / 2);
+    }
+    // Slid by translateX (set in JS); this animates the move.
+    transition: transform 460ms cubic-bezier(0.16, 1, 0.3, 1);
+    // NO permanent `will-change` here. It reserves a GPU layer for the life of the
+    // page even though the track is stationary almost all of that time — the cost
+    // _method.scss:141 warns about. testimonials.js sets it just before each move and
+    // drops it on transitionend, which is the only window where the hint does anything.
+}
+
+.c-testimonials.has-multiple .c-testimonial {
+    // Each slide is the response measure — the first sits exactly where a single
+    // testimonial would; the rest line up to its right.
+    flex: 0 0 min(#{$c-testimonials-slide}, 100cqi);
+    margin: 0; // the track handles layout; no per-card breakout
+    // Slides stretch to the tallest card (flex row); bottom-align the cite so
+    // avatars line up across quotes of different length. Narrow = stacked column;
+    // wide keeps the two-column mark, with the quote row growing to the bottom.
+    display: flex;
+    flex-direction: column;
+
+    // Two-column slide grid from tablet (md); the widened width holds off until xl.
+    // Below md the slide is a single-column stack. The JS step distance is measured
+    // from the DOM, so it adapts when the width changes at xl.
+    @include mq(from, md) {
+        display: grid; // grid-template-columns comes from .c-testimonial's own md rule
+        grid-template-rows: 1fr auto;
+    }
+    @include mq(from, xl) {
+        flex-basis: min(#{$c-testimonials-wide}, 100cqi);
+    }
+
+    // Each slide's layout and paint are its own business — one card changing can't
+    // affect the size or appearance of another, so the browser can skip the rest of
+    // the track when it re-does either. `layout paint` only, NOT `content`/`strict`:
+    // those add `size`, which would make the slide stop reporting its natural height
+    // and collapse the flex row that stretches every card to the tallest quote.
+    contain: layout paint;
+
+    // Off-view slides sit slightly smaller; the active one scales up to full as
+    // it comes into place. Transform is visual only, so the track's slide math
+    // is unaffected.
+    transform: scale(0.85);
+    transform-origin: center center;
+    transition: transform 460ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    &.is-active {
+        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-testimonials.has-multiple .c-testimonials__track,
+    .c-testimonials.has-multiple .c-testimonial {
+        transition: none;
+    }
+}
+
+// Keep a minimum gap before the bottom-pinned cite, so the tallest slide (whose
+// quote fills the card) doesn't let its cite touch the text.
+.c-testimonials.has-multiple .c-testimonial__quote {
+    margin-bottom: getmap($space, rhythm, 600);
+}
+
+.c-testimonials.has-multiple .c-testimonial__cite {
+    margin-top: auto; // pin to the bottom in the stacked (narrow) layout
+}
+
+// Controls row — the dots indicator + cycle button, right-aligned to the
+// response measure below the slider.
+.c-testimonials__controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; // dots to the left, cycle button to the right
+    gap: getmap($space, rhythm, 400);
+    margin-top: getmap($space, rhythm, 400);
+}
+
+// Position dots — one per testimonial, active highlighted in the button red.
+.c-testimonials__dots {
+    display: flex;
+    align-items: center;
+    gap: rem(8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.c-testimonials__dot {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    border: 0;
+    cursor: pointer; // clickable — jumps to that testimonial
+    width: rem(16);
+    height: rem(16);
+    border-radius: 50%;
+    background-color: getmap($colour, light, 700);
+    opacity: 0.4;
+    transform: scale(0.8); // non-active dots sit smaller, mirroring the slides
+    transition:
+        opacity 200ms ease,
+        background-color 200ms ease,
+        transform 200ms ease;
+
+    &.is-active {
+        opacity: 1;
+        background-color: getmap($colour, primary, 600);
+        transform: scale(1);
+    }
+
+    &:hover:not(.is-active) {
+        opacity: 0.7;
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, light, 100);
+        outline-offset: rem(2);
+    }
+}
+
+// Prev + next buttons sit together at the right.
+.c-testimonials__nav {
+    display: flex;
+    align-items: center;
+    gap: rem(8);
+}
+
+// The slider is click/script-focusable (tabindex -1) so clicking anywhere on it
+// enables the arrow keys — but it's never in the tab order, and shows no focus
+// ring (the button carries the visible keyboard focus instead).
+.c-testimonials.has-multiple:focus {
+    outline: none;
+}
+
+// Cycle button — advances the slider (wired via delegation in jonson-ask.js).
+// Uses the same red + inset "pop" as .c-button.
+.c-testimonials__cycle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: rem(44);
+    height: rem(44);
+    border: 0;
+    border-radius: 50%;
+    background: getmap($colour, primary, 600);
+    color: getmap($colour, light, 100);
+    box-shadow: inset 0 rem(-3) 0 rgba(#000, 0.3); // raised "pop", like .c-button
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 200ms ease;
+
+    svg {
+        display: block;
+    }
+
+    &:hover {
+        transform: translateY(rem(-1));
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid currentColor;
+        outline-offset: rem(2);
+    }
+
+    // At the ends of the slider the button stays put but reads as inactive —
+    // dimmed, flat (no "pop"), no hover lift, and not clickable.
+    &:disabled {
+        opacity: 0.35;
+        box-shadow: none;
+        cursor: default;
+    }
+
+    &:disabled:hover {
+        transform: none;
+    }
+}
+
+// Same arrow SVG as .c-jonson__submit; flip it for "previous".
+.c-testimonials__cycle--prev svg {
+    transform: scaleX(-1);
+}
+
+.c-testimonial {
+    // The fill steps out each side by exactly the horizontal padding, so the
+    // text lands back on the prose measure — the quote stays aligned with the
+    // rest of the response while only the panel background breaks out.
+    margin-inline: calc(-1 * #{getmap($space, rhythm, 800)});
+    padding-block: getmap($space, rhythm, 800); // vertical breathing room in the block
+    padding-inline: getmap($space, rhythm, 800);
+    padding-right: getmap($space, rhythm, 900); // extra breathing room on the right
+    // Same darker-olive fill as the footer, so the block reads as a solid panel.
+    background-color: getmap($colour, light, 800);
+    border-radius: $b-radius-200; // rounded corners, matching the rail's card
+
+    // From tablet (md): the mark gets its own left column, with the quote + cite
+    // stacked on the right — a two-column pull-quote. Mobile stays stacked (the
+    // mark's ::before sits above the text in normal flow).
+    @include mq(from, md) {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: getmap($space, rhythm, 800);
+        align-items: start;
+    }
+}
+
+// An oversized opening quote mark as a gold flourish. Stacked above the text on
+// narrow (tucked up close); on wide it moves into its own column, spanning the
+// quote + cite.
+.c-testimonial::before {
+    content: '\201C';
+    display: block;
+    font-family: Arial, sans-serif; // classic rounded quote glyph, not the display face
+    // Stacked above the text on mobile — kept modest so its tall line-box doesn't
+    // open a big gap before the quote. The full 276px flourish is restored from
+    // tablet (md), where the mark sits in its own column beside the text.
+    font-size: rem(150);
+    line-height: 0.6;
+    margin-bottom: rem(-30); // tuck the content up close under the mark
+    color: #e0b244; // gold flourish
+
+    @include mq(from, md) {
+        font-size: rem(276);
+        grid-column: 1;
+        grid-row: 1 / -1; // stand alone alongside both the quote and the cite
+        align-self: start;
+        margin-bottom: 0; // no stacked tuck needed in its own column
+        // The glyph overflows its short line-box upward; drop it so its top
+        // lines up with the top of the quote's first line.
+        transform: translateY(rem(33));
+    }
+}
+
+.c-testimonial__quote {
+    @include typography(p);
+    margin: 0;
+    font-family: $g-font-primary; // JonSonSans Light — a softer voice than the mono prose
+    font-weight: 500; // the Light face of Baikal Expanded
+    font-style: normal;
+    color: getmap($colour, light, 100); // brighter than prose — it stands forward
+
+    @include mq(from, md) {
+        grid-column: 2;
+    }
+
+    // The blockquote is rich text (<p>…</p>). Let the paragraphs take the
+    // blockquote's own voice, overriding the mono .c-jonson__response p styling.
+    p {
+        margin: 0;
+        font: inherit; // JonSonSans Light + size/line-height from the blockquote
+        color: inherit; // light-100, not the dim response prose colour
+    }
+
+    p + p {
+        margin-top: rem(20); // space between multi-paragraph quotes
+    }
+}
+
+// ── On the light template ───────────────────────────────────────────────────
+// The panel is built for the olive conversation slab: dark-olive fill, near-white
+// quote. On the cream content slab (.c-content — the caseStudy and contact singles)
+// it takes a slightly darker cream than the slab it sits on, and the text flips to
+// the h1's navy so the whole panel reads in one voice.
+//
+// Scoped to .c-content rather than a modifier class: the component is included from
+// several places and the surrounding slab is what decides this, not the caller.
+.c-content {
+    // l650 — the same token as the cream ask-bar footer, so the two blocks on this
+    // page read as one family. Shared deliberately: move one and you move both.
+    .c-testimonial {
+        background-color: getmap($colour, light, 650); // a step down from the l600 slab
+    }
+
+    // Near-white on cream is unreadable, so the fill and the text have to move
+    // together — never change one of these without the other.
+    .c-testimonial__quote,
+    .c-testimonial__quote p {
+        color: getmap($colour, primary, 700); // logo navy — same as .c-content__title
+    }
+
+    // Attribution takes the same navy. It stays quieter than the quote through weight
+    // and size, not colour.
+    .c-testimonial__name,
+    .c-testimonial__role {
+        color: getmap($colour, primary, 700);
+    }
+
+    // The slider's edge fade has to match the slab it sits on, or the gutters read
+    // as two olive bands down a cream page.
+    .c-testimonials.has-multiple .c-testimonials__viewport::after {
+        --band: #{getmap($colour, light, 600)};
+        --band-0: #{rgba(getmap($colour, light, 600), 0)};
+    }
+
+    // Dots sit below the panel, on the cream slab. Cream at 0.4 by default, which is
+    // near-invisible there — navy at low alpha instead, so they read as available
+    // without competing with the red active dot.
+    .c-testimonials__dot:not(.is-active) {
+        background-color: getmap($colour, primary, 700);
+        opacity: 0.25;
+    }
+
+    // The controls belong to the CARD, not to the box the slider measures against.
+    // Out here .c-content__quotes has to be the full content width — that's what lets
+    // the slider break out past the card so the next quote can peek — so a controls
+    // row at 100% flings the dots to the page's left edge and the arrows to its right,
+    // with the quote centred between them. Restate the card's own width expression so
+    // the row lands under the quote instead.
+    .c-testimonials.has-multiple .c-testimonials__controls {
+        width: min(#{$c-testimonials-slide}, 100cqi);
+        margin-inline: auto;
+
+        @include mq(from, xl) {
+            width: min(#{$c-testimonials-wide}, 100cqi);
+        }
+    }
+}
+
+.c-testimonial__cite {
+    display: flex;
+    align-items: center;
+    gap: getmap($space, rhythm, 400); // between the avatar and the attribution
+    margin-top: getmap($space, rhythm, 600); // gap above the attribution
+
+    @include mq(from, md) {
+        grid-column: 2;
+    }
+}
+
+// Fixed 60px round avatar, rendered from a 120px (2×) crop — retina-first.
+.c-testimonial__avatar {
+    flex: none;
+    display: block;
+    width: rem(60);
+    height: rem(60);
+    border-radius: 50%;
+    object-fit: cover; // safety net; the transform already crops square
+}
+
+.c-testimonial__attribution {
+    display: block; // name then role stack (role goes to its own line below)
+}
+
+.c-testimonial__name {
+    @include typography(p-sm);
+    font-weight: 600;
+    color: getmap($colour, light, 700); // match the role
+}
+
+.c-testimonial__role {
+    @include typography(p-sm);
+    color: getmap($colour, light, 700);
+
+    // Sits on its own line under the name.
+    .c-testimonial__name + & {
+        display: block;
+    }
+}

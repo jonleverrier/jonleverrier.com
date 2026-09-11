@@ -1,0 +1,43 @@
+<header class="b-header">
+    <div class="b-wrap">
+        <div class="b-header__inner">
+            <div class="b-header__items">
+                <div class="b-header__item">
+                    {% include '_includes/page/logo.twig' %}
+                </div>
+                <div class="b-header__item">
+                    {# Its own class rather than styling .c-button through the header:
+                       the rule that hides this on a phone (see _header.scss) would
+                       otherwise catch any button added to the bar later. #}
+                    {% include '_components/button.twig' with {
+                        label:   'Contact',
+                        href:    '/contact',
+                        size:    'sm',
+                        classes: 'b-header__contact',
+                    } only %}
+                    {# ONE icon whose three bars fold into the cross — not two glyphs
+                       swapped over. The bars have to be separate <path>s for that: a
+                       single two-subpath `d` can be shown or hidden but its halves
+                       can't be moved independently, which is what a fold is. #}
+                    <button
+                        type="button"
+                        class="b-header__burger"
+                        data-nav-toggle
+                        aria-expanded="false"
+                        aria-label="Menu"
+                    >
+                        {# A WIDE box — 28x20 rather than a square 24 — so the bars run
+                           the width of the button rather than sitting in a square well
+                           inside it. Rotated 45deg the arms reach 1.5–18.5 vertically,
+                           so the cross still clears the box and nothing is clipped. #}
+                        <svg class="b-header__burger-icon" viewBox="0 0 28 20" width="27" height="19" aria-hidden="true" focusable="false">
+                            <path class="b-header__burger-bar b-header__burger-bar--top" d="M2 4h24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                            <path class="b-header__burger-bar b-header__burger-bar--mid" d="M2 10h24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                            <path class="b-header__burger-bar b-header__burger-bar--bot" d="M2 16h24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

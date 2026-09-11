@@ -1,0 +1,40 @@
+columnSuffix: null
+handle: prompts
+instructions: null
+name: Prompts
+searchable: false
+settings:
+  addRowLabel: 'Add a prompt'
+  columns:
+    __assoc__:
+      -
+        - col1
+        -
+          __assoc__:
+            -
+              - heading
+              - Prompt
+            -
+              - handle
+              - prompt
+            -
+              - width
+              - '100'
+            -
+              - type
+              - singleline
+  defaults:
+    -
+      __assoc__:
+        -
+          - col1
+          - ''
+        -
+          - rowId
+          - c0e38a69-bd08-4bc4-a89c-f46058d9d546
+  maxRows: null
+  minRows: null
+  staticRows: false
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Table

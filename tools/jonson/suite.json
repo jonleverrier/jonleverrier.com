@@ -1,0 +1,427 @@
+{
+  "_": [
+    "The Jonson surfacing suite. One entry per scenario; a scenario is one or more turns in",
+    "ONE fresh conversation (same cid and cookie jar, continuation=1 from the second turn).",
+    "Each turn names the surfaces it EXPECTS (must appear) and FORBIDS (must not appear).",
+    "Surfaces are the SSE event names the ask endpoint emits: context (the photo rail),",
+    "casestudies, clients, sectors, method, testimonial, contact, music, suggestions.",
+    "Expectations are PRODUCT intent — what the answer should carry — never a description of",
+    "how the current code behaves. A surface not listed either way is a don't-care.",
+    "Run: node tools/jonson/run.mjs [runs=6] [concurrency=4] [filter]",
+    "`singleTestimonial` on a scenario: any testimonial panel shown in it must carry exactly one quote (no `has-multiple`).",
+    "`maxStudies: N` on a turn: the casestudies panel, if shown, carries at most N cards.",
+    "`maxWords: N` on a turn: the answer's prose (markers stripped) is at most N words — a card on screen means a lead-in, not an essay."
+  ],
+  "scenarios": [
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "expect": [
+            "context",
+            "suggestions"
+          ],
+          "forbid": [
+            "clients",
+            "sectors",
+            "method",
+            "casestudies",
+            "music",
+            "testimonial",
+            "contact"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "expect": [
+            "context"
+          ],
+          "forbid": [
+            "clients",
+            "sectors",
+            "method",
+            "casestudies",
+            "music",
+            "contact"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "based",
+      "turns": [
+        {
+          "q": "Where are you based?",
+          "expect": [
+            "context"
+          ],
+          "forbid": [
+            "clients",
+            "sectors",
+            "method",
+            "casestudies",
+            "music",
+            "contact"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jersey",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "expect": [
+            "context"
+          ],
+          "forbid": [
+            "clients",
+            "sectors",
+            "method",
+            "casestudies"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "camera",
+      "turns": [
+        {
+          "q": "What camera do you shoot with?",
+          "expect": [
+            "context"
+          ],
+          "forbid": [
+            "clients",
+            "sectors",
+            "method",
+            "casestudies",
+            "contact"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "japan-decoy",
+      "turns": [
+        {
+          "q": "Do you like Japan?",
+          "expect": [],
+          "forbid": [
+            "context",
+            "clients",
+            "sectors",
+            "method",
+            "casestudies"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "logos",
+      "turns": [
+        {
+          "q": "Show other logos you have designed?",
+          "expect": [
+            "casestudies"
+          ],
+          "forbid": [
+            "context"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "named-study",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "expect": [
+            "casestudies"
+          ],
+          "forbid": [
+            "context"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "named-client",
+      "turns": [
+        {
+          "q": "Have you worked for Vaiie?",
+          "expect": [
+            "casestudies"
+          ],
+          "forbid": [
+            "context"
+          ],
+          "maxWords": 70
+        }
+      ]
+    },
+    {
+      "id": "fintech",
+      "turns": [
+        {
+          "q": "Do you have any experience in fintech?",
+          "expect": [],
+          "forbid": [
+            "context"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "projects",
+      "turns": [
+        {
+          "q": "What kinds of projects have you done?",
+          "expect": [],
+          "forbid": [
+            "context"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clients",
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "expect": [
+            "clients"
+          ],
+          "forbid": [
+            "context",
+            "method"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sectors",
+      "turns": [
+        {
+          "q": "Which sectors have you worked in?",
+          "expect": [
+            "sectors"
+          ],
+          "forbid": [
+            "context",
+            "method"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "testimonial",
+      "turns": [
+        {
+          "q": "What do your clients say about working with you?",
+          "expect": [
+            "testimonial"
+          ],
+          "forbid": [
+            "context"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "process",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "expect": [
+            "method"
+          ],
+          "forbid": [
+            "context",
+            "clients"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "start-decoy",
+      "turns": [
+        {
+          "q": "How do we start working together?",
+          "expect": [
+            "contact"
+          ],
+          "forbid": [
+            "method",
+            "context"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "expect": [],
+          "forbid": [
+            "contact",
+            "context"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "music",
+      "turns": [
+        {
+          "q": "What music do you like?",
+          "expect": [
+            "music"
+          ],
+          "forbid": [
+            "context",
+            "clients",
+            "sectors",
+            "method",
+            "casestudies"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "music-while-work",
+      "turns": [
+        {
+          "q": "Do you listen to music while you work?",
+          "expect": [
+            "music"
+          ],
+          "forbid": [
+            "clients",
+            "sectors",
+            "method",
+            "casestudies"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rail-repeat",
+      "turns": [
+        {
+          "q": "Have you spent much time in Jersey?",
+          "expect": [
+            "context"
+          ],
+          "forbid": [
+            "clients",
+            "sectors",
+            "method",
+            "casestudies"
+          ]
+        },
+        {
+          "q": "Tell me more about Jersey",
+          "expect": [],
+          "forbid": [
+            "clients",
+            "sectors",
+            "method",
+            "casestudies"
+          ],
+          "noRepeatPhotos": true
+        }
+      ]
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "expect": [
+            "context"
+          ],
+          "forbid": [
+            "music"
+          ]
+        },
+        {
+          "q": "What music do you like?",
+          "expect": [
+            "music"
+          ],
+          "forbid": []
+        }
+      ]
+    },
+    {
+      "id": "signoff",
+      "turns": [
+        {
+          "q": "What is your process?",
+          "expect": [
+            "method"
+          ],
+          "forbid": []
+        },
+        {
+          "q": "Thanks, that's all I needed.",
+          "expect": [],
+          "forbid": [
+            "suggestions",
+            "method",
+            "context",
+            "clients",
+            "sectors",
+            "casestudies"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "testimonial-follow-up",
+      "singleTestimonial": true,
+      "turns": [
+        {
+          "q": "What did you do for White Paper?",
+          "expect": [
+            "casestudies"
+          ],
+          "forbid": [
+            "context"
+          ]
+        },
+        {
+          "q": "What results did the booking engine deliver?",
+          "expect": [],
+          "forbid": [
+            "context"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "expect": [
+            "casestudies"
+          ],
+          "forbid": [
+            "context"
+          ],
+          "maxStudies": 1,
+          "maxWords": 60
+        }
+      ]
+    }
+  ]
+}

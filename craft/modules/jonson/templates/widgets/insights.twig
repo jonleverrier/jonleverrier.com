@@ -1,0 +1,336 @@
+{#
+  Jonson dashboard widget. Every figure comes from services\Analytics; there is no
+  logic in here beyond formatting.
+
+  Styles are scoped and inline rather than in the site's build: the CP has its own
+  asset pipeline, and a widget is not worth adding a second entry point for. They are
+  written against Craft's own CSS custom properties so the widget follows the CP's
+  light/dark theme instead of pinning colours of its own.
+#}
+<style>
+    .jonson-w { --jw-gap: 18px; font-size: 13px; }
+    /* Inline with the number it belongs to, nudged off the baseline so it reads as a
+       status light beside the figure rather than a bullet in front of it. */
+    /* No margin or vertical nudge any more: the dot lived inline beside a 22px figure
+       when this was a stat box, and both were compensating for that. It sits in a flex
+       row now, so the row's own gap and centring place it.
+
+       A lighter green than --success-color (#27ab83), which is tuned for text and reads
+       as bottle-green at 8px — a live indicator wants to look lit, not painted on.
+       Stated rather than tokenised because it is the only place in the widget that
+       needs this weight of green; the accent elsewhere stays --enabled-color. */
+    .jonson-w__dot {
+        position: relative;
+        width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto;
+        background: #3ddc91;
+    }
+    .jonson-w__dot--idle { background: var(--medium-text-color, #9aa5b1); }
+
+    /* The pulse: a ring of the same colour expanding out and fading. On a separate
+       ::after so the dot itself stays solid — scaling the dot would make the count
+       beside it appear to breathe. */
+    .jonson-w__dot:not(.jonson-w__dot--idle)::after {
+        content: ''; position: absolute; inset: 0;
+        border-radius: 50%; background: inherit;
+        animation: jonson-w-pulse 2.2s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+    }
+    @keyframes jonson-w-pulse {
+        0% { transform: scale(1); opacity: 0.55; }
+        /* Fades out well before full size, so it reads as a ripple rather than a
+           hard-edged disc snapping off. */
+        70% { opacity: 0; }
+        100% { transform: scale(3); opacity: 0; }
+    }
+    /* Idle never pulses — nothing is happening, and a blinking nought is a lie. */
+    @media (prefers-reduced-motion: reduce) {
+        .jonson-w__dot::after { animation: none; }
+    }
+    .jonson-w__stats {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+        /* Tighter than the section gap now the boxes have their own edges: the border
+           is doing the separating, so the whitespace no longer has to. */
+        gap: 10px; margin-bottom: var(--jw-gap);
+    }
+    /* Each stat in its own box. Uses the CP's own panel tokens rather than a colour of
+       its own, so the boxes follow the control panel's light/dark theme. */
+    .jonson-w__stat {
+        padding: 12px 14px; border-radius: 5px;
+        border: 1px solid var(--hairline-color, #d8dde3);
+        background: var(--gray-050, rgba(0, 0, 0, 0.035));
+    }
+    .jonson-w__n { font-size: 22px; font-weight: 600; line-height: 1.1; margin-bottom: 4px; }
+    /* Uppercased in CSS, not in the markup: the source stays readable and a screen
+       reader still gets ordinary sentence case rather than spelling out initials. Same
+       treatment as the column headings below, so the two tiers match. */
+    .jonson-w__label {
+        color: var(--medium-text-color, #606d7b); font-size: 11px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .jonson-w__spark { display: flex; align-items: flex-end; gap: 2px; height: 34px; margin-bottom: var(--jw-gap); }
+    .jonson-w__spark i {
+        flex: 1 1 0; background: var(--enabled-color, #27ab83); opacity: 0.75;
+        min-height: 1px; border-radius: 1px;
+    }
+    .jonson-w__warn {
+        padding: 8px 10px; border-radius: 4px; margin-bottom: var(--jw-gap);
+        background: var(--error-color, #cf1124); color: #fff;
+    }
+    .jonson-w__cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--jw-gap); }
+    /* Both small-caps tiers carry the same weight — the stat labels and the column
+       titles are one system, and bolding only half of it would read as an accident.
+       At 11px uppercase, 600 is what makes the letterforms hold together rather than
+       thinning out under the tracking. */
+    .jonson-w__h {
+        font-size: 11px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--medium-text-color, #606d7b); margin-bottom: 8px;
+    }
+    .jonson-w__row { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; }
+    /* Zebra, on the two long lists only. It replaces the per-chip rate bar, which was a
+       5px band under every suggestion and read as a heavy divider rather than a chart.
+       The rate it carried survives on each row's tooltip.
+
+       nth-child(2n) rather than a wrapper element: the heading is always the first
+       child of these columns, so every row lands on a predictable parity without
+       restructuring the markup. The Journey column is excluded because it has two
+       headings, which would break that counting — and it is short enough not to need
+       striping anyway. */
+    .jonson-w__col--zebra .jonson-w__row { padding: 5px 8px; border-radius: 3px; }
+    .jonson-w__col--zebra .jonson-w__row:nth-child(2n) { background: var(--gray-050, rgba(0, 0, 0, 0.035)); }
+    /* Left-aligned. The min-width still holds the column, so the question text lines up
+       whatever the count is — only the number's own position moves. Applies to all four
+       lists, not just the two: they sit side by side in one row, and two columns of
+       right-aligned figures next to two of left-aligned would read as a mistake. */
+    .jonson-w__count { color: var(--medium-text-color, #606d7b); min-width: 2.2em; text-align: left; flex: 0 0 auto; }
+    .jonson-w__txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* The taken-count marker on a suggestion nobody has pressed. Green, the widget's
+       own accent — the same one the live dot and the sparkline use — rather than the
+       error red it started as. Red made an ordinary "not yet" read as a fault, which
+       is wrong on a young dataset where every chip legitimately sits at nought.
+
+       Renamed off `__dead` with it: a class called dead painted green is the sort of
+       thing that misleads whoever reads this next. */
+    .jonson-w__nil { color: var(--enabled-color, #27ab83); }
+    .jonson-w__foot {
+        margin-top: var(--jw-gap); padding-top: 10px;
+        border-top: 1px solid var(--hairline-color, #d8dde3);
+        color: var(--medium-text-color, #606d7b); font-size: 11px;
+    }
+    .jonson-w__empty { color: var(--medium-text-color, #606d7b); padding: 4px 0; }
+
+    /* Proper tabs: a rule the row sits ON, with the active tab's underline breaking it.
+       They were pills before — rounded, filled, floating clear of the content — which
+       reads as a button group, not as a set of views onto the same panel. The rule is
+       what does the work: it ties the strip to the panel beneath it. */
+    .jonson-w__tabs {
+        display: flex; gap: 2px; margin-bottom: var(--jw-gap);
+        border-bottom: 1px solid var(--hairline-color, #d8dde3);
+        /* The live count is pushed to the far end by its own auto margin, so the tabs
+           keep their natural widths at the left however many there are. */
+        align-items: center;
+    }
+    .jonson-w__live {
+        margin-left: auto; padding: 0 4px 7px;
+        display: flex; align-items: center; gap: 7px;
+    }
+    .jonson-w__tab {
+        appearance: none; cursor: pointer;
+        padding: 7px 14px; background: none;
+        /* Boxed on three sides, rounded at the top — the folder shape. Inactive tabs
+           keep a TRANSPARENT border rather than none, so nothing shifts by a pixel when
+           one becomes active. */
+        border: 1px solid transparent;
+        border-radius: 4px 4px 0 0;
+        /* Sits the tab down onto the container's rule, which is what lets the active
+           one paint over it. */
+        margin-bottom: -1px;
+        font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--medium-text-color, #606d7b);
+        transition: color 120ms ease, background-color 120ms ease;
+    }
+    .jonson-w__tab:hover { color: var(--text-color, #3f4d5a); }
+    .jonson-w__tab:focus-visible { outline: 2px solid var(--enabled-color, #27ab83); outline-offset: -2px; }
+    /* THE ACTIVE TAB HAS NO BOTTOM EDGE. Its bottom border is painted in the pane's own
+       background, which sits over the container's hairline and erases the 14-or-so
+       pixels beneath this tab — so the tab opens into the panel instead of floating
+       above it. That gap IS the effect; --pane-bg is the CP's own widget-body token, so
+       it stays right whatever the control panel is themed to. */
+    .jonson-w__tab.is-on {
+        color: var(--text-color, #3f4d5a);
+        border-color: var(--hairline-color, #d8dde3);
+        border-bottom-color: var(--pane-bg, #fff);
+        background: var(--pane-bg, #fff);
+    }
+
+    /* The VIP table. A real <table>, so one set of column widths applies to the
+       head and every body row — the thing a stack of per-row grids could never do. */
+    .jonson-w__table {
+        width: 100%; border-collapse: collapse;
+        margin-bottom: var(--jw-gap);
+    }
+    .jonson-w__table th,
+    .jonson-w__table td { padding: 5px 8px; }
+    /* Name takes the slack and is the only cell that can truncate — it is the one piece
+       of content with no upper bound. Dates, counts and headings are short and known. */
+    .jonson-w__table th:first-child,
+    .jonson-w__table td:first-child {
+        width: 100%; text-align: left;
+        max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    /* Everything else hugs the right, heading and value together, so each column reads
+       as one block — and the right edges line the numbers up on their units. */
+    .jonson-w__table th,
+    .jonson-w__table td { text-align: right; white-space: nowrap; }
+    .jonson-w__table th {
+        font-size: 11px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--medium-text-color, #606d7b);
+        /* The stat boxes' own surface — same token, same hairline — so the head reads
+           as part of the widget's furniture rather than as a third kind of panel.
+           BORDERED TOP AND BOTTOM, which is what keeps it distinct: it shares a tone
+           with the zebra stripe, so without the rules it would be indistinguishable
+           from a striped body row. The lines do the separating, not the colour. */
+        background: var(--gray-050, rgba(0, 0, 0, 0.035));
+        border-top: 1px solid var(--hairline-color, #d8dde3);
+        border-bottom: 1px solid var(--hairline-color, #d8dde3);
+        padding-top: 7px; padding-bottom: 7px;
+    }
+    /* Rounded at the outer corners only, matching the stat boxes' radius, so the head
+       caps the table rather than banding across it. */
+    .jonson-w__table th:first-child { border-radius: 5px 0 0 0; }
+    .jonson-w__table th:last-child { border-radius: 0 5px 0 0; }
+    /* Striped from a class, not nth-child — see the template: each VIP owns two rows. */
+    .jonson-w__table tbody tr.is-alt { background: var(--gray-050, rgba(0, 0, 0, 0.035)); }
+
+    /* The name, as a disclosure. Styled as text rather than a button so the table still
+       reads as a table; the caret is the only thing announcing it opens. */
+    .jonson-w__vip {
+        appearance: none; border: 0; background: none; padding: 0;
+        font: inherit; color: inherit; cursor: pointer; text-align: left;
+    }
+    /* Underline, not a colour change. Green is the widget's accent and it means
+       something here — the live dot, a suggestion nobody has taken — so spending it on
+       an ordinary hover dilutes it. An underline says "this does something" without
+       competing. */
+    .jonson-w__vip:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .jonson-w__caret {
+        display: inline-block; margin-right: 6px;
+        color: var(--medium-text-color, #606d7b);
+        transition: transform 120ms ease;
+    }
+    .jonson-w__vip[aria-expanded="true"] .jonson-w__caret { transform: rotate(90deg); }
+    /* The question cell: indented under the name that owns it, and allowed to WRAP.
+       The name column truncates by design — a VIP title has no natural length — but a
+       question ellipsised at the column edge would lose the half that matters, and
+       reading them is the entire reason this row opens. */
+    .jonson-w__detail td:first-child {
+        /* Less indent than before — the branch glyph now carries it, and doubling up
+           pushed the questions away from the name they belong to. Lines up under the
+           caret on the row above. */
+        padding-left: 10px; white-space: normal; text-overflow: clip;
+        color: var(--medium-text-color, #606d7b);
+    }
+    .jonson-w__branch {
+        /* Fixed width so every connector sits on the same vertical line whatever the
+           question beside it. */
+        display: inline-block; width: 16px;
+        /* The hairline colour was too faint to read as structure — at 11px a box-drawing
+           glyph in a border tone all but disappears. This is the same muted grey the
+           rest of the secondary text uses, so the tree is legible without competing
+           with the questions themselves. */
+        color: var(--medium-text-color, #606d7b);
+        font-size: 14px; line-height: 1;
+    }
+    .jonson-w__detail td { color: var(--medium-text-color, #606d7b); }
+    .jonson-w__tag {
+        font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+        padding: 1px 5px; border-radius: 3px;
+        background: var(--gray-100, rgba(0, 0, 0, 0.07));
+        color: var(--medium-text-color, #606d7b);
+    }
+</style>
+
+{# TABS. VIP conversations are a different population — hand-picked visitor, primed
+   persona, longer chats, bigger prompts — so averaging them into cold traffic quietly
+   distorts most asked, chat → lead and tokens per chat. Splitting them is the point of
+   these; "All" stays the default because it is the site's actual total.
+
+   All three panels are rendered up front and toggled in the browser rather than
+   fetched: the queries behind them are small, and a tab that swaps instantly beats one
+   that spins. #}
+<div class="jonson-w">
+    {# LIVE VISITORS sits on the tab row, not inside a panel, because it is the one
+       figure here that the tabs do NOT filter: presence is a count of who is on the
+       site in the last five minutes, and the presence table carries no VIP flag. Held
+       in all three panels it repeated the same number three times and implied it had
+       been segmented. Out here it is plainly global — and it is the only thing in the
+       widget about right now rather than about the period in the subtitle. #}
+    <div class="jonson-w__tabs" role="tablist">
+        {% for key, label in {all: 'All', general: 'General', vips: 'VIPs'} %}
+            <button
+                type="button"
+                role="tab"
+                class="jonson-w__tab {{ loop.first ? 'is-on' }}"
+                aria-selected="{{ loop.first ? 'true' : 'false' }}"
+                data-jonson-tab="{{ key }}"
+            >{{ label }}</button>
+        {% endfor %}
+
+        {% set liveTitle = presence.inChat
+            ? presence.inChat ~ ' mid-conversation' ~ (presence.pages|length ? ' · ' ~ presence.pages|keys|join(', ') : '')
+            : (presence.pages|length ? presence.pages|keys|join(', ') : 'Nobody on the site in the last 5 minutes') %}
+        <div class="jonson-w__live" title="{{ liveTitle }}">
+            <span class="jonson-w__dot {{ presence.now == 0 ? 'jonson-w__dot--idle' }}"></span>
+            <strong>{{ presence.now }}</strong>
+            <span class="jonson-w__label">live visitors</span>
+        </div>
+    </div>
+
+    {% for key, label in {all: 'All', general: 'General', vips: 'VIPs'} %}
+        <div class="jonson-w__panel" data-jonson-panel="{{ key }}" {{ loop.first ? '' : 'hidden' }}>
+            {# No `presence` — the live count moved out to the tab row above, and passing
+               a variable the panel no longer reads is just something to trip over later. #}
+            {% include 'jonson/widgets/_insights-panel.twig' with {
+                stats: segments[key],
+            } only %}
+        </div>
+    {% endfor %}
+
+    <script>
+        (() => {
+            // Scoped to this widget's own root so two copies on one dashboard don't fight.
+            // INSIDE the widget root, so closest() finds it directly. It sat after the
+            // closing tag before and had to fall back to previousElementSibling — which
+            // worked, but only while nothing was ever inserted between the two.
+            const root = document.currentScript.closest('.jonson-w');
+            if (!root) return;
+            root.addEventListener('click', (e) => {
+                // The VIP disclosure shares this one delegated handler with the tabs.
+                const vip = e.target.closest('[data-jonson-vip]');
+                if (vip) {
+                    const open = vip.getAttribute('aria-expanded') === 'true';
+                    vip.setAttribute('aria-expanded', open ? 'false' : 'true');
+                    // querySelectorAll: a VIP owns one detail row PER QUESTION now, not a
+                    // single row holding a list, so every matching row has to be toggled.
+                    root.querySelectorAll(`[data-jonson-vip-detail="${vip.dataset.jonsonVip}"]`)
+                        .forEach((row) => { row.hidden = open; });
+                    return;
+                }
+    
+                const tab = e.target.closest('[data-jonson-tab]');
+                if (!tab) return;
+                const want = tab.dataset.jonsonTab;
+                root.querySelectorAll('[data-jonson-tab]').forEach((t) => {
+                    const on = t === tab;
+                    t.classList.toggle('is-on', on);
+                    t.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                // `hidden` rather than a display class: the panels carry no display rule of
+                // their own, so there is nothing for an author style to have to beat.
+                root.querySelectorAll('[data-jonson-panel]').forEach((p) => {
+                    p.hidden = p.dataset.jonsonPanel !== want;
+                });
+            });
+        })();
+    </script>
+</div>

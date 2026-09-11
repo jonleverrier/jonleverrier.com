@@ -1,0 +1,40 @@
+columnSuffix: null
+handle: suggestions
+instructions: "Clear by pasting sessionStorage.removeItem('jonson-prompt-uses')"
+name: Suggestions
+searchable: false
+settings:
+  addRowLabel: 'Add a row'
+  columns:
+    __assoc__:
+      -
+        - col1
+        -
+          __assoc__:
+            -
+              - heading
+              - Suggestions
+            -
+              - handle
+              - suggestions
+            -
+              - width
+              - '100'
+            -
+              - type
+              - singleline
+  defaults:
+    -
+      __assoc__:
+        -
+          - col1
+          - ''
+        -
+          - rowId
+          - 38583722-1a6f-4edd-93ac-175a02934190
+  maxRows: null
+  minRows: null
+  staticRows: false
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Table

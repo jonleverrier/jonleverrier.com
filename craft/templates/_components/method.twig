@@ -1,0 +1,78 @@
+{#
+  "How I can help" — Jon's project journey as a horizontal, paged timeline at
+  process/offering moments (the [[method]] marker). Each phase is the response
+  measure with its numbered node pinned to its own left edge; a line runs
+  through the nodes and "travels" (fills) up to the active one. The viewport
+  breaks out to the full container so the next phases peek in the right gutter
+  and the outgoing one slides off left — the linear order stays visible as you
+  cycle (nodes off-screen travel with their phase). Paged with the nodes or the
+  prev/next arrows.
+
+  Expects: method — a list of { title, summary, services: [name, …] }.
+           light  — true for the cream-slab version (About): no olive band, navy
+                    ink. Styled under .c-method--light in _method.scss.
+#}
+{% if method is defined and method %}
+    {% set multiple = method|length > 1 %}
+    <div class="c-method js-method{% if multiple %} has-multiple{% endif %}{% if light ?? false %} c-method--light{% endif %}"
+        role="group" aria-roledescription="carousel"
+        aria-label="How Jon can help — his project process"
+        {%- if multiple %} tabindex="-1"{% endif %}>
+        <div class="c-method__viewport">
+            <ol class="c-method__track">
+                <span class="c-method__line--fill" aria-hidden="true"></span>
+                {% for step in method %}
+                    <li class="c-method__phase{% if loop.first %} is-active{% endif %}"
+                        {%- if multiple and not loop.first %} aria-hidden="true"{% endif %}>
+                        {% if multiple %}
+                            <button type="button" class="c-method__node" data-index="{{ loop.index0 }}"
+                                aria-label="Show phase {{ loop.index }}: {{ step.title }}">
+                                <span class="c-method__num">{{ '%02d'|format(loop.index) }}</span>
+                            </button>
+                        {% else %}
+                            <span class="c-method__node">
+                                <span class="c-method__num">{{ '%02d'|format(loop.index) }}</span>
+                            </span>
+                        {% endif %}
+                        <h3 class="c-method__display">{{ step.title }}</h3>
+                        {% if step.summary %}
+                            <p class="c-method__summary">{{ step.summary }}</p>
+                        {% endif %}
+                        {% if step.services %}
+                            {# Colour palettes (styled in _method.scss) cycled from a random
+                               offset so the mix shuffles each render while adjacent tags always
+                               differ; plus a per-tag random hover pop — same as .c-sectors__tag. #}
+                            {% set palettes = ['a', 'e', 'f'] %}
+                            {% set offset = random(palettes|length - 1) %}
+                            <ul class="c-method__items">
+                                {% for service in step.services %}
+                                    {% set rot = random(-6, 6) %}
+                                    {% set lift = random(3, 9) %}
+                                    {% set scale = (106 + random(10)) / 100 %}
+                                    {% set dur = random(320, 480) %}
+                                    <li class="c-method__item c-method__item--{{ palettes[(loop.index0 + offset) % palettes|length] }}"
+                                        style="--tag-rot: {{ rot }}deg; --tag-lift: -{{ lift }}px; --tag-scale: {{ scale }}; --tag-dur: {{ dur }}ms">{{ service }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ol>
+        </div>
+
+        {% if multiple %}
+            <div class="c-method__nav">
+                <button type="button" class="c-method__cycle c-method__cycle--prev" aria-label="Previous phase" disabled>
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                        <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button type="button" class="c-method__cycle c-method__cycle--next" aria-label="Next phase" aria-keyshortcuts="ArrowLeft ArrowRight">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                        <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}

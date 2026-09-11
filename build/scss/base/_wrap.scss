@@ -1,0 +1,49 @@
+/**
+ * BASE: WRAP
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// the first .b-wrap after the body
+body > .b-wrap {
+    padding: getmap($space, rhythm, 500);
+    position: relative;
+    // The whole page stops at the design canvas, so nothing inside has to cap itself
+    // against a viewport that keeps growing. At 1728 a full-bleed case study image
+    // works out to ~1600 wide — the size the artwork is designed for, and the size a
+    // 3200px source covers at 2×. Uncapped, that slot reached 2435 on a 2560 monitor
+    // and no source was ever going to be retina at it.
+    //
+    // The same cap the inner .b-wrap already uses, so the two agree rather than the
+    // page having one width and its contents another. Past it, the slab centres and
+    // the page background shows either side — including under the full-bleed strips,
+    // which stop here too.
+    max-width: getmap($mq-breakpoints, xxl);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+
+    > * + * {
+        margin-top: getmap($space, rhythm, 500);
+    }
+}
+
+.b-wrap {
+    padding: 0 getmap($space, rhythm, 500);
+    max-width: getmap($mq-breakpoints, xxl);
+    margin: 0 auto;
+    @include mq(from, md) {
+        padding: 0 getmap($space, rhythm, 600);
+    }
+    @include mq(from, lg) {
+        padding: 0 getmap($space, rhythm, 800);
+    }
+    @include mq(from, xl) {
+        padding: 0 getmap($space, rhythm, 800);
+    }
+    @include mq(from, xxl) {
+        padding: 0 getmap($space, rhythm, 800);
+    }
+}

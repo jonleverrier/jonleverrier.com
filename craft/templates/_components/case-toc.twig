@@ -1,0 +1,110 @@
+{#
+  CASE STUDY SECTION STRIP — the second TOC.
+
+  A case study is mostly pictures, so the notes' "on this page" panel cannot work here:
+  it is a persistent column, and on a page of full-bleed imagery it sits ON the work.
+  This is the same job solved the other way round — a bar pinned to the top of the
+  window that appears once the reader is into the body, showing where they are and
+  and offering a way to move that does not occupy the page while unused:
+
+    title   a button; opens the full list ON DEMAND, so the list exists only while it
+            is being looked at and can never cover an image
+
+  ONE control, not three. There were prev/next steppers and an arrow-key shortcut too;
+  both went. The list is the thing that actually answers "take me to a section", and
+  three ways to do one job made a bar that reads as a toolbar rather than a label.
+
+  Plus an IMAGE MODE switch, which belongs here rather than anywhere else: it is a way
+  of reading this page, and this bar is where the page's reading controls live.
+
+    headings — [{ id, text }] from craft.frontend.headingAnchors (h2s only)
+
+  REAL ANCHORS underneath. The list is <a href="#id">, so without JavaScript the strip
+  is a plain list of working links; case-toc.js only adds the pinning, the current
+  marker and the mode switch.
+
+  Ships `hidden`. It is a scroll affordance, and one sitting there before anyone has
+  scrolled is just a bar across the top of a title page.
+#}
+{% if headings is defined and headings|length >= 2 %}
+    <div class="c-case-toc" data-case-toc hidden>
+        <div class="c-case-toc__bar">
+            {# TWO insets, because that is how many the logo sits behind: `body > .b-wrap`
+               pads the slab off the viewport, and the header's own .b-wrap pads the logo
+               off the slab. This strip is FIXED, so it is outside both and has to
+               reproduce them — the outer as .c-case-toc__page, the inner as the site's
+               real .b-wrap class, whose padding steps up at md and lg. Hardcoding one
+               number would line up at exactly one breakpoint. #}
+            <div class="c-case-toc__page">
+            <div class="b-wrap">
+            <div class="c-case-toc__inner">
+                {# The counter is what keeps the bar legible when the title truncates —
+                   on a phone a long h2 loses its end, and "2/3" is the part that still
+                   tells you where you are. #}
+                <span class="c-case-toc__count" data-case-toc-count>1/{{ headings|length }}</span>
+
+                <button
+                    type="button"
+                    class="c-case-toc__title"
+                    data-case-toc-toggle
+                    aria-expanded="false"
+                    aria-controls="case-toc-list"
+                >
+                    <span class="c-case-toc__label" data-case-toc-label>{{ headings|first.text }}</span>
+                    {# A RIGHT-pointing glyph, rotated to ▾ when open (see _case-toc.scss).
+                       Closed it points at what it will reveal; open it points down at the
+                       list it revealed — and one glyph turning says "this is the same
+                       thing, in its other state" where swapping ▸ for ▾ would not. #}
+                    <span class="c-case-toc__caret" aria-hidden="true">▸</span>
+                </button>
+
+                {# aria-pressed, not a checkbox: this is a toggle on the view, and a
+                   pressed button is how that is announced. #}
+                <button
+                    type="button"
+                    class="c-case-toc__mode"
+                    data-case-toc-mode
+                    aria-pressed="false"
+                    {# aria-label as well as the visible words, because that label is
+                       hidden on a narrow screen where the section title needs the room —
+                       without it the button would be announced as its icon, which is
+                       aria-hidden, i.e. as nothing at all.
+
+                       case-toc.js keeps the two IN STEP as the state changes. They have
+                       to say the same thing: an accessible name that differs from the
+                       visible text is the one thing a voice-control user cannot work
+                       with, since they say what they can see. #}
+                    aria-label="Image Mode: Off"
+                >
+                    <span class="c-case-toc__mode-label" data-case-toc-mode-label>Image Mode: Off</span>
+                </button>
+            </div>
+            </div>
+            </div>
+
+            {# Reading progress through the article. It costs one element and earns its
+               place twice over: it is the orientation that survives when the title is
+               cut short. #}
+            <div class="c-case-toc__progress" aria-hidden="true"><i data-case-toc-progress></i></div>
+        </div>
+
+        {# The list, closed. Only in the DOM as a panel — no fixed column, nothing over
+           the work — and it closes on pick, on Escape and on a click outside. #}
+        {# Same two insets as the bar above, so the list's numbers line up under the
+           counter rather than hanging off some other edge. The sheet's white background
+           stays full-bleed on the <ol>; only its contents are inset. #}
+        <ol class="c-case-toc__list" id="case-toc-list" data-case-toc-list hidden>
+            <div class="c-case-toc__page">
+            <div class="b-wrap">
+            {% for h in headings %}
+                <li class="c-case-toc__item">
+                    <a class="c-case-toc__link" href="#{{ h.id }}" data-case-toc-link>
+                        <span class="c-case-toc__n">{{ loop.index }}.</span>{{ h.text }}
+                    </a>
+                </li>
+            {% endfor %}
+            </div>
+            </div>
+        </ol>
+    </div>
+{% endif %}

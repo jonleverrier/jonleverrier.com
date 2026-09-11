@@ -1,0 +1,91 @@
+{# The Globals single, carrying both the strapline and the CTAs. Empty is a normal
+   state for either — the strapline block drops out rather than leaving a gap above
+   the columns, and the CTA row renders nothing without blocks. #}
+{% set globals = craft.entries().section('globals').one() %}
+{% set discussCtas = globals ? globals.ctas.all() : [] %}
+{% set strapline = globals ? (globals.strapline ?? '')|trim : '' %}
+<footer class="b-footer">
+    <div class="b-slab b-slab--p700">
+        <div class="b-footer__primary">
+            <div class="b-wrap">
+                <div class="b-footer__primary-cols">
+                    <div class="b-footer__primary-col">
+                        {% if strapline %}
+                            <p class="b-footer__strapline">{{ strapline }}</p>
+                        {% endif %}
+                        <h3 class="b-footer__whisper">Find me elsewhere</h3>
+                        {% include '_includes/page/social.twig' %}
+                    </div>
+                    <div class="b-footer__primary-col">
+                        <h3 class="b-footer__whisper">Quick Links</h3>
+                        <ul class="c-footer__items">
+                            {# Deliberately NOT data-wipe-thread: going to look at the
+                               work isn't starting over, and the visitor may well come
+                               back to the conversation — thread-memory restores it.
+                               Only the logo and the conversation's own back arrow wipe. #}
+                            {# The About single, only while it's live: the entry's
+                               enabled state is the switch, so turning it off in the
+                               CMS takes the link away rather than leaving one to a
+                               page that no longer exists. Queried rather than a
+                               hardcoded URL for the same reason. #}
+                            {% set about = craft.entries().section('about').status('live').one() %}
+                            {% if about %}
+                                <li class="c-footer__item">
+                                    <a class="c-footer__link" href="{{ about.url }}"><span>{{ about.title }}</span></a>
+                                </li>
+                            {% endif %}
+                            <li class="c-footer__item">
+                                <a class="c-footer__link" href="{{ siteUrl('case-studies') }}"><span>Case Studies</span></a>
+                            </li>
+                            {# The Notes index single, gated the same way: live, or
+                               no link. #}
+                            {% set notesIndex = craft.entries().section('note').status('live').one() %}
+                            {% if notesIndex %}
+                                <li class="c-footer__item">
+                                    <a class="c-footer__link" href="{{ notesIndex.url }}"><span>{{ notesIndex.title }}</span></a>
+                                </li>
+                            {% endif %}
+                            <li class="c-footer__item">
+                                <a class="c-footer__link" href="{{ siteUrl('contact') }}"><span>Contact</span></a>
+                            </li>
+                            {# The `pages` structure — AI Policy, Privacy Statement and
+                               whatever else gets added. In the section's own order, so
+                               dragging them in the CMS reorders them here.
+
+                               `status('live')` as everywhere else: disabled,
+                               future-dated and expired entries stay out. These were
+                               hardcoded with href="#" until the section existed. #}
+                            {% for page in craft.entries().section('pages').status('live').all() %}
+                                <li class="c-footer__item">
+                                    <a class="c-footer__link" href="{{ page.url }}"><span>{{ page.title }}</span></a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% if discussCtas %}
+                        <div class="b-footer__primary-col">
+                            <h3 class="b-footer__whisper">Discuss a project</h3>
+                            <ul class="c-footer__items">
+                                {% for cta in discussCtas %}
+                                    {% set href = cta.ctaUrl.url ?? null %}
+                                    {% if href %}
+                                        <li class="c-footer__item">
+                                            <a class="c-footer__link" href="{{ href }}"><span>{{ cta.title }}</span></a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="b-slab b-slab--l100">
+        <div class="b-footer__secondary">
+            <div class="b-wrap">
+                <p class="b-footer__copyright">Copyright &copy; 2003 - 2026 Jon Leverrier. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</footer>

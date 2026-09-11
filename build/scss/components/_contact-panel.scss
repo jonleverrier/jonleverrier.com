@@ -1,0 +1,276 @@
+/**
+ * COMPONENT: CONTACT PANEL
+ *
+ * The ways in, as a side panel over the page (_components/contact-panel). A native
+ * <dialog> opened with showModal(): the top layer, the backdrop, Escape and the
+ * inert page come with it; the slide is ours. From the right on a wide screen, up
+ * from the bottom as a sheet on a phone. One motion, no fade — the drawer's rule.
+ *
+ * Dressed as a content-page slab: the eggshell, the navy, the whisper's blue; the
+ * CTA card and the green form inside it are the contact page's own components.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$c-contact-panel-width: rem(560);
+$c-contact-panel-ease: cubic-bezier(0.16, 1, 0.3, 1);
+$c-contact-panel-slide: 420ms; // the enter
+$c-contact-panel-exit: 260ms; // the exit — softer, so a dismiss is the panel getting out of the way, not a second event (contact-panel.js waits this long before closing the dialog)
+
+.c-contact-panel {
+    // Reset the UA dialog box: it centres itself with auto margins and a border.
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(#{$c-contact-panel-width}, 100%);
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background-color: getmap($colour, light, 600); // the content slab's eggshell
+    color: getmap($colour, primary, 700);
+    overflow-y: auto;
+    overflow-x: hidden; // the form slides in from beyond the right edge
+    overscroll-behavior: contain;
+
+    // Off to the right at rest. `open` alone would show it mid-flight, so the
+    // slide waits for .is-open (added a frame after showModal by the script).
+    transform: translateX(100%);
+    transition: transform $c-contact-panel-exit $c-contact-panel-ease; // closing: the shorter one
+
+    // The page behind goes soft as well as dark: the backdrop blurs it, so the
+    // panel is the one sharp thing on screen. The blur rides on the backdrop's
+    // own fade, so it arrives and leaves with the tint.
+    &::backdrop {
+        background-color: rgba(12, 36, 60, 0.45); // the navy, held back a little now the blur carries some of the weight
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        opacity: 0;
+        transition: opacity 320ms ease;
+    }
+
+    &.is-open {
+        transform: none;
+        transition-duration: $c-contact-panel-slide; // opening: the full slide
+
+        &::backdrop {
+            opacity: 1;
+        }
+    }
+
+    // Phones: a sheet from the bottom, the page's own inset radius on its top edge.
+    @include mq(until, md) {
+        inset: auto 0 0 0;
+        width: 100%;
+        height: auto;
+        max-height: 92dvh;
+        // Concentric with the cards inside: their radius plus the sheet's inset.
+        border-radius: calc(#{$b-radius-200} + #{getmap($space, rhythm, 600)}) calc(#{$b-radius-200} + #{getmap($space, rhythm, 600)}) 0 0;
+        transform: translateY(100%);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+
+        &::backdrop {
+            transition: none;
+        }
+    }
+}
+
+.c-contact-panel__inner {
+    outline: none; // takes focus on a pointer open, invisibly (see contact-panel.js)
+    min-height: 100%; // the dialog's full height, so the brands strip's auto margin can push it to the foot
+    display: flex;
+    flex-direction: column;
+    gap: getmap($space, rhythm, 600);
+    padding: getmap($space, rhythm, 700) getmap($space, rhythm, 600);
+
+    @include mq(from, md) {
+        padding: getmap($space, rhythm, 800) getmap($space, rhythm, 700);
+    }
+}
+
+// The close: the light ask bar's home / back button, exactly (.c-jonson__home in
+// its --light dress): a 44px ring in the navy held back, and on hover the navy
+// ring spinning round a white fill with the icon in full navy.
+.c-contact-panel__close {
+    position: absolute;
+    top: getmap($space, rhythm, 500);
+    right: getmap($space, rhythm, 500);
+    width: rem(44);
+    height: rem(44);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    border: rem(3) solid rgba(22, 44, 65, 0.35);
+    color: rgba(22, 44, 65, 0.55);
+    cursor: pointer;
+    transition: border-color 220ms ease, color 220ms ease;
+
+    &:hover {
+        border-color: transparent;
+        color: getmap($colour, primary, 700);
+        background:
+            // The fill is the ground it sits on (the home button fills with its
+            // bar's cream): here the panel's eggshell, so only the ring shows.
+            linear-gradient(getmap($colour, light, 600), getmap($colour, light, 600)) padding-box,
+            conic-gradient(
+                from var(--c-chip-angle),
+                rgba(22, 44, 65, 0.12),
+                getmap($colour, primary, 700) 50%,
+                rgba(22, 44, 65, 0.12)
+            ) border-box;
+        animation: c-jonson-chip-spin 1.4s linear infinite;
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 700);
+        outline-offset: rem(2);
+    }
+
+    svg {
+        display: block;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &:hover {
+            animation: none; // no spin — a static navy stroke instead
+            border-color: getmap($colour, primary, 700);
+        }
+    }
+}
+
+.c-contact-panel__whisper {
+    @include typography(whisper);
+    margin: 0;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, primary, 450); // the content-page whisper blue
+}
+
+.c-contact-panel__title {
+    @include typography(h3);
+    margin: rem(-8) 0 0; // sits close under its whisper, as on the page
+    padding-right: rem(56); // clear of the close button
+    font-weight: 600;
+    text-wrap: balance;
+    color: getmap($colour, primary, 700);
+}
+
+// The CTA card and the form take the panel's width in turn.
+.c-contact-panel .c-ctas,
+.c-contact-panel .c-form {
+    width: 100%;
+}
+
+// The stage: one container, the two steps side by side inside it, each a full
+// panel width — and it's the CONTAINER that moves. It bleeds through the inner's
+// side padding to the panel's own edges (each step carries that padding
+// instead), so when it slides one step left the ways in leave at the panel's
+// edge and the form arrives from the panel's edge: one plane, clipped by the
+// panel and nothing else. Once settled, the departed step is hidden and the
+// shift undone in the same frame (the form is then first, exactly where the
+// shift had put it), so the stage's height is the form's alone.
+.c-contact-panel__steps {
+    display: flex;
+    align-items: flex-start;
+    margin-inline: calc(-1 * #{getmap($space, rhythm, 600)});
+    transition: transform 380ms $c-contact-panel-ease;
+
+    @include mq(from, md) {
+        margin-inline: calc(-1 * #{getmap($space, rhythm, 700)});
+    }
+
+    &.is-form {
+        transform: translateX(-100%);
+    }
+
+    // The settle: no transition while the shift is undone and the first step hidden.
+    &.is-settled {
+        transition: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
+}
+
+.c-contact-panel__step {
+    flex: 0 0 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: getmap($space, rhythm, 600);
+    padding-inline: getmap($space, rhythm, 600); // the inner's inset, carried by each step
+
+    @include mq(from, md) {
+        padding-inline: getmap($space, rhythm, 700);
+    }
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.c-contact-panel__write {
+    display: flex;
+}
+
+// The brands strip at the foot: pushed to the bottom when the panel has room to
+// spare, in flow beneath the steps when it doesn't — and flush with the panel's
+// bottom edge either way, bleeding through the inner's bottom padding. The strip's
+// own static dress (.c-clients--static) fades its ends into the eggshell it sits
+// on; its cards run 30% smaller here than on the contact page.
+.c-contact-panel__clients {
+    margin-top: auto;
+    // Through the inner's bottom padding, then back out by its side padding: the
+    // strip sits off the bottom edge by the same amount it sits in from the left.
+    margin-bottom: calc(#{getmap($space, rhythm, 600)} - #{getmap($space, rhythm, 700)});
+    padding-top: getmap($space, rhythm, 600);
+
+    @include mq(from, md) {
+        margin-bottom: calc(#{getmap($space, rhythm, 700)} - #{getmap($space, rhythm, 800)});
+    }
+
+    .c-clients {
+        margin-block: 0;
+    }
+
+    // The small card's own sizes (see _clients.scss: 120px tall, a sixth of the
+    // wide measure less its gaps wide — they're local to that file), scaled down.
+    // Was 70%; a further quarter off (0.7 × 0.75) so the strip reads as a footnote
+    // to the panel rather than a row of cards competing with the ways in.
+    $scale: 0.525;
+
+    .c-clients--static.c-clients--small .c-clients__item,
+    .c-clients--static.c-clients--small .c-clients__face {
+        width: calc((#{$g-measure-wide} - 5 * #{getmap($space, rhythm, 500)}) / 6 * #{$scale});
+        height: calc(#{rem(120)} * #{$scale});
+    }
+
+    .c-clients--static.c-clients--small .c-clients__logo {
+        max-height: calc(#{rem(48)} * #{$scale});
+        padding-inline: calc(#{getmap($space, rhythm, 400)} * #{$scale});
+    }
+}
+
+.c-contact-panel__clients-whisper {
+    @include typography(whisper);
+    margin: 0 0 getmap($space, rhythm, 400);
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, primary, 450); // the content-page whisper blue
+}
+
+// The page behind the open panel stays put.
+html.has-contact-panel {
+    overflow: hidden;
+}

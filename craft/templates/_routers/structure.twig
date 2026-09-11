@@ -1,0 +1,14 @@
+{#
+    Structure Template Router
+#}
+
+{% include [
+    "_views/structure/#{entry.section.handle}/#{entry.parent.uri ?? ''}#{entry.uri}/#{entry.type}",
+    "_views/structure/#{entry.section.handle}/#{entry.parent.uri ?? ''}#{entry.uri}/default",
+    "_views/structure/#{entry.section.handle}/#{entry.uri}/#{entry.type}",
+    "_views/structure/#{entry.section.handle}/#{entry.uri}",
+    "_views/structure/#{entry.section.handle}/#{entry.uri}/default",
+    "_views/structure/#{entry.section.handle}/#{entry.slug}",
+    "_views/structure/#{entry.section.handle}/#{entry.type}",
+    "_views/structure/#{entry.section.handle}/default",
+] %}

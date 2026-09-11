@@ -1,0 +1,43 @@
+/**
+ * BASE: SLAB
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.b-slab {
+    position: relative;
+}
+
+.b-slab--l100 {
+    border-radius: $b-radius-300;
+    background-color: getmap($colour, light, 100);
+}
+
+.b-slab--l600 {
+    border-radius: $b-radius-300;
+    background-color: getmap($colour, light, 600); // eggshell
+    // `clip`, not `hidden`, for the same reason as the olive slab below: hidden
+    // makes the slab a scroll container, and a sticky descendant — the "on this
+    // page" panel beside a note's prose — positions against it and never moves.
+    // clip bounds the corners just the same without creating one.
+    overflow: clip;
+}
+
+.b-slab--p500 {
+    border-radius: $b-radius-300;
+    background-color: getmap($colour, primary, 500);
+    // `clip`, not `hidden`. Both clip identically, but `hidden` makes this a scroll
+    // container, and a sticky descendant positions against its nearest scroll
+    // container — so the sticky header inside never moved. `clip` doesn't create
+    // one, which lets the header stick to the viewport while still being bounded by
+    // this slab's box (see .is-jonson .b-header).
+    overflow: clip;
+}
+
+.b-slab--p700 {
+    border-radius: $b-radius-300;
+    background-color: getmap($colour, primary, 700);
+    overflow: hidden;
+}

@@ -1,0 +1,123 @@
+/**
+ * COMPONENT: NEXT (note)
+ *
+ * The pill that carries a reader on to the next note. It's a CTA pill —
+ * .c-ctas__item does the pill, the edge, the extend-and-arrow on hover (see
+ * _ctas.scss) — with its arrow showing from the start rather than on hover,
+ * and a two-line label inside it: the eyebrow over the title.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// Unlike a CTA, the arrow shows from the start — this is a link onward, and
+// the arrow is what says so — and it's drawn (an SVG in the markup) rather
+// than the CTA's small red disc, so it can take the height of the two-line
+// label. The pill's own ::after arrow is switched off and the padding is
+// even, so nothing moves on hover except the border's highlight and the
+// arrow, which nudges on.
+.c-ctas__item.c-next {
+    justify-content: space-between; // label at the left, arrow at the right, whatever the title's length
+    gap: rem(16);
+    width: 100%; // the row's width on a phone…
+    height: 100%; // …and the row's height beside its twin from lg, so previous and next are always the same box
+    padding: rem(20) rem(22);
+
+    // …and from md, where the two cards share a row beneath the share block,
+    // each fills its half of it; only in the one-row layout from wide (see
+    // .c-content__foot, whose breakpoint this matches) does a card cap at
+    // 340px, or its column where that's narrower.
+    @include mq(from, md) {
+        width: 100%;
+    }
+
+    @media (min-width: 1440px) {
+        width: min(#{rem(340)}, 100%);
+    }
+    border-radius: $b-radius-200; // the panels' corner, not the CTA's full pill — two lines of label and a tall arrow sit better in a card than a capsule
+
+    &::after {
+        content: none;
+    }
+
+    // The page's own ground at rest — the content slab's eggshell, so the card
+    // is the slab with an edge round it (covering the dot grid), as the CTA
+    // pills are — lifting to white on hover. The hover keeps the CTA's
+    // spinning navy highlight round the border, drawn as a conic gradient in
+    // the border box, with the white stated in the padding box.
+    background-color: getmap($colour, light, 600); // eggshell — the content-page slab
+    transition: border-color 220ms ease, background-color 200ms ease;
+
+    // The CTA pill extends on hover to make room for its arrow; this one has
+    // its arrow already, so it holds its width — the arrow's nudge is a
+    // transform, which costs no layout.
+    &:hover,
+    &:focus-visible {
+        padding-right: rem(22);
+        background:
+            linear-gradient(getmap($colour, light, 100), getmap($colour, light, 100)) padding-box,
+            conic-gradient(
+                from var(--c-chip-angle),
+                rgba(getmap($colour, primary, 700), 0.1),
+                getmap($colour, primary, 700) 50%,
+                rgba(getmap($colour, primary, 700), 0.1)
+            ) border-box;
+    }
+}
+
+.c-next__arrow {
+    display: block;
+    flex: none;
+    color: getmap($colour, primary, 600); // the link red
+    transition: transform 200ms ease;
+
+    .c-next:hover &,
+    .c-next:focus-visible & {
+        transform: translateX(rem(4));
+    }
+}
+
+// Previous: the arrow first, flipped to point back, and it nudges back on
+// hover; the label follows. The card's a row reversed, so the markup order
+// (label, then arrow) is the same as next's.
+.c-next--prev {
+    flex-direction: row-reverse;
+    justify-content: flex-end; // reversed, "end" is the left: the arrow, then the label right beside it, with the room at the right
+
+    .c-next__arrow {
+        transform: scaleX(-1);
+    }
+
+    &:hover .c-next__arrow,
+    &:focus-visible .c-next__arrow {
+        transform: scaleX(-1) translateX(rem(4));
+    }
+}
+
+.c-next__text {
+    display: flex;
+    flex-direction: column;
+    gap: rem(2);
+    flex: 1 1 auto;
+    min-width: 0; // so a long title wraps rather than widening the card
+}
+
+// The eyebrow: the whisper, as the CTA block's own title uses it.
+.c-next__whisper {
+    @include typography(whisper);
+    font-family: $g-font-primary; // JonSonSans, like the whisper
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, primary, 450); // the content-page whisper blue
+}
+
+// The title: in the sans, like a heading — it names a page, as the note's
+// own title does — a step up from the pill's label and bold.
+.c-next__title {
+    @include typography(p);
+    font-family: $g-font-primary; // JonSonSans
+    font-weight: 600;
+    line-height: 1.2;
+    color: getmap($colour, light, 880); // the section grey the prose gives its sub-headings
+}

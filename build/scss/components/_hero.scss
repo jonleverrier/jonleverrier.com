@@ -1,0 +1,32 @@
+/**
+ * COMPONENT: HERO
+ *
+ * Container for the Record3D point cloud behind the homepage title (see
+ * build/js/components/hero.js). The script appends its own <canvas> and sizes it
+ * from this element, so all this has to do is be a box with a height.
+ *
+ * The alternative backdrop is the dot tunnel (_tunnel.scss); the template picks
+ * between them.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.c-hero {
+    position: absolute;
+    inset: 0;
+    // hero.js reads clientWidth/clientHeight to size the renderer and to set the
+    // point-scale uniform, so this needs real dimensions before it mounts — an
+    // auto-height box would start it at zero and the ResizeObserver would then have
+    // to correct it on the next frame.
+    overflow: hidden;
+
+    // The renderer's own clear colour is the olive slab, so the canvas fills the
+    // section edge to edge with no seam against the page behind it.
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+}

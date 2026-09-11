@@ -1,0 +1,25 @@
+defaultPlacement: beginning
+enableVersioning: true
+entryTypes:
+  -
+    uid: 94386123-8a64-4a2b-913e-0c19f1ef56a8 # Job
+handle: curriculumVitae
+maxAuthors: 1
+minAuthors: 1
+name: 'Curriculum Vitae'
+previewTargets:
+  -
+    label: 'Primary entry page'
+    refresh: '1'
+    urlFormat: '{url}'
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: false
+    hasUrls: false
+    template: null
+    uriFormat: null
+structure:
+  maxLevels: 1
+  uid: 71c59c78-5528-4bd4-8f5a-da96f0dd326e
+type: structure

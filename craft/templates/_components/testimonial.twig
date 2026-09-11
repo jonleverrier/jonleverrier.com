@@ -1,0 +1,29 @@
+{#
+  Testimonial — a single pull-quote surfaced as social proof at credibility
+  moments (see the [[testimonial]] marker). Distinct from the photo rail.
+
+  Expects: quote, name, role, company (strings; name/role/company optional).
+#}
+{% if quote is defined and quote %}
+    <figure class="c-testimonial js-testimonial">
+        <blockquote class="c-testimonial__quote">{{ quote|raw }}</blockquote>
+        <figcaption class="c-testimonial__cite">
+            {%- if image is defined and image -%}
+                {# Fixed 60px avatar — retina-first: a single 120px (2×) square crop,
+                   no responsive srcset needed for one small, known size. #}
+                <img
+                    class="c-testimonial__avatar"
+                    src="{{ image.getUrl({ width: 120, height: 120, mode: 'crop', format: 'webp' }) }}"
+                    width="60" height="60"
+                    alt="{{ name }}"
+                    loading="lazy" decoding="async">
+            {%- endif -%}
+            <span class="c-testimonial__attribution">
+                {%- if name %}<span class="c-testimonial__name">{{ name }}</span>{% endif -%}
+                {%- if role or company %}
+                    <span class="c-testimonial__role">{{ role }}{% if role and company %}, {% endif %}{{ company }}</span>
+                {%- endif -%}
+            </span>
+        </figcaption>
+    </figure>
+{% endif %}

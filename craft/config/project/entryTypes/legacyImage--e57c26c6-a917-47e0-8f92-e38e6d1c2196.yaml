@@ -1,0 +1,83 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  80c6909c-50b5-498a-b198-d51228911f03:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-09-03T18:47:26+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 7aa024a6-1b91-4eea-a5e3-558f2c3c1ce9 # Legacy Image
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 5195bf3e-29c9-4801-8751-06da60f87d92
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-03T18:59:18+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: ed188daf-9990-4545-89c6-becaa4769fd8 # Caption
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 6f114abc-56d5-4862-83d4-ebeb973157b0
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: e46dba1a-a6fe-4a50-989d-5c62813916ab
+        userCondition: null
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-09-03T18:47:26+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 3126289e-aa51-4063-8ac8-7a3fa6f80dc6 # Has breakout?
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: e2259db5-a7b1-4c32-82a2-e51aac618cc9
+            userCondition: null
+            warning: null
+            width: 100
+        name: Settings
+        uid: f34cfa66-26c3-49b9-86dc-7a6e8267a780
+        userCondition: null
+    thumbFieldKey: null
+handle: legacyImage
+hasTitleField: false
+icon: null
+name: 'Legacy Image'
+showSlugField: true
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

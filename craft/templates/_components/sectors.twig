@@ -1,0 +1,26 @@
+{#
+  Sector-experience tags — the industries Jon has worked in, surfaced as small
+  tags at experience/industry moments (the [[sectors]] marker).
+
+  Expects: sectors — a list of strings (category titles).
+#}
+{% if sectors is defined and sectors %}
+    {# Colour palettes (styled in _sectors.scss), cycled from a random offset so
+       the mix shuffles each render while adjacent tags always differ. #}
+    {% set palettes = ['a', 'e', 'f'] %}
+    {% set offset = random(palettes|length - 1) %}
+    <div class="c-sectors js-sectors" role="group" aria-label="Sectors Jon has experience in">
+        <p class="c-sectors__whisper">Sector experience</p>
+        <ul class="c-sectors__list">
+            {% for s in sectors %}
+                {# Randomise each tag's hover pop a little (tilt, lift, scale, speed). #}
+                {% set rot = random(-6, 6) %}
+                {% set lift = random(3, 9) %}
+                {% set scale = (106 + random(10)) / 100 %}
+                {% set dur = random(320, 480) %}
+                <li class="c-sectors__tag c-sectors__tag--{{ palettes[(loop.index0 + offset) % palettes|length] }}"
+                    style="--tag-rot: {{ rot }}deg; --tag-lift: -{{ lift }}px; --tag-scale: {{ scale }}; --tag-dur: {{ dur }}ms">{{ s }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}

@@ -1,0 +1,42 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  4f3e66e4-5ec0-4c9c-9609-46c8054b888b:
+    cardThumbAlignment: start
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-08-03T20:33:04+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 2d33f0d3-5668-4312-8d32-87eca5c7aba8 # Large Image
+            handle: null
+            instructions: 'Upload 3200×1800 for display at 1600x900'
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: fbbc146f-1118-4547-a06f-0248a2d5c30d
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: 3fdc86cb-b4a3-4e9a-bc93-922f3df19500
+        userCondition: null
+    thumbFieldKey: 'layoutElement:fbbc146f-1118-4547-a06f-0248a2d5c30d'
+handle: largeImage
+hasTitleField: false
+icon: null
+name: 'Large Image'
+showSlugField: false
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

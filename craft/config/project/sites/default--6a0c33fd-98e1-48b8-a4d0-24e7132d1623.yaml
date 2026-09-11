@@ -1,0 +1,8 @@
+baseUrl: $PRIMARY_SITE_URL
+handle: default
+hasUrls: true
+language: en-JE
+name: 'Jon Leverrier'
+primary: true
+siteGroup: 088f037b-ae75-4bd5-9398-7cc9651e7475 # Jon Leverrier
+sortOrder: 1

@@ -1,0 +1,22 @@
+defaultPlacement: end
+enableVersioning: true
+entryTypes:
+  -
+    uid: ddc5ed35-bbf5-442c-b714-1068f85d5452 # Notes
+handle: note
+maxAuthors: 1
+minAuthors: 1
+name: Notes
+previewTargets:
+  -
+    label: 'Primary entry page'
+    refresh: '1'
+    urlFormat: '{url}'
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: true
+    template: _routers/single.twig
+    uriFormat: notes
+type: single

@@ -1,0 +1,90 @@
+/**
+ * COMPONENT: RAIL
+ *
+ * Horizontal "context rail" surfaced by find_context — a full-bleed strip of
+ * mixed cards (portrait / photo / project / quote) injected into a Jonson
+ * answer after the first paragraph. Scrolls horizontally on overflow; cards
+ * stagger in (via --i) like items pulled off a shelf.
+ *
+ * Assumes a horizontally-centred ancestor (the Jonson thread) — the full-bleed
+ * relies on `margin-inline: calc(50% - 50vw)` resolving against a centred box.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$c-rail-gap: rem(8);
+$c-rail-radius: rem(8);
+
+.c-rail {
+    // Break out of the centred answer measure to the c-jonson content box.
+    // 100cqi tracks the section's inline size (container-type on .c-jonson);
+    // the negative margin re-centres the wider rail. No viewport units, so no
+    // scrollbar overflow.
+    width: 100cqi;
+    margin-inline: calc((100% - 100cqi) / 2);
+    background-color: getmap($colour, light, 100); // #fff
+    border-radius: $b-radius-200;
+    padding: $c-rail-gap; // inner breathing room, matches the column gap
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    // Entrance is handled by the parent answer's per-child stagger
+    // (.c-jonson__response > *), so the rail has no independent reveal here.
+}
+
+.c-rail__items {
+    display: flex;
+    flex-wrap: wrap; // wrap to new rows instead of scrolling
+    gap: $c-rail-gap; // row + column gap
+    align-items: flex-start; // each card is its own image's height (no stretch)
+    justify-content: safe center; // centres a partial last row
+}
+
+// A lone photo isn't a strip — pull the rail back from full-bleed to the answer
+// measure, so a single image sits at the response-container width, not blown up
+// across the whole section.
+.c-rail:has(.c-rail__item:only-child) {
+    width: 100%;
+    margin-inline: 0;
+}
+
+.c-rail__item {
+    // Responsive columns: 1 → 2 (md) → 4 (lg). The basis is the 4-up width, but
+    // grow:1 lets a row of fewer cards stretch to fill the full width — so 2 or 3
+    // photos fill the rail just like 4 do (rather than sitting at 1/4 each).
+    flex: 1 1 100%;
+    @include mq(from, md) {
+        flex-basis: calc((100% - #{$c-rail-gap}) / 2);
+    }
+    @include mq(from, lg) {
+        flex-basis: calc((100% - 3 * #{$c-rail-gap}) / 4);
+    }
+    position: relative; // stacks the colour placeholder under the photo
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.06);
+    border-radius: 0.4rem;
+}
+
+.c-rail__item picture {
+    display: block;
+}
+
+.c-rail__item img {
+    display: block;
+    width: 100%;
+    height: auto; // image dictates the card height, at its true aspect ratio
+}
+
+// NO PER-CARD STAGGER. There used to be one here: the colour placeholder from
+// _picture.scss was on in the rail, and the cards developed in right-to-left by
+// handing it a `--tone-delay` off the `--r` the markup sets.
+//
+// The placeholder is now case-study-only (opt-in via the media.picture macro), so
+// there is no reveal left to stagger — the rail's photos are ordinary images that
+// paint when they arrive, and the rail as a whole still fades in with the answer.
+// `--r` stays in rail.twig's markup as the right-to-left index; if a stagger is
+// wanted again it should drive the rail's own transition, not a placeholder the
+// rail doesn't have.

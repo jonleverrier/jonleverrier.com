@@ -1,0 +1,10 @@
+columnSuffix: null
+handle: backgroundColour
+instructions: null
+name: 'Background Colour'
+searchable: false
+settings:
+  allowCustomColors: true
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Color

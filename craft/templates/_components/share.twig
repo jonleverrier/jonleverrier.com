@@ -1,0 +1,46 @@
+{#
+  Share — a "Share" eyebrow and a row of places to send the page: LinkedIn and
+  email, then the AI assistants, each opened with the page's address in a prompt
+  asking it to read and discuss the note.
+
+  Expects: url   — the page's canonical address
+           title — its title, for the email subject and the prompts
+
+  Every link is built here rather than in the CMS, so the destinations can't drift
+  from the page they're on. The AI links use each service's URL prefill: ChatGPT
+  and Claude document theirs; Grok and Perplexity take `q` too; Gemini has no
+  official prefill, so its link opens the app with the same parameter and falls
+  back to a blank chat if that's ignored. Same-page links (mail) open in place,
+  everything else in a new tab.
+#}
+{% set url = url ?? '' %}
+{% set title = (title ?? '')|trim %}
+{% set prompt = "Read and summarise this note, then tell me what you make of it: " ~ url %}
+{% set links = [
+    { handle: 'linkedin', label: 'LinkedIn', href: 'https://www.linkedin.com/sharing/share-offsite/?url=' ~ url|url_encode },
+    { handle: 'email', label: 'Email', href: 'mailto:?subject=' ~ title|url_encode ~ '&body=' ~ url|url_encode, same: true },
+    { handle: 'claude', label: 'Claude', href: 'https://claude.ai/new?q=' ~ prompt|url_encode },
+    { handle: 'grok', label: 'Grok', href: 'https://grok.com/?q=' ~ prompt|url_encode },
+    { handle: 'perplexity', label: 'Perplexity', href: 'https://www.perplexity.ai/search?q=' ~ prompt|url_encode },
+    { handle: 'gemini', label: 'Gemini', href: 'https://gemini.google.com/app?q=' ~ prompt|url_encode },
+    { handle: 'chatgpt', label: 'ChatGPT', href: 'https://chatgpt.com/?q=' ~ prompt|url_encode },
+] %}
+{% if url %}
+    <nav class="c-share" aria-label="Share this note">
+        <p class="c-share__whisper">Share this note</p>
+        {# The footer's social markup, so the icons come from the same spritemap pairs
+           (_social.scss) and cross-fade the same way; the label is for screen
+           readers, the icon is the link. #}
+        <div class="b-social">
+            <ul class="b-social__items">
+                {% for link in links %}
+                    <li class="b-social__item">
+                        <a class="b-social__link b-social__link--{{ link.handle }}" href="{{ link.href }}"{% if not (link.same ?? false) %} target="_blank" rel="noopener"{% endif %}>
+                            <span class="u-visually-hidden">{{ link.label }}</span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </nav>
+{% endif %}

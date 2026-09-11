@@ -1,0 +1,17 @@
+defaultPlacement: end
+enableVersioning: false
+entryTypes:
+  -
+    uid: 12005ccd-8100-4692-a304-298b71ca8e50 # Global
+handle: globals
+maxAuthors: 1
+minAuthors: 1
+name: Globals
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: false
+    template: null
+    uriFormat: null
+type: single

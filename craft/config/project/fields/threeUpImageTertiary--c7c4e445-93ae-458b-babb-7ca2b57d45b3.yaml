@@ -1,0 +1,35 @@
+columnSuffix: null
+handle: threeUpImageTertiary
+instructions: null
+name: '3UP Image'
+searchable: false
+settings:
+  allowSelfRelations: false
+  allowSubfolders: false
+  allowUploads: true
+  allowedKinds: null
+  branchLimit: null
+  defaultPlacement: end
+  defaultUploadLocationSource: 'volume:3e9036d0-de1a-4b49-a1fe-85cded2c7b73' # Local
+  defaultUploadLocationSubpath: null
+  maintainHierarchy: false
+  maxRelations: 1
+  minRelations: null
+  previewMode: full
+  restrictFiles: false
+  restrictLocation: true
+  restrictedDefaultUploadSubpath: null
+  restrictedLocationSource: 'volume:3e9036d0-de1a-4b49-a1fe-85cded2c7b73' # Local
+  restrictedLocationSubpath: "{% set s = object.owner ?? object %}{% if (s.section.handle ?? '') == 'caseStudies' %}case-studies/{{ (s.clientSelector.one().title ?? s.slug)|kebab }}{% else %}{{ (s.section.handle ?? s.slug)|kebab }}{% endif %}"
+  selectionLabel: null
+  showSearchInput: true
+  showSiteMenu: false
+  showUnpermittedFiles: false
+  showUnpermittedVolumes: false
+  sources: '*'
+  targetSiteId: null
+  validateRelatedElements: false
+  viewMode: thumbs
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Assets

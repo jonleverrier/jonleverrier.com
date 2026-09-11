@@ -1,0 +1,120 @@
+/**
+ * COMPONENT: CURSOR
+ *
+ * The badge that follows the pointer over a case study card (case-study-cursor.js).
+ * Mouse-only and created lazily, so nothing here applies on touch.
+ *
+ * Positioned with translate3d from JS on the element itself; the scale/opacity of
+ * the reveal is CSS. Both are transform/opacity, so the whole thing stays on the
+ * compositor — no layout, no paint, just the GPU.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$c-cursor-size: rem(46);
+// Set here rather than on the element's width/height attributes so the circle's own
+// size stays independent of it. Held at ~43% of the circle, the proportion the
+// earlier 33/76 and 20/46 pairs sat at, so the arrow keeps the same breathing room
+// as the disc changes size.
+$c-cursor-icon-size: rem(20);
+
+// Entry is slower and eased to a soft landing; exit is short, flat and undelayed —
+// once you've left the card the badge's only job is to get out of the way. The fade
+// and the scale share a duration in each direction so neither outlives the other.
+$c-cursor-in:        320ms;
+$c-cursor-in-fade:   160ms;  // fill arrives ahead of the scale settling
+$c-cursor-out:       140ms;
+$c-cursor-stagger:    60ms;  // arrow behind the disc, on entry only
+$c-cursor-ease-in:   cubic-bezier(0.16, 1, 0.3, 1);   // decelerate into place
+$c-cursor-ease-out:  cubic-bezier(0.4, 0, 1, 1);      // accelerate away
+
+.c-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: getmap($z-index, xxl); // above the cards and the fixed header
+    display: grid;
+    place-items: center;
+    width: $c-cursor-size;
+    height: $c-cursor-size;
+    // The element is positioned by its top-left, so pull it back by half to centre
+    // it on the pointer. margin, not a transform — JS owns the transform property.
+    margin: calc(#{$c-cursor-size} / -2) 0 0 calc(#{$c-cursor-size} / -2);
+    border-radius: 50%;
+    // NO background here — the disc is drawn by ::before, which is what fades and
+    // scales. Filling this element too left a yellow circle painted on screen after
+    // the pointer had left the card, because only the pseudo was being hidden.
+    color: getmap($colour, light, 100);               // white arrow, as on .c-button
+    pointer-events: none;                            // never eat a click
+    // Fades the whole badge — disc and arrow together — so nothing can be left
+    // behind on exit.
+    opacity: 0;
+    // EXIT timing lives on the base rule, ENTRY timing on .is-visible. The two are
+    // not mirrors and shouldn't be: arriving wants to feel considered, leaving wants
+    // to be out of the way. Exit is a short, flat fade — no delay, and matched to the
+    // scale below so the badge finishes shrinking and disappearing at the same
+    // moment. (Previously opacity ran 180ms against a 320ms scale, so it spent the
+    // last ~140ms invisibly shrinking — motion nobody could see.)
+    transition: opacity $c-cursor-out ease;
+    // Continuous movement for as long as it's visible — the case will-change is
+    // actually for. Contrast the card hover states, which are short and discrete.
+    will-change: transform;
+}
+
+.c-cursor.is-visible {
+    opacity: 1;
+    transition: opacity $c-cursor-in-fade ease;
+}
+
+// The scale rides on a pseudo-element because the badge's own transform is written
+// by JS every pointermove — the two would fight over the same property.
+.c-cursor::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-color: getmap($colour, primary, 600); // red, same fill as .c-button
+    transform: scale(0.2);
+    transition: transform $c-cursor-out $c-cursor-ease-out;
+}
+
+.c-cursor.is-visible::before {
+    transform: scale(1);
+    transition: transform $c-cursor-in $c-cursor-ease-in;
+}
+
+// Arrow follows the disc in a beat later, so the badge reads as opening rather than
+// everything arriving at once. The delay is on .is-visible ONLY — carried on the
+// base rule it applied to the exit too, leaving the arrow hanging after the disc had
+// started collapsing. Same reasoning as the card's staggered lines: stagger in,
+// leave together.
+.c-cursor__icon {
+    position: relative;
+    width: $c-cursor-icon-size;
+    height: $c-cursor-icon-size;
+    transform: scale(0.4);
+    transition: transform $c-cursor-out $c-cursor-ease-out;
+}
+
+.c-cursor.is-visible .c-cursor__icon {
+    transform: none;
+    transition: transform $c-cursor-in $c-cursor-ease-in $c-cursor-stagger;
+}
+
+// The badge replaces the pointer while it's over a card, so hide the native one.
+// Scoped to the root class JS sets, so with JS off (or on touch, where the badge is
+// never built) the normal cursor is untouched.
+.has-card-cursor .c-case-study {
+    cursor: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-cursor,
+    .c-cursor::before,
+    .c-cursor__icon {
+        transition-duration: 1ms;
+        transition-delay: 0s;
+    }
+}

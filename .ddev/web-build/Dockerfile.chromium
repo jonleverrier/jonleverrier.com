@@ -1,0 +1,17 @@
+# Chromium for rollup-plugin-critical.
+#
+# The plugin drives Puppeteer to render each page and extract its above-the-fold
+# CSS. Puppeteer would normally download its own browser, but the one it fetches
+# is Chrome for Testing, which Google does not publish a linux-arm64 build of —
+# on Apple Silicon it lands an x86-64 binary that can't exec ("rosetta error:
+# failed to open elf"). Debian's chromium package does have an arm64 build, so we
+# install that and point Puppeteer at it (see PUPPETEER_EXECUTABLE_PATH in
+# .ddev/config.yaml).
+#
+# Only needed for `npm run build`. Nothing at request time touches it.
+ARG BASE_IMAGE
+FROM $BASE_IMAGE
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends chromium \
+    && rm -rf /var/lib/apt/lists/*

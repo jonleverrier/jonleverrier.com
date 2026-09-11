@@ -1,0 +1,38 @@
+columnSuffix: null
+handle: blockquote
+instructions: null
+name: Blockquote
+searchable: false
+settings:
+  advancedLinkFields: null
+  availableTransforms: ''
+  availableVolumes: '*'
+  characterLimit: null
+  css: null
+  cssFile: null
+  defaultTransform: null
+  defaultUploadLocationSubpath: null
+  defaultUploadLocationVolume: null
+  fullGraphqlData: true
+  headingLevels: false
+  imageEntryTypeUid: null
+  imageFieldUid: null
+  imageMode: img
+  js: null
+  jsFile: null
+  options: null
+  parseEmbeds: false
+  purifierConfig: null
+  purifyHtml: true
+  showUnpermittedFiles: false
+  showUnpermittedVolumes: false
+  showWordCount: true
+  sourceEditingGroups:
+    - __ADMINS__
+  toolbar:
+    - heading
+    - sourceEditing
+  wordLimit: null
+translationKeyFormat: null
+translationMethod: none
+type: craft\ckeditor\Field

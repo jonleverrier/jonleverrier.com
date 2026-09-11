@@ -1,0 +1,77 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  1bc1ec03-0dbb-4423-ac6d-c0867ed3b58d:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-09-03T16:27:42+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: fc756c61-415e-4207-8833-f2209a907afe # Language
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 1c47c3ef-efa1-4d44-9e6e-44500c8b877c
+            userCondition: null
+            warning: null
+            width: 50
+          -
+            dateAdded: '2026-09-03T16:36:08+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 56356920-3742-4704-9bb9-9dda638fcf8d # Has line numbers?
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: cd47ef57-9f52-4cb8-999a-8a3f1c00e691
+            userCondition: null
+            warning: null
+            width: 50
+          -
+            dateAdded: '2026-09-03T16:27:42+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 22559de5-9987-4d8e-8dda-32482d03074c # Snippet
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 66defb23-3283-443c-bd60-c9d7c04094bb
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: efe60c4a-7a10-4562-8a5e-55703ecc38ac
+        userCondition: null
+    thumbFieldKey: null
+handle: code
+hasTitleField: false
+icon: null
+name: Code
+showSlugField: true
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

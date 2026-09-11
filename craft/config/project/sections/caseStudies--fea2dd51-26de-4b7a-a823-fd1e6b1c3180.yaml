@@ -1,0 +1,25 @@
+defaultPlacement: end
+enableVersioning: true
+entryTypes:
+  -
+    uid: bf05dd31-0643-4d5f-985c-90849d0e4ebc # Case Study
+handle: caseStudies
+maxAuthors: 1
+minAuthors: 1
+name: 'Case Study'
+previewTargets:
+  -
+    label: 'Primary entry page'
+    refresh: '1'
+    urlFormat: '{url}'
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: true
+    template: _routers/structure.twig
+    uriFormat: 'case-study/{slug}'
+structure:
+  maxLevels: 1
+  uid: 27f970f0-dd66-4acb-9d01-0f300e145321
+type: structure

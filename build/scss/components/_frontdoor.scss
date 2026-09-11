@@ -1,0 +1,254 @@
+/**
+ * COMPONENT: FRONT DOOR
+ *
+ * The homepage's opening section — the title, the ask bar, and whichever backdrop
+ * the template selects behind them (the point cloud, _hero.scss, or the original
+ * dot tunnel). Everything here is shared by both backdrops; only the thing inside
+ * .c-frontdoor__bg differs.
+ *
+ * The section keeps its own name because it isn't the backdrop: it's the door a
+ * visitor arrives at, and it stays put when the backdrop is swapped.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+@use 'field' as *;
+
+.c-frontdoor {
+    position: relative;
+    overflow: hidden;
+    // Shorter than full height on a phone. The backdrop fits itself to whichever axis
+    // is tightest, so on a portrait frame it's the WIDTH that decides its size — the
+    // extra height just becomes empty slab above and below, and pushes everything
+    // below the fold for no gain.
+    min-height: min(calc(100dvh - 2 * #{getmap($space, rhythm, 500)}), rem(620));
+
+    @include mq(from, md) {
+        min-height: min(calc(100dvh - 2 * #{getmap($space, rhythm, 500)}), rem(960));
+    }
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    // Author `display` overrides the UA [hidden] rule, so restore it explicitly.
+    &[hidden] {
+        display: none;
+    }
+}
+
+.c-frontdoor {
+    // The gutter keeps the ask bar off the slab's edge on a phone, where the meta
+    // block's 100% would otherwise touch it. On the SECTION, not the block: padding
+    // on the block would sit inside its max-width (border-box) and narrow the bar on
+    // every screen; here it only bites once the viewport is narrower than the bar
+    // plus two gutters. The content pages' base gutter, so the two agree.
+    padding-inline: getmap($space, rhythm, 500);
+}
+
+.c-frontdoor__bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.c-frontdoor__bg canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.c-frontdoor__meta {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    // The block's own width. The section is a flex box that centres this block, and
+    // with no width it shrinks to its widest child — so the ask field below (100% of
+    // this) silently took whatever the title measured. Pinned at the bar's width;
+    // the title has its own, smaller cap and centres inside (see .c-frontdoor__title).
+    width: 100%;
+    max-width: rem(740); // the site's text measure, as .c-case-content__text
+
+    p {
+        margin-top: 2rem;
+        font-size: 0.8rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #8d877c;
+    }
+}
+
+// During the warp, the hero title + input accelerate up and fade out.
+.is-warping .c-frontdoor__meta {
+    animation: c-frontdoor-warp-exit 600ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+@keyframes c-frontdoor-warp-exit {
+    to {
+        opacity: 0;
+        transform: translateY(rem(-48)) scale(0.94);
+    }
+}
+
+.c-frontdoor__title {
+    color: getmap($colour, light, 100);
+    @include typography(h1);
+    // Trim the hero headline ~10% below the global h1 scale (66/88/110).
+    font-size: rem(60);
+    @include mq(from, lg) {
+        font-size: rem(80);
+    }
+    @include mq(from, xxl) {
+        font-size: rem(100);
+    }
+    font-weight: 600;
+    margin: 0 auto;
+    // A fixed measure, NOT ch. This was 16ch, and in JonSonSans the "0" glyph is a
+    // full em wide, so at the 80px title size 16ch computed to 1300px and never
+    // constrained anything — the title sat on one line however long it ran. 560px
+    // wraps "How can I help?" to two lines at both title sizes, which is the shape
+    // the hero was designed around.
+    max-width: rem(560);
+
+    // A whisper of a shadow, only to hold the white off the point cloud behind it.
+    // The backdrop is a photograph, so parts of it land close to white — the shirt,
+    // the lit side of the face — and the headline loses its edge against exactly those
+    // areas while reading fine everywhere else.
+    //
+    // Two soft passes rather than one hard one: a tight, barely-there pass to define
+    // the letterforms, and a wide, very faint one that darkens the field behind the
+    // text without ever reading as a drop shadow. No offset on either — an offset
+    // shadow would look like a deliberate effect, and this is meant to be invisible.
+    //
+    // In the SLAB's own olive, not black. Black at any strength greys the white and
+    // reads as dirt on a light backdrop; the slab colour just deepens what's there.
+    text-shadow:
+        0 0 #{rem(10)} #{rgba(getmap($colour, primary, 500), 0.85)},
+        0 0 #{rem(46)} #{rgba(getmap($colour, primary, 500), 0.7)};
+}
+
+// Input with an inline submit button living inside the field.
+// Height of the prompt band. The ask was 8px; it can't be — the text is rem(16) on a
+// 1.45 line-height, so 8px would clip it to a sliver. This is the smallest that holds
+// the words, and the padding around them is tight deliberately so the band reads as a
+// border rather than as a second row. Declared here because .c-frontdoor__field's own
+// padding is derived from it.
+$prompt-band-h: rem(46);
+
+// Holds the field and the band tucked behind it.
+//
+// The padding is what makes the band reachable. The band and its button are absolutely
+// positioned, so they don't extend this box on their own — and the pointer moving down
+// off the field would leave the wrapper, drop :hover, and pull the band out from under
+// the cursor before it arrived. The padding stretches the hover region over the band's
+// visible part, so the trip from field to words is continuous.
+//
+// Reserved permanently rather than on hover: it's layout, and growing it on hover would
+// shift the vertically-centred hero.
+.c-frontdoor__field {
+    position: relative;
+    margin: rem(24) auto 0;
+    width: 100%; // .c-frontdoor__meta above sets the bar's width; this fills it
+    padding-bottom: calc(#{$prompt-band-h} - #{$b-radius-200});
+}
+
+.c-frontdoor__form {
+    @include field-shell('.c-frontdoor__input');
+    width: 100%;
+    margin: 0;
+    // Above the band, so the band's top edge and its upper corners are hidden behind
+    // the field and only the bottom of it shows.
+    position: relative;
+    z-index: 1;
+}
+
+.c-frontdoor__input {
+    @include field-input;
+    @include typography(p);
+}
+
+.c-frontdoor__submit {
+    @include field-submit;
+    width: rem(44);
+}
+// The band under the field — the words' strip at rest, the chips when opened —
+// is the shared .c-jonson__band (its --below variant), in _jonson.scss. Only the
+// words themselves are dressed here: yellow on the olive.
+.c-frontdoor__prompt {
+    position: absolute;
+    left: rem(16);
+    bottom: rem(6); // the strip's bottom padding
+    z-index: 1;
+
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+
+    font-family: $g-font-secondary; // JonSonMono, as the input's own text
+    @include typography(p-sm);
+    font-weight: 600; // the mono's bold face, as the content pages' nudge
+    color: getmap($colour, primary, 400); // yellow — reads properly on the dark band
+    cursor: pointer;
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 400);
+        outline-offset: rem(2);
+    }
+
+    // Author `display` overrides the UA [hidden] rule, so restore it explicitly —
+    // the button ships hidden and JS reveals it.
+    &[hidden] {
+        display: none;
+    }
+}
+
+// Typing state — the label fades out and a spinner takes its place while the prompt
+// types into the field, the same beat the contact form's submit button has. JS adds
+// .is-typing for the duration.
+//
+// Reuses c-form-spin from _form.scss rather than declaring a second identical rotate:
+// @keyframes are global, and two spinners drifting apart would be worse than the
+// cross-partial reference.
+.c-frontdoor__prompt.is-typing {
+    color: transparent;
+    pointer-events: none; // can't be re-clicked mid-type
+
+    &::after {
+        content: "";
+        position: absolute;
+        // Over the label, which is now the button's whole box — so left 0 and
+        // vertically centred on it, rather than offset into a band. Centred with
+        // calc, NOT translateY: c-form-spin animates `transform`, which would
+        // replace the translate and drop the spinner half its height mid-rotation.
+        left: 0;
+        top: calc(50% - #{rem(8)});
+        width: rem(16);
+        height: rem(16);
+        border: rem(2) solid rgba(getmap($colour, light, 100), 0.3); // faint white track
+        border-top-color: getmap($colour, light, 100);                // bright white arc
+        border-radius: 50%;
+        animation: c-form-spin 650ms linear infinite;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-frontdoor__prompt.is-typing::after {
+        animation: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-frontdoor__bg {
+        display: none;
+    }
+
+    .is-warping .c-frontdoor__meta {
+        animation: none;
+    }
+}

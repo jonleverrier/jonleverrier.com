@@ -1,0 +1,283 @@
+/**
+ * COMPONENT: FIELD (shared)
+ *
+ * The "ask" field look — a frosted input shell with an inline submit button.
+ * Shared by the hero (.c-frontdoor) and the conversation (.c-jonson) so they stay
+ * visually identical. Each consumer adds its own sizing/positioning.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// The frosted shell. Pass the input's selector so the filled-state (:has)
+// and focus border can be wired up.
+@mixin field-shell($input-selector) {
+    display: flex;
+    align-items: center;
+    gap: rem(8);
+    padding: rem(6);
+
+    // Frosted glass: translucent white over a blur.
+    background: rgba(getmap($colour, light, 100), 0.45);
+    backdrop-filter: blur(rem(12));
+    -webkit-backdrop-filter: blur(rem(12));
+    border: rem(3) solid getmap($colour, light, 800);
+    border-radius: $b-radius-200;
+    transition: border-color 200ms ease, background-color 200ms ease;
+
+    // Blue stroke while focused on / typed into.
+    &:focus-within,
+    &:has(#{$input-selector}:not(:placeholder-shown)) {
+        border-color: getmap($colour, primary, 700);
+    }
+
+    // Firm up the glass on focus for readability.
+    &:focus-within {
+        background-color: rgba(getmap($colour, light, 100), 0.6);
+    }
+}
+
+// Note: the consumer sets the type size with its own @include typography(...) —
+// keeping it out of here avoids two typography() calls colliding on breakpoints.
+@mixin field-input {
+    flex: 1 1 auto;
+    min-width: 0;
+
+    border: 0;
+    background: transparent;
+    padding: rem(12) rem(8) rem(12) rem(16);
+
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 600; // typed text is bold
+    color: getmap($colour, primary, 700);
+
+    &::placeholder {
+        // Muted dark tone — readable over the glass, lighter than typed text.
+        font-weight: 500; // placeholder stays non-bold
+        color: getmap($colour, primary, 700);
+        opacity: 1; // Firefox dims placeholders by default; keep our alpha.
+    }
+
+    // Clears the moment the field is focused, rather than lingering until the first
+    // keystroke — by then the prompt has done its job and it's just sitting under the
+    // caret. Colour, not opacity: it keeps the text in place so nothing reflows, and
+    // the rule above already forces opacity to 1 to beat Firefox, which an opacity
+    // transition here would be fighting.
+    &:focus::placeholder {
+        color: transparent;
+        transition: color 150ms ease;
+    }
+
+    &:focus {
+        outline: none;
+    }
+}
+
+@mixin field-submit {
+    flex: 0 0 auto;
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden; // clips the arrow as it flies out / sweeps back in
+
+    border: 0;
+    border-radius: $b-radius-200;
+    background: getmap($colour, primary, 600);
+    color: getmap($colour, light, 100);
+    box-shadow: inset 0 rem(-3) 0 rgba(#000, 0.3); // raised "pop"
+
+    cursor: pointer;
+    transition: background-color 200ms ease, transform 200ms ease;
+
+    svg {
+        display: block;
+    }
+
+    &:hover {
+        transform: translateY(rem(-1));
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid currentColor;
+        outline-offset: rem(2);
+    }
+
+    // "Send" whoosh — arrow exits right, a fresh one re-enters from the left.
+    &:hover svg,
+    &:focus-visible svg {
+        animation: c-field-arrow-send 300ms linear;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &:hover svg,
+        &:focus-visible svg {
+            animation: none;
+        }
+    }
+}
+
+@keyframes c-field-arrow-send {
+    0%   { transform: translateX(0); animation-timing-function: cubic-bezier(0.5, 0, 1, 0.5); }
+    45%  { transform: translateX(250%); }
+    46%  { transform: translateX(-250%); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+    100% { transform: translateX(0); }
+}
+
+// ── Dictation ───────────────────────────────────────────────────────────────
+//
+// The mic beside the submit, in both ask fields. Injected by voice.js and only
+// where the browser can actually do it (see that file), so this styles a button
+// that may never exist on a given visit.
+//
+// Deliberately NOT the submit's red: two red buttons side by side would read as
+// a pair of equals, and sending the question is the primary action. This is the
+// field's own ink on a quiet fill, until it's live — then it takes the red, and
+// pulses, because a microphone that is listening has to look like it.
+.c-voice {
+    flex: 0 0 auto;
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: rem(44);
+
+    position: relative; // anchors the recording dot just outside its left edge
+
+    padding: 0;
+    border: 0;
+    border-radius: $b-radius-200;
+    background: rgba(getmap($colour, primary, 700), 0.08);
+    color: getmap($colour, primary, 700);
+    // The darker bottom edge that gives .c-button its raised "pop", borrowed here so
+    // this reads as pressable rather than as a tinted area of the field. Inset, so it
+    // follows the radius cleanly and costs no layout.
+    //
+    // The SAME navy as the fill, at a heavier alpha — not the button's rgba(#000, 0.3).
+    // Black over this near-transparent tint lands as a hard grey rule on a pale field,
+    // where the button wears it over saturated red. Deepening its own colour keeps the
+    // control exactly the colour it was.
+    box-shadow: inset 0 rem(-3) 0 rgba(getmap($colour, primary, 700), 0.18);
+
+    cursor: pointer;
+    transition:
+        background-color 200ms ease,
+        color 200ms ease,
+        transform 200ms ease;
+
+    svg { display: block; }
+
+    // Clipping, so the glyph flies out of the button rather than across the field —
+    // the same job `overflow: hidden` does on the submit beside it.
+    //
+    // Scoped to NOT-listening because the recording dot is a ::before sitting OUTSIDE
+    // this button's left edge (`right: 100%`), and a blanket overflow:hidden would
+    // clip it away entirely. At rest that dot is scale(0)/opacity(0), so there is
+    // nothing to clip; while listening the clip lifts and the dot shows.
+    //
+    // The one cost: stop recording with the pointer still on the button and the dot's
+    // 200ms fade-out is cut short, because the clip returns the instant .is-listening
+    // goes. A dot vanishing rather than shrinking, on a transition most visitors will
+    // never see twice.
+    &:not(.is-listening) {
+        overflow: hidden;
+    }
+
+    // The submit's "whoosh", reused exactly — same keyframes, same duration — so the
+    // two controls in the field answer the pointer as a pair.
+    //
+    // Scoped to the MIC glyph, not `svg`: while listening the button means STOP, and
+    // a glyph that flies away off the right is the wrong gesture for a control that
+    // halts something. The pause icon stays put.
+    &:hover .c-voice__icon--mic,
+    &:focus-visible .c-voice__icon--mic {
+        animation: c-field-arrow-send 300ms linear;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &:hover .c-voice__icon--mic,
+        &:focus-visible .c-voice__icon--mic {
+            animation: none;
+        }
+    }
+
+    // The mic at rest, the pause while listening — both are in the button and
+    // only one is ever shown (see voice.js for why they're not swapped in JS).
+    .c-voice__icon--stop { display: none; }
+
+    &.is-listening {
+        .c-voice__icon--mic { display: none; }
+        .c-voice__icon--stop { display: block; }
+
+        // The edge moves to the TOP while listening — the same shadow, its offset
+        // flipped positive. A raised control has its dark edge underneath; moving it
+        // overhead reads as pressed IN, which is what a control you have to press
+        // again to stop should look like. Colour and fill are untouched, so the
+        // change is purely the light on it.
+        box-shadow: inset 0 rem(3) 0 rgba(getmap($colour, primary, 700), 0.18);
+    }
+
+    &:hover {
+        background: rgba(getmap($colour, primary, 700), 0.16);
+        // The same 1px lift .c-button takes on hover — enough to read as rising off
+        // the field without opening a gap under it.
+        transform: translateY(rem(-1));
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 700);
+        outline-offset: rem(2);
+    }
+
+    // Listening changes only the GLYPH (see the icon swap above) — the button
+    // keeps its resting fill. It was the record red first, then filled navy, and
+    // both had the same fault: this is the secondary control in the field, and a
+    // solid block of colour beside the send button made it read as the louder of
+    // the two at exactly the moment attention belongs on what you're saying. The
+    // dot below is the indicator; the button only ever says what pressing it does.
+
+    // The recording dot: the record red, breathing, just outside the button's
+    // left edge. A pseudo-element rather than an element of its own — it carries
+    // no meaning a screen reader needs (the button's own label and pressed state
+    // already say it's listening), so it has no business in the markup.
+    //
+    // Absolutely placed, so it appears and disappears without moving the field's
+    // contents. It sits over the input's right end, which is empty at the point
+    // someone is dictating into it.
+    &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: 100%;
+        margin-right: rem(10);
+        width: rem(10);
+        height: rem(10);
+        border-radius: 50%;
+        background: getmap($colour, primary, 600);
+        transform: translateY(-50%) scale(0);
+        opacity: 0;
+        transition: transform 200ms ease, opacity 200ms ease;
+    }
+
+    &.is-listening::before {
+        transform: translateY(-50%) scale(1);
+        opacity: 1;
+        animation: c-voice-pulse 1600ms ease-in-out infinite;
+    }
+}
+
+@keyframes c-voice-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(getmap($colour, primary, 600), 0.55); }
+    50%      { box-shadow: 0 0 0 rem(7) rgba(getmap($colour, primary, 600), 0); }
+}
+
+// The dot still appears, it just doesn't breathe — its presence is the signal,
+// the pulse only makes it feel live.
+@media (prefers-reduced-motion: reduce) {
+    .c-voice.is-listening::before {
+        animation: none;
+        transition: none;
+    }
+}

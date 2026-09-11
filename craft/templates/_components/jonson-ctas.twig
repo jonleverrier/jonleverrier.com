@@ -1,0 +1,18 @@
+{#
+  Jonson CTA beat — the ways-to-connect moment inside a response ([[contact]]).
+  One button routing to /contact, tuned for the olive slab. Its label is fixed —
+  "Let’s talk more" — for everyone, VIP or not: it follows a reply that has just
+  made the case, so it continues the conversation rather than asking the contact
+  single's question again (that copy stays on the contact page and panel).
+
+  Expects: contact — the contact single entry.
+#}
+{% if contact is defined and contact %}
+    <div class="c-ctas c-ctas--jonson">
+        {% include '_components/button.twig' with {
+            label: 'Let’s talk more',
+            href:  siteUrl('contact'),
+            size:  'md',
+        } only %}
+    </div>
+{% endif %}

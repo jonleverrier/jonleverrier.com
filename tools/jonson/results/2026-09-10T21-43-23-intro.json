@@ -1,0 +1,129 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-10T21:43:10.024Z",
+  "scenarios": [
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "jersey",
+            "bordeaux"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "I'm a web designer working across the whole life cycle — strategy, design and development — which is a bit unusual for a designer, and something I've been doing for over 25 years. I'm from Jersey[[jersey]] originally, lived in Paris and Brighton, and now I'm settled in Bordeaux[[bordeaux]] in France.\n\nOutside of work I'm a keen street photographer, I collect photography books, and I usually have music on while I'm working or cooking. What brings you here — sizing me up for a project, or just curious?\n\n[[next: what kind of work do you do? @work | what do you shoot with your street photography? @photo:street-photo | what music do you have on while you work? @music]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux"
+          ],
+          "imgs": 1,
+          "chips": 3,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — originally from Jersey, with stints living in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a bit rare for one person.\n\nOutside work I'm a keen street photographer, I collect photography books, I used to DJ, and I love to travel — the more a place has a bad reputation, the more I'm drawn to it.\n\n[[next: what kind of work do you do? @work | where have you travelled? @photo:street-photo | what do you listen to while you work? @music]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey",
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm a web designer based in Bordeaux[[bordeaux]], originally from Jersey[[jersey]] in the Channel Islands, with over 25 years in the game. I work across the whole life cycle — strategy, design and development — which is a bit unusual for a designer, and I help organisations, startups and agencies turn tricky problems into things people actually want to use.\n\nOutside of that I'm a fairly obsessive street photographer[[street-photo]], I collect photography books, and there's usually music on while I work. Ask me anything you like.\n\n[[next: what kind of work have you done? @work | how did you get into web design? @cv | what do you listen to while you work? @music]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey",
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — originally from Jersey[[jersey]], with a few years in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a slightly unusual mix for a designer.\n\nOutside of that I'm a keen street photographer[[street-photo]], I collect photography books, and I nearly always have music on while I work or cook.\n\n[[next: what kind of work do you do? @work | what do you shoot as a street photographer? @photo:street-photo | how did you end up in Bordeaux? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey and have lived in Paris and Brighton along the way. I've been designing and building things for the web for over 20 years, working across strategy, design and development, which is a bit rare for a designer.\n\nAway from the screen I'm a street photographer[[street-photo]] (I shoot with a Leica rangefinder, sorry not sorry), I collect photography books, and I've spent a fair chunk of my life travelling — once for 12 months around South East Asia and India. Music's usually on while I work or cook, too.\n\n[[next: what kind of work do you do? @work | how did you get into web design? @cv | what do you shoot as a street photographer? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "intro",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey",
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — originally from Jersey[[jersey]], with stints in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a slightly unusual combination for a designer.\n\nOutside the screen I'm a street photographer[[street-photo]], a photography book collector, and I nearly always have music on while I work. I've also done a fair bit of travelling — a year around South East Asia and India left a real mark on me.\n\n[[next: what kind of work do you do? @work | what do you shoot as a street photographer? @photo:street-photo | how did you end up in Bordeaux? @photo:bordeaux]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

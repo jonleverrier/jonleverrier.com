@@ -1,0 +1,410 @@
+dateModified: 1789124733
+elementSources:
+  craft\elements\Entry:
+    -
+      defaultSort:
+        - postDate
+        - desc
+      defaultViewMode: ''
+      disabled: true
+      key: '*'
+      page: Entries
+      tableAttributes:
+        - status
+        - section
+        - postDate
+        - expiryDate
+        - link
+      type: native
+    -
+      key: 'single:f72fde96-d0e8-4526-bd7e-52228d6dc2b7' # Home
+      page: Entries
+      type: native
+    -
+      key: 'single:dca9ad48-ff6a-4e9e-aed0-4e84bba40794' # About
+      page: Entries
+      type: native
+    -
+      key: 'single:acad981a-e3ae-417d-ac6f-df5be8f2c1f1' # Case Studies
+      page: Entries
+      type: native
+    -
+      key: 'single:0645b09a-c1c3-42ca-9969-106bcb09eb89' # Notes
+      page: Entries
+      type: native
+    -
+      key: 'single:898a8b56-b457-4eb4-8f86-d807e8521a2c' # Contact
+      page: Entries
+      type: native
+    -
+      heading: Brain
+      key: 'heading:b23d3417-94a3-4eb6-ba73-4ed13335e447'
+      page: Entries
+      type: heading
+    -
+      key: 'single:5a671f63-dc27-42cc-a745-2cfca5c54f6a' # Personality
+      page: Entries
+      type: native
+    -
+      key: 'single:c2da239d-e8b1-4e39-aee1-d1ac68f059a2' # Methodology
+      page: Entries
+      type: native
+    -
+      defaultSort:
+        - structure
+        - asc
+      defaultViewMode: ''
+      disabled: false
+      key: 'section:85820103-a9d9-42b3-bda9-219fec934020' # Curriculum Vitae
+      page: Entries
+      tableAttributes:
+        - status
+      type: native
+    -
+      heading: Catalogues
+      key: 'heading:bb3fb8db-6c6a-4552-9c2e-f525346bbdc6'
+      page: Entries
+      type: heading
+    -
+      defaultSort:
+        - structure
+        - asc
+      defaultViewMode: ''
+      disabled: false
+      key: 'section:fea2dd51-26de-4b7a-a823-fd1e6b1c3180' # Case Study
+      page: Entries
+      tableAttributes:
+        - 'field:d4a7e015-56ce-4618-b6f1-1fd92cb1dc07' # Client
+        - 'field:df554acf-1b5c-47ab-b8e6-c45e0ca061a7' # Featured
+        - status
+        - link
+      type: native
+    -
+      defaultSort:
+        - postDate
+        - desc
+      defaultViewMode: table
+      disabled: false
+      key: 'section:0252a306-7b82-4d61-8a16-d2607229203f' # Testimonials
+      page: Entries
+      tableAttributes:
+        - 'field:4f7ddbf7-9856-47f8-80e4-9ea65921bc23' # Name
+        - 'field:9a729bf7-4da1-42b6-90a3-6a4c12666f0c' # Context
+        - 'field:df554acf-1b5c-47ab-b8e6-c45e0ca061a7' # Featured
+        - status
+      type: native
+    -
+      defaultSort:
+        - structure
+        - asc
+      defaultViewMode: ''
+      disabled: false
+      key: 'section:2c6f965e-738b-4e0c-8477-f364be69669f' # Client List
+      page: Entries
+      tableAttributes:
+        - 'field:a2d93e99-dee0-49f1-aa28-d8274699d05c' # Logo
+        - status
+      type: native
+    -
+      defaultSort:
+        - structure
+        - asc
+      defaultViewMode: ''
+      disabled: false
+      key: 'section:534287de-d8ca-48b9-ac50-33adaece4775' # Pages
+      page: Entries
+      tableAttributes:
+        - status
+        - postDate
+        - expiryDate
+        - link
+      type: native
+    -
+      defaultSort:
+        - postDate
+        - desc
+      defaultViewMode: ''
+      disabled: false
+      key: 'section:dc2b099e-fcb9-4ba5-b22d-fec61485eb0e' # Note
+      page: Entries
+      tableAttributes:
+        - 'field:96b2f741-dade-4019-a023-d26ab96cca8c' # Topic Selector
+        - status
+        - postDate
+        - link
+      type: native
+    -
+      defaultSort:
+        - postDate
+        - desc
+      defaultViewMode: ''
+      disabled: false
+      key: 'section:8636ff44-3f6d-40e6-bf55-09775e0e6a6d' # CRM
+      page: Entries
+      tableAttributes:
+        - 'field:994d5070-7163-4d97-8082-568fdabea3f5' # Email
+        - status
+        - postDate
+      type: native
+    -
+      defaultSort:
+        - structure
+        - asc
+      defaultViewMode: ''
+      disabled: false
+      key: 'section:232b394e-e9cd-4a51-9d65-83d1a8020c56' # VIP
+      page: Entries
+      tableAttributes:
+        - slug
+        - 'field:da8e0e9f-3e2d-4127-a793-c4adaa4710d3' # URL Hits
+        - status
+      type: native
+    -
+      heading: ''
+      key: 'heading:e55a5d62-7a85-4614-b790-a64e44baa647'
+      page: Entries
+      type: heading
+    -
+      key: 'single:8db08e9f-0dae-4539-9232-1b49345205e5' # Globals
+      page: Entries
+      type: native
+    -
+      heading: ''
+      key: 'heading:8d46ff38-8ab4-4d8e-9c95-9ef15a607f3f'
+      page: Entries
+      type: heading
+    -
+      heading: ''
+      key: 'heading:e14ce52b-8ce1-4775-8cc2-b5f79e26daeb'
+      page: Entries
+      type: heading
+    -
+      heading: ''
+      key: 'heading:19a49d99-5325-4447-ba91-981a2996ccbf'
+      page: Entries
+      type: heading
+    -
+      heading: ''
+      key: 'heading:a7f9cb46-0cf8-41d1-a1ea-be5173f8bea3'
+      page: Entries
+      type: heading
+    -
+      heading: ''
+      key: 'heading:1738c873-97a7-44b8-a2a6-2078bff5e8ec'
+      page: Entries
+      type: heading
+    -
+      heading: ''
+      key: 'heading:10031eb6-5b8e-4c21-b266-c7308f7b087c'
+      page: Entries
+      type: heading
+    -
+      heading: ''
+      key: 'heading:ca004dda-156b-4a70-ab59-359ce7a3fa34'
+      page: Entries
+      type: heading
+    -
+      heading: ''
+      key: 'heading:66388fe1-3b9c-4ea8-97f5-81b3597f3ddb'
+      page: Entries
+      type: heading
+    -
+      heading: ''
+      key: 'heading:68a08b13-8f64-4fb9-9d3d-60b039d721f9'
+      page: Entries
+      type: heading
+    -
+      heading: ''
+      key: 'heading:28594774-fedd-460c-9858-572d8068f3bd'
+      page: Entries
+      type: heading
+email:
+  fromEmail: j@leverrier.co.uk
+  fromName: 'Jon Leverrier'
+  transportType: craft\mail\transportadapters\Sendmail
+fs:
+  local:
+    hasUrls: true
+    name: Local
+    settings:
+      path: $PRIMARY_SITE_FILESYSTEM_WEBROOT
+    type: craft\fs\Local
+    url: $PRIMARY_SITE_FILESYSTEM_URL
+meta:
+  __names__:
+    0adb35bc-92fb-4eeb-9c84-963c653035b5: Test # Test
+    0baae4aa-d904-4c28-84b3-93034e5bcc7f: 'Date hidden?' # Date hidden?
+    0cd51eff-21f4-45d3-a2f4-640a7a40422b: CTAs # CTAs
+    00fcf05d-4b96-4b68-a24b-e8699a932153: 'Custom Page Title' # Custom Page Title
+    1a861c96-c194-4c76-96b0-35ef2047f305: 'Job Status' # Job Status
+    1da6899b-6141-4109-9115-16f521dd98b6: 'Jonson Rate Limit' # Jonson Rate Limit
+    2c6f965e-738b-4e0c-8477-f364be69669f: 'Client List' # Client List
+    2c7e191f-4db6-4b41-9d9f-6feae3bef0cd: 'End Date' # End Date
+    2d33f0d3-5668-4312-8d32-87eca5c7aba8: 'Large Image' # Large Image
+    2e7b7f18-1d9b-4556-b115-cdf870027ca6: Testimonial # Testimonial
+    2ffd51f5-8488-4bc6-a969-da63a608779c: Role # Role
+    3a15ea5a-e35f-4121-974b-8705a328441b: Home # Home
+    3a385840-ffe7-4230-bb75-8a3f41027903: Testimonial # Testimonial
+    3c0f3520-1660-44e5-9653-afa5db8c0fdc: 'CRM Entry' # CRM Entry
+    3e9036d0-de1a-4b49-a1fe-85cded2c7b73: Local # Local
+    4f7ddbf7-9856-47f8-80e4-9ea65921bc23: Name # Name
+    5a671f63-dc27-42cc-a745-2cfca5c54f6a: Personality # Personality
+    5bc74964-e785-4f9f-8fc3-7502d057e3f6: Bio # Bio
+    5ea42c48-233a-4c62-a94d-c41df0af4186: '3UP Image' # 3UP Image
+    5ffe69b6-79f5-42cd-8069-4909a437ea8b: 'Start Date' # Start Date
+    6a0c33fd-98e1-48b8-a4d0-24e7132d1623: 'Jon Leverrier' # Jon Leverrier
+    6ad25872-242d-49e3-b49d-89a6b3cba5a7: 'Long title' # Long title
+    6e43da47-a5d5-4d1c-a791-af7d18e9a2ac: 'First Name' # First Name
+    6f2dc241-82f5-4fc2-9b2c-ca09752f2486: CTA # CTA
+    6f442111-71d2-4463-8956-38dd8146f3de: 'Sector Experience' # Sector Experience
+    7a5e8aea-1061-410c-987a-4600fd56eedd: 'Sector Selector' # Sector Selector
+    7aa024a6-1b91-4eea-a5e3-558f2c3c1ce9: 'Legacy Image' # Legacy Image
+    7b38c794-18bc-4bb6-a055-bcbde0307c59: How # How
+    07c29e70-a7b4-468e-a272-456bfafd863c: 'Employment Type' # Employment Type
+    8db08e9f-0dae-4539-9232-1b49345205e5: Globals # Globals
+    9a729bf7-4da1-42b6-90a3-6a4c12666f0c: Context # Context
+    9d03f484-8451-4fdb-a587-204054e6a7dc: '3UP Image' # 3UP Image
+    16eff64f-e755-49ec-9bac-66c60032a09d: Strapline # Strapline
+    24d25123-4314-4ccb-a64f-a450d200cb1d: URL # URL
+    27e9120b-2988-4328-b1a1-00f9aea77134: 'Lottie JSON' # Lottie JSON
+    34ff84d5-a7af-4a84-b293-3ad3aadbb438: Page # Page
+    38c53f0d-1602-478d-87f7-ad35b7b0211f: Personality # Personality
+    48a345a5-15fa-438d-9106-72cc3204d789: 'Profile Image' # Profile Image
+    53bb207c-9913-45d4-acf8-9f4cca3d76e2: Skills # Skills
+    58bd7782-6a62-4253-8045-4bd40e0bf7a3: 'Meta Description' # Meta Description
+    64ce95c1-a716-4888-acc6-4e2127de1543: JonSon # JonSon
+    76c638b1-cf43-42a7-9c63-56cb5ffa05b5: Summary # Summary
+    77ea00d9-220d-4956-9c54-7938e51cd4ff: '2UP Image Secondary' # 2UP Image Secondary
+    84e896bc-0163-4b58-a239-e31fef1afffa: Skills # Skills
+    85c12d20-a33a-4dda-86fc-10cf8a66590a: '3UP Image' # 3UP Image
+    088f037b-ae75-4bd5-9398-7cc9651e7475: 'Jon Leverrier' # Jon Leverrier
+    96b2f741-dade-4019-a023-d26ab96cca8c: 'Topic Selector' # Topic Selector
+    232b394e-e9cd-4a51-9d65-83d1a8020c56: VIP # VIP
+    0252a306-7b82-4d61-8a16-d2607229203f: Testimonials # Testimonials
+    380b1c37-494f-4693-895c-b62a1a22c6f4: Method # Method
+    409a80e2-b752-4daa-8b4b-edd0cb50a5ff: Services # Services
+    440d7004-304c-41ed-8c66-fb158ab8b52c: Personality # Personality
+    472e3b23-b470-4dd0-8e52-c3d9a537976b: Video # Video
+    489d5930-13d4-45d9-85f2-7fea42ce77eb: Location # Location
+    0645b09a-c1c3-42ca-9969-106bcb09eb89: Notes # Notes
+    646b88d9-49a2-4e1c-8109-b1eafd61a34c: '2UP Image Primary' # 2UP Image Primary
+    898a8b56-b457-4eb4-8f86-d807e8521a2c: Contact # Contact
+    994d5070-7163-4d97-8082-568fdabea3f5: Email # Email
+    2264f1d9-274a-40ca-88c3-d257e97831a3: 'Large Image' # Large Image
+    4833f177-88ca-45a3-9945-0bc2baaa2b0f: Method # Method
+    8636ff44-3f6d-40e6-bf55-09775e0e6a6d: CRM # CRM
+    09805ad9-ad12-4f9b-b458-0644d283c8e3: Prompts # Prompts
+    12005ccd-8100-4692-a304-298b71ca8e50: Global # Global
+    22559de5-9987-4d8e-8dda-32482d03074c: Snippet # Snippet
+    32583b60-37cb-443a-9712-36c9c501d20f: Conversation # Conversation
+    56248dc5-d5bc-4930-84e1-33a86621fb8c: Topics # Topics
+    85738cb0-617b-45ba-9842-28cb680b4591: Company # Company
+    534287de-d8ca-48b9-ac50-33adaece4775: Pages # Pages
+    3126289e-aa51-4063-8ac8-7a3fa6f80dc6: 'Has breakout?' # Has breakout?
+    20283626-153e-4279-aec4-3b29e5285338: 'Loop Animation?' # Loop Animation?
+    56356920-3742-4704-9bb9-9dda638fcf8d: 'Has line numbers?' # Has line numbers?
+    85820103-a9d9-42b3-bda9-219fec934020: 'Curriculum Vitae' # Curriculum Vitae
+    94386123-8a64-4a2b-913e-0c19f1ef56a8: Job # Job
+    a2d93e99-dee0-49f1-aa28-d8274699d05c: Logo # Logo
+    a5c0ac83-e6a8-4ac9-93c4-b24a085711cf: about # about
+    a62bda5a-4156-4df3-978e-898f4573c2da: Suggestions # Suggestions
+    a68efc3b-2b23-40b8-9c1e-7090c9713dd4: 'Case Study' # Case Study
+    a2722a42-13ad-403c-a2f5-26906a00c47d: Location # Location
+    a9951897-0c70-4fcf-8b91-6feb29e1c9a3: Lottie # Lottie
+    aa85c7c1-9789-4e1e-8c17-73f94dc0470e: 'Job Title' # Job Title
+    ac207a17-88ae-482b-b0b5-dfbf6ca6a970: 'How I can help' # How I can help
+    acad981a-e3ae-417d-ac6f-df5be8f2c1f1: 'Case Studies' # Case Studies
+    b1d9fee8-8250-4688-b6f7-b8e7bffa0569: 'Client Long Title' # Client Long Title
+    b7cbdaa4-0dca-4396-ac30-8a87d96757d7: Tags # Tags
+    ba6e18f9-ba13-4201-8c29-03a1ebd3ad4e: Video # Video
+    bf05dd31-0643-4d5f-985c-90849d0e4ebc: 'Case Study' # Case Study
+    bfb56d7d-fee2-4410-9f56-4f8c6ec62176: Testimonial # Testimonial
+    bfce2a98-eed7-4c67-b3a4-39e5122ec983: 'Role Item' # Role Item
+    c086bc81-8c0a-4abb-bd0d-4d8b7ff54040: 'Exclude from sitemap?' # Exclude from sitemap?
+    c2da239d-e8b1-4e39-aee1-d1ac68f059a2: Methodology # Methodology
+    c7c4e445-93ae-458b-babb-7ca2b57d45b3: '3UP Image' # 3UP Image
+    c8c3b106-b599-4c1a-b3ca-343d2c7f519b: contact # contact
+    cae568b2-765d-47ae-83a8-77bf3b56ed54: Blockquote # Blockquote
+    cc9584ce-622d-4fd5-8533-6260daa16d8f: 'Jonson Api Error' # Jonson Api Error
+    cd72b7e1-1564-4018-9f17-b7d624b1a168: Content # Content
+    d2d8f42a-ad66-4f98-8f9f-181b3aa8f046: 'Case Study Link' # Case Study Link
+    d4a7e015-56ce-4618-b6f1-1fd92cb1dc07: Client # Client
+    d5e9ab69-1c2c-40bb-8b06-87c1490f7ef6: 'Message sent title' # Message sent title
+    d6b5a9f4-a1a7-41e8-bd94-bb4f731c7382: 'Jonson Short Answer' # Jonson Short Answer
+    d97b5f71-70aa-4e74-a738-d602ebec8e89: Message # Message
+    d4817107-92e7-411e-b1a7-0a60fb88db28: Code # Code
+    da6a9fef-c7a8-4ba7-8aa8-7ba34cf486af: Client # Client
+    da8e0e9f-3e2d-4127-a793-c4adaa4710d3: 'URL Hits' # URL Hits
+    db00a4b3-990e-40ea-85c1-6c8ac876990d: URL # URL
+    dba22451-95dd-4af4-b1a5-12c2ea2fd4ce: '2UP Image' # 2UP Image
+    dc2b099e-fcb9-4ba5-b22d-fec61485eb0e: Note # Note
+    dca9ad48-ff6a-4e9e-aed0-4e84bba40794: About # About
+    dcd6cf6d-6913-4896-ba48-e2f454483395: 'Public Schema' # Public Schema
+    dd563e4b-3caf-4340-937b-0b4024598dae: Content # Content
+    dda88e7f-6b8c-4f3e-b84a-b70ee8559f7b: 'Case Content' # Case Content
+    ddc5ed35-bbf5-442c-b714-1068f85d5452: Notes # Notes
+    df554acf-1b5c-47ab-b8e6-c45e0ca061a7: Featured # Featured
+    dff7c4ca-a181-4f0f-814b-c0deb6d03aa6: 'Message sent text' # Message sent text
+    e7ff809f-dc90-4ce8-a727-9118744b18d0: 'Is present?' # Is present?
+    e57c26c6-a917-47e0-8f92-e38e6d1c2196: 'Legacy Image' # Legacy Image
+    e92bca2e-bd0c-44c9-b4ba-ed8c0f8a6f51: 'Jonson Summary' # Jonson Summary
+    e92cf7c2-ce99-4782-b339-eab7b65ea6c1: Memories # Memories
+    e2440e70-5602-4656-b121-fc071cbccbba: Note # Note
+    e304270d-d9be-4623-8d5f-43901f7a8fa7: Personality # Personality
+    ed50ab74-0966-4b8e-a313-53e039a800f9: Purpose # Purpose
+    ed188daf-9990-4545-89c6-becaa4769fd8: Caption # Caption
+    edb0c911-caa4-4bb6-a805-e01e1ca27d71: VIP # VIP
+    f1afd6d8-432a-42e7-b160-a811467114bb: 'Background Colour' # Background Colour
+    f5f10221-af20-403a-8d6f-ae1ed8656d3d: 'Case Study Title' # Case Study Title
+    f57bc582-7826-4703-81c6-440492ad3ceb: 'Case Summary' # Case Summary
+    f67ce52e-283a-4745-9dc4-bda90a764767: 'Case Content' # Case Content
+    f72fde96-d0e8-4526-bd7e-52228d6dc2b7: Home # Home
+    f87acb59-ec2e-4031-aa6c-ad11069ba376: 'Open Graph Image' # Open Graph Image
+    f487c1d5-6e83-4e7f-9124-c60a7de99825: Surname # Surname
+    fc756c61-415e-4207-8833-f2209a907afe: Language # Language
+    fd87040d-8b86-4b1e-9263-61cc796304ff: 'Alt Slug' # Alt Slug
+    fda9463a-004f-448a-9907-bfab64c7f831: 'Enable sidebar summary' # Enable sidebar summary
+    fea2dd51-26de-4b7a-a823-fd1e6b1c3180: 'Case Study' # Case Study
+    fff25737-d8e6-43fe-b3bf-572cd3966519: 'Hidden?' # Hidden?
+plugins:
+  ckeditor:
+    edition: standard
+    enabled: true
+    schemaVersion: 5.6.0.0
+  cryptographer:
+    edition: standard
+    enabled: true
+    schemaVersion: 1.0.0
+  doxter:
+    edition: standard
+    enabled: true
+    schemaVersion: 4.0.0
+  expanded-singles:
+    edition: standard
+    enabled: true
+    schemaVersion: 1.0.0
+    settings:
+      expandSingles: true
+      redirectToEntry: true
+  postmark:
+    edition: standard
+    enabled: true
+    schemaVersion: 2.0.1
+  vite:
+    edition: standard
+    enabled: true
+    schemaVersion: 1.0.0
+system:
+  edition: solo
+  live: true
+  name: 'Jon Leverrier'
+  retryDuration: null
+  schemaVersion: 5.11.0.2
+  timeZone: Europe/Paris
+users:
+  allowPublicRegistration: false
+  defaultGroup: null
+  photoSubpath: null
+  photoVolumeUid: null
+  require2fa: false
+  requireEmailVerification: true

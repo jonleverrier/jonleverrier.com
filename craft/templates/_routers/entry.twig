@@ -1,0 +1,9 @@
+{#
+    Entry Template Router
+#}
+
+{% include
+    [
+        '_views/' ~ entry.section.type ~ '/' ~ entry.section.handle|lower ~ '/' ~ entry.type,
+    ]
+%}

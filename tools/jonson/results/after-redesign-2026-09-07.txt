@@ -1,0 +1,42 @@
+(node:90035) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+(Use `node --trace-warnings ...` to show where the warning was created)
+1/132 runs2/132 runs3/132 runs4/132 runs5/132 runs6/132 runs7/132 runs8/132 runs9/132 runs10/132 runs11/132 runs12/132 runs13/132 runs14/132 runs15/132 runs16/132 runs17/132 runs18/132 runs19/132 runs20/132 runs21/132 runs22/132 runs23/132 runs24/132 runs25/132 runs26/132 runs27/132 runs28/132 runs29/132 runs30/132 runs31/132 runs32/132 runs33/132 runs34/132 runs35/132 runs36/132 runs37/132 runs38/132 runs39/132 runs40/132 runs41/132 runs42/132 runs43/132 runs44/132 runs45/132 runs46/132 runs47/132 runs48/132 runs49/132 runs50/132 runs51/132 runs52/132 runs53/132 runs54/132 runs55/132 runs56/132 runs57/132 runs58/132 runs59/132 runs60/132 runs61/132 runs62/132 runs63/132 runs64/132 runs65/132 runs66/132 runs67/132 runs68/132 runs69/132 runs70/132 runs71/132 runs72/132 runs73/132 runs74/132 runs75/132 runs76/132 runs77/132 runs78/132 runs79/132 runs80/132 runs81/132 runs82/132 runs83/132 runs84/132 runs85/132 runs86/132 runs87/132 runs88/132 runs89/132 runs90/132 runs91/132 runs92/132 runs93/132 runs94/132 runs95/132 runs96/132 runs97/132 runs98/132 runs99/132 runs100/132 runs101/132 runs102/132 runs103/132 runs104/132 runs105/132 runs106/132 runs107/132 runs108/132 runs109/132 runs110/132 runs111/132 runs112/132 runs113/132 runs114/132 runs115/132 runs116/132 runs117/132 runs118/132 runs119/132 runs120/132 runs121/132 runs122/132 runs123/132 runs124/132 runs125/132 runs126/132 runs127/132 runs128/132 runs129/132 runs130/132 runs131/132 runs132/132 runs
+
+Jonson surfacing suite — 22 scenarios × 6 runs, 238s
+
+FAIL  intro              1/6  T1 missing context ×5
+FAIL  outside-work       0/6  T1 missing context ×6
+PASS  based              6/6  
+FAIL  jersey             5/6  T1 missing context ×1
+FAIL  camera             1/6  T1 missing context ×5
+FAIL  japan-decoy        5/6  T1 showed context ×1
+FAIL  logos              5/6  T1 missing casestudies ×1
+FAIL  named-study        4/6  T1 missing casestudies ×2
+FAIL  named-client       3/6  T1 missing casestudies ×3
+PASS  fintech            6/6  
+PASS  projects           6/6  
+FAIL  clients            3/6  T1 missing clients ×3
+FAIL  sectors            4/6  T1 missing sectors ×2
+FAIL  testimonial        1/6  T1 missing testimonial ×5
+FAIL  process            4/6  T1 missing method ×2
+PASS  start-decoy        6/6  
+PASS  hire-decoy         6/6  
+FAIL  music              0/6  T1 missing music ×6
+FAIL  music-while-work   0/6  T1 missing music ×6
+PASS  rail-repeat        6/6  
+FAIL  music-then-ask     0/6  T1 missing context ×6; T2 missing music ×5
+FAIL  signoff            2/6  T1 missing method ×4
+
+surface        expected  missed   forbidden  leaked
+context              42      23          84       1
+casestudies          18       6          66       0
+clients               6       3          72       0
+sectors               6       2          66       0
+method               12       6          84       0
+testimonial           6       5           6       0
+contact               6       0          30       0
+music                18      17          24       0
+suggestions           6       0           6       0
+
+full record: /Users/jonleverrier/Sites/jonleverrier2.local/tools/jonson/results/2026-09-07T10-55-02.json
+exit 1

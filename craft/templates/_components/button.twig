@@ -1,0 +1,56 @@
+{#
+  BUTTON
+
+  Renders <a class="c-button"> if `href` is set, otherwise <button class="c-button">.
+
+  Params:
+    label    string         button text (required)
+    href     string|null    URL — if set, renders <a> instead of <button>
+    size     string         'sm' | 'md' | 'lg'  (default 'md')
+    type     string         'button' | 'submit' | 'reset'  (default 'button', <button> only)
+    target   string|null    e.g. '_blank'  (<a> only)
+    rel      string|null    e.g. 'noopener'  (<a> only)
+    title    string|null    title attribute
+    classes  string         extra classes appended to .c-button
+    attrs    object         extra HTML attributes, e.g. { 'data-foo': 'bar' }
+
+  Examples:
+    {% include '_components/button.twig' with {
+        label: 'Get in touch',
+        href:  '/contact',
+        size:  'lg',
+    } only %}
+
+    {% include '_components/button.twig' with {
+        label: 'Submit',
+        type:  'submit',
+        size:  'md',
+    } only %}
+#}
+
+{% set href    = href ?? null %}
+{% set size    = size ?? 'md' %}
+{% set type    = type ?? 'button' %}
+{% set target  = target ?? null %}
+{% set rel     = rel ?? null %}
+{% set title   = title ?? null %}
+{% set attrs   = attrs ?? {} %}
+{% set classes = ('c-button c-button--' ~ size ~ ' ' ~ (classes ?? ''))|trim %}
+
+{% if href %}
+    <a class="{{ classes }}"
+       href="{{ href }}"
+       {%- if target %} target="{{ target }}"{% endif %}
+       {%- if rel %} rel="{{ rel }}"{% endif %}
+       {%- if title %} title="{{ title }}"{% endif %}
+       {%- for k, v in attrs %} {{ k }}="{{ v }}"{% endfor %}>
+        {{ label }}
+    </a>
+{% else %}
+    <button class="{{ classes }}"
+            type="{{ type }}"
+            {%- if title %} title="{{ title }}"{% endif %}
+            {%- for k, v in attrs %} {{ k }}="{{ v }}"{% endfor %}>
+        {{ label }}
+    </button>
+{% endif %}

@@ -1,0 +1,55 @@
+{#
+  Topics — the notes' topics as a row of pills (the method timeline's light-blue
+  service pill, minus its diamond, see _components/method), each a link to that topic's page at
+  /notes/{topic}, with "All" first. Only topics with a live note; a
+  topic with nothing under it has no page worth linking. The current topic —
+  on a topic page — is marked and isn't a link.
+
+    current    — the current topic category, or null
+    allCurrent — whether "All" is where the visitor is (the plain index);
+                 false on a year page, where no pill is current
+#}
+{# Each topic with how many live notes carry it; only those with any. #}
+{% set topics = [] %}
+{% for t in craft.categories().group('topics').all() %}
+    {% set n = craft.entries().section('notes').status('live').relatedTo(t).count() %}
+    {% if n > 0 %}
+        {% set topics = topics|merge([{ category: t, count: n }]) %}
+    {% endif %}
+{% endfor %}
+{# Busiest first: the count is the visitor's cue to where the writing is. Ties keep
+   the CMS order. #}
+{% set topics = topics|sort((a, b) => b.count <=> a.count) %}
+{% if topics %}
+    {% set notesIndex = craft.entries().section('note').one() %}
+    {% set total = craft.entries().section('notes').status('live').count() %}
+    <div class="c-topics">
+        <nav class="c-topics__panel" aria-label="Topics">
+        <h2 class="c-topics__whisper">Topics</h2>
+        <ul class="c-topics__items">
+            {% set isAll = (current is not defined or not current) and (allCurrent ?? true) %}
+            <li class="c-topics__item">
+                {# The count, in a disc after the label. Read out as "12 notes", not
+                   a bare number. #}
+                {% set allCount %}<span class="c-topics__count" aria-label="{{ total }} notes">{{ total }}</span>{% endset %}
+                {% if isAll %}
+                    <span class="c-topics__topic is-current" aria-current="page">All {{ allCount }}</span>
+                {% else %}
+                    <a class="c-topics__topic" href="{{ notesIndex ? notesIndex.url : siteUrl('notes') }}">All {{ allCount }}</a>
+                {% endif %}
+            </li>
+            {% for item in topics %}
+                {% set t = item.category %}
+                {% set count %}<span class="c-topics__count" aria-label="{{ item.count }} {{ item.count == 1 ? 'note' : 'notes' }}">{{ item.count }}</span>{% endset %}
+                <li class="c-topics__item">
+                    {% if current is defined and current and current.id == t.id %}
+                        <span class="c-topics__topic is-current" aria-current="page">{{ t.title }} {{ count }}</span>
+                    {% else %}
+                        <a class="c-topics__topic" href="{{ t.url }}">{{ t.title }} {{ count }}</a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    </nav>
+</div>
+{% endif %}

@@ -1,0 +1,106 @@
+{#
+  Case studies panel — the [[casestudies]] discovery cards inside a Jonson answer.
+  `caseStudies` is the list from FindContext::caseStudies() (maps: url, title,
+  client, summary, skills, logo, [image]). Rendered by the panel registry when the
+  model places the marker. Full-bleeds like the other Jonson panels.
+
+  Two presentations of the same data:
+
+    feature — one or two considered picks standing as evidence for the point just
+              made. Full-width cards carrying the client logo as well as the title,
+              because there's room and the job is to make a pick look worth opening.
+    marquee — several studies drifting past, so the volume reads at a glance rather
+              than as a long scroll.
+
+  WHICH ONE is a question of how many, not only of what was asked. [[casestudies:all]]
+  always marquees — the visitor asked for the lot. But a plain [[casestudies]] can also
+  come back with a handful (a broad question narrows to the featured picks, and there
+  may be five of those), and the feature layout caps at 2-up: five full-width cards at
+  a 3:2 well is thousands of pixels of scroll buried inside one answer. Past the
+  threshold below it marquees too.
+
+  Skills and summary are deliberately NOT passed through in either view. These are
+  discovery cards in the middle of a conversation — enough to decide whether to open
+  something, no more. The card component still renders them when given them, for the
+  case study page where the detail belongs. The logo goes to the feature only; the
+  marquee's cards are too narrow to carry a 260px chip beside the title.
+#}
+{% set modifier = modifier ?? null %}
+{# Normalised first: this file is rendered by the panel registry, which can hand over
+   nothing at all, and `|length` on an undefined variable is a Twig error — which
+   renderComponent swallows, silently losing the whole panel. #}
+{% set caseStudies = caseStudies ?? [] %}
+{# Above this many, the feature layout stops reading as a considered pick and starts
+   reading as a list. Three is the most that still feels chosen. #}
+{% set featureMax = 3 %}
+{% set isMarquee = modifier == 'all' or caseStudies|length > featureMax %}
+
+{% if caseStudies %}
+    {% if isMarquee %}
+        {# One run of cards; clients-marquee.js fills it out, clones it for a
+           seamless loop and sets the duration from the run's width. Both variants use
+           __items / __item — only the modifier on the block says which layout it is —
+           so the extra __track wrapper is the one structural difference. It has to
+           exist: the JS writes a transform to it while the block above clips. #}
+        {# The label has to follow the reason for the marquee, not the layout: it's
+           only "all" when the visitor asked for all. #}
+        <div class="c-case-studies c-case-studies--marquee js-case-studies-marquee"
+             role="group" aria-label="{{ modifier == 'all' ? 'All case studies' : 'Case studies' }}">
+            <div class="c-case-studies__track">
+                <ul class="c-case-studies__items">
+                    {# Reversed, and only here. The strip drifts left to right, so cards
+                       leave at the right edge and arrive at the left one — meaning the
+                       card a visitor meets next is the one BEFORE it in this list. Laid
+                       out in source order the strip would count backwards through them;
+                       reversing the markup puts the intended order back in the reveal.
+                       The feature grid below is static and stays as it comes. #}
+                    {% for cs in caseStudies|reverse %}
+                        {# No logo here. These cards are narrower than a feature card,
+                           and a 260px chip beside the text leaves nothing for the
+                           title — the client eyebrow already names who it was for. #}
+                        {# One title across both variants and the study's own page.
+                           (Comments can't live inside the hash literal below —
+                           Twig fails to parse it and the whole panel silently
+                           disappears.) #}
+                        <li class="c-case-studies__item">
+                            {% include '_components/case-study' with {
+                                url: cs.url,
+                                title: cs.title,
+                                client: cs.client,
+                                image: cs.image ?? null,
+                            } only %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% else %}
+        <div class="c-case-studies c-case-studies--feature">
+            <ul class="c-case-studies__items">
+                {% for cs in caseStudies %}
+                    {# The card is the doorway to the study's page, so the two have to
+                       agree — a card and a page headed differently reads as a wrong
+                       link. Both come from `longTitle ?: title` via FindContext.
+
+                       Feature cards span the 1110 panel — twice the marquee slide — so
+                       they override the component's marquee-sized defaults: 1110 for
+                       display, 2220 for 2x, which is what the Thumbnail field asks to
+                       be uploaded. (Comments can't go inside the hash below: Twig
+                       fails to parse it and the whole panel silently disappears.) #}
+                    <li class="c-case-studies__item">
+                        {% include '_components/case-study' with {
+                            url: cs.url,
+                            title: cs.title,
+                            client: cs.client,
+                            image: cs.image ?? null,
+                            logo: cs.logo ?? null,
+                            imageWidths: [1110, 2220],
+                            imageSizes: '(min-width: 80em) 1110px, 100vw',
+                            imageFallback: 1110,
+                        } only %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+{% endif %}

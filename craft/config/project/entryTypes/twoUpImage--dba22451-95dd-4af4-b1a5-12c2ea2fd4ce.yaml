@@ -1,0 +1,58 @@
+allowLineBreaksInTitles: false
+color: null
+description: 'Upload 1578x1800 for display at 789x900'
+fieldLayouts:
+  c38bd430-5adf-405b-861b-4f23a770a132:
+    cardThumbAlignment: start
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-08-03T20:39:10+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 646b88d9-49a2-4e1c-8109-b1eafd61a34c # 2UP Image Primary
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 69472c1d-9ba5-49a9-b164-b9912f45e0ea
+            userCondition: null
+            warning: null
+            width: 50
+          -
+            dateAdded: '2026-08-03T20:39:10+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 77ea00d9-220d-4956-9c54-7938e51cd4ff # 2UP Image Secondary
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: daedfa50-0154-4260-86e8-caebecf5705e
+            userCondition: null
+            warning: null
+            width: 50
+        name: Content
+        uid: b314e2e3-0c56-411d-8d5e-d93fb98e8084
+        userCondition: null
+    thumbFieldKey: 'layoutElement:69472c1d-9ba5-49a9-b164-b9912f45e0ea'
+handle: twoUpImage
+hasTitleField: false
+icon: null
+name: '2UP Image'
+showSlugField: false
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

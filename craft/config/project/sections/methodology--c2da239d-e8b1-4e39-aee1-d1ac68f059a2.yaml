@@ -1,0 +1,17 @@
+defaultPlacement: end
+enableVersioning: true
+entryTypes:
+  -
+    uid: 4833f177-88ca-45a3-9945-0bc2baaa2b0f # Method
+handle: methodology
+maxAuthors: 1
+minAuthors: 1
+name: Methodology
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: false
+    template: null
+    uriFormat: null
+type: single

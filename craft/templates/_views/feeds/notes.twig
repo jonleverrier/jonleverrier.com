@@ -1,0 +1,80 @@
+{#
+  RSS 2.0 feed for the notes.
+
+  Reached at /notes.rss (see config/routes.php) and advertised from every page's head
+  (_includes/page/head.twig), which is how a reader discovers it: paste the site address
+  into any feed app and it finds this without being told.
+
+  NO LAYOUT. This extends nothing and includes nothing — a feed is XML, and one stray
+  newline before the declaration makes it invalid. `{% header %}` sets the content type
+  so browsers and readers treat it as a feed rather than a download.
+
+  RSS 2.0 rather than Atom or JSON Feed: it is the format every reader still supports
+  without exception, and it costs nothing to be the boring choice here.
+#}
+{#
+  Whitespace control on EVERY tag below, and no {% spaceless %} — that tag was removed
+  in Twig 3 and fails as "unclosed block". It matters here in a way it never does in
+  HTML: a single newline before the XML declaration makes the document invalid, and a
+  reader will reject the feed outright rather than tolerate it.
+
+  Twenty items is the convention: enough backlog for a new subscriber, small enough to
+  stay a quick download. Readers keep what they have already seen, so nothing is lost
+  from a feed someone is already following.
+#}
+{%- header "Content-Type: application/rss+xml; charset=utf-8" -%}
+{%- set notes = craft.entries().section('notes').status('live').orderBy('postDate DESC').limit(20).all() -%}
+{%- set notesIndex = craft.entries().section('note').status('live').one() -%}
+{%- set feedUrl = siteUrl('notes.rss') -%}
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>{{ siteName }} — Notes</title>
+        <link>{{ notesIndex ? notesIndex.url : siteUrl('notes') }}</link>
+        {# atom:self is how a reader knows the feed's own canonical address — it is what
+           lets one that has been moved or mirrored still be recognised as the same feed.
+           The atom namespace on the <rss> element above exists solely for this. #}
+        <atom:link href="{{ feedUrl }}" rel="self" type="application/rss+xml" />
+        <description>{{ notesIndex and notesIndex.summary ? notesIndex.summary|striptags|trim : 'Notes from ' ~ siteName }}</description>
+        <language>{{ craft.app.language }}</language>
+        {# The newest note's date, so a reader can tell whether anything has changed
+           without parsing the items. #}
+        {% if notes|length and notes[0].postDate %}
+            <lastBuildDate>{{ notes[0].postDate|rss }}</lastBuildDate>
+        {% endif %}
+
+        {% for note in notes %}
+            <item>
+                {# The plain title, not longTitle: a feed reader shows this in a list
+                   where the long form wraps to three lines. #}
+                <title>{{ note.title }}</title>
+                <link>{{ note.url }}</link>
+                {# isPermaLink tells a reader the guid IS the address, so an entry whose
+                   URL changes is not re-delivered as a new note. #}
+                <guid isPermaLink="true">{{ note.url }}</guid>
+                {% if note.postDate %}
+                    <pubDate>{{ note.postDate|rss }}</pubDate>
+                {% endif %}
+                {# The FIRST paragraph only, matching the cards on the notes index — the
+                   feed is a pointer to the note, not a copy of it. Split on a blank
+                   line, the same way _components/notes-list.twig does. #}
+                {% set summary = (note.summary ?? '')|trim|split("\n\n")|first|trim %}
+                {% if summary %}
+                    <description>{{ summary }}</description>
+                {% endif %}
+                {# `topicSelector`, which is the field's real handle — `topics` is the
+                   CATEGORY GROUP's handle, and a note has no field by that name. It
+                   failed silently, emitting no categories at all rather than erroring,
+                   which is the way this kind of mistake usually hides.
+
+                   Guarded on the field existing so a feed is never a 500: this template
+                   also renders for a section that may not carry the field forever. #}
+                {% if note.topicSelector is defined %}
+                    {% for topic in note.topicSelector.all() %}
+                        <category>{{ topic.title }}</category>
+                    {% endfor %}
+                {% endif %}
+            </item>
+        {% endfor %}
+    </channel>
+</rss>

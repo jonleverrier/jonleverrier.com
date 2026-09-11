@@ -1,0 +1,122 @@
+{#
+  Contact form (c-form) — a solid green panel that posts to the CRM channel
+  (modules/jonson/controllers/CrmController). Standard POST + redirect, no JS.
+  Repopulates from the flashed values on a validation error.
+#}
+{# The thank-you copy: the contact single's Message Sent fields, with the original
+   wording as the fallback while they're empty. The same two strings ride on the
+   form as data attributes for contact-form.js, whose fetch path paints the same
+   block — so a refresh and a live submit read identically. #}
+{% set contactSingle = craft.entries().section('contact').status('live').one() %}
+{% set sentTitle = (contactSingle.messageSentTitle ?? '')|trim ?: 'Message sent' %}
+{% set sentText = (contactSingle.messageSentText ?? '')|trim ?: 'I’ll be in touch soon within the next day or so' %}
+{% set old = craft.app.session.getFlash('crmForm') ?? {} %}
+{% set error = craft.app.session.getFlash('error') %}
+{% set fieldErrors = craft.app.session.getFlash('crmErrors') ?? {} %}
+
+{# Validation message shown under a label. #}
+{% macro errorMessage(message) %}
+    <span class="c-form__error" role="alert">{{ message }}</span>
+{% endmacro %}
+
+{# Warning icon overlaid inside an errored input (right side, red). Inlined (not
+   the icon() sprite) so its currentColor takes the red we set in CSS. #}
+{% macro errorIcon() %}
+    <svg class="c-form__input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
+        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+    </svg>
+{% endmacro %}
+{% import _self as f %}
+
+{% if craft.app.session.get('crmSubmitted') %}
+    {# Already submitted this session — confirm instead of re-showing the form.
+       Copy must match showThanks() in contact-form.js so a refresh looks identical. #}
+    <div class="c-form c-form--done" role="status">
+        <p class="c-form__thanks">{{ sentTitle }}</p>
+        <p class="c-form__thanks-sub">{{ sentText }}</p>
+    </div>
+{% elseif craft.app.session.getFlash('crmBlocked') %}
+    {# Blocked this attempt (rate limit / too fast) — one-time notice replacing the
+       form. Copy must match showBlocked() in contact-form.js. #}
+    <div class="c-form c-form--done" role="status">
+        <p class="c-form__thanks">Message not sent</p>
+        <p class="c-form__thanks-sub">Please use another way of contacting me</p>
+    </div>
+{% else %}
+<form class="c-form" method="post" accept-charset="UTF-8" data-form data-sent-title="{{ sentTitle }}" data-sent-text="{{ sentText }}">
+    {{ csrfInput() }}
+    {# A VIP visitor (see modules/jonson/services/Vip) gets the fields Jon already
+       knows filled in from their entry — first name, surname, email, whichever are
+       set. A failed submit's own values (`old`) always win over these: what the
+       visitor typed is what they meant, even if it differs from the entry. #}
+    {% set vip = craft.app.getModule('jonson').vip.current() %}
+    <input type="hidden" name="action" value="jonson/crm/submit">
+    {{ redirectInput(craft.app.request.pathInfo) }}
+
+    {# Signed render time — the controller rejects submissions completed
+       implausibly fast (bots). Hashed so it can't be forged. #}
+    <input type="hidden" name="ts" value="{{ craft.app.security.hashData(now|date('U')) }}">
+    {# Where the message was sent from — the page this form was rendered on (the
+       contact page, or any page via the contact panel). Stored on the lead. #}
+    <input type="hidden" name="referrerUrl" value="{{ craft.app.request.absoluteUrl }}">
+
+
+    {# Honeypot — hidden from people, tempting to bots. #}
+    <div class="c-form__hp" aria-hidden="true">
+        <label>Leave this blank
+            <input type="text" name="website" tabindex="-1" autocomplete="off">
+        </label>
+    </div>
+    {% if error %}
+        <p class="c-form__flash c-form__flash--error" role="alert">{{ error }}</p>
+    {% endif %}
+
+    <div class="c-form__row">
+        <label class="c-form__field{{ fieldErrors.firstName is defined ? ' c-form__field--error' }}">
+            <span class="c-form__label">
+                <span class="c-form__label-text">First Name</span>
+                {% if fieldErrors.firstName is defined %}{{ f.errorMessage(fieldErrors.firstName) }}{% endif %}
+            </span>
+            <span class="c-form__control">
+                <input class="c-form__input" type="text" name="firstName" autocomplete="given-name"
+                    value="{{ old.firstName ?? vip.firstName ?? '' }}" placeholder="Henri" required>
+                {% if fieldErrors.firstName is defined %}{{ f.errorIcon() }}{% endif %}
+            </span>
+        </label>
+        <label class="c-form__field{{ fieldErrors.surname is defined ? ' c-form__field--error' }}">
+            <span class="c-form__label">
+                <span class="c-form__label-text">Surname</span>
+                {% if fieldErrors.surname is defined %}{{ f.errorMessage(fieldErrors.surname) }}{% endif %}
+            </span>
+            <span class="c-form__control">
+                <input class="c-form__input" type="text" name="surname" autocomplete="family-name"
+                    value="{{ old.surname ?? vip.surname ?? '' }}" placeholder="Cartier-Bresson" required>
+                {% if fieldErrors.surname is defined %}{{ f.errorIcon() }}{% endif %}
+            </span>
+        </label>
+    </div>
+
+    <label class="c-form__field{{ fieldErrors.email is defined ? ' c-form__field--error' }}">
+        <span class="c-form__label">
+            <span class="c-form__label-text">Email</span>
+            {% if fieldErrors.email is defined %}{{ f.errorMessage(fieldErrors.email) }}{% endif %}
+        </span>
+        <span class="c-form__control">
+            <input class="c-form__input" type="email" name="email" autocomplete="email"
+                value="{{ old.email ?? vip.email ?? '' }}" placeholder="thedecisivemoment@example.com" required>
+            {% if fieldErrors.email is defined %}{{ f.errorIcon() }}{% endif %}
+        </span>
+    </label>
+
+    <label class="c-form__field">
+        <span class="c-form__label">
+            <span class="c-form__label-text">Message <span class="c-form__optional">(optional)</span></span>
+        </span>
+        <textarea class="c-form__input c-form__input--area" name="message" rows="5">{{ old.message ?? '' }}</textarea>
+    </label>
+
+    {% include '_components/button.twig' with { label: 'Send', type: 'submit', size: 'sm' } only %}
+</form>
+{% endif %}

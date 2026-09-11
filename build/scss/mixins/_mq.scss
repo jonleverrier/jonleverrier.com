@@ -1,0 +1,67 @@
+/**
+ * MIXINS: MQ
+ *
+**/
+@use "sass:map";
+@use '../theme' as *;
+
+/**
+ * mq
+ *
+ * allows you to write media queries inline by using the
+ * include tag. For example:
+ *
+ *  .hello {
+ *      padding: 0;
+ *      @include mq(from, md) {
+ *          padding: 10rem;
+ *      }
+ *  }
+ * 
+ *  .hello {
+ *      padding: 0;
+ *      @include mq($direction: from, $bp: md) {
+ *          padding: 10rem;
+ *      }
+ *  }
+ *
+ * $direction (string) = direction of mq. from and until are accepted values
+ * $bp (string) = mq value from sass map
+**/
+
+// default values: these can be overriden in theme/_setup.scss
+$mq-breakpoints: (
+    sm:  320px,
+    md:  740px,
+    lg:  980px,
+    xl:  1300px,
+    xxl: 1300px,
+) !default;
+
+@mixin mq($direction, $bp:null) {
+    
+    // check if the provided key matches a value in the map
+    $size: map.get($mq-breakpoints, $bp);
+
+    // if there is a match
+    @if ($size) {
+
+        // if direction value if "from"
+        @if ($direction) == from {
+            @media screen and (min-width: $size) {
+                @content;
+            }
+        }
+
+        // if direction value is "until"
+        @if ($direction) == until {
+            @media screen and (max-width: $size) {
+                @content;
+            }
+        }
+
+    // if no mq value found in map
+    } @else {
+        @error 'mixins/_mq.scss: #{$size} does not exist in the $mq-breakpoints sass map...';
+    }
+}

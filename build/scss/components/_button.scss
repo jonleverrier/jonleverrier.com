@@ -1,0 +1,74 @@
+/**
+ * COMPONENT: BUTTON
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.c-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: rem(8);
+
+    border: 0;
+    border-radius: $b-radius-200;
+    background: getmap($colour, primary, 600);
+    color: getmap($colour, light, 100);
+    // Darker bottom edge gives the button a raised "pop". Inset shadow
+    // follows the radius cleanly (no corner artifacts) and adds no layout shift.
+    box-shadow: inset 0 rem(-3) 0 rgba(#000, 0.3);
+
+    font-family: $g-font-primary;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1;
+    white-space: nowrap;
+
+    cursor: pointer;
+    transition:
+        background-color 200ms ease,
+        color 200ms ease,
+        transform 200ms ease;
+
+    &:hover {
+        transform: translateY(rem(-1));
+    }
+
+    // Press: a small squeeze, the tactile beat a click deserves. 0.96 exactly —
+    // lower feels exaggerated. Instant on the way down (the 200ms transform
+    // transition above eases it back on release).
+    &:active {
+        transform: scale(0.96);
+        transition-duration: 0ms;
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid currentColor;
+        outline-offset: rem(2);
+    }
+
+    &:disabled,
+    &[aria-disabled="true"] {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+}
+
+// sizes
+.c-button--sm {
+    @include typography(p-sm);
+    padding: rem(12) rem(16);
+}
+
+.c-button--md {
+    @include typography(p);
+    padding: rem(18) rem(22);
+}
+
+.c-button--lg {
+    @include typography(p-lg);
+    padding: rem(24) rem(30);
+}

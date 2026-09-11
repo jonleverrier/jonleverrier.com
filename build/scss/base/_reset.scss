@@ -1,0 +1,87 @@
+/**
+ * BASE: RESET
+ *
+ * inspired from:
+ * https://github.com/hankchizljaw/modern-css-reset/blob/master/dist/reset.css
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+html,
+body {
+    height: 100%;
+}
+
+// macOS renders both faces heavier than they were drawn; set once here, never per
+// component.
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    // Hold the scrollbar's gutter open whether or not there is a scrollbar.
+    //
+    // This exists for the nav panel, which locks scrolling with `overflow: hidden` on
+    // this element (see _header.scss). On a system with CLASSIC scrollbars — Windows,
+    // or macOS set to always show them — that takes ~15px of scrollbar away and widens
+    // the viewport by the same amount. Media queries answer to the viewport, so a
+    // window sitting within 15px of a breakpoint crossed it the moment the nav opened
+    // and every heading on the page jumped a whole step of the type scale. Measured:
+    // 1009px gives 66px type, 1024px gives 80px; 753px gives 48px, 768px gives 66px.
+    //
+    // Reserving the gutter permanently means hiding the overflow changes nothing. It
+    // also stops the sideways shift between a page that scrolls and one that doesn't.
+    // No effect at all where scrollbars are overlays (macOS by default), which is why
+    // the bug only ever showed up on some machines and never reproduced on demand.
+    scrollbar-gutter: stable;
+}
+
+// Box sizing
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+// Remove unwanted padding
+ul,
+ol {
+    padding: 0;
+}
+
+// Remove unwanted margin
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+p,
+ul,
+ol,
+figure,
+blockquote,
+dl,
+dd,
+pre {
+    margin: 0;
+}
+
+// Body defaults
+body {
+    position: relative;
+}
+
+// Remove all animations and transitions for people that prefer not to see them 
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *:hover,
+    *:before,
+    *:after {
+      transition-property: none !important;
+    }
+}
+
+.is-loading * {
+    transition-property: none !important;
+}
+

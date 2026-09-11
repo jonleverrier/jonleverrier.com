@@ -1,0 +1,133 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-09T19:49:20.726Z",
+  "scenarios": [
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Because I work across the whole life cycle — strategy, design and development — which is rare for a designer, and it means fewer handoffs and a straighter line from idea to something real. I've been doing this for over 25 years, across agencies, in-house teams and my own studio, and clients tend to stick around — one kept me on for over a decade.[[testimonial]]\n\nIf you want to see what that looks like in practice, my case studies show the actual work.[[casestudies]]\n\n[[next: how do you approach a new project? | who have you worked with over the years? | what sectors have you worked in? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Because I work across the whole life cycle — strategy, design and build — which is rare for a designer, so you get one person who can take a complex idea and turn it into something real and coherent rather than handing off between people. Over 25 years I've done that for startups, established organisations and agencies alike, and clients tend to keep me around — one for over a decade.[[testimonial]]\n\nHappy to show you the actual work if that's more use than me telling you.[[casestudies]]\n\n[[next: how do you approach a new project? | what kinds of sectors have you worked in? | who have you worked with over the years? @method | @sectors | @clients]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies",
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Because I work across the whole arc of a project — research, branding, design and front-end — which is rare for one person, so you don't lose the thread handing off between specialists. I've been at this for over 25 years, with clients who've kept me around for the long haul rather than a single job. Have a look and judge for yourself.[[casestudies]][[testimonial]]\n\n[[next: how do you work through a project? | who have you worked with over the years? | which sectors have you worked in? @method @cv @sector:Technology]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "I work across the whole arc of a project — strategy, design and development — which is rarer than it sounds for a designer, so you're not handing off between people who don't quite talk to each other. Over 25 years I've done this for startups, agencies and organisations with genuinely complex products, and clients tend to keep me around a long time. [[testimonial]]\n\nThe honest test of fit is a conversation, but the work speaks better than I can. [[casestudies]]\n\n[[next: how do you approach a new project? @method | what kinds of clients have you worked with? @cv | can you show me the Vaiie work? @study:vaiie-product-branding]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Because I work across the whole life cycle — strategy, design and development — which is rare, so you're not stitching three people together to get one coherent result. I've got over 25 years doing this for agencies, in-house teams and my own clients, and people tend to keep me around: one kept me on for over a decade to look after their brand and platforms.[[testimonial]]\n\nHappy to show you the actual work if that's more useful than me telling you.[[casestudies]]\n\n[[next: how do you approach a new project? | what kinds of clients have you worked with? | which sectors have you worked in? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole arc of a project — strategy, design and development — which means fewer handovers, fewer things lost in translation, and someone who can actually make the thing, not just draw it. I've been at this for over 25 years, across everything from pre-seed startups to household names, and people tend to keep me around: one client's stayed with me for over a decade.[[clients]]\n\nBut honestly, the best way to judge fit is the work itself and what people I've worked with say about me.[[testimonial]]\n\n[[next: can I see some of your work? @work | how do you actually approach a project? @method | what kinds of sectors have you worked in? @work]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

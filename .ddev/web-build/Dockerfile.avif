@@ -1,0 +1,26 @@
+# AVIF encoding for Craft's image transforms.
+#
+# The base image's ImageMagick is built against libheif, so `queryFormats()`
+# happily reports AVIF and Craft accepts `format: 'avif'` — but libheif ships its
+# codecs as separate plugins, and without an AV1 *encoder* among them the write
+# fails with "no encode delegate for this image format `AVIF'".
+#
+# That failure is the reason this file exists rather than a note in the README.
+# Craft swallows it: the transform still lands on disk, still gets served as
+# image/avif, and is JPEG bytes wearing an .avif extension. Browsers mostly sniff
+# their way past it, so nothing looks broken — the AVIF <source> just quietly
+# serves a file bigger than the WebP it was meant to beat. It is only visible to
+# `file(1)`.
+#
+# aomenc over the alternatives (rav1e, svtenc): it's the reference encoder and
+# the one that compresses hardest, and transforms are generated once and cached,
+# so encode speed matters far less here than bytes on the wire.
+#
+# craft.frontend.supportsAvif checks for this at runtime rather than assuming it,
+# so a host without the plugin serves WebP and nothing breaks.
+ARG BASE_IMAGE
+FROM $BASE_IMAGE
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libheif-plugin-aomenc \
+    && rm -rf /var/lib/apt/lists/*

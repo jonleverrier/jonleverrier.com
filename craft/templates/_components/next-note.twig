@@ -1,0 +1,27 @@
+{#
+  Next / previous note — a card that carries the reader on to another note: an
+  eyebrow ("Next note" / "Previous note") over the title, the whole card the
+  link. It IS a CTA pill (.c-ctas__item, see _components/ctas and _ctas.scss) —
+  the same eggshell ground, spine-grey edge, and the navy highlight that spins
+  round the border on hover — with a two-line label inside instead of one, and
+  a drawn arrow that shows from the start: at the end for next, at the start
+  (and pointing back) for previous.
+
+    note      — the entry to go to
+    direction — 'next' (default) or 'prev'
+#}
+{% if note is defined and note %}
+    {% set direction = direction ?? 'next' %}
+    {% set isPrev = direction == 'prev' %}
+    <a class="c-ctas__item c-next{{ isPrev ? ' c-next--prev' : '' }}" href="{{ note.url }}">
+        <span class="c-next__text">
+            <span class="c-next__whisper">{{ isPrev ? 'Previous note' : 'Next note' }}</span>
+            <span class="c-next__title">{{ note.title }}</span>
+        </span>
+        {# The arrow, drawn — the same path the testimonials' buttons use — so it
+           can be as tall as the label; flipped in CSS for previous. #}
+        <svg class="c-next__arrow" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" focusable="false">
+            <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </a>
+{% endif %}

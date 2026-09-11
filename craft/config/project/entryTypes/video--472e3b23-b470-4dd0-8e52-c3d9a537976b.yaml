@@ -1,0 +1,58 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  610d264e-4e66-44d0-b506-d5ca51278b34:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-08-18T22:50:06+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: ba6e18f9-ba13-4201-8c29-03a1ebd3ad4e # Video
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: e4d5d859-ddb2-4aab-8cac-9b90a5d67b4e
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-08-18T22:50:06+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 2d33f0d3-5668-4312-8d32-87eca5c7aba8 # Large Image
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 90f3d4b3-32fa-42c9-85e5-e22f96ded486
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: c7ad8162-95cb-4221-ab23-93d223f640a0
+        userCondition: null
+    thumbFieldKey: null
+handle: video
+hasTitleField: false
+icon: null
+name: Video
+showSlugField: false
+showStatusField: false
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

@@ -1,0 +1,121 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-09T18:08:51.847Z",
+  "scenarios": [
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I designed the identity verification journey for Vaiie, the whole customer-facing experience so their clients could white label it themselves without a developer. It shipped mobile responsive across 254 countries and later got government approval.\n\n[[casestudies]]\n\n[[next: what did you learn from testing the verification flow? @study:vaiie-identify-product-design | how did you handle the accessibility side? @study:vaiie-identify-product-design | what was the branding work behind Vaiie? @study:vaiie-product-branding]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I designed the identity verification journey for Vaiie, the whole customer-facing experience so clients could white label it themselves without needing a developer.[[casestudies]]\n\n[[next: how did you test the verification journey with real users? | what made the identity product tricky to design? | which sectors have you worked across? @sector:Regulatory]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes, that was mine — I designed the identity verification journey so clients could white label it themselves without needing a developer, across any device. A lot of it came down to getting the small things right, like how people read numbers aloud during a check or which way they'd move in front of an unmirrored camera.[[casestudies]]\n\n[[next: what surprised you most in testing the verification flow? @study:vaiie-identify-product-design | how did you approach the white labelling side? @study:vaiie-identify-product-design | did you work on the wider Vaiie brand too? @study:vaiie-product-branding]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I designed the identity verification journey for Vaiie, aiming to make something clients could white label themselves without needing a developer. It ended up shipping mobile responsive across 254 countries, and was later government approved.[[casestudies]]\n\n[[next: how did you test the verification steps? @study:vaiie-identify-product-design | what made designing for RegTech tricky? @study:vaiie-product-branding | how do you usually approach a project like this? @method]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I designed the identity verification journey for Vaiie, built so clients could white label it themselves without needing a developer. The back office and verification tech were already strong; the customer-facing part hadn't had the same attention, so that's where I came in.\n\n[[casestudies]]\n\n[[next: how did you handle the different ways the journey could be triggered? @study:vaiie-identify-product-design | what did testing reveal that surprised you? @study:vaiie-identify-product-design | what else did you do for Vaiie? @study:vaiie-product-branding]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "named-study-by-title",
+      "turns": [
+        {
+          "q": "Did you design Vaiie Identify?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Yes — I designed the identity verification journey for Vaiie, the whole customer-facing side that clients could white label themselves without needing a developer.[[casestudies]]\n\n[[next: how did you test the verification flow? @study:vaiie-identify-product-design | what was the trickiest part of the design? @study:vaiie-identify-product-design | how do you usually approach a project like this? @method]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

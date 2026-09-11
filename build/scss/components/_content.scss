@@ -1,0 +1,801 @@
+/**
+ * COMPONENT: CONTENT
+ *
+ * A static page in the Jonson timeline shape — whisper → title → prose, joined
+ * by a centred dotted spine (drawn with pseudo-elements, no markup), the same
+ * device as the live conversation but authored/static (no JS, no markers). Sits
+ * directly on the page slab, whose colour is set per view via `slabModifier`.
+ * Styled for a light/cream slab (dark ink, tan spine).
+ *
+**/
+
+@use 'sass:color';
+@use '../mixins' as *;
+@use '../theme' as *;
+@use 'prose' as *;
+@use 'accent-link' as *;
+
+$c-content-measure: rem(740);
+$c-content-spine: getmap($colour, light, 750); // grey-taupe — the timeline line + caps
+// The dot grid is white, NOT the spine colour: it sits behind the prose, so it has
+// to lift off the eggshell rather than sit on it as marks. Keep in step with the
+// canvas grid's dotRgb in app.js — the canvas replaces this on mount.
+$c-content-dot: #fff;
+$c-content-ink: getmap($colour, light, 950); // near-black — body prose. Neutral, not the palette's warm 900: the same ink .c-case-content__text uses
+$c-content-title: getmap($colour, primary, 700); // logo navy — the main title
+$c-content-summary: getmap($colour, light, 850); // deep olive — the standfirst (an entry's Summary)
+$c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
+
+.c-content {
+    position: relative;
+    isolation: isolate; // own stacking context so the dot layer sits behind content
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    // Full height so the trailing spine can run down to the footer (like the
+    // conversation thread), rather than the content sitting in a short band.
+    min-height: calc(100dvh - 2 * #{getmap($space, rhythm, 500)});
+    padding-top: getmap($space, rhythm, 900); // clears the absolute header
+    padding-inline: getmap($space, rhythm, 500);
+    @include mq(from, md) {
+        padding-inline: getmap($space, rhythm, 600);
+    }
+    @include mq(from, lg) {
+        padding-inline: getmap($space, rhythm, 800);
+    }
+}
+
+// Content shows at its natural height — no arrival spinner, no height animation.
+// On form submit the page just reloads normally (the submit button is disabled in
+// app.js to block a double-send), so the response is a plain page load.
+.c-content__reveal-inner {
+    min-height: 0;
+}
+
+// Entrances. Two kinds, one motion — a 500ms fade-up on ease-in-out, 20px, with
+// the fade landing at three quarters so the last stretch is pure settle:
+//
+//  · ARRIVAL for the header group (whisper, title, meta, columns): always above the
+//    fold, so it rises on page load, lightly staggered. Not gated on JS — a title
+//    that waited on the bundle would be a blank slab on a slow connection.
+//  · ON SCROLL for the content blocks below it (`js-reveal`, see observe.js): each
+//    starts hidden and rises when its top reaches 85% of the way down the
+//    viewport, one at a time as the reader scrolls. Before, all ten blocks rose in
+//    the first 0.9s of the page — below the fold unseen, above it all at once, on
+//    top of the page's arrival warp. One motion idea, spent where it's looked at.
+//    Without JS (html.no-js) the blocks simply show.
+@keyframes c-content-rise {
+    0%   { opacity: 0; transform: translateY(#{rem(20)}); }
+    75%  { opacity: 1; }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+// The page's own head rises on arrival, one beat after another. Scoped to DIRECT
+// children of .c-content (and the columns' inner, the one nested case): the meta
+// row's class is reused by every card on the notes index (.c-notes__meta-items), and
+// unscoped this ran the page-arrival animation on all six of them at once.
+.c-content > .c-content__whisper,
+.c-content > .c-content__title,
+.c-content > .c-content__meta-items,
+.c-content__cols-inner {
+    animation: c-content-rise 500ms ease-in-out both;
+}
+
+.c-content > .c-content__title { animation-delay: 60ms; }
+.c-content > .c-content__meta-items { animation-delay: 90ms; }
+.c-content__cols-inner { animation-delay: 120ms; }
+
+.c-content__blocks-inner,
+.c-content__reveal-inner,
+.c-content__clients-inner,
+.c-content__work-inner,
+.c-content__method-inner,
+.c-content__quotes-inner {
+    &.js-reveal:not(.is-inview) {
+        opacity: 0;
+    }
+
+    &.is-inview {
+        animation: c-content-rise 500ms ease-in-out both;
+    }
+
+    html.no-js & {
+        opacity: 1;
+        animation: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-content__whisper,
+    .c-content__title,
+    .c-content__meta-items,
+    .c-content__cols-inner,
+    .c-content__blocks-inner,
+    .c-content__reveal-inner,
+    .c-content__work-inner,
+    .c-content__method-inner,
+    .c-content__quotes-inner,
+    .c-content__clients-inner {
+        animation: none;
+        opacity: 1 !important; // over the js-reveal hidden state too — nothing waits on a scroll
+    }
+}
+
+// Ambient dot grid behind the timeline — same pattern as the conversation view,
+// tuned for the cream slab (tan dots). Absolute, so it stays out of the flex
+// flow; the trailing spine (::after) and content sit above it.
+.c-content::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(
+        circle,
+        $c-content-dot 1.5px,
+        transparent 2.1px
+    );
+    background-size: 26px 26px;
+    // Matched to the canvas grid's resting weight (app.js baseAlpha + dotRadius), so
+    // the swap to the interactive grid on mount isn't a visible step in either
+    // direction.
+    opacity: 0.8;
+}
+
+// When the interactive canvas grid mounts (jonson-grid.js), it takes over the
+// dots, so the painted base grid steps aside. Only ::before is the grid — ::after
+// is the trailing spine and must stay.
+.c-content.is-interactive::before {
+    opacity: 0;
+}
+
+// Top cap: a line above the whisper, capped with a dot at its top end.
+.c-content__whisper {
+    @include typography(whisper);
+    position: relative; // anchor the top-cap dot
+    margin: 0;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: $c-content-whisper;
+
+    &::before {
+        content: '';
+        display: block;
+        width: $spine-width;
+        height: calc(#{$spine-length} * 1.6); // a longer lead-in than a joining segment — the cap dot sat too close to the slab edge; tracks $spine-length so the timeline stays in proportion
+        margin: rem(28) auto rem(22);
+        background: $c-content-spine;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: rem(22);
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: rem(16);
+        height: rem(16);
+        border-radius: 50%;
+        background: $c-content-spine;
+    }
+
+    // MOBILE: the whole cap drops 20px. The logo's role ticker wraps to two or three
+    // lines at this width — "Street Photographer" does not fit one — which pushes the
+    // header down into the timeline's lead-in. Measured at 375: the ticker's last line
+    // ended at 123 and the cap DOT's top edge sat at 120, overlapping it by 3px.
+    //
+    // Both offsets move, by the same amount, because they are one drawing: the ::before
+    // is the line and the ::after is the dot capping it, and shifting either alone pulls
+    // the dot off the end of its own line.
+    //
+    // Not a margin on .c-content__whisper itself — that would collapse with the
+    // ::before's own 28px and the larger simply wins, so nothing moves at all.
+    @include mq(until, md) {
+        &::before {
+            margin-top: rem(48);
+        }
+
+        &::after {
+            top: rem(42);
+        }
+    }
+}
+
+.c-content__title {
+    @include typography(h1);
+    font-weight: 600;
+    text-wrap: balance; // even lines rather than a long one over a short one
+    overflow-wrap: break-word; // a handle or URL in a title breaks rather than escapes
+    width: 100%;
+    max-width: $c-content-measure;
+    margin: 0;
+    text-align: center;
+    color: $c-content-title;
+
+    // Wider than the answer measure on large viewports, so the title has more
+    // room left/right than the whisper + body (which stay at the measure).
+    @include mq(from, lg) {
+        max-width: rem(1000);
+    }
+}
+
+// A case study's h1 is the Long title — a full descriptive sentence ("Designing and
+// developing the booking engine for…"), not a page name like "Contact", so it wraps
+// where the other pages' titles don't. It gets the shared wide measure instead: the
+// same box the body, testimonials and case study panels use, so the extra width lands
+// on a line the rest of the page already sits on rather than a new one.
+//
+// The TITLE only. The whisper and prose stay at the reading measure — a sentence set
+// to 1110 is a title; a paragraph set to 1110 is hard to read.
+.c-content--case-study .c-content__title,
+.c-content--case-study .c-content__cols {
+    @include mq(from, lg) {
+        max-width: $g-measure-wide;
+    }
+}
+
+// Two-column band under the title. Tracks the TITLE's width, not the body's, because
+// it sits directly beneath the h1 and reads as part of that heading block — hence the
+// same 740 → 1000 steps, and the same widening under --case-study above.
+.c-content__cols {
+    width: 100%;
+    max-width: $c-content-measure;
+
+    @include mq(from, lg) {
+        max-width: rem(1000);
+    }
+}
+
+// Page body below the columns — a case study's Case Content. Effectively the full
+// content box, which is what a large image wants and the reading measure would waste.
+//
+// `.c-content` already carries the house inline padding (rhythm 500 → 600 → 800), so
+// `width: 100%` stops exactly on that gutter and tracks it at every breakpoint. NOT
+// the rail's own `100cqi` — that needs a container-type ancestor, and `.c-content`
+// declares none, so cqi would resolve against the viewport and overflow the slab.
+//
+// The cap exists to make the numbers land ON the design size rather than near it: the
+// page stops at 1728, which leaves 1603 here once the paddings come off, and 1603 in
+// a 16:9 box is 901.7. Capping at 1600 gives exactly 1600 × 900 — the size the artwork
+// is made at, and a whole number for a 3200 × 1800 source to be exactly 2× of.
+.c-content__blocks {
+    width: 100%;
+    max-width: rem(1600);
+}
+
+// One column below md — two narrow columns of prose on a phone are unreadable, and
+// the second is empty on a study that hasn't filled it in yet.
+//
+// The gutter widens once there's room for it: at md the two columns are tight enough
+// that rhythm 700 is all they can spare, but by lg they're wide enough that the extra
+// step reads as a deliberate channel rather than lost width.
+.c-content__cols-inner {
+    display: grid;
+    gap: getmap($space, rhythm, 600);
+    // A card, on the same surface as a notes-index card (.c-notes__item): the
+    // ask bar's cream, one step darker than the slab, so the two columns read as
+    // one boxed block rather than prose floating on the timeline. A step more
+    // padding than the card (it holds two columns of prose, not a title and a
+    // line): rhythm 700 all round, 800 at the sides from md.
+    padding: getmap($space, rhythm, 700);
+    border-radius: $b-radius-200;
+    background-color: getmap($colour, light, 650);
+
+    @include mq(from, md) {
+        grid-template-columns: 1fr 1fr;
+        gap: getmap($space, rhythm, 700);
+        padding: getmap($space, rhythm, 700) getmap($space, rhythm, 800);
+    }
+
+    @include mq(from, lg) {
+        gap: getmap($space, rhythm, 800);
+    }
+}
+
+// Prose styling matches the reveal's, so a paragraph reads the same whichever block
+// it's in. No per-paragraph max-width here: the column IS the measure.
+.c-content__col {
+    @include prose-body($marker: $c-content-whisper); // bullets in the whisper blue, on the cream
+    color: $c-content-ink;
+
+    > :first-child { margin-top: 0; }
+    > :last-child { margin-bottom: 0; }
+}
+
+// The About page's standfirst — the entry's Summary, at the head of the body on
+// the same measure as the prose (see _views/single/about). Bold mono, one step up
+// from the prose: it's a statement to read once, not the first paragraph of what
+// follows. Nested under the body rather than on its own, because prose-body styles
+// the body's `> p` and would otherwise win on specificity.
+.c-content__reveal-inner > .c-content__summary {
+    @include typography(p-lg);
+    @include typography(standfirst); // a tenth up on p-lg at each size — see the scale
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 600; // the mono's bold face — see theme/_typography.scss
+    text-wrap: pretty; // a description: no lone short word on the last line
+    // Looser than the scale's 1.3: a bold mono at this size sets dense, and a
+    // three-line standfirst wants air between the lines. Unitless, so it scales
+    // with the font size at every breakpoint rather than needing a value each.
+    line-height: 1.45;
+    letter-spacing: -0.03rem; // the bold mono sets a touch loose at this size
+    color: $c-content-summary; // the summaries' deep olive — between the navy title and the prose ink
+}
+
+.c-content__body {
+    position: relative; // anchors the thinking spinner over the body content
+    width: 100%;
+    // Wide enough to hold the form (at its ~740 measure) + the CTA column beside
+    // it; prose is re-capped to the measure below so it stays readable. This box
+    // is what $g-measure-wide names — the testimonial and case-study panels break
+    // out to the same width so the three line up.
+    max-width: $g-measure-wide;
+    // Reserve exactly the spinner's band (connector height + spinner height) so
+    // that, while the content is collapsed during the beat, the connector above
+    // and the trailing spine below sit symmetrically around the spinner (each
+    // keeps its own margin). No effect once the taller content opens.
+    min-height: calc(#{rem(40)} + 2 * #{rem(22)} + #{rem(72)});
+}
+
+// Prose lives inside the collapsible reveal wrapper now — re-capped to the
+// answer measure and centred, since the body itself is now wider.
+.c-content__reveal-inner {
+    @include prose-body($marker: $c-content-whisper); // bullets in the whisper blue, on the cream
+
+    // Everything the prose can contain, not just paragraphs. The body box is the wide
+    // measure so the form and CTAs can sit side by side; the reading column is
+    // narrower and centred inside it. Capping only `p` left headings and lists running
+    // the full width and starting further left than the text they belong to — fine
+    // while this only ever held paragraphs, wrong now the `pages` section puts real
+    // rich text through it.
+    > p,
+    > h2,
+    > h3,
+    > h4,
+    > ul,
+    > ol,
+    > blockquote {
+        max-width: $c-content-measure;
+        margin-inline: auto;
+    }
+
+    > p { color: $c-content-ink; }
+}
+
+// Form + CTAs joined into one block. Stacked below lg (form above the white CTA
+// box, meeting edges squared); side by side from lg (form fills, white column
+// fixed). Either way the two panels touch (no gap) with squared inner corners.
+//
+// Named __form-cols, not __cols: this is the two-panel row INSIDE the reveal, and
+// __cols is the two-column band under the title. They're different blocks that
+// happen to both be columns, so the more specific one takes the qualified name.
+.c-content__form-cols {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+
+    // Stacked: the form squares its bottom, the CTA box squares its top, so the
+    // seam between them reads as one continuous block.
+    > :first-child {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    > :last-child {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+    }
+
+    @include mq(from, lg) {
+        // The form flexes to fill; the white CTA column is a fixed width until it
+        // stacks below lg. minmax(0,1fr) lets the form shrink rather than overflow.
+        grid-template-columns: minmax(0, 1fr) rem(370);
+        align-items: stretch; // white CTA column matches the form height
+
+        // Now the seam is vertical — square the meeting left/right edges instead,
+        // restoring the top/bottom corners the stacked rules squared.
+        > :first-child {
+            border-radius: $b-radius-200 0 0 $b-radius-200; // round left, square right
+        }
+        > :last-child {
+            border-radius: 0 $b-radius-200 $b-radius-200 0; // square left, round right
+        }
+    }
+}
+
+// "Trusted by" client-logo marquee below the form block. The outer box full-
+// bleeds to the viewport (flex-centred in .c-content, so 100vw lands edge-to-edge;
+// the l600 slab clips any scrollbar overshoot).
+.c-content__clients {
+    width: 100vw;
+}
+
+// Case study marquee — same full-bleed box as the clients strip. Sits inside
+// .c-content so the trailing spine and end node still come after it.
+.c-content__work {
+    width: 100vw;
+}
+
+// Label above the strip, in the content column while the strip below it keeps the
+// full-bleed — the .c-music__whisper arrangement, done without container queries,
+// which .c-content has no container to answer.
+//
+// The alignment is the whole job, and the edge to match is the PROSE, not the images.
+// .c-case-content__text is rem(740) centred (see _case-content.scss) — the reading
+// measure, deliberately narrower than the rem(1600) the figures fill. Lining this up
+// with the images instead puts it a long way outboard of the paragraph it sits under.
+//
+// Same cap, same auto margins, so it centres on exactly the same axis and tracks the
+// prose at every width. .c-content__work is 100vw, so the label centres in the window
+// — which is where the prose centres too, both insets below cancelling out of the
+// arithmetic once the measure is what binds.
+//
+// The padding still earns its place on narrow screens, where 740 no longer binds and
+// the label would otherwise run to the window edge. It restates BOTH insets the
+// full-bleed escaped: body > .b-wrap's flat rhythm 500, which holds the slab off the
+// window edge, and .c-content's own padding, which steps 500 -> 600 -> 800. That is
+// the same pair the prose sits inside, so the two stay level there as well.
+//
+// box-sizing: content-box is doing real work and is not a slip — the reset makes
+// everything border-box, and under that rule max-width would cap the PADDED box, so
+// the text would start one padding-width inboard of the images and the two edges
+// would miss by rhythm 500-800 depending on the breakpoint. Capping the content box
+// instead makes the outer box 1600 + 2 × padding, which is exactly the width
+// .c-content resolves to at the point its own children stop growing.
+.c-content__work-whisper {
+    @include typography(whisper);
+    box-sizing: content-box;
+    max-width: rem(740); // mirrors .c-case-content__text
+    margin: 0 auto getmap($space, rhythm, 500);
+    // .b-wrap's inset + .c-content's, summed. Written as an addition rather than the
+    // total so the two sources stay visible — change either and this follows.
+    padding-inline: getmap($space, rhythm, 500) + getmap($space, rhythm, 500);
+    text-transform: uppercase;
+    font-weight: 600;
+    // Green, matching .c-content__clients-whisper and the page's top whisper, NOT the
+    // white .c-music__whisper — that one is set for the dark Jonson panel and would
+    // disappear into the cream slab here.
+    color: $c-content-whisper;
+    @include mq(from, md) {
+        padding-inline: getmap($space, rhythm, 500) + getmap($space, rhythm, 600);
+    }
+    @include mq(from, lg) {
+        padding-inline: getmap($space, rhythm, 500) + getmap($space, rhythm, 800);
+    }
+}
+
+// Testimonial slider — the slider does its own breaking out (see _testimonial.scss),
+// so this is just the box it measures itself against.
+//
+// That measurement is the whole point of the container here. Every dimension in the
+// slider — the viewport's breakout, the track's centring offset, the card's width —
+// is written in `100cqi`. On a Jonson page that resolves to .c-jonson's inline size,
+// so a card fills the conversation's content width and the padding stays as a gutter.
+// Out here .c-content declared no container at all, so `cqi` fell back to the VIEWPORT:
+// the card was sized to the whole window and sat edge to edge with no gutter, which
+// only showed up once the window was narrow enough for the card to stop hitting its
+// max width.
+//
+// NO max-width: the slider has to reach past the visible card so the next quote can
+// peek in the gutter. Capping this box at the measure would make 100cqi equal to the
+// card itself and there'd be nothing either side to peek into. The visible card is
+// already capped by its own flex-basis — min(measure, 100cqi) — so the measure is
+// still honoured, it's just enforced where the peek survives it.
+//
+// Safe to contain here: containment makes an element the containing block for `fixed`
+// descendants, and the page-blur overlays are fixed — but they live under
+// .c-content__work, not in this subtree.
+.c-content__quotes {
+    width: 100%;
+    container-type: inline-size;
+}
+
+// The method timeline on a static page (About). Two boxes, because the timeline's
+// breakout maths (see _method.scss) assumes what it has in a Jonson answer: the
+// COMPONENT is the prose measure wide, and the CONTAINER it reads cqi from is the
+// full box around it. So the outer is the container — the whole column, as
+// .c-jonson is the whole box — and the inner is the measure, centred, which is
+// where the phase text lines up with the prose above it. Give the component the
+// full column instead and its first phase parks on the column's left edge.
+.c-content__method {
+    width: 100%;
+    container-type: inline-size;
+}
+
+.c-content__method-inner {
+    width: 100%;
+    max-width: $c-content-measure;
+    margin-inline: auto;
+}
+
+.c-content__clients-inner {
+    text-align: center;
+}
+
+.c-content__clients-whisper {
+    @include typography(whisper);
+    margin: 0 0 getmap($space, rhythm, 500);
+    text-transform: uppercase;
+    font-weight: 600;
+    color: $c-content-whisper; // green — matches the top whisper
+}
+
+// Connecting lines: whisper → title, title → body, and form block → clients.
+// (On clients the line hangs off the inner, not the grid outer — a ::before on
+// the outer would become a second grid row and break the collapse.)
+.c-content__title::before,
+// On the OUTER, not the inner: the inner is the grid, and a pseudo-element there
+// becomes a grid item and eats the first cell. Same trap the clients note describes.
+.c-content__cols::before,
+.c-content__blocks-inner::before,
+.c-content__body::before,
+.c-content__method-inner::before,
+.c-content__work-inner::before,
+.c-content__quotes-inner::before,
+.c-content__clients-inner::before {
+    content: '';
+    display: block;
+    width: $spine-width;
+    height: $spine-length;
+    margin: rem(22) auto;
+    background: $c-content-spine;
+}
+
+// Bottom cap: a line trailing from the body down to the footer, ending in a
+// dot. Stretches to fill the remaining column height (line + dot in one paint).
+.c-content::after {
+    content: '';
+    flex: 1 0 rem(58);
+    width: rem(16);
+    margin: rem(22) auto getmap($space, rhythm, 700);
+    background:
+        linear-gradient($c-content-spine, $c-content-spine) center top / $spine-width calc(100% - #{rem(16)}) no-repeat,
+        radial-gradient(circle, $c-content-spine rem(8), transparent rem(8)) center bottom / rem(16) rem(16) no-repeat;
+}
+
+// The meta row directly under a title (a note's): a white box holding a list —
+// the topic (a link), then the dates — in one centred line that wraps on a
+// narrow screen. All mono. Rounded like the other panels.
+.c-content__meta-items {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: rem(8) rem(16);
+    margin: getmap($space, rhythm, 500) 0 0;
+    // The same at both ends: the date's text on the left and the chip on the
+    // right want the same air from the box's edge.
+    padding: rem(8) rem(14);
+    border-radius: $b-radius-200;
+    background-color: getmap($colour, light, 100); // white
+    list-style: none;
+}
+
+.c-content__meta-item {
+    @include typography(p-sm);
+    font-family: $g-font-secondary; // JonSonMono
+    margin: 0;
+}
+
+// The topic: a link to the topic's own page, as an outlined chip — white, with
+// the link red for its text and a grey hairline round it — the same corner
+// radius as the box it sits in, so it reads as the one thing in the row you can
+// press, without a solid red block shouting from the meta. Fills red on hover,
+// the way it used to sit, so the press has somewhere to go.
+.c-content__topic {
+    display: inline-block;
+    padding: rem(4) rem(12);
+    border: rem(1) solid rgba($c-content-summary, 0.18); // the meta row's hairline, so the chip's edge matches the rules around it
+    border-radius: $b-radius-200; // matches .c-content__meta-items
+    background-color: getmap($colour, light, 100); // white
+    color: getmap($colour, primary, 600); // house red — the link colour
+    // The whisper SIZE only — a step under the labels beside it, a chip rather
+    // than a label. Not the whisper step itself: its 0.19em tracking is set for
+    // uppercase labels and spreads a mixed-case word like a headline.
+    font-size: rem(12);
+    letter-spacing: normal;
+    font-family: $g-font-primary; // JonSonSans — it's a button, and buttons are sans; the mono is for the labels beside it
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+
+    &:hover,
+    &:focus-visible {
+        border-color: getmap($colour, primary, 600);
+        background-color: getmap($colour, primary, 600);
+        color: getmap($colour, light, 100);
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 700);
+        outline-offset: rem(2); // navy: the yellow measured 1.7:1 on the chip's white
+    }
+}
+
+// The date beside it, in the summaries' olive so the row sits back from the
+// title.
+.c-content__date {
+    color: $c-content-summary;
+    font-weight: 600; // the mono's bold face, as the summary and the updated line — the facts in the row set like the other asides
+}
+
+// A hairline between the date and the reading time — the two facts either side
+// of it are the same colour and size, and without it they run into one line.
+// Drawn on the reading-time item, so it only appears when both are present.
+// It runs the box's full height: the item stretches to the row, and the line's
+// negative block margins reach through the box's own padding to its edges.
+.c-content__date + .c-content__read {
+    display: inline-flex;
+    align-items: center;
+    align-self: stretch;
+
+    &::before {
+        content: '';
+        align-self: stretch;
+        width: rem(1);
+        margin: -#{rem(8)} rem(16) -#{rem(8)} 0; // top/bottom = the box's padding; right = the row's gap, so the line sits centred in a double gap
+        background: rgba($c-content-summary, 0.18);
+    }
+}
+
+// "Last updated", under the last block: on the reading measure, bold mono in a
+// neutral grey. The small step, not the paragraph one — it's a footnote about
+// the page rather than part of the reading, and at the paragraph size it read as
+// one more sentence of the note. The trailing spine follows it as any block's.
+.c-content__updated {
+    width: 100%;
+    max-width: $c-content-measure;
+    margin: getmap($space, rhythm, 600) auto 0;
+    @include typography(p-sm);
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 600; // the mono's bold face
+    color: getmap($colour, light, 860); // a neutral grey beside the summary's warm one — a footnote, not a standfirst
+}
+
+// The share block, under the updated line: on the reading measure, the "Share
+// this note" eyebrow in the whisper's voice (small, uppercase, green) and the
+// footer's social icons beneath it (see _components/share and _social.scss).
+// A timeline connector above it — the same spine the blocks are joined with,
+// at the same size and with the same air either side (see the case-content
+// spine) — so the share block reads as the last beat of the page rather than
+// a footer tacked on under it.
+// The foot: the share block and the previous- and next-note cards, under one
+// connector. Three layouts:
+//
+//   · below md   — a stack: share, previous, next, each full width.
+//   · from md    — the share block on its own row, starting where the measure
+//                  starts; the cards on the row beneath, at the content's edges.
+//   · from wide  — one row: the cards in the outer columns, each exactly the
+//                  space beside the measure (less the gap), the share block in
+//                  the middle column, the measure itself. Only where that space
+//                  is genuinely wide enough for a card: at lg it's 67px, and a
+//                  card there ran into the share block.
+//
+// The connector is a row of its own above, centred, in every layout.
+$c-content-foot-wide: 1440px; // the viewport at which the space beside the measure clears ~260px
+
+.c-content__foot {
+    display: grid;
+    row-gap: getmap($space, rhythm, 600);
+    column-gap: getmap($space, rhythm, 600);
+    width: 100%;
+
+    &::before {
+        content: '';
+        display: block;
+        width: $spine-width;
+        height: $spine-length;
+        margin: rem(22) 0 0;
+        justify-self: center;
+        background: $c-content-spine;
+    }
+
+    @include mq(from, md) {
+        grid-template-columns: 1fr 1fr;
+
+        &::before {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @media (min-width: $c-content-foot-wide) {
+        $beside: calc((100% - #{$c-content-measure}) / 2 - #{getmap($space, rhythm, 600)}); // the space beside the measure, less the column gap
+        grid-template-columns: $beside #{$c-content-measure} $beside;
+        align-items: stretch; // the two cards fill the row's height, so their tops and bottoms are flush whatever their titles' lengths
+    }
+}
+
+// The share block: from md its own row, starting where the measure starts (the
+// row is the content's full width, so the margin is the difference — never
+// negative where the content is narrower than the measure); from wide, the
+// middle column, which IS the measure.
+.c-content__share {
+    @include mq(from, md) {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-self: start;
+        margin-left: max(0px, calc((100% - #{$c-content-measure}) / 2));
+    }
+
+    @media (min-width: $c-content-foot-wide) {
+        grid-column: 2;
+        margin-left: 0;
+        align-self: center;
+    }
+}
+
+// The cards: previous at the content's left edge, next at the right — the ways
+// back and onward at either end of the line; level with the share block from
+// wide, on the row beneath it from md, on their own rows below.
+//
+// On wide viewports they fade up as they come into view (observe.js adds
+// `is-inview` the first time they do; the markup carries `js-observe`) — the
+// page's arrival rise, but on scroll, since the foot of a note is well below
+// the fold. Below lg they're simply there; and with reduced motion they're
+// simply there everywhere.
+.c-content__prev,
+.c-content__next {
+    @include mq(from, md) {
+        grid-row: 3;
+        min-width: 0; // so the card inside can shrink to the column
+        display: flex;
+    }
+
+    @media (min-width: $c-content-foot-wide) {
+        grid-row: 2;
+    }
+
+    @include mq(from, lg) {
+        opacity: 0;
+        transform: translateY(rem(64));
+        // Slower and deeper than the page's arrival rise: the observer fires as
+        // soon as a fifth of the card is in view, while the reader is still
+        // scrolling, so a quick 16px settle went unnoticed. The fade takes 1.4s;
+        // the rise, from 64px down, runs longer still at 2s, so the card is
+        // visibly travelling after it's already there.
+        transition:
+            opacity 1400ms cubic-bezier(0.16, 1, 0.3, 1) 120ms,
+            transform 2000ms cubic-bezier(0.16, 1, 0.3, 1) 120ms;
+
+        &.is-inview {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+// Each wrapper spans its column and is a flex row, so the card is placed by
+// flex (start / end) rather than by shrink-wrapping the wrapper — which
+// picked up the whitespace beside the inline card and left it short of the
+// edge — and the card's `100%` is the column's full width.
+.c-content__prev {
+    @include mq(from, md) {
+        grid-column: 1;
+        justify-content: flex-start;
+    }
+}
+
+.c-content__next {
+    @include mq(from, md) {
+        grid-column: 2;
+        justify-content: flex-end;
+    }
+
+    @media (min-width: $c-content-foot-wide) {
+        grid-column: 3;
+    }
+}
+
+.c-share__whisper {
+    @include typography(whisper);
+    margin: 0 0 getmap($space, rhythm, 600);
+    text-transform: uppercase;
+    font-weight: 600;
+    color: $c-content-whisper;
+}
+

@@ -1,0 +1,201 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-10T19:47:10.736Z",
+  "scenarios": [
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey[[jersey]] in the Channel Islands and lived in Paris and Brighton along the way. I've been doing this for over 25 years, working across strategy, design and development, which is a slightly unusual combination for a designer.\n\nOutside of work I'm a keen street photographer, I collect photography books, I love to cook, and I used to DJ — music's always on while I work.\n\n[[next: what kind of work do you do? @work | what do you shoot as a street photographer? @photo:street-photo | what do you listen to while you work? @music]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "All over the place, honestly — from The Beatles and Beastie Boys through to drum and bass like LTJ Bukem, soulful house from Crazy P, a bit of Massive Attack and Justice, and I've always got time for Ella Fitzgerald.[[music]] It shifts with what I'm doing — something with a pulse when I'm designing, something calmer when I'm cooking or editing photos.\n\n[[next: how does music tie into your street photography? @photo:street-photo | did you dj professionally? @about | what sort of work do you take on? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux — though I'm originally from Jersey and have lived in Paris and Brighton along the way. I've been doing this for over 25 years, working across strategy, design and development, which is a bit unusual for a designer.\n\nOutside work I'm a keen street photographer, I collect photography books, and I nearly always have music on while I work or cook. I'm French-speaking too, having lived over here for more than a decade.\n\n[[next: what kind of work do you do? @work | what do you shoot as a street photographer? @photo:street-photo | what music do you have on while you work? @music]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "A pretty broad spread — everything from The Beatles and Beastie Boys through to drum and bass like LTJ Bukem, downtempo Massive Attack, and a fair bit of soul and funk from the likes of El Michels Affair and Ella Fitzgerald. It shifts with what I'm doing — something rhythmic when I'm coding, something more mellow when I'm cooking or editing photos. I used to DJ, so music's always been a big part of how I work.[[music]]\n\n[[next: what do you shoot as a street photographer? @photo:street-photo | did DJing feed into your design work at all? @about | what kind of projects do you take on? @work]]"
+        }
+      ],
+      "failures": [
+        "T1 missing context (unmarked by model)"
+      ]
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux, though I'm originally from Jersey and have lived in Paris and Brighton along the way. I've been designing and building for the web for over 25 years, working across strategy, design and development, which is a bit unusual for a designer.\n\nOutside of work I'm a keen street photographer, I collect photography books, I used to DJ, and I love to travel — usually towards places with a slightly dodgy reputation.\n\n[[next: what kind of work do you do? @work | where have you travelled? @photo:street-photo | what music are you into? @music]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "Bit of a magpie, really — I bounce between hip-hop, drum and bass, electronic and soul depending on the mood. Beastie Boys and Massive Attack are long-time staples, but I'll happily swing from LTJ Bukem to Ella Fitzgerald in the same sitting. There's nearly always something on while I'm working, cooking or out with the camera.[[music]]\n\n[[next: what do you listen to while working? @music | how does music fit into your photography? @photo:street-photo | what kind of work do you take on? @work]]"
+        }
+      ],
+      "failures": [
+        "T1 missing context (unmarked by model)"
+      ]
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey"
+          ],
+          "imgs": 4,
+          "chips": 1,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — originally from Jersey[[jersey]], and I've been doing this for over 25 years across strategy, design and development. Outside work I'm a bit obsessed with street photography, shooting on a Leica, and I nearly always have music on while I work or cook.\n\nI help organisations, startups and agencies turn complex products into something people actually want to use — that's the short version.\n\n[[next: what kind of work do you take on? | how did you get into web design? | what do you listen to while you work? @music]]\n\nWait — let me fix those citations.\n\n[[next: what kind of work do you take on? @work | how did you get into web design? @cv | what do you listen to while you work? @music]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 2,
+          "answer": "All sorts, really — my taste swings from The Beatles and Beastie Boys to drum and bass like LTJ Bukem, trip-hop like Massive Attack, plus a soft spot for soul and jazz, Ella Fitzgerald through to El Michels Affair. I used to DJ, so a good beat still pulls me in.[[music]]\n\n[[next: do you still DJ? @about | does music feed into your design work? @about | what does your street photography look like? @photo:street-photo]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux",
+            "jersey",
+            "street-photo"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "I'm Jon, an independent web designer based in Bordeaux[[bordeaux]] — though I'm originally from Jersey[[jersey]] and have lived in Paris and Brighton along the way. I've been doing this for over 25 years, working across strategy, design and development, which is a bit of a rare mix for a designer.\n\nOutside of work I'm a keen street photographer[[street-photo]], I collect photography books, and I nearly always have music on while I work or cook. Ask me anything you like — happy to talk shop or life.\n\n[[next: what kind of work do you do? @work | how did you get into web design? @cv | what do you shoot as a street photographer? @photo:street-photo]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "A real mix — I grew up on The Beatles and the Beastie Boys, went deep into drum and bass and electronica with the likes of LTJ Bukem, Massive Attack and The Prodigy, and I'll happily swing over to Ella Fitzgerald or something soulful like El Michels Affair depending on the mood.[[music]]\n\nI used to DJ, so music's always been part of how I work — it sets the pace for whatever I'm doing.\n\n[[next: what did you play when you were DJing? @about | does music affect how you work? @method | what do you do outside of work besides music? @about]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "music-then-ask",
+      "turns": [
+        {
+          "q": "Tell me about yourself?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux"
+          ],
+          "imgs": 1,
+          "chips": 2,
+          "answer": "I'm Jon — an independent web designer based in Bordeaux[[bordeaux]], though I'm originally from Jersey and have lived in Paris and Brighton along the way. I've been designing and building websites for over 20 years, working across strategy, design and development, which is a bit unusual for a designer.\n\nOutside of work I'm a keen street photographer, I collect photography books, I love to cook, and I've done a fair bit of travelling. Anything in particular you'd like to know?\n\n[[next: what kind of work do you do? @work | what's your street photography like? @photo:street-photo | how did you end up in Bordeaux? @about]]"
+        },
+        {
+          "q": "What music do you like?",
+          "shown": [
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "A real mix, honestly — everything from The Beatles and the Beastie Boys through to drum and bass like LTJ Bukem, plenty of Massive Attack and The Prodigy, some soul and jazz with Ella Fitzgerald, and downtempo stuff like Crazy P. I used to DJ, and I've always got something on while I'm working, cooking or out taking photos.[[music]]\n\n[[next: what do you listen to while you work? @music | did you DJ professionally? @about | what kind of work do you do? @work]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

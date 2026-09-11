@@ -1,0 +1,101 @@
+columnSuffix: null
+handle: caseContent
+instructions: null
+name: 'Case Content'
+searchable: false
+settings:
+  createButtonLabel: 'New Block'
+  defaultIndexViewMode: cards
+  enableVersioning: false
+  entryTypes:
+    -
+      __assoc__:
+        -
+          - uid
+          - cd72b7e1-1564-4018-9f17-b7d624b1a168 # Content
+        -
+          - group
+          - General
+    -
+      __assoc__:
+        -
+          - uid
+          - 2264f1d9-274a-40ca-88c3-d257e97831a3 # Large Image
+        -
+          - group
+          - General
+    -
+      __assoc__:
+        -
+          - uid
+          - dba22451-95dd-4af4-b1a5-12c2ea2fd4ce # 2UP Image
+        -
+          - group
+          - General
+    -
+      __assoc__:
+        -
+          - uid
+          - 85c12d20-a33a-4dda-86fc-10cf8a66590a # 3UP Image
+        -
+          - group
+          - General
+    -
+      __assoc__:
+        -
+          - uid
+          - 3a385840-ffe7-4230-bb75-8a3f41027903 # Testimonial
+        -
+          - group
+          - General
+    -
+      __assoc__:
+        -
+          - uid
+          - 472e3b23-b470-4dd0-8e52-c3d9a537976b # Video
+        -
+          - group
+          - General
+    -
+      __assoc__:
+        -
+          - uid
+          - a9951897-0c70-4fcf-8b91-6feb29e1c9a3 # Lottie
+        -
+          - group
+          - General
+    -
+      __assoc__:
+        -
+          - uid
+          - d4817107-92e7-411e-b1a7-0a60fb88db28 # Code
+        -
+          - group
+          - General
+    -
+      __assoc__:
+        -
+          - uid
+          - 380b1c37-494f-4693-895c-b62a1a22c6f4 # Method
+        -
+          - group
+          - General
+    -
+      __assoc__:
+        -
+          - uid
+          - e57c26c6-a917-47e0-8f92-e38e6d1c2196 # Legacy Image
+        -
+          - group
+          - General
+  includeTableView: false
+  maxEntries: null
+  minEntries: null
+  pageSize: null
+  propagationKeyFormat: null
+  propagationMethod: all
+  showCardsInGrid: false
+  viewMode: blocks
+translationKeyFormat: null
+translationMethod: site
+type: craft\fields\Matrix

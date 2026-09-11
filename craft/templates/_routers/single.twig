@@ -1,0 +1,9 @@
+{#
+    Single Template Router
+#}
+
+{% include [
+    "_views/single/#{entry.section.name|kebab|lower}/#{entry.type}",
+    "_views/single/#{entry.section.name|kebab|lower}/default",
+    "_views/single/default",
+] %}

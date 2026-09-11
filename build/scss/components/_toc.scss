@@ -1,0 +1,228 @@
+/**
+ * COMPONENT: TOC ("on this page")
+ *
+ * A note's section headings as a nav of anchors. On wide viewports it floats
+ * in the gutter to the left of the prose and sticks under the header as the
+ * reader scrolls; below that it sits above the blocks, on the measure, as a
+ * plain list. The section in view is marked by toc.js.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$c-toc-wide: 1440px; // where the gutter beside the measure clears ~260px — as the foot's cards
+$c-toc-top: rem(120); // clear of the sticky header
+
+// The slot the content component gives the panel. In flow above the blocks, a
+// beat of the page with the timeline connector above it — the blocks draw
+// their own beneath, so the panel is bracketed like any other block…
+.c-content__aside {
+    width: 100%;
+    max-width: rem(740); // the reading measure
+    margin: 0 auto;
+
+    &::before {
+        content: '';
+        display: block;
+        width: $spine-width;
+        height: $spine-length;
+        margin: rem(22) auto;
+        background: getmap($colour, light, 750); // the content spine
+    }
+
+    // …and from wide, out of flow: pinned to the blocks' left edge and running
+    // their full height, so the panel inside can be sticky for the whole read.
+    @media (min-width: $c-toc-wide) {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1; // above the blocks: they run the full width for the breakouts, and their arrival animation's stacking context would otherwise paint over the panel and take its clicks
+        width: min(#{rem(340)}, calc((100% - #{rem(740)}) / 2 - #{getmap($space, rhythm, 600)})); // the foot cards' 340px, or the space beside the measure (less a gap) where that's narrower — one width for the boxes on a note
+        max-width: none;
+        margin: 0;
+
+        &::before {
+            display: none; // out of the flow, so out of the timeline
+        }
+    }
+
+    // The mirror: pinned to the blocks' right edge instead (the topics on the
+    // notes index).
+    &--right {
+        @media (min-width: $c-toc-wide) {
+            left: auto;
+            right: 0;
+        }
+    }
+}
+
+.c-content__blocks.has-aside {
+    @media (min-width: $c-toc-wide) {
+        position: relative; // the aside pins to this
+
+        // The breakouts — code panels, full-width images — would otherwise run
+        // under the panel. With the panel present they stop at the gutter: the
+        // blocks are inset by the gutter on BOTH sides, so the measure stays
+        // where it is (centred) and a breakout is just narrower, and centred
+        // with it, rather than lopsided.
+        .c-content__blocks-inner {
+            padding-inline: calc((100% - #{rem(740)}) / 2);
+        }
+
+        // …except in overlay mode (a case study, where the full-width imagery IS
+        // the content): the blocks keep their width and the panel sits UNDER
+        // them at their left edge, sticky — so a full-width image covers it and
+        // it shows only beside the prose, which sits at the centred measure and
+        // never reaches it.
+        //
+        // Under, not over, means the blocks paint above the panel — and would
+        // take its clicks, since the blocks box spans the full width. So the
+        // boxes that merely span (the inner and the case-content wrapper) pass
+        // pointer events through, and each block re-enables them: a figure is
+        // clickable where it covers the panel, a text block never overlaps it,
+        // and the gutters between let the click reach the panel's links.
+        &--overlay {
+            .c-content__blocks-inner {
+                padding-inline: 0;
+                pointer-events: none;
+            }
+
+            .c-content__blocks-inner > * {
+                pointer-events: auto;
+            }
+
+            .c-content__blocks-inner > .c-case-content {
+                pointer-events: none;
+
+                > * {
+                    pointer-events: auto;
+                }
+            }
+
+            .c-content__aside {
+                z-index: 0; // below the blocks (which follow it in the DOM at the same level)
+            }
+        }
+    }
+}
+
+// The panel: a box in the CTA pill's dress — the slab's eggshell with the
+// spine-grey edge and the panels' corner — so it covers the dot grid and reads
+// as a thing on the page, not lines floating on it.
+.c-toc {
+    padding: rem(20) rem(22); // the same inset as the previous / next cards (.c-next), so the boxes on a note match
+    border: rem(2) solid getmap($colour, light, 750); // the timeline's grey-taupe, as $c-ctas-border
+    border-radius: $b-radius-200;
+    background-color: getmap($colour, light, 600); // eggshell — the content-page slab
+
+    @media (min-width: $c-toc-wide) {
+        position: sticky;
+        top: $c-toc-top;
+    }
+}
+
+// The title is a <summary>: the whisper eyebrow, as the section labels use
+// it. Below wide it's the tap target that folds the list, with a chevron at
+// the end that turns when open; from wide it's a plain title — the details is
+// held open by toc.js, and the marker and pointer go.
+.c-toc__whisper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: rem(12);
+    @include typography(whisper);
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, primary, 450); // the content-page whisper blue
+    cursor: pointer;
+    list-style: none; // no disclosure triangle — the chevron below instead
+
+    &::-webkit-details-marker {
+        display: none;
+    }
+
+    &::after {
+        content: '';
+        width: rem(8);
+        height: rem(8);
+        border-right: rem(2) solid currentColor;
+        border-bottom: rem(2) solid currentColor;
+        transform: rotate(45deg) translateY(-2px); // a chevron pointing down
+        transition: transform 200ms ease;
+    }
+
+    .c-toc__details[open] > &::after {
+        transform: rotate(-135deg) translateY(-2px); // …and up when open
+    }
+
+    .c-toc__details[open] > & {
+        margin-bottom: rem(12);
+    }
+
+    @media (min-width: $c-toc-wide) {
+        cursor: default;
+        pointer-events: none; // a title, not a control, where the panel is always open
+
+        &::after {
+            display: none;
+        }
+    }
+}
+
+.c-toc__items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.c-toc__item {
+    margin: 0;
+
+    & + & {
+        margin-top: rem(8);
+    }
+}
+
+// A link: mono, the summary grey, with a short hairline before it that turns
+// red and grows as the marker of the section in view — a hand on a timeline.
+.c-toc__link {
+    display: inline-flex;
+    align-items: center;
+    gap: rem(10);
+    @include typography(p-sm);
+    font-family: $g-font-secondary; // JonSonMono
+    font-weight: 600;
+    color: getmap($colour, light, 850); // the summaries' grey
+    text-decoration: none;
+    transition: color 200ms ease;
+
+    &::before {
+        content: '';
+        flex: none;
+        width: rem(12);
+        height: rem(2);
+        background: rgba(getmap($colour, light, 850), 0.35);
+        transition: width 200ms ease, background-color 200ms ease;
+    }
+
+    &:hover,
+    &:focus-visible {
+        color: getmap($colour, primary, 600); // the link red
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 700); // navy: the yellow ring measured 1.3:1 on the cream pages
+        outline-offset: rem(2);
+    }
+
+    &.is-current {
+        color: getmap($colour, primary, 600);
+
+        &::before {
+            width: rem(20);
+            background: getmap($colour, primary, 600);
+        }
+    }
+}

@@ -1,0 +1,44 @@
+(node:69135) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+(Use `node --trace-warnings ...` to show where the warning was created)
+1/144 runs2/144 runs3/144 runs4/144 runs5/144 runs6/144 runs7/144 runs8/144 runs9/144 runs10/144 runs11/144 runs12/144 runs13/144 runs14/144 runs15/144 runs16/144 runs17/144 runs18/144 runs19/144 runs20/144 runs21/144 runs22/144 runs23/144 runs24/144 runs25/144 runs26/144 runs27/144 runs28/144 runs29/144 runs30/144 runs31/144 runs32/144 runs33/144 runs34/144 runs35/144 runs36/144 runs37/144 runs38/144 runs39/144 runs40/144 runs41/144 runs42/144 runs43/144 runs44/144 runs45/144 runs46/144 runs47/144 runs48/144 runs49/144 runs50/144 runs51/144 runs52/144 runs53/144 runs54/144 runs55/144 runs56/144 runs57/144 runs58/144 runs59/144 runs60/144 runs61/144 runs62/144 runs63/144 runs64/144 runs65/144 runs66/144 runs67/144 runs68/144 runs69/144 runs70/144 runs71/144 runs72/144 runs73/144 runs74/144 runs75/144 runs76/144 runs77/144 runs78/144 runs79/144 runs80/144 runs81/144 runs82/144 runs83/144 runs84/144 runs85/144 runs86/144 runs87/144 runs88/144 runs89/144 runs90/144 runs91/144 runs92/144 runs93/144 runs94/144 runs95/144 runs96/144 runs97/144 runs98/144 runs99/144 runs100/144 runs101/144 runs102/144 runs103/144 runs104/144 runs105/144 runs106/144 runs107/144 runs108/144 runs109/144 runs110/144 runs111/144 runs112/144 runs113/144 runs114/144 runs115/144 runs116/144 runs117/144 runs118/144 runs119/144 runs120/144 runs121/144 runs122/144 runs123/144 runs124/144 runs125/144 runs126/144 runs127/144 runs128/144 runs129/144 runs130/144 runs131/144 runs132/144 runs133/144 runs134/144 runs135/144 runs136/144 runs137/144 runs138/144 runs139/144 runs140/144 runs141/144 runs142/144 runs143/144 runs144/144 runs
+
+Jonson surfacing suite — 24 scenarios × 6 runs, 246s
+
+PASS  intro              6/6  
+FAIL  outside-work       4/6  T1 missing context (unmarked by model) ×2
+PASS  based              6/6  
+PASS  jersey             6/6  
+PASS  camera             6/6  
+PASS  japan-decoy        6/6  
+PASS  logos              6/6  
+PASS  named-study        6/6  
+PASS  named-client       6/6  
+PASS  fintech            6/6  
+PASS  projects           6/6  
+PASS  clients            6/6  
+PASS  sectors            6/6  
+PASS  testimonial        6/6  
+PASS  process            6/6  
+PASS  start-decoy        6/6  
+PASS  hire-decoy         6/6  
+PASS  music              6/6  
+PASS  music-while-work   6/6  
+PASS  rail-repeat        6/6  
+PASS  music-then-ask     6/6  
+PASS  signoff            6/6  
+PASS  testimonial-follow-up  6/6  
+PASS  named-study-by-title  6/6  
+
+surface        expected  missed   forbidden  leaked
+context              42       2         102       0
+casestudies          30       0          66       0
+clients               6       0          72       0
+sectors               6       0          66       0
+method               12       0          84       0
+testimonial           6       0           6       0
+contact               6       0          30       0
+music                18       0          24       0
+suggestions           6       0           6       0
+
+full record: /Users/jonleverrier/Sites/jonleverrier2.local/tools/jonson/results/2026-09-09T19-55-34.json
+exit 1

@@ -1,0 +1,17 @@
+{# How far back the widget's figures reach. The token-per-month figure ignores this
+   and stays a calendar month — see the widget template. #}
+{% import '_includes/forms.twig' as forms %}
+
+{{ forms.selectField({
+    label: 'Period',
+    instructions: 'How far back the figures cover. The monthly token total is always the calendar month.',
+    id: 'days',
+    name: 'days',
+    value: widget.days,
+    options: [
+        { label: 'Last 7 days',  value: 7 },
+        { label: 'Last 30 days', value: 30 },
+        { label: 'Last 90 days', value: 90 },
+        { label: 'Last year',    value: 365 },
+    ],
+}) }}

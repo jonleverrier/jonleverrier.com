@@ -1,0 +1,74 @@
+{#
+  Pagination — previous and next as the round arrow buttons the testimonials
+  cycle with, either side of the page numbers:
+
+      (←)  1  2  3  …  9  (→)        — and from lg:   1  2  3  …  9        (←) (→)
+
+  Always the first and last page; the current page with one neighbour either
+  side — a window of three, kept three at the ends, so the first page reads
+  1 2 3 … 9 and the second the same; an ellipsis for whatever is skipped, even
+  a single page, so the row never grows past the window plus its two ends. An arrow with no page to go to stays, faded and inert, as the
+  testimonials' does, so the row keeps its shape. A single page draws nothing.
+
+    pageInfo — the Paginate object from a `{% paginate %}` tag
+#}
+{% if pageInfo is defined and pageInfo and pageInfo.totalPages > 1 %}
+    {% set cur = pageInfo.currentPage %}
+    {% set last = pageInfo.totalPages %}
+    {# The pages to show, as a sorted, deduped list. #}
+    {% set wanted = [1, last] %}
+    {# A window of three around the current page, slid inwards at either end so
+       it stays three wide: page 1 shows 1 2 3, the last shows the three before it. #}
+    {% set from = max(1, min(cur - 1, last - 2)) %}
+    {% set to = min(last, from + 2) %}
+    {% for n in from..to %}
+        {% set wanted = wanted|merge([n]) %}
+    {% endfor %}
+    {% set pages = [] %}
+    {% for n in 1..last %}
+        {% if n in wanted %}
+            {% set pages = pages|merge([n]) %}
+        {% endif %}
+    {% endfor %}
+    {# The arrow — the same path the testimonials' buttons draw; flipped in CSS
+       for previous. #}
+    {% set arrow %}
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+            <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    {% endset %}
+    <nav class="c-pagination" aria-label="Pages">
+        <ul class="c-pagination__items">
+            <li class="c-pagination__item c-pagination__item--prev">
+                {% if pageInfo.prevUrl %}
+                    <a class="c-pagination__cycle c-pagination__cycle--prev" href="{{ pageInfo.prevUrl }}" rel="prev" aria-label="Previous page">{{ arrow }}</a>
+                {% else %}
+                    <span class="c-pagination__cycle c-pagination__cycle--prev is-disabled" aria-disabled="true" aria-label="Previous page">{{ arrow }}</span>
+                {% endif %}
+            </li>
+            {% set prev = 0 %}
+            {% for n in pages %}
+                {# Anything skipped — one page or many — is an ellipsis, so the row
+                   is always the window plus its ends and never creeps wider. #}
+                {% if n - prev > 1 %}
+                    <li class="c-pagination__item c-pagination__gap" aria-hidden="true"></li>
+                {% endif %}
+                <li class="c-pagination__item">
+                    {% if n == cur %}
+                        <span class="c-pagination__page is-current" aria-current="page">{{ n }}</span>
+                    {% else %}
+                        <a class="c-pagination__page" href="{{ pageInfo.getPageUrl(n) }}">{{ n }}</a>
+                    {% endif %}
+                </li>
+                {% set prev = n %}
+            {% endfor %}
+            <li class="c-pagination__item c-pagination__item--next">
+                {% if pageInfo.nextUrl %}
+                    <a class="c-pagination__cycle c-pagination__cycle--next" href="{{ pageInfo.nextUrl }}" rel="next" aria-label="Next page">{{ arrow }}</a>
+                {% else %}
+                    <span class="c-pagination__cycle c-pagination__cycle--next is-disabled" aria-disabled="true" aria-label="Next page">{{ arrow }}</span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+{% endif %}

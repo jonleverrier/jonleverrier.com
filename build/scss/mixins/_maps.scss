@@ -1,0 +1,29 @@
+/**
+ * MIXINS: MAPS
+ *
+**/
+@use "sass:map";
+
+/**
+ * getmap
+ *
+ * returns value from sass map
+ * $map (string) = name or sass map
+ * $keys (string) = name of key or nested group if $key passed
+ * $key (string) = name of key. defaults to null if no value passed
+**/
+@function getmap($map:null, $keys:null, $key:null) {
+
+    // if only 2 parameters are passed
+    // fetch a simple map
+    @if ($key == null) {
+        @return map.get($map, $keys);
+    }
+
+    // if 3 parameters are passed
+    // fetch a nested map
+    @if ($key != null) {
+        @return map.get($map, $keys, $key);
+    }
+
+}

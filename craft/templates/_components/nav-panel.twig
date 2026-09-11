@@ -1,0 +1,123 @@
+{#
+  Site nav panel — the site, covered, with the way around it on top.
+
+  Opened by the header's burger (nav-panel.js). Rendered once per page from
+  _layouts/page.twig, next to the contact panel, and for the same reasons: a native
+  <dialog> is the site's idiom for this.
+
+  It is FIXED and full-bleed, over everything — the page gutter included. The header
+  stays above it (z-index xl vs this panel's lg) so the logo and the close button
+  survive, which is also why nav-panel.js opens it with show() rather than
+  showModal(): a modal dialog's top layer would bury them.
+
+  Links are queried, not hardcoded, exactly as the footer's quick links are: a single
+  that isn't live takes its own link away rather than leaving one pointing at a page
+  that no longer resolves. Case Studies is the exception — a section index with no
+  entry of its own, so it's a route.
+#}
+{% set about = craft.entries().section('about').status('live').one() %}
+{% set notesIndex = craft.entries().section('note').status('live').one() %}
+
+{# One list, built first, so the active test below is written once rather than four
+   times. `uri` is the entry's own URI, which is exactly the shape getPathInfo()
+   returns — no leading slash, no host — so the two compare directly. Home is ''
+   because the homepage single's URI is Craft's `__home__` sentinel.
+
+   `owns` lists the path roots an item counts as its own, for the pages that sit
+   UNDER a section rather than at it. Case Studies needs two because the index and
+   the entries are different sections with different URIs:
+
+     case-studies     the `caseStudy` SINGLE — the index page
+     case-study/…     the `caseStudies` STRUCTURE — the studies themselves
+
+   Notes needs only its own root: `notes/{slug}` covers the entries, `notes/<year>`
+   the archive route, and the topics category group is also `notes/{slug}`, so all
+   three are already under it. Home lists nothing — with a uri of '' a prefix test
+   would claim every page on the site. #}
+{# `key` is the access key. Set per item rather than taken from the first letter of
+   the label, which would collide the day a second item starts with the same one — and
+   would move on its own if a single's title were edited in the CMS. #}
+{% set items = [{ label: 'Home', url: siteUrl(''), uri: '', owns: [], key: 'h' }] %}
+{% if about %}
+    {% set items = items|merge([{ label: about.title, url: about.url, uri: about.uri, owns: [about.uri], key: 'a' }]) %}
+{% endif %}
+{% set items = items|merge([{
+    label: 'Case Studies',
+    url: siteUrl('case-studies'),
+    uri: 'case-studies',
+    owns: ['case-studies', 'case-study'],
+    key: 'c',
+}]) %}
+{% if notesIndex %}
+    {% set items = items|merge([{ label: notesIndex.title, url: notesIndex.url, uri: notesIndex.uri, owns: [notesIndex.uri], key: 'n' }]) %}
+{% endif %}
+
+{# Contact, PHONES ONLY — the one item that isn't a plain page in this list.
+   Above md the header carries it as a button; below md that button is hidden
+   (.b-header__contact in _header.scss), which left the footer as the only way to it,
+   so it comes back here instead. `mobileOnly` is what the stylesheet keys off.
+
+   LAST on purpose, and not only because it reads that way: the stagger delays are
+   nth-child, and an item hidden with display:none still counts for nth-child — put
+   anywhere else it would leave a gap in the cascade above md.
+
+   A route, like Case Studies, rather than a queried entry: contact-panel.js turns any
+   same-tab click on a /contact link into the side panel, so this never navigates. It
+   opens the panel OVER the open nav, which is deliberate — the nav closing behind the
+   contact panel was reported as a bug and fixed by removing the click-outside. #}
+{# 'c' belongs to Case Studies, so Contact takes the next free letter in its own
+   word. Hoisted out of the hash below rather than annotated in place: a Twig comment
+   inside a hash or array literal is a syntax error and 500s the page. #}
+{% set contactKey = 't' %}
+{% set items = items|merge([{
+    label: 'Contact',
+    url: siteUrl('contact'),
+    uri: 'contact',
+    owns: ['contact'],
+    key: contactKey,
+    mobileOnly: true,
+}]) %}
+
+{% set currentPath = craft.app.request.getPathInfo()|trim('/') %}
+
+<dialog class="c-nav-panel" data-nav-panel aria-label="Site menu">
+    {# tabindex -1 so a pointer-opened panel has somewhere silent to put focus —
+       the same trick the contact panel uses. #}
+    <nav class="c-nav-panel__inner" tabindex="-1">
+        {# The site's own wrap, nested inside the panel's rhythm-500 inset, because
+           that is exactly the pair of insets the logo sits behind: `body > .b-wrap`
+           pads the slab off the viewport, and the header's own .b-wrap pads the logo
+           off the slab. Reproducing the structure keeps the list's left edge on the
+           logo's at every breakpoint, where a hardcoded padding would drift. #}
+        <div class="b-wrap">
+            <ul class="c-nav-panel__items">
+                {% for item in items %}
+                    {# Exact match on the item's own URI, or anything under one of the
+                       roots it owns — so /case-study/vaiie-product-branding marks Case
+                       Studies, and a note or a topic marks Notes. #}
+                    {% set active = currentPath == item.uri %}
+                    {% for root in item.owns %}
+                        {% set active = active or currentPath == root or currentPath starts with root ~ '/' %}
+                    {% endfor %}
+                    <li class="c-nav-panel__item{% if item.mobileOnly ?? false %} c-nav-panel__item--mobile{% endif %}">
+                        {# aria-current is the semantic AND the styling hook: the state is
+                           announced to a screen reader and painted from the same source,
+                           so a class can never drift out of step with what's read out. #}
+                        {# No title attribute. It named the access key, which made it
+                           discoverable — but a tooltip repeating the link's own text
+                           on hover is noise, and screen readers announce title on top
+                           of the link text, so every item read out twice. The keys are
+                           still on the elements; they are just undiscoverable, which
+                           is the normal state of affairs for accesskey. #}
+                        <a
+                            class="c-nav-panel__link"
+                            href="{{ item.url }}"
+                            accesskey="{{ item.key }}"
+                            {% if active %}aria-current="page"{% endif %}
+                        >{{ item.label }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </nav>
+</dialog>

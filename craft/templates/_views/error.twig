@@ -1,0 +1,90 @@
+{#
+  Error pages — every status code the site can hand back, wearing the front door.
+
+  ONE template on purpose. Craft resolves by status code first (`_views/404.twig`
+  would win over this), and there is deliberately no such file: a 404 and a 500
+  differ by one line of copy, not by a layout, and the failure mode of per-code
+  templates is a 500 page nobody has looked at since the day it was written.
+
+  It lives in here rather than loose at the templates root because
+  `errorTemplatePrefix` is set to '_views/' in config/general.php. Craft's lookup is
+  prefix + code, then prefix + 'offline' for a 503, then prefix + 'error' — so this
+  file is the catch-all end of that chain.
+
+  Craft hands over `statusCode` (a STRING, not an int — compare against '404'), plus
+  `message`, `code`, `file` and `line`. See
+  vendor/craftcms/cms/src/controllers/TemplatesController.php.
+
+  `message` is deliberately NOT rendered. For a UserException it is the exception's
+  own words and for anything else a flat "Server Error" — Craft's language rather
+  than Jon's, always English whatever the site is, and free to name internals.
+
+  Nothing here reads `entry`, because there isn't one. The layout, head.twig and
+  scripts.twig all already guard for that (`entry is defined and entry`), which is
+  why this needs no special handling — and why nothing added here later should
+  assume a page element.
+
+  NOTE ON LOCAL TESTING: with devMode on you will never see this. Craft serves Yii's
+  own debug error view instead, so a 404 comes back as a bare "404 Not Found" page.
+  Set CRAFT_DEV_MODE=false to check it, and put it back afterwards.
+#}
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+
+{# No slabModifier: the default is the olive p500 the homepage uses. An error is a
+   front door, not a content page — the cream slab was tried and reads as an article
+   about the mistake. #}
+
+{# A line each, keyed by the code Craft resolved. The fallback covers everything not
+   listed — there is no per-code sentence worth writing for a 502. No body copy and no
+   eyebrow: the heading IS the page, and the code itself is already in the HTTP status
+   where the thing that cares about it is looking. #}
+{% set titles = {
+    '404': 'Page not found',
+    '403': 'Access required',
+    '503': 'Website offline',
+} %}
+
+{% set title = titles[statusCode] ?? 'Something went wrong' %}
+
+{# The tab reads "That page doesn't exist | Jon Leverrier" rather than the bare site
+   name. pageTitleParts is head.twig's own override hook, so the site-name segment and
+   the pagination prefix keep working. #}
+{% set pageTitleParts = [title] %}
+
+{% block siteHead %}
+    {# The status code is what actually keeps a 404 out of an index, and Craft sends
+       it. This is belt and braces for crawlers that are less careful, and for anything
+       that reaches this template with a 200 by accident. #}
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block siteContent %}
+{#
+  The homepage's front door, minus everything that asks a question.
+
+  `data-frontdoor` IS REQUIRED, and not for the reason the name suggests. It looks
+  like a Jonson hook — the door to warp through when a question is asked, the panel
+  to hide when a thread is restored — but in app.js the point cloud's mount sits
+  INSIDE `if (hero)`, and `hero` is `querySelector('[data-frontdoor]')`. Drop the
+  attribute and `[data-hero]` renders an empty box: right size, no canvas, no error.
+  The Jonson behaviours it also switches on are all inert here — thread-memory bails
+  before it reaches the door (no `[data-jonson-view]` on this page), and the warp only
+  fires on a question that can't be asked without a form.
+
+  No ask bar. An error page is a dead end to get OUT of, not a place to start a
+  conversation, and an input here reads as the site asking the visitor to do the work
+  of finding what it lost. The header and the site footer carry the routes on.
+#}
+<section class="c-frontdoor" data-frontdoor>
+    <div class="c-frontdoor__bg">
+        {# No src — hero.js imports the binary as a bundled asset so the built
+           filename carries a content hash. Same as the homepage. #}
+        <div class="c-hero" data-hero></div>
+    </div>
+    <div class="c-frontdoor__meta">
+        <h1 class="c-frontdoor__title">{{ title }}</h1>
+    </div>
+</section>
+{% endblock %}

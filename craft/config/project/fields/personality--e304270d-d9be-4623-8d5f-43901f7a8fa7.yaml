@@ -1,0 +1,18 @@
+columnSuffix: null
+handle: personality
+instructions: null
+name: Personality
+searchable: false
+settings:
+  enableLineWrapping: true
+  enableSpellChecker: true
+  enabledToolbarIconNames:
+    - ordered-list
+    - unordered-list
+    - link
+  indentWithTabs: false
+  showToolbar: true
+  tabSize: 2
+translationKeyFormat: null
+translationMethod: none
+type: verbb\doxter\fields\Doxter

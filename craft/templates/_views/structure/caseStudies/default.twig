@@ -1,0 +1,208 @@
+{#
+  Full case study page, at /case-study/{slug} (the caseStudies structure section,
+  routed via _routers/structure.twig).
+
+  Built on the same `_components/content` shape as the contact single — whisper →
+  title → prose on the cream slab, joined by the dotted spine — so a case study reads
+  as part of the same family of static pages rather than a one-off layout.
+
+  Field mapping:
+    whisper  "Case Study" — a fixed label, not a field
+    title    Long title, falling back to the study's own Title
+    client   The related Client List entry (`clientSelector`), not a field on the study
+    columns  Case Summary in the first column; the project facts in the second
+    aside    "On this page" — the Case Content's h2s, where Enable Sidebar
+             Summary is on (the note's switch, on this entry type too)
+#}
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+
+{# Cream slab, as on the contact page — the default is the olive p500. #}
+{% set slabModifier = 'b-slab--l600' %}
+
+{% block siteContent %}
+    {# `longTitle ?: title` — the pattern every other section uses (see the contact
+       single and the case study index). Both are the STUDY's own names now: Title is
+       the short one it's filed under and the one the cards use, Long title the fuller
+       sentence that only belongs on its own page. Neither is the client — a client can
+       have several studies, so the client lives on the `clientSelector` relation and is
+       read through craft.frontend, which every other surface reads too. #}
+    {% set heading = (entry.longTitle ?? '')|trim ?: entry.title|trim %}
+
+    {# The long form here — this row IS the client, so it gets the full name rather
+       than the short one the card eyebrow uses. '' when no client is related, which
+       drops the row entirely (project-meta filters empties): personal work has no
+       client to name, and inventing one from the study's own title is what this
+       change exists to stop. #}
+    {% set client = craft.frontend.caseStudyClientName(entry, true) %}
+
+    {# Case Summary — the CKEditor field, so it arrives as trusted HTML and goes into
+       the column raw. NOT `summary`, which is the plain one-line description used for
+       the cards and the model's background list. #}
+    {% set caseSummary = entry.caseSummary ?? '' %}
+
+    {# Project facts for the second column.
+
+       Role is the Skills categories — the same source the Jonson background list
+       uses, so what a study says it involved is stated once and read everywhere.
+       Passed as a LIST rather than joined here, so project-meta can cap it: a study
+       can carry a dozen skills, and the whole set dumped into the column buried the
+       Year row below it. Six show, the rest sit behind a "+N more" toggle — all of
+       them in the HTML either way (see project-meta.twig).
+
+       Year comes from the entry's Post Date: no extra field to keep in step, and it's
+       already set per entry. Set it to the year the project STARTED rather than the
+       day the page was published. The "Is present?" switch makes it a range that's
+       still open — "2015 – present" — for work that's ongoing. The "Date hidden?"
+       switch drops the row entirely, for work old enough that dating it would
+       undersell it. An empty value is all project-meta.twig needs to leave the row
+       out. #}
+    {% set role = entry.skills.all()|map(s => s.title)|values %}
+    {% set year = (entry.hasDateHidden ?? false) or not entry.postDate
+        ? ''
+        : entry.postDate|date('Y') ~ ((entry.isPresent ?? false) ? ' – present' : '') %}
+
+    {# The Sector Experience categories, the same source the Jonson background list
+       reads as `sectors` (FindContext::categoryTitles). Passed as a LIST rather than
+       joined here so project-meta renders them as separate items and the comma
+       separators stay its business — and so a study that grows a long set can be
+       capped later with `limit`, the way Role is. Uncapped for now: studies carry one
+       to three of these, well short of the point where the row buries the ones below.
+       A study with none simply loses the row; project-meta drops empties. #}
+    {% set sectors = entry.sectorSelector.all()
+        |map(c => (c.longTitle ?? '')|trim ?: c.title)|values %}
+
+    {# No Bio row. The field is the study's one-line public blurb and it still earns
+       its keep everywhere it isn't visible on this page — the meta description and
+       the JSON-LD description fall back to it (see page/head + page/scripts), and it
+       is what Jonson reads as a study's summary (FindContext). It's just not a
+       project FACT the way the rows below are, and it restated the standfirst the
+       reader has already met in the column alongside. Add it back as a row here if
+       that changes; don't empty the field. #}
+    {% set meta = [
+        { label: 'Client', value: client },
+        { label: sectors|length > 1 ? 'Categories' : 'Category', values: sectors },
+        { label: 'Role', values: role, limit: 6 },
+        { label: 'Year', value: year },
+    ] %}
+
+    {# --case-study widens the h1 only (see _content.scss). A study's Long title is a
+       full descriptive sentence rather than a page name, so it wraps to three lines
+       at the shared title measure; the whisper and prose stay where they are. #}
+    {# Column 1 sits under the h1 at the title's width rather than the narrower prose
+       measure. The second column is empty for now — add its content as the second
+       item in the list. #}
+    {# No `ctas` for now — the ask bar below and the site footer both already offer a
+       way to get in touch, and a third block of the same buttons mid-page was one too
+       many. Pass `ctas` + `ctasHeading` again to bring them back. #}
+    {# A fixed label rather than the client name. It says what the page IS, which is
+       what the whisper does on every other view — and the client now has its own row
+       in the meta column, so putting it up here as well would state it twice. #}
+    {# `readMore` collapses the column to its opening paragraph on mount (read-more.js);
+       the markup itself ships open, so it stays readable with JS off.
+       (Set OUTSIDE the include below: a Twig comment inside a hash literal is a parse
+       error, and the whole page 500s.) #}
+    {% set col1 = caseSummary ? { html: caseSummary, readMore: true } : '' %}
+    {% set col2 = include('_components/project-meta', { items: meta }, with_context = false) %}
+
+    {# NO testimonial slider at the foot of the page, and no query behind one. A quote
+       appears on a study only where a caseTestimonial block puts it, in the order the
+       blocks are in — placement is the switch. This page used to also pull every
+       testimonial related by caseStudyLink and slide them in below the work, which
+       meant a quote nobody had placed still turned up, and the one you HAD placed
+       turned up twice. The relation still earns its keep elsewhere (the index, and
+       craft.frontend.testimonialCompany); it just no longer decides this page. #}
+
+    {# Case Content, block by block. Rendered here rather than passed as entries, so
+       _components/content stays generic — it takes finished HTML and knows nothing
+       about matrix block types. The list is kept for the heading anchors below. #}
+    {% set contentBlocks = entry.caseContent.all() %}
+
+    {# The "on this page" panel — the same one a note carries (see
+       _views/channel/notes): only where the study's Enable Sidebar Summary switch
+       is on, and only with at least two h2s to list. The h2s get ids (the
+       anchored HTML goes back into the blocks) and the list becomes the nav in
+       the content's aside, beside the blocks. #}
+    {% set anchors = (entry.enableSidebarSummary ?? false) ? craft.frontend.headingAnchors(contentBlocks) : null %}
+    {# The STRIP, not the notes panel. Same switch, same anchors — only the surface
+       changes, and it has to: the notes TOC is a column beside the prose, and a case
+       study is mostly full-bleed imagery, so that column sits on the work. This one
+       pins to the top of the window, appears once the reader is into the body, and
+       keeps its list closed until it is asked for. See _components/case-toc.
+
+       Rendered OUTSIDE the content component rather than into its aside, because it is
+       fixed to the viewport and belongs to the page, not to the column layout. #}
+    {% set caseToc = anchors and anchors.headings|length >= 2
+        ? include('_components/case-toc', { headings: anchors.headings }, with_context = false)
+        : null %}
+
+    {# `anchoredHtml` is gated on the STRIP now, not on the old panel variable: it is
+       what puts the generated ids into the block HTML, and without it the strip's
+       anchors would point at headings that have no id.
+
+       Said HERE, above the hash — a {# comment inside a hash or array literal is a Twig
+       parse error and 500s the page. #}
+    {% set anchoredHtml = caseToc ? anchors.html : {} %}
+    {% set blocks = include('_components/case-content', {
+        blocks: contentBlocks,
+        anchoredHtml: anchoredHtml,
+    }, with_context = false) %}
+
+    {# The other work, so the page ends with somewhere to go rather than stopping
+       dead at the last image.
+
+       Same source and ordering as the index — live only, featured first — less this
+       study: a strip offering the page you are already on reads as a broken link,
+       and on a site with five studies losing one to a self-reference is a fifth of
+       the strip. #}
+    {% set others = craft.entries()
+        .section('caseStudies')
+        .status('live')
+        .id('not ' ~ entry.id)
+        .all() %}
+    {% set others = others|filter(s => s.isFeatured ?? false)
+        |merge(others|filter(s => not (s.isFeatured ?? false)))|values %}
+
+    {# Then the other studies for THIS client to the front, each group keeping the
+       featured ordering above. Someone at the foot of one study for a client is more
+       likely to want that client's other work than a stranger's — and with several
+       studies to a client, that work is otherwise buried at whatever position the
+       featured sort left it. A study with no client, or a client with only this one,
+       gets the list back untouched. #}
+    {% set others = craft.frontend.caseStudiesBySharedClient(others, entry) %}
+
+    {# asideOverlay: the "On this page" panel floats over the blocks rather than
+       insetting them — a study's full-width imagery is the content, and must keep
+       its width. (Said here, not in the hash: a comment inside the literal is a
+       parse error that 500s the page.) #}
+    {# The strip itself. Fixed to the viewport, so it sits at the top of the page's own
+       content rather than inside the content component's column layout.
+
+       Note there is no `aside` passed to _components/content below any more: the
+       section nav is this strip, not a column beside the prose, which is the whole
+       point — a column here sat on the imagery. #}
+    {{ caseToc|raw }}
+
+    {% include '_components/content' with {
+        modifier: 'case-study',
+        whisper: 'Case Study',
+        title: heading,
+        columns: [col1, col2],
+        blocks: blocks,
+        caseStudies: others,
+        caseStudiesTitle: 'More case studies',
+    } only %}
+
+    {# Ask bar as a real footer — a SIBLING of .c-content, not a child, exactly as on
+       the case study index. The timeline's end node is .c-content::after, so anything
+       inside would sit above it; out here it also spans the slab without negative
+       margins, since the inline padding belongs to .c-content. #}
+    {# With a back button up to the case studies index, beside the home one. #}
+    {% set studiesIndex = craft.entries().section('caseStudy').status('live').one() %}
+    {% include '_components/ask' with {
+        entry: entry,
+        up: studiesIndex ? studiesIndex.url : siteUrl('case-studies'),
+        upLabel: 'Back to case studies',
+    } only %}
+{% endblock %}

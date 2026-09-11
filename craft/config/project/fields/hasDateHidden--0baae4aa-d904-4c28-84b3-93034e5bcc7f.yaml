@@ -1,0 +1,13 @@
+columnSuffix: null
+handle: hasDateHidden
+instructions: null
+name: 'Date hidden?'
+searchable: false
+settings:
+  default: false
+  offLabel: null
+  onLabel: 'Yes'
+  showLabelsInCards: true
+translationKeyFormat: null
+translationMethod: none
+type: craft\fields\Lightswitch

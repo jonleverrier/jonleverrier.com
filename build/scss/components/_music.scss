@@ -1,0 +1,130 @@
+/**
+ * COMPONENT: MUSIC ("On heavy rotation")
+ *
+ * A strip of Jon's current top artists with their Spotify artwork, surfaced at
+ * personality/music moments (the [[music]] marker). Circular artwork in a
+ * wrapping row, each with the artist's name — a quiet "who is this person" beat,
+ * kin to the photo rail and sector tags.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.c-music {
+    padding-block: rem(28); // match .c-clients / .c-sectors drop-in breathing
+}
+
+// Whisper label — blue, matching the .c-jonson__suggestions-whisper accent.
+.c-music .c-music__whisper {
+    @include typography(whisper);
+    margin: 0 0 getmap($space, rhythm, 500); // was 16px — the same air as the suggestions title
+    font-family: $g-font-primary; // JonSonSans, not the mono prose
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, primary, 430); // the light blue, flat — matches .c-jonson__suggestions-whisper
+}
+
+// Grid of artwork — six across, two rows (the top 12 artists; the template caps
+// the list to match). minmax(0, 1fr) lets the cells shrink freely so the artwork
+// just scales with them and never overflows.
+.c-music__list {
+    // Only the artwork grid breaks out to the full .c-jonson box (like .c-rail) —
+    // the title above stays in the answer measure, aligned with the prose. 100cqi
+    // tracks the section's inline size; the negative margin re-centres the wider box.
+    width: 100cqi;
+    margin-inline: calc((100% - 100cqi) / 2);
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: rem(14);
+    margin-block: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.c-music__artist {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: rem(12);
+    min-width: 0; // let the cell shrink freely
+    text-align: center;
+
+    // Covers alternately tilted, like a row of records leant against a wall —
+    // the strip should read as a shelf, not a grid. Hover straightens the one
+    // you're on, on the same springy curve as the art's pop, so the record
+    // rights itself as it lifts. The `rotate` property rather than `transform`,
+    // so it doesn't collide with that pop on the art inside.
+    transition: rotate 320ms cubic-bezier(0.34, 1.4, 0.7, 1);
+
+    &:nth-child(odd) {
+        rotate: -3deg;
+    }
+
+    &:nth-child(even) {
+        rotate: 3deg;
+    }
+
+    &:hover,
+    &:focus-within {
+        rotate: 0deg;
+    }
+}
+
+.c-music__art {
+    display: block;
+    position: relative; // anchor the name overlay
+    width: 100%;
+    aspect-ratio: 1; // square, sized by the grid cell
+    overflow: hidden;
+    border-radius: $b-radius-200; // match the .c-rail panel, not its cards
+    background: getmap($colour, light, 800); // placeholder while the art loads
+    box-shadow: 0 rem(6) rem(18) rgba(#000, 0.28);
+    transition: transform 320ms cubic-bezier(0.34, 1.4, 0.7, 1); // springy pop
+
+    img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.c-music__artist:hover .c-music__art {
+    transform: translateY(rem(-3)) scale(1.06);
+}
+
+// The name is hidden until you hover the cover, then fades in as a centred
+// overlay with a scrim so it stays legible over any artwork.
+.c-music__name {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: rem(8);
+    text-align: center;
+    @include typography(whisper); // smallest rule in the scale
+    font-family: $g-font-secondary; // JonSonMono — matches the response voice
+    color: getmap($colour, light, 100); // white-ish, over the scrim
+    background: rgba(#000, 0.55); // scrim for legibility over any cover
+    overflow-wrap: break-word; // long single-word names (Khruangbin) break in a narrow cell
+    opacity: 0;
+    transition: opacity 220ms ease;
+}
+
+.c-music__artist:hover .c-music__name,
+.c-music__artist:focus-within .c-music__name {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-music__artist,
+    .c-music__art {
+        transition: none;
+    }
+
+    .c-music__artist:hover .c-music__art {
+        transform: none;
+    }
+}

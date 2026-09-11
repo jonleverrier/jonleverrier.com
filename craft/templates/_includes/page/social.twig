@@ -1,0 +1,24 @@
+{#
+  SOCIAL
+
+  Social profile links for the footer.
+
+  The list lives in craft/config/social.php, not here — the same URLs are the
+  Person node's `sameAs` in the JSON-LD (_includes/page/scripts.twig), and two
+  hand-typed copies of one list is how they end up disagreeing. Add, remove or
+  reorder a profile there and both surfaces follow.
+
+  A profile needs a matching .b-social__link--{handle} rule in
+  build/scss/base/_social.scss to have an icon; see the config for which exist.
+#}
+<div class="b-social">
+    <ul class="b-social__items">
+        {% for link in craft.app.config.getConfigFromFile('social') %}
+            <li class="b-social__item">
+                <a class="b-social__link b-social__link--{{ link.handle }}" href="{{ link.url }}" rel="me noopener" target="_blank">
+                    <span class="u-visually-hidden">{{ link.name }}</span>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

@@ -1,0 +1,140 @@
+allowLineBreaksInTitles: false
+color: null
+description: null
+fieldLayouts:
+  616e1285-af66-4062-bae0-39adf1dc8211:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        elements:
+          -
+            autocapitalize: true
+            autocomplete: false
+            autocorrect: true
+            class: null
+            dateAdded: '2026-07-06T12:16:23+00:00'
+            disabled: false
+            elementCondition: null
+            id: null
+            inputType: null
+            instructions: null
+            label: 'Client Name'
+            max: null
+            min: null
+            name: null
+            orientation: null
+            placeholder: null
+            readonly: false
+            required: true
+            size: null
+            step: null
+            tip: null
+            title: null
+            type: craft\fieldlayoutelements\entries\EntryTitleField
+            uid: d55a5c06-2b67-41f1-a291-c0486af18893
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-08-31T12:53:36+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: b1d9fee8-8250-4688-b6f7-b8e7bffa0569 # Client Long Title
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 4dd79266-abf0-4d4f-b278-ec6a703a3de2
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-06T12:18:30+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 76c638b1-cf43-42a7-9c63-56cb5ffa05b5 # Summary
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 564e4d49-65fe-41b7-81cd-0135b0d6ee78
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-01T14:32:21+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: fff25737-d8e6-43fe-b3bf-572cd3966519 # Hidden?
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: f70b761b-91e3-4cbe-9fbd-a4816df3fc09
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-07-25T19:06:37+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: d2d8f42a-ad66-4f98-8f9f-181b3aa8f046 # Case Study Link
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 38a273af-ae01-4939-8059-4e68869d2c9d
+            userCondition: null
+            warning: null
+            width: 100
+        name: Content
+        uid: 01bf866f-26a7-455e-9896-c95683a2ea93
+        userCondition: null
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-07-06T12:18:30+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: a2d93e99-dee0-49f1-aa28-d8274699d05c # Logo
+            handle: null
+            instructions: null
+            label: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 6c605170-8fbd-4e36-ba0b-46e4d23fd4ca
+            userCondition: null
+            warning: null
+            width: 100
+        name: Branding
+        uid: 7d2bfca2-c5db-400b-9e87-3811d613a255
+        userCondition: null
+    thumbFieldKey: null
+handle: client
+hasTitleField: true
+icon: null
+name: Client
+showSlugField: false
+showStatusField: true
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

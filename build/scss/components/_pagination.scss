@@ -1,0 +1,176 @@
+/**
+ * COMPONENT: PAGINATION
+ *
+ * Previous and next arrows either side of page numbers, under a paginated
+ * list (see _components/pagination). The numbers are discs in the topic chip's outlined
+ * dress — white, red text, hairline edge — with the current page filled; the gap is
+ * a plain ellipsis; the arrows are the round cycle buttons the testimonials
+ * use. On the list's measure, set left with the cards.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+.c-pagination {
+    width: 100%;
+    max-width: rem(740); // the reading measure — with the list above it
+    margin: 0 auto;
+
+    // A timeline connector above it — the same spine the blocks are joined
+    // with, at the same size and with the same air either side (see the
+    // case-content spine) — so the pagination is a beat of the page, not a
+    // strip tacked under the last card.
+    &::before {
+        content: '';
+        display: block;
+        width: $spine-width;
+        height: $spine-length;
+        margin: rem(22) auto;
+        background: getmap($colour, light, 750); // the content spine
+    }
+}
+
+.c-pagination__items {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: rem(8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.c-pagination__item {
+    margin: 0;
+}
+
+// On a phone the arrows bracket the numbers. From lg they sit together at the
+// row's right end, the numbers at the left: previous moves after the numbers
+// (order, not markup — the reading order stays previous, pages, next) and
+// pushes itself and next across with an auto margin.
+// The arrows sit after the pages, as a pair at the trailing end. Below lg the
+// row can't hold pages and arrows together, and left to wrap on its own the
+// "next" arrow landed alone on a second row at the leading edge, under
+// "previous". So there the pair takes its own row: previous is a full-width
+// item less the next button's width, with its arrow pushed to its end, and next
+// is exactly that width — together they fill the row and can never split.
+.c-pagination__item--prev {
+    order: 1;
+
+    @include mq(until, lg) {
+        display: flex;
+        justify-content: flex-end;
+        flex: 0 0 calc(100% - #{rem(52)}); // the row less next's 44 + the 8 gap
+    }
+
+    @include mq(from, lg) {
+        margin-left: auto;
+    }
+}
+
+.c-pagination__item--next {
+    order: 2;
+
+    @include mq(until, lg) {
+        flex: 0 0 rem(44);
+    }
+}
+
+// A page number in a circle: the outlined chip's dress — white, red text,
+// hairline edge — on a disc the size of the arrow buttons beside it. Fixed
+// width, not a minimum, so a two-digit page stays round. The current page fills red, as
+// the chip does on hover, and isn't a link.
+.c-pagination__page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: rem(44);
+    height: rem(44);
+    padding: 0;
+    border: rem(1) solid rgba(getmap($colour, light, 850), 0.18);
+    border-radius: 50%;
+    background-color: getmap($colour, light, 100);
+    color: getmap($colour, primary, 600);
+    @include typography(p-sm);
+    font-family: $g-font-secondary; // JonSonMono — a number, like the date labels
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+
+    &:hover,
+    &:focus-visible {
+        border-color: getmap($colour, primary, 600);
+        background-color: getmap($colour, primary, 600);
+        color: getmap($colour, light, 100);
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 700); // navy: the yellow ring measured 1.3:1 on the cream pages
+        outline-offset: rem(2);
+    }
+
+    &.is-current {
+        border-color: getmap($colour, primary, 600);
+        background-color: getmap($colour, primary, 600);
+        color: getmap($colour, light, 100);
+    }
+}
+
+// The gap: three round dots, drawn rather than typed — a "…" glyph is small,
+// tight and sits on the baseline, where these want to be the size of the
+// numerals' strokes, evenly spaced and centred on the discs. A repeating
+// radial gradient paints one dot per 10px cell; the box is three cells wide.
+// The <li> is empty and aria-hidden, so nothing is read out for it.
+.c-pagination__gap {
+    width: rem(30);
+    height: rem(44);
+    background-image: radial-gradient(circle, getmap($colour, light, 850) rem(2.5), transparent rem(3));
+    background-size: rem(10) 100%;
+    background-repeat: repeat-x;
+}
+
+// Previous and next: the round red arrow buttons the testimonials and the
+// method timeline cycle with (see .c-method__cycle) — the same disc, pop and
+// arrow, with a faded, inert state where there's no page to go to. Links, not
+// buttons, since each is a page of its own; `is-disabled` stands in for
+// :disabled on the span that takes the link's place.
+.c-pagination__cycle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: rem(44);
+    height: rem(44);
+    border: 0;
+    border-radius: 50%;
+    background: getmap($colour, primary, 600);
+    color: getmap($colour, light, 100);
+    box-shadow: inset 0 rem(-3) 0 rgba(#000, 0.3); // raised "pop", like .c-button
+    line-height: 1;
+    text-decoration: none;
+    transition: transform 200ms ease;
+
+    svg {
+        display: block;
+    }
+
+    &.is-disabled {
+        opacity: 0.28;
+        cursor: default;
+    }
+
+    &:not(.is-disabled):hover {
+        transform: translateY(rem(-1));
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 700); // the ring sits outside the disc, on the eggshell — white there measured 1.2:1
+        outline-offset: rem(2);
+    }
+}
+
+// Same arrow SVG; flip it for "previous".
+.c-pagination__cycle--prev svg {
+    transform: scaleX(-1);
+}

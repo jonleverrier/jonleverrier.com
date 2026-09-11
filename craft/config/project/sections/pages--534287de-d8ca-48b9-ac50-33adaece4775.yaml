@@ -1,0 +1,25 @@
+defaultPlacement: end
+enableVersioning: true
+entryTypes:
+  -
+    uid: 34ff84d5-a7af-4a84-b293-3ad3aadbb438 # Page
+handle: pages
+maxAuthors: 1
+minAuthors: 1
+name: Pages
+previewTargets:
+  -
+    label: 'Primary entry page'
+    refresh: '1'
+    urlFormat: '{url}'
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: true
+    template: _routers/structure.twig
+    uriFormat: '{slug}'
+structure:
+  maxLevels: 1
+  uid: 6876ae48-fc72-4695-9a8a-436a6c43ea5d
+type: structure

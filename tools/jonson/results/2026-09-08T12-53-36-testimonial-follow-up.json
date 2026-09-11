@@ -1,0 +1,196 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-08T12:53:01.814Z",
+  "scenarios": [
+    {
+      "id": "testimonial-follow-up",
+      "turns": [
+        {
+          "q": "What did you do for White Paper?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "White Paper is the UK's leading provider of legal and business CPD conferences, and I've looked after their brand and platforms for a long stretch now. Most recently I designed and built their booking engine and on-demand video platform — cutting a long, error-prone checkout down to a few simple steps and pulling all their scattered conference data into one place.[[casestudies]]\n\nThe results were the part I'm proudest of: drop-offs fell dramatically and the on-demand side now brings in a real chunk of their revenue.\n\n[[next: how did you cut down the checkout drop-off? @study:white-paper-booking-engine-design-development | what does your on-demand platform actually do? @study:white-paper-booking-engine-design-development | have you done similar work for other clients? @work]]"
+        },
+        {
+          "q": "What results did the booking engine deliver?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "The booking engine cut drop-offs by around 90% and reduced the number of interactions to book by 50–60%. On the back-office side, processing time dropped by about 85% — their admin team now spends roughly a fifth of their time on bookings, freeing them for higher-value work.\n\nThe MD reckoned it let them go from four back-office staff down to one, and the on-demand platform ended up accounting for about 35% of their revenue.[[testimonial]]\n\n[[next: how did you cut the checkout down? @study:white-paper-booking-engine-design-development | what does your process look like on a project like this? @method | could you do something similar for us? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial-follow-up",
+      "turns": [
+        {
+          "q": "What did you do for White Paper?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I designed and built their booking engine and on-demand platform. The old flow took eight steps to book and had a single long checkout page that was a nightmare to correct, so people bailed and phoned support instead — I split checkout into clear tasks, rebuilt the conference pages as fast landing pages, and pulled all their scattered conference data into one repository.[[casestudies]]\n\nThe results were the part I'm proudest of: drop-off fell by around 90% and their back office went from four staff on bookings down to one.\n\n[[next: how did you cut booking drop-off so much? @study:white-paper-booking-engine-design-development | what was the on-demand platform side? @study:white-paper-booking-engine-design-development | how do you usually approach a project like this? @method]]"
+        },
+        {
+          "q": "What results did the booking engine deliver?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Drop-off fell by about 90%, and the number of interactions to book dropped by 50–60%. Processing time came down roughly 85% — admin now spend about a fifth of their time on bookings, and the on-demand side went from nothing to around 35% of revenue.[[testimonial]]\n\nThe MD put it best: their back office went from four staff to one, and they felt I'd genuinely integrated with how the business runs rather than just handing over a website.\n\n[[next: how did you get drop-off down by 90%? @study:white-paper-booking-engine-design-development | what does your process look like on a project like this? @method | i've got a clunky checkout — could you help? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial-follow-up",
+      "turns": [
+        {
+          "q": "What did you do for White Paper?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I designed and built their booking engine and on-demand platform — pulling everything into one place so bookings, content, invoices and CPD certificates all run off a single source rather than scattered across disconnected tools.[[casestudies]]\n\nThe results I'm proudest of: drop-off cut by around 90%, and their back office went from four staff to one. It's a relationship that's carried on for over a decade, too.\n\n[[next: how did you cut the booking drop-off so dramatically? | what was wrong with the original booking process? | how did the on-demand platform change their revenue? @study:white-paper-booking-engine-design-development]]"
+        },
+        {
+          "q": "What results did the booking engine deliver?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "The headline ones: booking drop-off fell by around 90%, the number of interactions to complete a booking dropped by 50–60%, and processing time was cut by about 85%. On-demand content grew to roughly 35% of their revenue too.\n\nThe one their MD singled out was the back office going from four staff down to one — freed the team up enormously.[[testimonial]]\n\n[[next: how did you cut the drop-off rate so much? @study:white-paper-booking-engine-design-development | how would you approach a project like mine? @method | can we have a chat about a booking system? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial-follow-up",
+      "turns": [
+        {
+          "q": "What did you do for White Paper?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 1,
+          "answer": "I designed and built their booking engine and on-demand platform — the UK's leading provider of legal and business CPD conferences. The old flow took eight interactions to book and their data was scattered across disconnected platforms, so I rebuilt the whole thing around fast conference landing pages, a task-based checkout, and a single content repository feeding everything.[[casestudies:white-paper-booking-engine-design-development]]\n\nIt's been a long relationship — I've looked after their brand and platforms for over a decade now.\n\n[[next: what results did the new booking engine achieve? | how did you handle the on-demand video side? | how long have you worked with White Paper? @study:white-paper-booking-engine-design-development]]"
+        },
+        {
+          "q": "What results did the booking engine deliver?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Drop-off fell by around 90%, the number of interactions to complete a booking dropped 50–60%, and processing time came down about 85% — the admin team now spends roughly 20% of their time on bookings rather than being buried in it. The on-demand platform I built also went from nothing to about 35% of their revenue.[[testimonial]]\n\nThe MD summed it up better than I can — their back office went from four staff handling bookings to one.\n\n[[next: how did you cut the booking down to fewer steps? @study:white-paper-booking-engine-design-development | what's your process for a project like this? @method | can we talk about a project I have in mind? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial-follow-up",
+      "turns": [
+        {
+          "q": "What did you do for White Paper?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I designed and built their booking engine and on-demand platform. The old booking flow was eight interactions deep with one endless checkout page, and their conference data was scattered across disconnected systems — so I split checkout into manageable tasks, pulled everything into a single content repository and automated a lot of the back office. [[casestudies:white-paper-booking-engine-design-development]]\n\nThe results were the bit I'm proudest of: drop-off fell by around 90%, and their back office went from four staff on bookings down to one.\n\n[[next: how did you cut the booking drop-off so much? @study:white-paper-booking-engine-design-development | what's the AI copilot you built for them? @study:white-paper-booking-engine-design-development | how long have you worked with White Paper? @cv]]"
+        },
+        {
+          "q": "What results did the booking engine deliver?",
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "The headline ones: roughly 90% less drop-off in the booking flow, and 50–60% fewer interactions to get from browsing a programme to a confirmed booking. Processing time dropped by about 85%, so their admin team spend only a fraction of their day on bookings now.\n\nThe one I like most is the back office going from four people down to one — and the on-demand platform ended up bringing in around 35% of revenue, which nobody expected at the outset.\n\n[[next: how did you cut the drop-off rate so much? @study:white-paper-booking-engine-design-development | what was your process on a project like this? @method | can you do something similar for my platform? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "testimonial-follow-up",
+      "turns": [
+        {
+          "q": "What did you do for White Paper?",
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "I designed and built their booking engine and on-demand platform. The booking flow was a mess — eight interactions from programme to checkout, one giant form, and drop-offs would just phone support — so I split it into clean tasks and pulled all their scattered conference data into a single content repository. [[casestudies]]\n\nThe results were the satisfying part: drop-off fell by about 90%, back-office processing time by around 85%, and on-demand now brings in a third of their revenue.\n\n[[next: how did you cut the booking drop-off so much? @study:white-paper-booking-engine-design-development | what does the on-demand platform actually do? @study:white-paper-booking-engine-design-development | how long have you worked with White Paper? @cv]]"
+        },
+        {
+          "q": "What results did the booking engine deliver?",
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "The headline ones: roughly 90% less drop-off in the booking flow, and 50–60% fewer interactions to get from the programme page to a confirmed booking. [[testimonial]]\n\nOn the back office side, processing time dropped by about 85% — their admin team now spends only around a fifth of its time on bookings, and the on-demand platform grew to about 35% of revenue. The MD told me it took his back office from four staff down to one.\n\n[[next: how did you cut the booking down to fewer steps? @study:white-paper-booking-engine-design-development | how would you approach a project like mine? @method | how do I get in touch to discuss a project? @contact]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

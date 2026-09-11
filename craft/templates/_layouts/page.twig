@@ -1,0 +1,43 @@
+{% set language = craft.app.language|slice(0,2) %}
+{% set element = entry ?? product ?? variant ?? element ?? null %}
+{% set global = global ?? craft.entries().section('global').one() %}
+{% set baseUrl = getenv('URL_SITE_PUBLIC') %}
+<!DOCTYPE html>
+<!--
+  * Designed & Developed by Jon Leverrier
+  * https://jonleverrier.com
+-->
+<html lang="{{ language }}" class="no-js is-loading">
+<head>
+    {% include '_includes/page/head.twig' %}
+    {% block siteHead %}{% endblock %}
+    {{ head() }}
+</head>
+<body{% if bodyClass ?? false %} class="{{ bodyClass }}"{% endif %}>
+    <div class="b-wrap">
+        <main class="b-main" id="main">
+            <div class="b-slab {{ slabModifier ?? 'b-slab--p500' }}">
+                {% block siteAlerts %}{% endblock %}
+                {% include '_includes/page/header.twig' %}
+                {% block siteHeader %}{% endblock %}
+                {% block siteContent %}{% endblock %}
+            </div>
+        </main>
+        {% include '_includes/page/footer.twig' %}
+        {% block siteFooter %}{% endblock %}
+    </div>
+{# The contact side panel — the ways in, over any page (see the component). Outside
+   the wrap: a dialog in the top layer takes no part in the page's flow, and the
+   wrap's own spacing rules would otherwise hand it a margin. #}
+{% include '_components/contact-panel.twig' %}
+{# The site nav, opened by the header's burger. Outside the wrap for the same reason
+   as the panel above: a dialog in the top layer takes no part in the page's flow. #}
+{% include '_components/nav-panel.twig' %}
+{# The VIP strip — fixed chrome that has to sit outside the warped wrap for the same
+   reason. Renders nothing for anyone who isn't one (see the component). #}
+{% include '_components/vip-strip.twig' %}
+{% include '_includes/page/scripts.twig' %}
+{% block siteScripts %}{% endblock %}
+{{ endBody() }}
+</body>
+</html>

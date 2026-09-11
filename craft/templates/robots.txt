@@ -1,0 +1,19 @@
+{#
+  robots.txt. Served from a template, not a static file, so the URLs below follow
+  whatever environment this is rather than hardcoding a domain.
+#}
+# {{ systemName }}
+
+Sitemap: {{ alias('@web') }}/sitemap.xml
+
+{# llms.txt — the site in markdown for a language model (_views/feeds/llms.twig).
+
+   A COMMENT, not a directive. robots.txt has no `Llms:` field: the only registered
+   ones are User-agent, Disallow, Allow, Sitemap and Crawl-delay, and inventing a new
+   key risks a strict parser treating the whole file as malformed — which would cost the
+   Sitemap line above, a directive that genuinely works. A crawler that cares reads
+   /llms.txt at its well-known path either way; this is a signpost for anyone, or
+   anything, reading the file to see what the site offers. #}
+# llms.txt: {{ alias('@web') }}/llms.txt
+
+User-agent: *

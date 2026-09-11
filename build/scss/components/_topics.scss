@@ -1,0 +1,193 @@
+/**
+ * COMPONENT: TOPICS
+ *
+ * The notes' topics as a row of pills under the list on the index — the method
+ * timeline's light-blue service pill (see _method.scss), without its diamond,
+ * on every one, but links: each goes to its topic's page. The current topic is
+ * marked, in the navy, and isn't a link. A timeline connector above, like the
+ * blocks', and the pagination's own connector below closes the row.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// Matches the Summary panel (.c-toc): the box, and the width at which the
+// frame leaves the flow for the gutter. Restated here rather than shared — the
+// two files are independent modules.
+// The sticky offset in the gutter — the Summary panel's ($c-toc-top), so the two
+// panels sit on the same line as a reader scrolls. Restated rather than imported:
+// _toc.scss owns that one and neither file should reach into the other.
+$c-topics-sticky-top: rem(120); // clear of the sticky header
+
+$c-topics-wide: 1440px;
+
+// The block is the SLOT, and the panel inside it is the element — the other way
+// round from how this started, when an element (`__frame`) wrapped its own
+// block, which is backwards in BEM and read that way every time.
+//
+// In the flow the slot is the reading measure with a spine segment above,
+// between the list and the pagination; from wide it leaves the flow for the
+// right-hand gutter — pinned to the blocks' right edge, running their full
+// height so the panel inside can be sticky for the scroll of the list. The
+// Summary panel's .c-content__aside, mirrored, but living inside the blocks so
+// the flow order needs no second copy of the markup.
+.c-topics {
+    width: 100%;
+    max-width: rem(740);
+    margin: 0 auto;
+
+    &::before {
+        content: '';
+        display: block;
+        width: $spine-width;
+        height: $spine-length;
+        margin: rem(22) auto;
+        background: getmap($colour, light, 750); // the content spine
+    }
+
+    @media (min-width: $c-topics-wide) {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        z-index: 1;
+        width: min(#{rem(340)}, calc((100% - #{rem(740)}) / 2 - #{getmap($space, rhythm, 600)})); // as the Summary panel
+        max-width: none;
+        margin: 0;
+
+        &::before {
+            display: none; // out of the flow, so out of the timeline
+        }
+    }
+}
+
+.c-topics__panel {
+    width: 100%;
+
+    // The box — the Summary panel's dress (.c-toc), so the two gutter panels on the
+    // site match: the previous / next cards' inset, the timeline's grey-taupe edge,
+    // the slab's eggshell.
+    padding: rem(20) rem(22);
+    border: rem(2) solid getmap($colour, light, 750);
+    border-radius: $b-radius-200;
+    background-color: getmap($colour, light, 600);
+
+    // In the gutter (see .c-topics): STICKY, riding down the list with the
+    // reader, at the same offset as the Summary panel on a note (.c-toc) so the
+    // two gutter panels behave alike as well as match. It was pinned to the foot
+    // of the list — a destination level with the pagination — but that put the
+    // one piece of navigation on the page out of reach until you'd scrolled past
+    // everything it navigates.
+    //
+    // No fade-and-rise arrival with it: the panel is on screen from the top of
+    // the list now, so an entrance keyed to scrolling down to it would never
+    // fire, and one keyed to load would animate something already in view. The
+    // frame runs the blocks' full height, which is what gives it room to travel.
+    @media (min-width: $c-topics-wide) {
+        position: sticky;
+        top: $c-topics-sticky-top;
+
+        // Hug the widest pill rather than filling the gutter. Stacked (see the
+        // list below), the pills are all different lengths, and a fixed-width box
+        // left a ragged column of them in a lot of empty panel. Capped at the
+        // gutter, so a long topic name still can't push the box out of it.
+        width: max-content;
+        max-width: 100%;
+        // …and sat against the OUTER edge of the gutter. Now that the box is
+        // narrower than the frame it has somewhere to sit, and the frame's right
+        // edge is the page's — so the panel lines up with the margin the rest of
+        // the page is set to rather than floating mid-gutter.
+        margin-left: auto;
+    }
+
+    // The spine, as above the pagination — the topics are a beat of the page.
+}
+
+// The eyebrow above the pills — the whisper, as the section labels use it.
+.c-topics__whisper {
+    @include typography(whisper);
+    margin: 0 0 rem(16);
+    text-transform: uppercase;
+    font-weight: 600;
+    color: getmap($colour, primary, 450); // the content-page whisper blue
+}
+
+.c-topics__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: rem(12);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    // In the gutter: one topic a line. As a wrapping row the pills broke at
+    // whatever width the box happened to be, which read as a paragraph of chips
+    // rather than a list you scan. Stacked, and with the box hugging them
+    // (above), it reads as navigation.
+    @media (min-width: $c-topics-wide) {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: flex-start; // each pill hugs its own label, not the column
+    }
+}
+
+.c-topics__item {
+    margin: 0;
+}
+
+// The pill — .c-method__item, as a link, with no marker. Same springy pop
+// on hover. A flex row, so the count disc after the label sits centred beside it.
+.c-topics__topic {
+    display: inline-flex;
+    align-items: center;
+    gap: rem(10);
+    padding: rem(8) rem(14); // the meta row's inset (.c-content__meta-items), so the two chip rows on the index read as one family
+    border: rem(2) solid transparent;
+    border-radius: rem(999); // pill
+    background-color: getmap($colour, primary, 410); // the method's light-blue pill (palette f), for every topic
+    color: getmap($colour, primary, 700);
+    font-family: $g-font-secondary; // JonSonMono — matches the response voice
+    @include typography(p-sm);
+    font-weight: 600; // the mono's bold face
+    line-height: 1.2;
+    text-decoration: none;
+    transition: transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    &:hover,
+    &:focus-visible {
+        transform: translateY(rem(-5)) scale(1.1) rotate(-3deg);
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 700); // navy: the yellow ring measured 1.3:1 on the cream pages
+        outline-offset: rem(2);
+    }
+
+    // The current topic: filled navy, still with its marker, and no pop —
+    // it's where you are, not somewhere to go.
+    &.is-current {
+        background-color: getmap($colour, primary, 700);
+        color: getmap($colour, light, 100);
+        transform: none;
+    }
+}
+
+// The count: how many notes carry the topic, in a small white disc with navy
+// numerals after the label — a step down in size, so it reads as a badge on
+// the pill rather than part of its name. The same in every state: on the
+// light-blue pill and on the navy current one alike. Round for one digit, a
+// pill for two.
+.c-topics__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: rem(24);
+    height: rem(24);
+    padding: 0 rem(7);
+    border-radius: rem(999);
+    background-color: getmap($colour, light, 100); // white
+    color: getmap($colour, primary, 700); // navy
+    font-size: rem(12);
+    line-height: 1;
+}

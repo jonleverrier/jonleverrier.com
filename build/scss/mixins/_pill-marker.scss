@@ -1,0 +1,49 @@
+/**
+ * MIXIN: PILL MARKER
+ *
+ * The small shape before a pill's label — the same three, in the same three
+ * colours, wherever the a/e/f pill palette is used (the method timeline's
+ * services, the sector tags). Drawn on a ::before so the markup stays a plain
+ * label. One geometry for all three: sized off the type (em) so it tracks the
+ * pill's text, the same gap to the label, and set to sit on the x-height's
+ * centre. Only the shape and colour differ.
+ *
+ *   triangle  beige pill (a) — warm gold
+ *   pacman    white pill (e) — dusty pink, mouth open towards the label
+ *   diamond   blue pill  (f) — mid blue
+ *
+ * Usage, on the pill's ::before:  @include pill-marker(triangle);
+ *
+**/
+
+@mixin pill-marker($shape) {
+    content: '';
+    display: inline-block;
+    margin-right: 0.9em;
+    vertical-align: -0.1em; // the shapes' corners reach past the x-height, so a touch lower centres them on it
+
+    @if $shape == triangle {
+        // Wider than tall, to the width the diamond's points span once rotated
+        // (0.9em × √2), so the two read the same size. Cut with a clip-path.
+        width: 1.27em;
+        height: 0.9em;
+        background-color: #d4b363;
+        clip-path: polygon(50% 0, 100% 100%, 0 100%);
+    } @else if $shape == pacman {
+        // A disc with a 70° mouth open towards the label, cut with a conic
+        // gradient (0° is twelve o'clock, so 55°–125° is centred on three).
+        // Its diameter matches the width the other two span.
+        width: 1.27em;
+        height: 1.27em;
+        border-radius: 50%;
+        background: conic-gradient(from 55deg, transparent 0 70deg, #d7a7cd 70deg);
+        vertical-align: -0.25em; // taller than the others: lower again to keep it centred
+    } @else if $shape == diamond {
+        width: 0.9em;
+        height: 0.9em;
+        background-color: #72a2b9;
+        transform: rotate(45deg);
+    } @else {
+        @error "pill-marker: unknown shape `#{$shape}` (triangle | pacman | diamond)";
+    }
+}

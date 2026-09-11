@@ -1,0 +1,33 @@
+{
+  "author": "Jon Leverrier",
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": "^20 || ^22"
+  },
+  "scripts": {
+    "dev": "NODE_ENV=dev URL=https://jonleverrier2.local/ vite",
+    "build": "NODE_ENV=production URL=https://jonleverrier2.local/ vite build",
+    "preview": "NODE_ENV=production URL=https://jonleverrier2.local/ vite preview"
+  },
+  "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.4",
+    "@spiriit/vite-plugin-svg-spritemap": "^5.0.0",
+    "autoprefixer": "^10.4.21",
+    "npm-check-updates": "^19.1.1",
+    "postcss-combine-duplicated-selectors": "^10.0.3",
+    "postcss-sort-media-queries": "^5.2.0",
+    "rollup-plugin-critical": "^1.0.18",
+    "sass": "^1.93.2",
+    "tm-grammars": "^1.32.11",
+    "vite": "^7.1.11",
+    "vite-plugin-compression": "^0.5.1",
+    "vite-plugin-restart": "^1.0.0"
+  },
+  "dependencies": {
+    "gsap": "^3.12.5",
+    "lottie-web": "^5.13.0",
+    "shiki": "^4.4.3",
+    "three": "^0.184.0"
+  }
+}

@@ -1,0 +1,61 @@
+{#
+  Case study marquee for a static content page (the caseStudy single), as opposed to
+  the one Jonson renders inside an answer (_components/case-studies.twig).
+
+  Same markup and the same clients-marquee.js behaviour — fill, clone, drift, drag —
+  but with the --static modifier, which full-bleeds off the viewport instead of
+  breaking out with 100cqi. The Jonson version relies on .c-jonson's container-type
+  for that, and a content page has no container.
+
+  Expects: studies — a list of caseStudies entries, already ordered and filtered.
+
+  Thumbnails load lazily. Unlike the Jonson marquee this strip is in normal document
+  flow — at the foot of a case study, below everything — so the browser can be left to
+  decide, and a visitor who never scrolls that far never pays for the images. The card
+  defaults to eager for the Jonson case; this is the override.
+
+  Cards carry `longTitle ?: title`, the same as everywhere else — one name per project
+  — with the client as the eyebrow above it, read from the study's `clientSelector`
+  relation rather than its Title. Those used to be the same thing; they aren't now that
+  a client can have more than one study.
+#}
+{% if studies is defined and studies %}
+    <div class="c-case-studies c-case-studies--marquee c-case-studies--static"
+         role="group" aria-label="Case studies">
+        <div class="c-case-studies__track">
+            <ul class="c-case-studies__items">
+                {# NOT reversed, unlike the Jonson marquee next door.
+                
+                   It used to be, to cancel out a drift that ran left to right: cards
+                   arrived at the LEFT edge, so the strip revealed the DOM backwards and
+                   the loop was reversed to put the intended order back into it. The
+                   cost was the frame that matters most — the visitor lands on the DOM's
+                   FIRST cards, so the strip opened on the tail of the list, which is
+                   the least relevant end of it now that the caller leads with the same
+                   client's other work and the featured picks.
+                
+                   DIRECTION is 1 now (case-study-marquee.js), so the cards run right to
+                   left and arrive at the RIGHT edge — the DOM reveals forwards on its
+                   own and there's nothing left to cancel. Source order is the order in
+                   both senses: what you land on, and what drifts in after it. #}
+                {% for study in studies %}
+                    {# The short client name: the eyebrow sits above the title in small
+                       type, so the full "The White Paper Conference Company" form
+                       belongs on the study's own page, not here. '' when there's no
+                       client, which drops the line — the card still reads as itself. #}
+                    {% set client = craft.frontend.caseStudyClientName(study) %}
+                    {% set heading = (study.longTitle ?? '')|trim ?: study.title|trim %}
+                    <li class="c-case-studies__item">
+                        {% include '_components/case-study' with {
+                            url: study.url,
+                            title: heading,
+                            client: client,
+                            image: study.largeImage.one() ?? null,
+                            loading: 'lazy',
+                        } only %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endif %}
