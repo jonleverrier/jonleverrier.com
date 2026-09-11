@@ -102,6 +102,13 @@ $c-nav-panel-ms: 260ms;
     // The header sits over the top of this, so the list is pushed clear of it.
     padding-block: rem(120) getmap($space, rhythm, 500);
 
+    // The header moved up by rhythm700 - rhythm600 on a phone, so this clearance
+    // follows it by the same 11.25px. Left at 120 the list keeps a gap sized for a
+    // bar that is no longer there.
+    @include mq(until, md) {
+        padding-top: rem(109);
+    }
+
     &:focus-visible {
         outline: none; // a silent target for a pointer open, never a focus ring
     }

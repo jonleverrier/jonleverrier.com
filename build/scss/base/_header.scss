@@ -6,6 +6,21 @@
 @use '../mixins' as *;
 @use '../theme' as *;
 
+// WHERE THE HEADER SITS ON A PHONE — one value, three states.
+//
+// The bar appears at three different offsets depending on what the page is doing:
+// absolute at rest, sticky on the Jonson view, fixed while the nav is open. Each
+// carried its own number, so raising one on mobile left the other two behind and
+// the bar jumped as you opened the nav or started a conversation. Named here, they
+// cannot drift apart again.
+//
+// The value is JUDGED, not derived. rhythm500 would put the bar at exactly the
+// wrap's left padding — tidy on paper, and too high in the frame: the logo ended up
+// hard against the top of the slab with nothing above it. rhythm600 is the step
+// between that and the desktop's rhythm700, and reads as deliberate rather than
+// either cramped or wasteful.
+$c-header-top-sm: getmap($space, rhythm, 600);
+
 .b-header {
     position: absolute;
     top: getmap($space, rhythm, 700);
@@ -13,12 +28,10 @@
     right: 0;
     z-index: getmap($z-index, xl);
 
-    // PHONES: down to the wrap's own left padding, so the logo sits the same
-    // distance from the top of the slab as from its side. rhythm700 is a desktop
-    // measurement — 34.38px of clearance above a header that is itself only a logo
-    // and a burger, on the screen with the least room to spare.
+    // rhythm700 is a desktop measurement — 34.38px of clearance above a bar that is
+    // only a logo and a burger, on the screen with the least room to spare.
     @include mq(until, md) {
-        top: getmap($space, rhythm, 500);
+        top: $c-header-top-sm;
     }
 }
 
@@ -77,8 +90,8 @@ $c-header-rest: calc(#{getmap($space, rhythm, 500)} + #{getmap($space, rhythm, 7
 // is nothing between them to travel through. The transform stays in the rule
 // rather than being deleted — it resolves to 0 at this width and to the desktop's
 // 17.5px above it, from the same pair of names.
-$c-header-stuck-sm: getmap($space, rhythm, 500);
-$c-header-rest-sm: getmap($space, rhythm, 500);
+$c-header-stuck-sm: $c-header-top-sm;
+$c-header-rest-sm: $c-header-top-sm;
 
 .is-jonson .b-header {
     position: sticky;
@@ -156,6 +169,13 @@ $c-header-rest-sm: getmap($space, rhythm, 500);
 .is-nav-open .b-header {
     position: fixed;
     top: calc(#{getmap($space, rhythm, 500)} + #{getmap($space, rhythm, 700)});
+
+    // Follows the closed header on a phone. Left at the desktop offset the bar
+    // dropped 28px the instant the nav opened and climbed back on close — the logo
+    // visibly moving because of a menu that has nothing to do with it.
+    @include mq(until, md) {
+        top: $c-header-top-sm;
+    }
     left: 0;
     // Inset by the scrollbar the lock just removed, rather than padded by it. Locking
     // the root with `overflow: hidden` takes the scrollbar away, which on a
