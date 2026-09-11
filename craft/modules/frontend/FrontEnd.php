@@ -46,11 +46,59 @@ class FrontEnd extends BaseModule
             // Set CSP policy
             if (App::env('CRAFT_ENVIRONMENT') !== 'dev') {
                 if (!Craft::$app->request->isCpRequest && !Craft::$app->getUser()->getIdentity() && !Craft::$app->request->isConsoleRequest) {
-                    // Deliberately empty for now — the policy this module arrived with
-                    // belonged to another site (HubSpot, LinkedIn, Bing) and none of it
-                    // applies here. Fill this in when the third parties are known; the
-                    // header isn't sent while it's blank.
-                    $csp = "";
+                    // CONTENT SECURITY POLICY — front end only.
+                    //
+                    // The guard above is the important half: never on a CP request,
+                    // never for a signed-in user (so live preview and the editor's own
+                    // tooling are untouched), never on the console, never in dev.
+                    //
+                    // ONE third party, and it is not the obvious one. Spotify and the
+                    // Anthropic API are both called SERVER-side — Guzzle in
+                    // AskController, the refresh-token flow in services/Spotify.php — so
+                    // the browser never talks to either and neither belongs in
+                    // connect-src. What the browser DOES fetch is the artist artwork the
+                    // music strip hotlinks straight from Spotify's CDN
+                    // (_components/music.twig renders <img src="{{ a.image }}">), which
+                    // is why i.scdn.co appears in img-src and nowhere else. Adding
+                    // api.spotify.com or api.anthropic.com would widen the policy to
+                    // cover requests that are never made.
+                    //
+                    // 'unsafe-inline' IN script-src IS THE BUILD TOOL'S, NOT THE SITE'S.
+                    // Measured across seven pages, removing it produced 21 inline-script
+                    // and 14 inline-handler violations, and every one traces to
+                    // nystudio107/craft-vite: the async-CSS pattern's
+                    // onload="this.media='all'" and the plugin's own
+                    // vite-script-loaded onload. None of it is hand-written, so none of
+                    // it can be moved to a nonce without forking the plugin.
+                    //
+                    // What still holds with it in place: no third-party script, style,
+                    // frame, font or connection can load at all, which is the whole
+                    // exposure for a site with no analytics, no embeds and no tag
+                    // manager. And the one place attacker-shaped text reaches the DOM —
+                    // the model's answer, via innerHTML in jonson-ask.js — is already
+                    // closed at source: inlineMarkdown escapes &, < and > BEFORE it
+                    // re-introduces <strong> and <em>, so no markup survives to need a
+                    // policy in the first place.
+                    //
+                    // media-src is omitted deliberately: case study video is a Craft
+                    // asset, so it falls back to default-src 'self' and stays correct
+                    // without a line of its own.
+                    //
+                    // MEASURED, not assumed: zero violations across /, /about, /notes,
+                    // /case-studies, /contact, a note and a case study.
+                    $csp = implode('; ', [
+                        "default-src 'self'",
+                        "base-uri 'self'",
+                        "object-src 'none'",
+                        "frame-ancestors 'none'",
+                        "form-action 'self'",
+                        "font-src 'self'",
+                        "connect-src 'self'",
+                        "img-src 'self' data: https://i.scdn.co",
+                        "style-src 'self' 'unsafe-inline'",
+                        "script-src 'self' 'unsafe-inline'",
+                        'upgrade-insecure-requests',
+                    ]);
 
                     if ($csp !== "") {
                         Craft::$app->response->headers->add("Content-Security-Policy", $csp);
