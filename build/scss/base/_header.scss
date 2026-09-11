@@ -55,24 +55,40 @@
 // `2 * rhythm500` in the sticky offset and again inside the transform below, which
 // meant the travel was the DIFFERENCE of two numbers that had to be edited in step —
 // change one and the bar silently rests in the wrong place.
-$c-header-stuck: getmap($space, rhythm, 500);
+$c-header-stuck: calc(2 * #{getmap($space, rhythm, 500)});
 $c-header-rest: calc(#{getmap($space, rhythm, 500)} + #{getmap($space, rhythm, 700)});
+
+// PHONES: both drop by one rhythm500. Everything above the fold is tighter here —
+// the page inset, the headings, the pills — and the header was still standing off
+// the top by twice the inset it keeps from the left, which on a small screen is
+// simply space the conversation could be using.
+//
+// The TRAVEL is deliberately identical (17.5px either way), so the slide between
+// resting and pinned reads exactly as it does on a desktop; only where it starts
+// and ends moves.
+$c-header-stuck-sm: getmap($space, rhythm, 500);
+$c-header-rest-sm: getmap($space, rhythm, 700);
 
 .is-jonson .b-header {
     position: sticky;
-    // PINNED at the wrap's own left padding, not twice it. At 2 x rhythm500 the bar
-    // sat 33.75px down against a 16.88px inset from the left, so the logo was further
-    // from the top of the window than from the side of the page it lines up with.
-    // One inset now, read the same way in both directions.
     top: $c-header-stuck;
     height: 0;
+
+    // Pinned at the wrap's own left padding rather than twice it, so the logo is the
+    // same distance from the top of the window as from the side of the page.
+    @include mq(until, md) {
+        top: $c-header-stuck-sm;
+    }
 }
 
 // The bar itself. At rest it's pushed down to the height the header has always sat
 // at; once stuck it slides up to the sticky offset, tight to the top of the window.
 // The difference between the two is the travel:
 //   rest  = rhythm500 (wrap inset) + rhythm700   ($c-header-rest)
-//   stuck = rhythm500 (the wrap's own inset)     ($c-header-stuck)
+//   stuck = 2 × rhythm500                        ($c-header-stuck)
+// and on a phone, both one rhythm500 higher:
+//   rest  = rhythm700                            ($c-header-rest-sm)
+//   stuck = rhythm500                            ($c-header-stuck-sm)
 // A transform, so the movement is compositor-only and — crucially — doesn't feed
 // back into the sticky calculation the way a `top` change would.
 .is-jonson .b-header > .b-wrap {
@@ -83,6 +99,10 @@ $c-header-rest: calc(#{getmap($space, rhythm, 500)} + #{getmap($space, rhythm, 7
     // The travel, expressed as what it IS — the gap between the two named positions —
     // so the resting place cannot drift when the pinned one moves.
     transform: translateY(calc(#{$c-header-rest} - #{$c-header-stuck}));
+
+    @include mq(until, md) {
+        transform: translateY(calc(#{$c-header-rest-sm} - #{$c-header-stuck-sm}));
+    }
     transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
