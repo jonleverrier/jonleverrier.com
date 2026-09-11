@@ -64,6 +64,13 @@ $c-method-vpad: rem(80); // viewport vertical padding — in-box room so the pul
     margin-block: calc(-1 * #{$c-method-vpad});
     // Single-phase: no clip and no mask, so a pill's hover pop shows in full.
     overflow: visible;
+
+    // Horizontal gestures are the slider's, vertical ones stay the page's. Declared
+    // in CSS rather than by calling preventDefault in a move handler: the browser
+    // then knows before the gesture starts, so the page never scrolls a few pixels
+    // and stops, and the swipe can't be stolen halfway through by a scroll that has
+    // already begun. See method.js.
+    touch-action: pan-y;
 }
 
 
@@ -106,6 +113,16 @@ $c-method-vpad: rem(80); // viewport vertical padding — in-box room so the pul
         rgba($band, 0) calc(50% - #{$half}),
         rgba($band, 0) calc(50% + #{$half}),
         $band 100%);
+
+    // NOT ON A PHONE. The fade exists to soften phases peeking in at the sides of a
+    // wide frame. Below the measure there is no peek to soften: the stops resolve to
+    // `calc(50% - half)` with half past 50%, so the transparent window falls off the
+    // left of the box and the gradient lands as a hard band down one edge and a
+    // ghost of one down the other — lopsided, and covering content rather than
+    // easing it.
+    @include mq(until, md) {
+        content: none;
+    }
 }
 
 // Final phase: no phases peek any more, and the yellow line runs the full width —
@@ -433,11 +450,18 @@ $band-complete: getmap($colour, light, 800);
     cursor: default; // labels, not buttons
     transition: transform var(--tag-dur, 400ms) cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    &:hover {
-        transform:
-            translateY(var(--tag-lift, -5px))
-            scale(var(--tag-scale, 1.1))
-            rotate(var(--tag-rot, -3deg));
+    // Gated on a real pointer, not on width. A touch screen has no hover to leave:
+    // tapping a pill latches :hover, so it stayed popped and rotated until something
+    // else was touched — and on a set of pills a visitor is scrolling past, the
+    // wrong one sits lifted out of line. `hover: hover` also keeps the pop on a
+    // small laptop, which a `until, md` breakpoint would have taken away.
+    @media (hover: hover) {
+        &:hover {
+            transform:
+                translateY(var(--tag-lift, -5px))
+                scale(var(--tag-scale, 1.1))
+                rotate(var(--tag-rot, -3deg));
+        }
     }
 }
 
