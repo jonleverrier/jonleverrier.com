@@ -398,6 +398,12 @@ $band-complete: getmap($colour, light, 800);
     display: flex;
     flex-wrap: wrap;
     gap: rem(18); // the pills carry markers now, so they want a little more air between them
+    // Tighter on a phone, with the pills' own padding below. Left at 18 the gaps
+    // read as large the moment the pills shrink, and a wrapped set of them spends
+    // most of a narrow column on the space between.
+    @include mq(until, md) {
+        gap: rem(12);
+    }
     padding: 0;
     list-style: none;
     // More air above the pills than the phase's owl rhythm (600) gives: the title
@@ -410,6 +416,12 @@ $band-complete: getmap($colour, light, 800);
 // with the same springy hover).
 .c-method__item {
     padding: rem(16) rem(30);
+    // A quarter off each axis on phones. These are labels at p-sm, and 16/30 is
+    // sized for a pill sitting in a wide row — on a 390 screen it made each one
+    // wide enough to wrap the set onto more lines than it has words.
+    @include mq(until, md) {
+        padding: rem(12) rem(22);
+    }
     border: rem(2) solid transparent;
     border-radius: rem(999); // pill
     background-color: getmap($colour, light, 700);
