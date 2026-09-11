@@ -112,14 +112,22 @@ $colour: (
 // render correctly under the 62.5% root trick (1rem = 10px).
 $typography: (
     // PHONES (base, until md) are fluid. The expanded sans sets a ten-letter word at
-    // ~0.77em a letter, so on a 375 phone the h1 has to be under 40px for a word
-    // like "Breadcrumb" to fit the 308px column at all — 10vw tracks that, floored
-    // and capped. The steps below it follow at the scale's ratios so the hierarchy
-    // holds at every width (at 375: 37.5 / 30 / 24 / 20 / 18), and every step lands
-    // on its former value at md, where the fixed sizes take over.
+    // ~0.77em a letter, so the h1 has to stay small enough for a word like
+    // "Breadcrumb" to fit the column at all — the vw term tracks that, floored and
+    // capped. The steps below follow at the scale's ratios so the hierarchy holds at
+    // every width, and every step lands on its former value at md, where the fixed
+    // sizes take over.
+    //
+    // Stepped DOWN a notch for phones (h1 10vw -> 9vw, the rest ~6%): at 390 that is
+    // 39 -> 35.1 / 31.2 -> 29.3 / 25 -> 23.4 / 21.1 -> 19.9. The h1 took the largest
+    // cut because it is the one that was shouting.
+    //
+    // The floors matter as much as the ratios: they bind below ~345px, and dropping
+    // the h1's from 34 to 31 is what stops a long single word setting three lines on
+    // a 320 screen.
     h1: (
         base: (
-            font-size:      clamp(#{rem(34)}, 10vw, #{rem(48)}),
+            font-size:      clamp(#{rem(31)}, 9vw, #{rem(44)}),
             line-height:    1.1,
             letter-spacing: -0.03em,
         ),
@@ -138,7 +146,7 @@ $typography: (
     ),
     h2: (
         base: (
-            font-size:      clamp(#{rem(28)}, 8vw, #{rem(40)}),
+            font-size:      clamp(#{rem(26)}, 7.5vw, #{rem(37)}),
             line-height:    1.1,
         ),
         md: (
@@ -150,7 +158,7 @@ $typography: (
     ),
     h3: (
         base: (
-            font-size:      clamp(#{rem(23)}, 6.4vw, #{rem(32)}),
+            font-size:      clamp(#{rem(21)}, 6vw, #{rem(30)}),
             line-height:    1.15,
         ),
         md: (
@@ -163,7 +171,7 @@ $typography: (
     ),
     h4: (
         base: (
-            font-size:      clamp(#{rem(20)}, 5.4vw, #{rem(26)}),
+            font-size:      clamp(#{rem(19)}, 5.1vw, #{rem(25)}),
             line-height:    1.2,
         ),
         md: (
@@ -186,7 +194,7 @@ $typography: (
     // length sub-heading doesn't outweigh its section title; on phones the h3 step
     // is already small enough, so it's the same size there.
     h3-prose: (
-        base: ( font-size: clamp(#{rem(23)}, 6.4vw, #{rem(32)}) ),
+        base: ( font-size: clamp(#{rem(21)}, 6vw, #{rem(30)}) ),
         md:   ( font-size: rem(34) ),
         lg:   ( font-size: rem(37) ),
     ),
