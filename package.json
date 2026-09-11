@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "NODE_ENV=dev URL=https://jonleverrier2.local/ vite",
-    "build": "NODE_ENV=production URL=https://jonleverrier2.local/ vite build",
+    "build": "NODE_ENV=production URL=${URL:-https://jonleverrier2.local/} vite build",
     "preview": "NODE_ENV=production URL=https://jonleverrier2.local/ vite preview"
   },
   "devDependencies": {
