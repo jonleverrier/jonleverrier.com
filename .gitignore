@@ -10,7 +10,10 @@ node_modules
 /.config
 
 # BUILD
-package-lock.json
+# package-lock.json is COMMITTED here, unlike the other sites. Those build
+# locally; this one builds on the server, where Forge's npm step runs `npm ci`
+# — which fails outright without a lockfile. Committed, the server installs the
+# exact versions of Vite and its plugins that the site was built against.
 /public/dist/*
 .tpl
 
