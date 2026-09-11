@@ -18,11 +18,33 @@
 .c-frontdoor {
     position: relative;
     overflow: hidden;
-    // Shorter than full height on a phone. The backdrop fits itself to whichever axis
-    // is tightest, so on a portrait frame it's the WIDTH that decides its size — the
-    // extra height just becomes empty slab above and below, and pushes everything
-    // below the fold for no gain.
-    min-height: min(calc(100dvh - 2 * #{getmap($space, rhythm, 500)}), rem(620));
+    // FULL HEIGHT on a phone — and svh, not dvh, which is the whole reason this can
+    // be full height at all.
+    //
+    // It was capped at 620 because the backdrop fits to whichever axis is tightest,
+    // so on a portrait frame the WIDTH decides its size and extra height is only
+    // empty slab. True — but the cap was also doing a job nothing named: at 620 the
+    // section is SHORTER than any phone viewport, so its height never changed, and
+    // hero.js re-frames its cloud whenever the container's aspect moves (it rescales
+    // 37k points on every resize and re-fits on a settled aspect change). Uncapped
+    // with dvh, the URL bar retracting or the keyboard opening resized the section
+    // on the fly and the figure visibly jumped — most obviously on "not sure what to
+    // ask", which puts a finger right next to the input.
+    //
+    // svh is the SMALL viewport height: the size with the browser chrome shown, and
+    // by definition it does not change as that chrome expands or retracts. So the
+    // section fills the screen on arrival and then holds one constant height, which
+    // is what the hero needs.
+    //
+    // The trade, stated: once the URL bar retracts the visible viewport is taller
+    // than svh, so the next section shows a sliver at the bottom. That reads as a
+    // scroll cue rather than a gap — and it is the thing the 620 cap gave up
+    // entirely.
+    //
+    // vh first as the fallback: on a phone it resolves to the LARGEST height, which
+    // slightly overflows rather than leaving the door short.
+    min-height: calc(100vh - 2 * #{getmap($space, rhythm, 500)});
+    min-height: calc(100svh - 2 * #{getmap($space, rhythm, 500)});
 
     @include mq(from, md) {
         min-height: min(calc(100dvh - 2 * #{getmap($space, rhythm, 500)}), rem(960));

@@ -184,7 +184,16 @@ export function mountLostForWords(button) {
         document.addEventListener('keydown', onKey);
         document.addEventListener('pointerdown', onOutside, true);
         field.addEventListener('pointerleave', onLeave);
-        if (chips[0]) chips[0].focus();
+        // preventScroll, and it is the whole reason the bar stopped moving. Focusing
+        // an element makes the browser scroll it into view, and the chips sit in a
+        // band ABOVE the field — so on a phone, where that band is near the top of a
+        // full-height section, opening the drawer scrolled the page and carried the
+        // input with it. Only the band's contents should move.
+        //
+        // The focus itself stays: it is what puts a keyboard user on the first chip
+        // and what the Escape handler and the outside-click close depend on. Only
+        // the browser's scrolling is declined.
+        if (chips[0]) chips[0].focus({preventScroll: true});
     };
 
     // Two ways to close. The visitor is still here (picked a chip, pressed Escape):
@@ -217,7 +226,7 @@ export function mountLostForWords(button) {
             // Out of the tab order once the slide is done — not before, or it vanishes.
             closeTimer = setTimeout(() => { if (!open) drawer.hidden = true; }, reduced ? 0 : CLOSE_MS);
         }
-        if (refocus) input.focus();
+        if (refocus) input.focus({preventScroll: true});
     };
 
     // Type a phrase into the field, letter by letter (or at once under reduced
