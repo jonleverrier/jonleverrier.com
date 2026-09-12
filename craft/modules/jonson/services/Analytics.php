@@ -322,7 +322,7 @@ class Analytics extends Component
             // Averaged together they quietly distort most asked, chat → lead, avg
             // questions and tokens per chat — so they can be looked at apart.
             $query = (new \craft\db\Query())
-                ->select(['sid', 'cid', 'turns', 'originUrl', 'originEntryId', 'vipId', 'exitTo', 'leadEntryId', 'startedAt'])
+                ->select(['sid', 'cid', 'turns', 'originUrl', 'originEntryId', 'vipId', 'exitTo', 'leadEntryId', 'startedAt', 'endedAt'])
                 ->from(self::VISITS)
                 ->where(['>=', 'startedAt', $sinceDb]);
 
@@ -683,7 +683,14 @@ class Analytics extends Component
             $byVip[$id]['visits']++;
             $byVip[$id]['questions'] += (int) $v['turns'];
             $byVip[$id]['lead'] = $byVip[$id]['lead'] || $v['leadEntryId'] !== null;
-            $byVip[$id]['last'] = max($byVip[$id]['last'], (string) $v['startedAt']);
+            // endedAt, NOT startedAt. Both are on the row and only one of them is a
+            // last-seen time: startedAt is when a visit opened, and this line used it,
+            // so a VIP who arrived at 11:45 and was still asking questions at 13:16
+            // was reported as last seen at 11:45 — with the 13:16 question sitting
+            // right there in the list below the name, contradicting it. logTurn keeps
+            // endedAt bumped on every turn for exactly this (see its comment: "nobody
+            // ever ends a conversation deliberately").
+            $byVip[$id]['last'] = max($byVip[$id]['last'], (string) ($v['endedAt'] ?: $v['startedAt']));
         }
 
         if (!$byVip) {
