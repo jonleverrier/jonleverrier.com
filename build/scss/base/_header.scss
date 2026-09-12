@@ -98,10 +98,19 @@ $c-header-rest-sm: $c-header-top-sm;
     top: $c-header-stuck;
     height: 0;
 
-    // Pinned at the wrap's own left padding rather than twice it, so the logo is the
-    // same distance from the top of the window as from the side of the page.
+    // NOT STICKY ON A PHONE. A pinned bar costs a permanent strip of the shortest
+    // screen there is, and it buys least there: the conversation is one column, so
+    // the logo is never far away, and the thing a visitor actually wants pinned —
+    // the input — is at the bottom of the thread, not up here.
+    //
+    // Back to exactly what every other page does, rather than a different sticky:
+    // absolute at the same offset the closed header uses, height restored so the bar
+    // sits in the box instead of hanging out of a zero-height anchor. The wrap's own
+    // rule below drops the slide to match.
     @include mq(until, md) {
-        top: $c-header-stuck-sm;
+        position: absolute;
+        top: $c-header-top-sm;
+        height: auto;
     }
 }
 
@@ -124,8 +133,14 @@ $c-header-rest-sm: $c-header-top-sm;
     // so the resting place cannot drift when the pinned one moves.
     transform: translateY(calc(#{$c-header-rest} - #{$c-header-stuck}));
 
+    // Nothing to slide between on a phone — the header isn't sticky there, so the bar
+    // goes back into flow. `position: static` matters as much as the transform: the
+    // parent is no longer a zero-height sticky anchor, so an absolutely positioned
+    // child would hang off it rather than sit in it.
     @include mq(until, md) {
-        transform: translateY(calc(#{$c-header-rest-sm} - #{$c-header-stuck-sm}));
+        position: static;
+        transform: none;
+        transition: none;
     }
     transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
