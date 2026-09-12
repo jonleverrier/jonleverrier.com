@@ -409,6 +409,30 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
   scene.add(points);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+
+  // NOT ON A SOFTWARE RASTERISER. This is 37k points redrawn every frame, which a
+  // GPU finishes in a few milliseconds and a software renderer does not: measured
+  // against production under SwiftShader, a frame took 75ms — 13fps — and Lighthouse,
+  // which runs headless with no GPU and throttles the CPU on top, logged twenty
+  // consecutive 220-266ms main-thread tasks from this file alone.
+  //
+  // That is not only a benchmark artefact. Anyone whose browser has fallen back to
+  // software — old drivers, a blocklisted GPU, a VM, hardware acceleration switched
+  // off — gets the same 13fps and the same blocked main thread, on the one page
+  // where they are meant to be typing a question.
+  //
+  // The hero is an enhancement, so it declines rather than degrades. The section it
+  // sits in (.b-slab--p500) is already the same olive as this canvas's clear colour,
+  // so its absence reads as a plain backdrop, which is exactly what a visitor with
+  // no WebGL at all already sees.
+  const gl = renderer.getContext();
+  const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+  const gpuName = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '') : '';
+  if (/swiftshader|llvmpipe|software|basic render/i.test(gpuName)) {
+    renderer.dispose();
+    return { warpOut() {}, dispose() {} };
+  }
+
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   // The olive slab IS this clear colour: the section behind the canvas has no
   // background of its own, and the canvas is opaque (alpha: false). Kept in a
@@ -942,9 +966,17 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
     warpFailsafe = setTimeout(finishWarp, WARP_MS + 120);
   }
 
+  // ~30fps rather than whatever the display offers. The sweep is a 23-second cycle
+  // and the pointer ease is expressed in seconds, so both are unchanged to look at —
+  // but half the frames means half the GPU and half the main-thread cost, on every
+  // device rather than only the slow ones. The check sits BEFORE lastFrame is
+  // updated, so dt measures the gap between frames actually drawn.
+  const FRAME_MS = 1000 / 30;
+
   function loop() {
     raf = requestAnimationFrame(loop);
     const nowMs = performance.now();
+    if (nowMs - lastFrame < FRAME_MS) return;
     // Clamped hard: the loop stops entirely while the tab is hidden or the hero is
     // scrolled away, so the first frame back would otherwise carry a delta of seconds
     // and snap the pointer ease straight onto its target.
