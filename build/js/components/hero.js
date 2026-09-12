@@ -721,9 +721,31 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
   let lastFrame = t0;
   // Pause when off-screen so a hero at the top of the page is not burning GPU
   // while someone reads the rest of the site.
+  //
+  // STOPS SCHEDULING, not just drawing. The loop used to call rAF unconditionally and
+  // return early from its body when `visible` was false — so scrolled away it still
+  // woke ~60 times a second to read the clock and re-arm itself. Cheap per frame, but
+  // it meant the page NEVER went idle: Lighthouse's trace ran to its limit and booked
+  // ~33s of "Other" against 462ms of real work, and a networkidle navigation simply
+  // timed out. Same shape as jonson-grid.js, which already gates this way.
   let visible = true;
-  const io = new IntersectionObserver(function (e) { visible = e[0].isIntersecting; });
+  const running = () => raf !== 0;
+  const stop = () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } };
+  const start = () => {
+    if (running() || !visible || document.hidden) return;
+    // Restart the clock. dt is clamped to 0.05 anyway, but carrying a pause of minutes
+    // into the first frame back is exactly what that clamp is defending against —
+    // better not to hand it the problem in the first place.
+    lastFrame = performance.now();
+    raf = requestAnimationFrame(loop);
+  };
+  const sync = () => { (visible && !document.hidden) ? start() : stop(); };
+
+  const io = new IntersectionObserver(function (e) { visible = e[0].isIntersecting; sync(); });
   io.observe(container);
+  // rAF is already throttled in a background tab, but throttled is not stopped — and a
+  // tab left open on the homepage should cost nothing at all.
+  document.addEventListener('visibilitychange', sync);
 
   // Where the cursor is (target) and where the camera has eased to (now), each -1..1
   // across the hero box. HAND-ADDED, not from the exporter.
@@ -920,7 +942,7 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
     warpFailsafe = setTimeout(finishWarp, WARP_MS + 120);
   }
 
-  (function loop() {
+  function loop() {
     raf = requestAnimationFrame(loop);
     const nowMs = performance.now();
     // Clamped hard: the loop stops entirely while the tab is hidden or the hero is
@@ -1094,12 +1116,14 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
       shown = true;
       renderer.domElement.style.opacity = "1";
     }
-  })();
+  }
+  start();
 
   return {
     warpOut,
     dispose() {
-      cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
+      stop(); ro.disconnect(); io.disconnect();
+      document.removeEventListener('visibilitychange', sync);
       document.removeEventListener('page:leaving', onPageLeaving);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerout', recentre);
