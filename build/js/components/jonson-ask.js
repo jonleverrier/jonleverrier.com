@@ -16,6 +16,7 @@ import {methodApply} from './method.js';
 import {slideTo} from './testimonials.js';
 import {pauseOffscreenWithin} from './pause-offscreen.js';
 import {looksLikeJunk} from './junk-question.js';
+import {armSubmit} from './submit-arm.js';
 import {revealPictures} from './picture.js';
 
 // Strip the invisible markers Claude leaves in its prose: the [[next: …]]
@@ -577,6 +578,13 @@ export function mountJonson({warpOut} = {}) {
 
     wire(heroForm, false, true);  // front door: junk opens the drawer, not a conversation
     wire(followForm, true);       // in-thread: junk gets the server's canned reply
+
+    // Both bars arm their submit as soon as what's typed becomes a question. Both,
+    // even though only the hero REFUSES junk — the field is the same field to the
+    // person using it, and a button that acknowledged a real question at the front
+    // door but not in the thread would read as the thread being the broken one.
+    armSubmit(heroForm);
+    armSubmit(followForm);
 
     // Suggested-prompt chips (rendered under each answer): clicking one asks it,
     // reusing the normal flow. Delegated since chips are injected per answer.

@@ -1259,8 +1259,9 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
 }
 
 .c-jonson__submit {
+    // No width here: field-submit owns it now, animating 0 -> 44px as the button
+    // arrives. Setting it after the include pinned it open and the reveal never ran.
     @include field-submit;
-    width: rem(44);
 }
 
 // "Back to the start" — a circle the same height as the input, with a left arrow.

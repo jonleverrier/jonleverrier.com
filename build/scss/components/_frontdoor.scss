@@ -203,8 +203,9 @@ $prompt-band-h: rem(46);
 }
 
 .c-frontdoor__submit {
+    // No width here: field-submit owns it now, animating 0 -> 44px as the button
+    // arrives. Setting it after the include pinned it open and the reveal never ran.
     @include field-submit;
-    width: rem(44);
 }
 // The band under the field — the words' strip at rest, the chips when opened —
 // is the shared .c-jonson__band (its --below variant), in _jonson.scss. Only the

@@ -9,6 +9,7 @@
 // and any referrer sent to a third party. Per-tab storage keeps it to this journey.
 
 import {looksLikeJunk} from './junk-question.js';
+import {armSubmit} from './submit-arm.js';
 
 const PENDING = 'jonson.pending';
 const PENDING_FROM = 'jonson.pending-from'; // the entry id of the page the question was asked from, if any
@@ -51,7 +52,15 @@ export function mountAskHandoff() {
     };
 
     form.addEventListener('submit', onSubmit);
-    return () => form.removeEventListener('submit', onSubmit);
+    // Same acknowledgement as the homepage bars. It matters a little more here: this
+    // one is going to navigate away, so "is this going to work?" is a question worth
+    // answering before the page changes rather than after.
+    const disarm = armSubmit(form);
+
+    return () => {
+        form.removeEventListener('submit', onSubmit);
+        disarm();
+    };
 }
 
 /**
