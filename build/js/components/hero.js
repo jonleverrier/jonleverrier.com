@@ -210,7 +210,49 @@ void main() {
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), vAlpha);
 }`;
 
+/**
+ * Is there a real GPU behind WebGL, or has the browser fallen back to software?
+ *
+ * A throwaway context, read and immediately released — cents of work, and it runs
+ * BEFORE the 373kB binary is fetched and 37k points are unpacked, which is the whole
+ * point of doing it here rather than after the renderer exists.
+ *
+ * Returns false for no WebGL at all, which is also correct: there is nothing to
+ * render with.
+ */
+function hasHardwareWebGL() {
+  try {
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+    if (!gl) return false;
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '') : '';
+    // Hand the context back rather than waiting for GC — browsers cap how many are
+    // live at once, and the real renderer wants one straight after this.
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return !/swiftshader|llvmpipe|software|basic render/i.test(name);
+  } catch {
+    return false;
+  }
+}
+
 export async function createHero(container, binUrl = HERO_BIN_URL) {
+  // DECLINE BEFORE SPENDING ANYTHING. 37k points redrawn every frame is a few
+  // milliseconds on a GPU and 75ms without one — measured against production under
+  // SwiftShader, i.e. 13fps, with Lighthouse logging twenty consecutive 220-266ms
+  // main-thread tasks from this file.
+  //
+  // Not only a benchmark artefact: old drivers, a blocklisted GPU, a VM, or hardware
+  // acceleration switched off all land here, on the one page where a visitor is meant
+  // to be typing a question.
+  //
+  // Checked FIRST, so the 373kB fetch, the two passes over 37k points and the
+  // geometry build are all skipped rather than done and discarded. The hero is an
+  // enhancement, so it declines rather than degrades — and .b-slab--p500 behind it is
+  // already the same olive as this canvas's clear colour, so its absence reads as a
+  // plain backdrop, which is what a visitor with no WebGL saw anyway.
+  if (!hasHardwareWebGL()) return { warpOut() {}, dispose() {} };
+
   // A plain fetch, deliberately. This used to force revalidation with
   // `{cache: 'no-cache'}`, from when the binary was served under a fixed name and
   // a swapped-in cloud would otherwise keep rendering the old one out of cache.
@@ -409,29 +451,6 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
   scene.add(points);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-
-  // NOT ON A SOFTWARE RASTERISER. This is 37k points redrawn every frame, which a
-  // GPU finishes in a few milliseconds and a software renderer does not: measured
-  // against production under SwiftShader, a frame took 75ms — 13fps — and Lighthouse,
-  // which runs headless with no GPU and throttles the CPU on top, logged twenty
-  // consecutive 220-266ms main-thread tasks from this file alone.
-  //
-  // That is not only a benchmark artefact. Anyone whose browser has fallen back to
-  // software — old drivers, a blocklisted GPU, a VM, hardware acceleration switched
-  // off — gets the same 13fps and the same blocked main thread, on the one page
-  // where they are meant to be typing a question.
-  //
-  // The hero is an enhancement, so it declines rather than degrades. The section it
-  // sits in (.b-slab--p500) is already the same olive as this canvas's clear colour,
-  // so its absence reads as a plain backdrop, which is exactly what a visitor with
-  // no WebGL at all already sees.
-  const gl = renderer.getContext();
-  const dbg = gl.getExtension('WEBGL_debug_renderer_info');
-  const gpuName = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '') : '';
-  if (/swiftshader|llvmpipe|software|basic render/i.test(gpuName)) {
-    renderer.dispose();
-    return { warpOut() {}, dispose() {} };
-  }
 
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   // The olive slab IS this clear colour: the section behind the canvas has no
