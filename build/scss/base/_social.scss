@@ -21,7 +21,16 @@ $b-social-icon-size: rem(46);
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-    gap: getmap($space, rhythm, 500);
+    // ROW gap first, and smaller than the column one. The single value here applied
+    // rhythm500 to both axes, which is right between two icons side by side and too
+    // much between two ROWS of them: horizontally the gap separates round buttons
+    // that would otherwise touch, while vertically it is stacked on top of the space
+    // the circles already carry, so a wrapped set drifted apart.
+    //
+    // The column gap is unchanged on purpose — .c-jonson__actions matches it
+    // deliberately (see _jonson.scss) so the two rows of round buttons on a note line
+    // up, and that pairing is horizontal.
+    gap: getmap($space, rhythm, 400) getmap($space, rhythm, 500);
 }
 
 .b-social__link {

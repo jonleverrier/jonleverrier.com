@@ -260,6 +260,61 @@ $c-contact-panel-exit: 260ms; // the exit — softer, so a dismiss is the panel 
         max-height: calc(#{rem(48)} * #{$scale});
         padding-inline: calc(#{getmap($space, rhythm, 400)} * #{$scale});
     }
+
+    // THE EDGE FADE, resized to this strip. _clients.scss sets 220px each end, which is
+    // right across a 1110px contact page and nonsense here: the panel strip is ~314px
+    // wide on a phone, so two 220px bands overlap and the gradient's transparent window
+    // collapses to zero — every logo veiled in cream except a knife-edge in the middle.
+    // It read as "only two logos fit" when in fact three were there and two were being
+    // washed out. A band of one card's width eases the ends without eating the middle.
+    //
+    // ON THE STRIP, not on this wrapper: _clients.scss declares the property on
+    // .c-clients--static itself, and an element's own declaration beats a value
+    // inherited from an ancestor no matter how specific the ancestor's selector is.
+    // Setting it here has to out-specify that rule on the same element.
+    //
+    // 40px — about half a card. The panel is NOT one width: full-bleed under lg (a
+    // ~721px strip) and a fixed side sheet above it (~491px), and a band wide enough
+    // to look right on the wider one wipes out half the narrower. Half a card eases
+    // both without reaching a whole logo on either.
+    .c-clients--static {
+        --c-clients-fade: #{rem(40)};
+    }
+
+    // THE WHITE BOX on a phone. It closed down onto its logo to stop the strip reading
+    // as a band of white — but 72 went too far the other way: a 25.2px mark in a 37.8px
+    // box has 6.3px above and below it, which is a logo jammed into a card rather than
+    // one sitting in it. Doubled, the box carries ~25px of air on each side, which is
+    // the proportion the logo wants and roughly what the strip has at desktop.
+    //
+    // Stated as the card height rather than as padding on the face, because the item
+    // and the face must stay the same height — _clients.scss slides one past the other
+    // by exactly one card-height for the summary swap. (No summaries reach this strip:
+    // clients.twig blanks them when `contained`. The two still have to agree.)
+    //
+    // 72 × 2 through the panel's own $scale, so it stays one decision expressed once —
+    // change $scale and every dimension here still agrees.
+    @include mq(until, md) {
+        // 12px, and the number is load-bearing: the strip is 314px on a 360px phone
+        // and three cards plus their gaps measure 286.6px, so anything above ~13.7px
+        // a side starts washing out the third logo again — which is the whole bug.
+        .c-clients--static {
+            --c-clients-fade: #{rem(12)};
+        }
+
+        .c-clients--static.c-clients--small .c-clients__item,
+        .c-clients--static.c-clients--small .c-clients__face {
+            height: calc(#{rem(72)} * 2 * #{$scale});
+        }
+
+        // The gap closes with the cards. rhythm500 is the spacing of the full-width
+        // strip; at this size it was costing most of a fourth logo for air the row
+        // does not need — the white cards already separate themselves.
+        .c-clients--static.c-clients--small .c-clients__items {
+            gap: getmap($space, rhythm, 300);
+            padding-right: getmap($space, rhythm, 300); // keep the gap across the seam
+        }
+    }
 }
 
 .c-contact-panel__clients-whisper {

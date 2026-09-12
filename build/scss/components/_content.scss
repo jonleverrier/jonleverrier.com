@@ -579,11 +579,16 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
     justify-content: center;
     gap: rem(8) rem(16);
     margin: getmap($space, rhythm, 500) 0 0;
-    // The same at both ends: the date's text on the left and the chip on the
-    // right want the same air from the box's edge.
-    padding: rem(8) rem(14);
-    border-radius: $b-radius-200;
-    background-color: getmap($colour, light, 100); // white
+    // NO FILL, NO PADDING. This was a white box on the slab; the row now sits
+    // directly on whatever is behind it — the cream slab on a note, the card's own
+    // cream on the index. The radius went with the fill (a corner only reads when
+    // there is something filled to round) and the padding went with the box (it was
+    // holding text off an edge that no longer exists).
+    //
+    // The hairline's own margins follow: they were negative to reach back through
+    // this padding to the box's edges, and with no padding to reach through they
+    // would simply overshoot the row. See .c-content__date + .c-content__read.
+    padding: 0;
     list-style: none;
 }
 
@@ -593,18 +598,25 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
     margin: 0;
 }
 
-// The topic: a link to the topic's own page, as an outlined chip — white, with
-// the link red for its text and a grey hairline round it — the same corner
-// radius as the box it sits in, so it reads as the one thing in the row you can
-// press, without a solid red block shouting from the meta. Fills red on hover,
-// the way it used to sit, so the press has somewhere to go.
+// The topic: a link to the topic's own page, as a solid red chip — the one thing
+// in the row you can press, and now the only thing in it carrying any colour at
+// all. It was an outlined white chip while the meta row was itself a white box:
+// a filled block would have shouted out of that. With the row's fill gone the
+// chip is what gives the meta its anchor, so it takes the fill instead.
+//
+// 600 is the button and chip red, and white on it passes AA — the same pairing
+// .c-button uses. Hover goes to 650, the same hue a step darker, which is the
+// palette's own answer for "this red, but deeper" rather than a one-off shade.
 .c-content__topic {
     display: inline-block;
     padding: rem(4) rem(12);
-    border: rem(1) solid rgba($c-content-summary, 0.18); // the meta row's hairline, so the chip's edge matches the rules around it
-    border-radius: $b-radius-200; // matches .c-content__meta-items
-    background-color: getmap($colour, light, 100); // white
-    color: getmap($colour, primary, 600); // house red — the link colour
+    // Bordered in its own fill rather than border: 0, so the chip's box is exactly
+    // the size it was — dropping the border would shrink it by a pixel each side and
+    // pull the row's baseline with it.
+    border: rem(1) solid getmap($colour, primary, 600);
+    border-radius: $b-radius-200;
+    background-color: getmap($colour, primary, 600);
+    color: getmap($colour, light, 100); // white on the red
     // The whisper SIZE only — a step under the labels beside it, a chip rather
     // than a label. Not the whisper step itself: its 0.19em tracking is set for
     // uppercase labels and spreads a mixed-case word like a headline.
@@ -617,9 +629,10 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
 
     &:hover,
     &:focus-visible {
-        border-color: getmap($colour, primary, 600);
-        background-color: getmap($colour, primary, 600);
-        color: getmap($colour, light, 100);
+        border-color: getmap($colour, primary, 650);
+        background-color: getmap($colour, primary, 650);
+        // Colour stays white — only the ground darkens, so the label never moves or
+        // changes weight under the pointer.
     }
 
     &:focus-visible {
@@ -649,23 +662,25 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
         content: '';
         align-self: stretch;
         width: rem(1);
-        margin: -#{rem(8)} rem(16) -#{rem(8)} 0; // top/bottom = the box's padding; right = the row's gap, so the line sits centred in a double gap
+        // Right margin only — the row's gap, so the line sits centred in a double
+        // one. The block margins used to be -8px, reaching back through the row's
+        // padding to the edges of the white box it sat in; with the box and the
+        // padding gone they would just overshoot the text. `align-self: stretch`
+        // already gives the line the row's full height.
+        margin: 0 rem(16) 0 0;
         background: rgba($c-content-summary, 0.18);
     }
 
-    // NOT ON A PHONE, anywhere this row appears. The hairline is drawn for a
-    // single line; once the row wraps it lands at the START of the wrapped line
-    // and pushes the reading time along, so it reads as a stray mark rather than
-    // a separator between two things.
+    // AT EVERY WIDTH. This was dropped below md while the row was a padded white
+    // box: the box was wide enough that the reading time wrapped onto its own line,
+    // and the hairline then sat at the START of that line, reading as a stray mark
+    // rather than a separator between two things.
     //
-    // On the shared class, not on the index's own: the cards carry both
-    // .c-content__meta-items and .c-notes__meta-items, so the index had this and
-    // the note page — the same row, same wrap, same stray line — did not.
-    @include mq(until, md) {
-        &::before {
-            content: none;
-        }
-    }
+    // The box and its padding are gone, so the row is narrower in content terms and
+    // the date and reading time sit together on the first line — the chip is what
+    // wraps now. The line is back where it belongs, between the two facts it
+    // separates, and the row needs it MORE without a fill: it is the only thing
+    // giving the meta any structure.
 }
 
 // "Last updated", under the last block: on the reading measure, bold mono in a

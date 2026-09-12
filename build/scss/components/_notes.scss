@@ -54,16 +54,16 @@
 
     // The card lifts to white while its title link is hovered, so the whole
     // card answers the pointer, not just the words. :has() reaches the parent
-    // from the link; the meta row, white itself, keeps its edge with a hairline
-    // so it doesn't sink into the card.
+    // from the link.
+    //
+    // The meta row used to get a hairline ring here: it was white itself, so on a
+    // white card it would have vanished, and the ring kept its edge. The row has no
+    // fill now, so there is no edge to keep — a ring would be drawing a box around
+    // nothing.
     transition: background-color 200ms ease;
 
     &:has(.c-notes__link:hover) {
         background-color: getmap($colour, light, 100); // white
-
-        .c-notes__meta-items {
-            box-shadow: 0 0 0 rem(1) rgba(getmap($colour, light, 850), 0.18);
-        }
     }
 }
 

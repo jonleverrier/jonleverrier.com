@@ -39,9 +39,30 @@ $c-testimonials-box: calc(#{$c-testimonials-wide} - 2 * #{$c-testimonials-bleed}
 .c-testimonials:not(.has-multiple) {
     // Only from xl, where 1110 actually fits with room; below that it stays at the
     // 740 thread measure (lg is 980px — too narrow for the wide width).
+    //
+    // The cap is also what makes .c-testimonial's bleed land correctly: $c-testimonials-box
+    // is the wide width MINUS two bleeds, so the card steps out to exactly
+    // $c-testimonials-wide. That only holds while the cap applies.
     @include mq(from, xl) {
         width: min(100cqi, #{$c-testimonials-box});
         margin-inline: calc((100% - min(100cqi, #{$c-testimonials-box})) / 2);
+    }
+
+    // BELOW xl THE CARD MUST NOT BLEED. With no cap the wrapper is already the full
+    // content width, so the card's `margin-inline: -rhythm800` pushed its fill past
+    // the slab on both sides and off the screen — measured at 397 the card ran from
+    // -17 to 400 inside a 360-wide slab, and at 900 from -6 to 891 inside 851.
+    //
+    // The carousel never showed this because .c-testimonials__viewport clips; a lone
+    // quote has nothing clipping it, so the overflow is simply visible.
+    //
+    // The bleed is not wanted here anyway: it exists so the panel's fill steps out
+    // while the TEXT stays on the prose measure, which needs room either side to step
+    // into. Below xl there is none — the wrapper is the measure.
+    @include mq(until, xl) {
+        .c-testimonial {
+            margin-inline: 0;
+        }
     }
 }
 
@@ -310,6 +331,18 @@ $c-testimonials-slide: rem(740);
     padding-block: getmap($space, rhythm, 800); // vertical breathing room in the block
     padding-inline: getmap($space, rhythm, 800);
     padding-right: getmap($space, rhythm, 900); // extra breathing room on the right
+
+    // TIGHTER ON A PHONE, and symmetric. 800 with a 900 on the right is sized for a
+    // panel several hundred pixels wide; at 397 the card is 326 across and was
+    // spending 114 of that on side padding alone, leaving about 212 for the quote —
+    // a measure of roughly four words a line.
+    //
+    // The right-hand 900 goes with it: that extra exists to keep a long quote clear
+    // of the carousel's cycle control, and below md there is no control beside the
+    // text to clear.
+    @include mq(until, md) {
+        padding: getmap($space, rhythm, 600);
+    }
     // Same darker-olive fill as the footer, so the block reads as a solid panel.
     background-color: getmap($colour, light, 800);
     border-radius: $b-radius-200; // rounded corners, matching the rail's card
@@ -337,7 +370,12 @@ $c-testimonials-slide: rem(740);
     // tablet (md), where the mark sits in its own column beside the text.
     font-size: rem(150);
     line-height: 0.6;
-    margin-bottom: rem(-30); // tuck the content up close under the mark
+    // A little air above the mark, then a harder tuck below it. The 0.6 line-height
+    // means the glyph overflows its own box upward, so at the card's top padding it
+    // sat almost on the edge; this drops it clear without the padding growing for
+    // everything else in the card.
+    margin-top: rem(12);
+    margin-bottom: rem(-40); // tuck the content up close under the mark
     color: #e0b244; // gold flourish
 
     @include mq(from, md) {
@@ -345,6 +383,7 @@ $c-testimonials-slide: rem(740);
         grid-column: 1;
         grid-row: 1 / -1; // stand alone alongside both the quote and the cite
         align-self: start;
+        margin-top: 0;    // the stacked spacing above is a mobile-only correction
         margin-bottom: 0; // no stacked tuck needed in its own column
         // The glyph overflows its short line-box upward; drop it so its top
         // lines up with the top of the quote's first line.

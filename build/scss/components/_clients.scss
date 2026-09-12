@@ -57,14 +57,26 @@
     --c-clients-band: #{getmap($colour, light, 600)}; // cream (the contact slab)
 }
 
-// Wide, fixed fade band on the full-viewport contact strip — a small % would
-// barely ease the logos before the edge. Same static-overlay technique.
+// Wide fade band on the full-viewport contact strip — a small % would barely ease
+// the logos before the edge. Same static-overlay technique.
+//
+// A CUSTOM PROPERTY, not a hardcoded length, because this band is absolute while the
+// strip it sits on is not. 220px each end is right across a 1110px contact page; drop
+// the same strip into the contact panel, ~314px wide on a phone, and 440px of fade
+// over 314px of strip leaves NO transparent window at all — the two stops cross, the
+// browser clamps the second to the first, and every logo is veiled in cream except a
+// knife-edge in the middle. Whoever reuses this strip somewhere narrow sets the band
+// to suit; see .c-contact-panel__clients.
+.c-clients--static {
+    --c-clients-fade: #{rem(220)};
+}
+
 .c-clients--static::after {
     background: linear-gradient(
         to right,
         var(--c-clients-band) 0,
-        transparent #{rem(220)},
-        transparent calc(100% - #{rem(220)}),
+        transparent var(--c-clients-fade),
+        transparent calc(100% - var(--c-clients-fade)),
         var(--c-clients-band) 100%
     );
 }

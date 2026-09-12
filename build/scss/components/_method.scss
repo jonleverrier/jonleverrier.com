@@ -83,6 +83,28 @@ $c-method-vpad: rem(80); // viewport vertical padding — in-box room so the pul
     isolation: isolate;  // own stacking context so the overlay can sit above the will-change track
     overflow-x: clip;
     overflow-y: visible;
+
+    // LET THE PULSE OUT, on phones only.
+    //
+    // Below md the active node sits flush against the viewport's left edge, and its
+    // ping is a 40px ring scaled to 2.4 — 96px across, so it reaches 48px from the
+    // node's centre and 26px past that edge. Clipped at 0 it was sliced in half down
+    // the left every time it fired.
+    //
+    // `overflow-clip-margin` is the companion to `overflow-x: clip`: the clip edge
+    // moves out by this much while the element still clips. 28px covers the ring's
+    // reach with a little to spare.
+    //
+    // Safe here because the phases are 182px apart at this width (measured: they sit
+    // at 0, 508 and 1016 across a 326-wide slide), so 28px of extra clip shows empty
+    // track, never a neighbour's content.
+    //
+    // NOT above md, deliberately. There the phases peek into the viewport by design
+    // and the gutter fade covers them — but that overlay is inset to the viewport box,
+    // so anything shown beyond it would sit outside the fade, unfaded.
+    @include mq(until, md) {
+        overflow-clip-margin: rem(28);
+    }
 }
 
 // Gutter fade as a STATIC overlay, not a `mask` on the viewport. A mask forces
@@ -377,10 +399,29 @@ $band-complete: getmap($colour, light, 800);
     }
 }
 
+// The ring's maximum, as a property so a narrow screen can ask for a smaller one
+// without a second set of keyframes. Substituted per element at computed-value time,
+// which is all a non-animated custom property needs to work inside @keyframes.
 @keyframes c-method-ping {
     0%   { opacity: 0; transform: translate(-50%, -50%) scale(1); }    // emerge from the node
     25%  { opacity: 0.5; }                                             // ease in
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.4); }  // small, tight pulse — fades out exactly as it reaches its modest max, so no large faint ring lingers
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(var(--c-method-ping-max, 2.4)); }  // small, tight pulse — fades out exactly as it reaches its modest max, so no large faint ring lingers
+}
+
+// A SMALLER RING ON PHONES, because there is nowhere for a bigger one to go.
+//
+// Below md the active node sits at the very start of the timeline, 50px from the
+// window edge, and .b-slab clips on both axes at 11px — it has to, that clip is what
+// keeps the page from scrolling sideways and lets the header stick. So the ring has
+// 39px of radius to live in.
+//
+// At 2.4 the 40px ring reaches 48px and lost its left 9px to the slab, whatever the
+// method viewport's own clip margin allowed. 1.8 puts the edge at 14px — inside the
+// slab with a little to spare — and keeps the pulse a pulse rather than removing it.
+@include mq(until, md) {
+    .c-method__node {
+        --c-method-ping-max: 1.8;
+    }
 }
 
 .c-method__num {
