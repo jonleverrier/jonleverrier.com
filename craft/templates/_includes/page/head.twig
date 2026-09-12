@@ -1,5 +1,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
+{# DROP `no-js` BEFORE THE FIRST PAINT. <html> ships with it so a visitor without
+   JavaScript — and any crawler that doesn't run it — gets the logo's role list as a
+   plain stacked list rather than an empty box (see `.no-js .b-logo__item` in
+   _logo.scss, which undoes the ticker's shared grid cell).
+
+   app.js clears it, but app.js is a module: deferred until the 144kB bundle has
+   downloaded AND parsed. With critical CSS inlined the page paints long before that,
+   and it painted with .no-js still applied — so every role showed at once, stacked,
+   until the bundle landed and snapped them into the ticker.
+
+   Inline and first in the head, so it runs during parse and the class is gone before
+   anything is drawn. `is-loading` deliberately stays: that one is the page-transition
+   machinery's and belongs to app.js, which removes both (removing an absent class is
+   a no-op).
+
+   A visitor with JS off never runs this, which is the entire point — they keep the
+   fallback. #}
+<script>document.documentElement.classList.remove('no-js');</script>
 {# "{Page} | Jon Leverrier" on inner pages (e.g. Contact); just the name on home.
 
    Sections listed here get a third segment naming what the page IS, between the two:
