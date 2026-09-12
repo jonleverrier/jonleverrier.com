@@ -88,6 +88,40 @@ export function methodApply(slider, index) {
         p.toggleAttribute('aria-hidden', i !== index);
     });
 
+    // THE PULSE, placed over the node it belongs to but living OUTSIDE the track.
+    //
+    // It used to be ::before/::after on the active node, which meant an animation
+    // running inside a subtree that transform-transitions on every change — the one
+    // mistake this component keeps making (the line shimmer was the last one). In
+    // Safari that cost a visible glitch mid-slide: the node's box came back 4.39px
+    // too tall for ~33ms and shoved the title, summary and pills down the page.
+    //
+    // Positioned from the SAME untransformed geometry the slide uses, offset by the
+    // shift we just applied — so this is where the node will COME TO REST, not where
+    // it happens to be this frame. Every phase rests in the same place, so the ping
+    // lands identically each time.
+    const ping = slider.querySelector('[data-method-ping]');
+    const activeNode = phases[index].querySelector('.c-method__node');
+    if (ping && activeNode) {
+        const vp = slider.querySelector('.c-method__viewport');
+        const vpRect = vp.getBoundingClientRect();
+        const nodeRect = activeNode.getBoundingClientRect();
+        // left() already has `current` subtracted out, and the viewport sits OUTSIDE
+        // the track so its rect carries no transform at all — subtracting it raw is
+        // the whole conversion. Taking `current` off the viewport too (as this first
+        // did) added the old transform back and parked the ping a full slide away.
+        ping.style.left = `${left(activeNode) + shift - vpRect.left}px`;
+        // Vertical never moves with the slide, so the live rect is already right.
+        ping.style.top = `${nodeRect.top - vpRect.top}px`;
+
+        // Restart it. Taking the class off and forcing a reflow before putting it
+        // back is what replays an animation that has already run — without the
+        // reflow the browser coalesces both changes and nothing fires.
+        ping.classList.remove('is-firing');
+        void ping.offsetWidth;
+        ping.classList.add('is-firing');
+    }
+
     // Grow the fill from the left edge to the active node (in track coords —
     // each node sits at its phase's left edge). On the first phase this leaves a
     // lead-in segment from the edge up to node 01; it extends further right as

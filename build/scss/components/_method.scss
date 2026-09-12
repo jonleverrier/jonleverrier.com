@@ -388,24 +388,92 @@ $band-complete: getmap($colour, light, 800);
     background: $c-method-accent;
     color: getmap($colour, light, 900);
 
-    // Ripple outward once on first view, then stop (reverts to opacity 0).
-    // ::after is offset half a cycle so it follows the first as a second ring.
+    // NO PING HERE ANY MORE — it moved to .c-method__ping, an overlay parented to
+    // the viewport instead of to this node. See that rule for why; short version:
+    // an animation running inside the transform-transitioning track is the one
+    // mistake this component keeps making, and this was the last instance of it.
+}
+
+// THE PULSE, as an overlay on the viewport.
+//
+// It used to be ::before/::after on the active node, which put an animation inside
+// .c-method__track — and the track transform-transitions on every phase change, so
+// WebKit composites that whole subtree, text and all, for the duration of the slide.
+// Measured in Safari with tools/safari/: at ~550ms into the 620ms slide the active
+// node's box came back as 48.391px instead of 44px for about 33ms, taking
+// .c-method__num down 2.19px and the display, summary and pills down 4.39px. Not a
+// real layout change — min/max-pinning the node's box did not stop it, and a pinned
+// box cannot be 48.391px — but a visible glitch every time you cycled.
+//
+// Bisected one lever at a time: ping off = clean, slide off = clean, both on =
+// 4.391px. It needs the pair. Firing the identical animation from out here, parented
+// to the viewport, measures 0.
+//
+// DO NOT MOVE THIS BACK INSIDE THE TRACK, and do not add any other animation in
+// there either — that is the same mistake the line shimmer made (see the note above
+// .c-method__line--fill). The viewport is the place for anything that moves.
+//
+// Positioned by method.js, which already measures every phase's untransformed
+// geometry for the slide and so knows exactly where the active node comes to rest.
+.c-method__ping {
+    position: absolute;
+    // Sized to the node it sits over, and centred on the point JS gives it.
+    width: $c-method-node;
+    height: $c-method-node;
+    // Above the track, which the viewport's `isolation: isolate` makes possible even
+    // with the track promoted; below the gutter fade, which stays the topmost thing.
+    z-index: 1;
+    pointer-events: none;
+
     &::before,
     &::after {
-        animation: c-method-ping 2.6s ease-out 1;
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: rem(4) solid rgba($c-method-accent, 0.5);
+        opacity: 0;
+        // Each ring on its own layer, as before. Out here that costs nothing — there
+        // is no text in this subtree to re-rasterise.
+        will-change: transform;
     }
-    &::after {
-        animation-delay: 1.3s;
+
+    // HELD BACK UNTIL THE NODE ARRIVES. Inside the track the pulse travelled with the
+    // node, because it was part of it. Out here it cannot — it is pinned to where the
+    // node comes to REST — so firing at once would pulse a ring in empty space for the
+    // length of the slide and only then have the node arrive inside it. Waiting the
+    // slide out makes it the "you are here" beat it always read as.
+    //
+    // Matches the track's own transition (see .c-method__track); if that duration
+    // changes, change this with it.
+    --c-method-ping-wait: 620ms;
+
+    // Fired by method.js on every phase change: the class goes off and back on, so
+    // the animation restarts rather than sitting finished.
+    &.is-firing::before,
+    &.is-firing::after {
+        animation: c-method-ping 2.6s ease-out 1;
+        animation-delay: var(--c-method-ping-wait);
+    }
+
+    // The second ring follows half a cycle behind the first.
+    &.is-firing::after {
+        animation-delay: calc(var(--c-method-ping-wait) + 1.3s);
     }
 }
 
 // The ring's maximum, as a property so a narrow screen can ask for a smaller one
 // without a second set of keyframes. Substituted per element at computed-value time,
 // which is all a non-animated custom property needs to work inside @keyframes.
+// No `translate(-50%, -50%)` any more. That was here because the rings were
+// `top: 50%; left: 50%` inside the node and had to be pulled back onto its centre.
+// They now fill .c-method__ping edge to edge (`inset: 0`) and that box is placed on
+// the node's own corner by method.js, so the scale alone is the animation and it
+// grows about the box's centre by default.
 @keyframes c-method-ping {
-    0%   { opacity: 0; transform: translate(-50%, -50%) scale(1); }    // emerge from the node
-    25%  { opacity: 0.5; }                                             // ease in
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(var(--c-method-ping-max, 2.4)); }  // small, tight pulse — fades out exactly as it reaches its modest max, so no large faint ring lingers
+    0%   { opacity: 0; transform: scale(1); }    // emerge from the node
+    25%  { opacity: 0.5; }                       // ease in
+    100% { opacity: 0; transform: scale(var(--c-method-ping-max, 2.4)); }  // small, tight pulse — fades out exactly as it reaches its modest max, so no large faint ring lingers
 }
 
 // A SMALLER RING ON PHONES, because there is nowhere for a bigger one to go.
@@ -419,7 +487,7 @@ $band-complete: getmap($colour, light, 800);
 // method viewport's own clip margin allowed. 1.8 puts the edge at 14px — inside the
 // slab with a little to spare — and keeps the pulse a pulse rather than removing it.
 @include mq(until, md) {
-    .c-method__node {
+    .c-method__ping {
         --c-method-ping-max: 1.8;
     }
 }
@@ -489,21 +557,23 @@ $band-complete: getmap($colour, light, 800);
     font-weight: 600; // the mono's bold face — a label, set like the date labels and the summary
     line-height: 1.2;
     cursor: default; // labels, not buttons
-    transition: transform var(--tag-dur, 400ms) cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    // Gated on a real pointer, not on width. A touch screen has no hover to leave:
-    // tapping a pill latches :hover, so it stayed popped and rotated until something
-    // else was touched — and on a set of pills a visitor is scrolling past, the
-    // wrong one sits lifted out of line. `hover: hover` also keeps the pop on a
-    // small laptop, which a `until, md` breakpoint would have taken away.
-    @media (hover: hover) {
-        &:hover {
-            transform:
-                translateY(var(--tag-lift, -5px))
-                scale(var(--tag-scale, 1.1))
-                rotate(var(--tag-rot, -3deg));
-        }
-    }
+    // NO HOVER POP. It lifted, scaled 1.1 and rotated -3deg on a 400ms spring, and it
+    // is gone for the same reason the line shimmer is: it animated a transform INSIDE
+    // .c-method__track, and the track transform-transitions on every phase change, so
+    // WebKit composites that whole subtree — text included.
+    //
+    // Measured in Safari on the LAST phase (the is-complete state, where the node
+    // holds its own layer for the burn), diffing the settled frame above the pills
+    // while the pointer rested on one: hovering the first pill repainted the phase
+    // number, 4709 pixels changed in a region the hover has no business touching.
+    // With the transform gone: 0. Layout never showed it — getBoundingClientRect is
+    // stable through all of it — which is why this has to be caught with a frame diff
+    // (tools/safari/).
+    //
+    // Nothing animated goes back in this subtree. If the pills want a hover state
+    // again it has to be a non-compositing one — colour, or a border — or it has to
+    // live on an overlay outside the track, the way .c-method__ping now does.
 }
 
 // Three calm tones, navy text — mirrors .c-sectors__tag--a/e/f. Assigned on a

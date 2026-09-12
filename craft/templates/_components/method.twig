@@ -41,23 +41,39 @@
                         {% if step.services %}
                             {# Colour palettes (styled in _method.scss) cycled from a random
                                offset so the mix shuffles each render while adjacent tags always
-                               differ; plus a per-tag random hover pop — same as .c-sectors__tag. #}
+                               differ. (The per-tag random hover pop this used to carry is gone;
+                               see below.) #}
                             {% set palettes = ['a', 'e', 'f'] %}
                             {% set offset = random(palettes|length - 1) %}
+                            {# The per-pill --tag-rot/--tag-lift/--tag-scale/--tag-dur went with
+                               the hover pop they drove (see _method.scss): the pop animated a
+                               transform inside the track, which is the one thing this component
+                               cannot have. Nothing reads these now, so emitting four custom
+                               properties per pill was four lies per pill about what the markup
+                               does. The palette cycle stays — that is still real. #}
                             <ul class="c-method__items">
                                 {% for service in step.services %}
-                                    {% set rot = random(-6, 6) %}
-                                    {% set lift = random(3, 9) %}
-                                    {% set scale = (106 + random(10)) / 100 %}
-                                    {% set dur = random(320, 480) %}
-                                    <li class="c-method__item c-method__item--{{ palettes[(loop.index0 + offset) % palettes|length] }}"
-                                        style="--tag-rot: {{ rot }}deg; --tag-lift: -{{ lift }}px; --tag-scale: {{ scale }}; --tag-dur: {{ dur }}ms">{{ service }}</li>
+                                    <li class="c-method__item c-method__item--{{ palettes[(loop.index0 + offset) % palettes|length] }}">{{ service }}</li>
                                 {% endfor %}
                             </ul>
                         {% endif %}
                     </li>
                 {% endfor %}
             </ol>
+            {# THE PULSE, parented to the viewport rather than to the node it appears
+               over — and that is the whole point of it being here.
+
+               Everything this component has ever got wrong in Safari is one rule
+               broken: nothing animated may live inside the track, because the track
+               transform-transitions and WebKit composites the whole subtree with it.
+               The line shimmer broke it (removed), and the node's own ping broke it
+               too — measured, the active node's box reported 44px as 48.391px for
+               ~33ms mid-slide, shoving the number 2.19px and the title, summary and
+               pills 4.39px down the page. Same animation fired from out here: zero.
+
+               An <i>, not a pseudo-element, because it has to be positioned over
+               whichever node is active — method.js places it and retriggers it. #}
+            <i class="c-method__ping" data-method-ping aria-hidden="true"></i>
         </div>
 
         {% if multiple %}

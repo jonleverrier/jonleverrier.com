@@ -143,59 +143,50 @@ $c-case-toc-num: rem(34);
     white-space: nowrap;
 }
 
-// The caret is the only thing announcing that the title opens, so it carries the whole
-// affordance now the hover fill has gone: bigger than the label it sits beside, and the
-// brand red rather than a grey that reads as decoration.
-.c-case-toc__caret {
+// THE CARET, drawn with borders on the title's own ::after.
+//
+// A border triangle rather than a character or an SVG. The character was the first
+// attempt and it hopped: a rotation turns about the BOX centre, while a glyph's ink
+// sits wherever the font puts it inside its em — low, for a down-pointing triangle —
+// so the half-turn mirrored the ink to the other side of the box and the caret moved
+// up the bar as it turned. Centring the box could not fix that; the box was centred.
+//
+// Borders have no such gap between box and ink: the triangle IS the border box, 10
+// wide by 6 tall, filled corner to corner. Half a turn maps that box exactly onto
+// itself, so only the direction changes. It also costs no element, no font dependency
+// and no request.
+//
+// It is the only thing announcing that the title opens, now the hover fill has gone,
+// so it wears the brand red rather than a grey that would read as punctuation.
+.c-case-toc__title::after {
+    content: '';
     flex: 0 0 auto;
-    // Well above the label it sits beside. It is the only thing announcing that the
-    // title opens — the hover fill that used to say so is gone — so it has to read as
-    // a control from across the bar, not as punctuation after a word.
+    // Zero box plus borders: the classic triangle. The zero width and height are what
+    // make the three borders meet at a point rather than frame a box.
+    width: 0;
+    height: 0;
+    border-left: rem(7) solid transparent;
+    border-right: rem(7) solid transparent;
+    // Points DOWN, at the sheet it will drop. The TOP border draws a downward
+    // triangle — the colour goes on the side opposite the way it points.
     //
-    // A FIXED SQUARE BOX that centres the glyph on both axes, rather than a
-    // zero-line-height sliver that centred it on neither.
-    //
-    // `line-height: 0` kept a 26px glyph from setting the line box for the whole row —
-    // which it has to, or the bar grows to fit the caret. But a zero-height box has no
-    // middle to sit in: the glyph hung off the baseline, which put it low against the
-    // label beside it. A square box with its own centring does the same job (nothing
-    // here can push the row taller, since the box is 18px whatever the font does) and
-    // has a middle for the glyph to occupy.
-    //
-    // Square, not just fixed-width, for a second reason: the open state turns this
-    // 180°, and a rotation spins about the box's centre. A box the glyph sits
-    // off-centre in would make the turn wobble rather than pivot.
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: rem(18);
-    height: rem(18);
-    color: getmap($colour, primary, 600);
-    transition: transform 160ms ease;
+    // 14 by 9 — it carries the whole "this opens" affordance on its own, so it has to
+    // read as a control from across the bar rather than as punctuation after a word.
+    // Still shorter than the 16px text beside it, so it cannot set the line box and the
+    // bar keeps the title's height; the old glyph needed `line-height: 0` to stop a
+    // 26px character doing exactly that.
+    border-top: rem(9) solid getmap($colour, primary, 600);
+    transition: transform 160ms ease, border-top-color 200ms ease;
+}
 
-    // No font-size or line-height any more: the caret is an SVG (see case-toc.twig),
-    // so nothing here is text and nothing can set the row's line box. Which is what
-    // the old `line-height: 0` was defending against — and it is the drawn triangle,
-    // symmetric about its own viewBox centre, that finally makes the half-turn land
-    // where it started instead of hopping up the bar.
-    svg {
-        display: block;
-    }
+.c-case-toc__title:hover::after {
+    border-top-color: getmap($colour, primary, 650);
+}
 
-    .c-case-toc__title:hover & {
-        color: getmap($colour, primary, 650);
-    }
-
-    // Ships pointing DOWN, at the sheet it will drop; half a turn takes it to up,
-    // at the bar the list folds back into. Rotating rather than swapping the
-    // character keeps it the same object moving, and means the turn can be animated.
-    //
-    // The rotation is what makes a 180° turn legible here. Down and up are mirror
-    // images, so as a straight character swap the change would be easy to miss —
-    // watching it travel is what says which way it just went.
-    .c-case-toc__title[aria-expanded='true'] & {
-        transform: rotate(180deg);
-    }
+// Half a turn takes it to up, at the bar the list folds back into. Rotating rather
+// than redrawing keeps it the same object moving, and means the turn can be animated.
+.c-case-toc__title[aria-expanded='true']::after {
+    transform: rotate(180deg);
 }
 
 .c-case-toc__mode {
