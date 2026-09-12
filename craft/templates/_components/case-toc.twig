@@ -51,12 +51,23 @@
                     aria-controls="case-toc-list"
                 >
                     <span class="c-case-toc__label" data-case-toc-label>{{ headings|first.text }}</span>
-                    {# A DOWN-pointing glyph, rotated to ▴ when open (see _case-toc.scss).
-                       Closed it points down at the list it will drop; open it points back
-                       up at the bar, which is where pressing again puts things. One glyph
-                       turning says "this is the same thing, in its other state" where
-                       swapping ▾ for ▴ would not. #}
-                    <span class="c-case-toc__caret" aria-hidden="true">▾</span>
+                    {# DRAWN, not typed. This was the character ▾ rotated 180°, and a
+                       rotation turns about the BOX centre while a glyph's ink sits
+                       wherever the font puts it in its em — low, for a down-pointing
+                       triangle. So the closed caret sat below the middle and the open one
+                       above it, and the triangle visibly jumped up the bar as it turned.
+
+                       The path below is symmetric about the viewBox centre (y 8.5 to 15.5
+                       about 12, x 5.5 to 18.5 about 12), so half a turn lands its bounding
+                       box exactly where it started and only the direction changes.
+
+                       Points down at the list it will drop; up, when open, at the bar the
+                       list folds back into. #}
+                    <span class="c-case-toc__caret" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" focusable="false">
+                            <path d="M5.5 8.5h13L12 15.5z"/>
+                        </svg>
+                    </span>
                 </button>
 
                 {# aria-pressed, not a checkbox: this is a toggle on the view, and a

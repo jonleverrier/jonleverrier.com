@@ -175,16 +175,52 @@ export function revealPictures(root = document, {immediate = false} = {}) {
             setTimeout(once, DECODE_CAP_MS);
         };
 
+        // DID THIS COME OUT OF THE CACHE? `complete` above catches an image that had
+        // already arrived by the time we first looked, which on this site is only ever
+        // the two or three above the fold: nearly every picture is loading="lazy", and
+        // a lazy image below the fold is NOT fetched at page load even when it is
+        // sitting in the cache. It is fetched when you scroll near it, fires `load`
+        // like any other, and went down the fade path — so a return visit still played
+        // a colour wash over twenty images that were already on the machine.
+        //
+        // transferSize === 0 is the cache hit: memory or disk, no bytes over the wire.
+        // SAME-ORIGIN ONLY, because a cross-origin response without Timing-Allow-Origin
+        // also reports 0 and would be indistinguishable from a cache hit — better to
+        // fade something that was cached than to snap something the reader watched
+        // load. If there is no entry at all (the resource-timing buffer fills at 250
+        // and this page has more images than that), the same default applies.
+        const fromCache = () => {
+            try {
+                const src = img.currentSrc || img.src;
+                if (!src || new URL(src, location.href).origin !== location.origin) return false;
+                const entries = performance.getEntriesByName(src);
+                const t = entries[entries.length - 1];
+                return !!t && t.transferSize === 0;
+            } catch {
+                return false;
+            }
+        };
+
         // Loaded — but hold it until the picture is actually on screen. Without an
         // IntersectionObserver (or once it has already reported this one) there is
         // nothing to wait for, so go straight away.
         const done = () => {
+            // Nothing was waited for, so there is nothing to cover. Note this skips the
+            // on-screen gate as well: the gate exists to put the fade where it can be
+            // seen, and there is no fade.
+            if (fromCache()) { snap(); return; }
+
             if (immediate || !inView || seen.has(pic)) { seen.add(pic); start(); return; }
             armed.set(pic, start);
         };
 
-        // ALREADY HERE — so there is nothing to reveal. Snap to the end state and
-        // leave: no observer, no frames, no fade.
+        // Straight to the end state: no observer, no frames, no fade.
+        const snap = () => {
+            seen.add(pic);
+            pic.classList.add('is-loaded', 'is-developed');
+        };
+
+        // ALREADY HERE — so there is nothing to reveal.
         //
         // This is the cached case, and it is most of them — a repeat visit, a
         // back-navigation, scrolling back up to something already fetched, every
@@ -207,11 +243,7 @@ export function revealPictures(root = document, {immediate = false} = {}) {
         // Checked BEFORE observing, so a cached picture is never registered with
         // the observer at all — nothing to unobserve, and no intersection callback
         // for an element that is already finished.
-        if (img.complete) {
-            seen.add(pic);
-            pic.classList.add('is-loaded', 'is-developed');
-            return;
-        }
+        if (img.complete) { snap(); return; }
 
         // Observe from the start, not from the load event, so a picture already on
         // screen is known to be visible by the time its image arrives and reveals

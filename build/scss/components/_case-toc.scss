@@ -170,10 +170,17 @@ $c-case-toc-num: rem(34);
     justify-content: center;
     width: rem(18);
     height: rem(18);
-    font-size: rem(26);
-    line-height: 1;
     color: getmap($colour, primary, 600);
     transition: transform 160ms ease;
+
+    // No font-size or line-height any more: the caret is an SVG (see case-toc.twig),
+    // so nothing here is text and nothing can set the row's line box. Which is what
+    // the old `line-height: 0` was defending against — and it is the drawn triangle,
+    // symmetric about its own viewBox centre, that finally makes the half-turn land
+    // where it started instead of hopping up the bar.
+    svg {
+        display: block;
+    }
 
     .c-case-toc__title:hover & {
         color: getmap($colour, primary, 650);
