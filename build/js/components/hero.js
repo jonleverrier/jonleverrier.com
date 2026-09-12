@@ -208,7 +208,15 @@ void main() {
   // no-op there, so the desktop look is untouched) and closes the seam where they are
   // not. Ambient specks are excluded: they are meant to be small, and the line below
   // caps them anyway.
-  if (aAmbient < 0.5) gl_PointSize = max(gl_PointSize, uMinSize);
+  // SCALED BY (1 - aEdge), so it never touches the silhouette band.
+  //
+  // The first cut floored every scan point, and that made things worse where it
+  // mattered: the edge band carries dark, background-contaminated colour, and lifting
+  // those points off sub-pixel turned a thin dark line down the silhouette into a
+  // wide smear. Interior points are the ones that need the help — they are the
+  // surface — so the floor fades out as aEdge rises and the fringe keeps the size the
+  // bake gave it.
+  if (aAmbient < 0.5) gl_PointSize = max(gl_PointSize, uMinSize * (1.0 - aEdge));
   // Backstop for the same case: the fade handles the approach, this catches anything
   // that slips past it (a resize mid-orbit re-solves the camera distance under it).
   if (aAmbient > 0.5) gl_PointSize = min(gl_PointSize, uMaxSize);
