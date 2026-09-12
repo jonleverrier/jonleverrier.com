@@ -176,6 +176,28 @@ $c-nav-panel-item-step: 100ms;
     animation: c-nav-panel-item $c-nav-panel-item-ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+// ARRIVED — the animation comes OFF once it has finished.
+//
+// `fill-mode: both` is needed on the way in (see above), but it means the animation
+// keeps APPLYING its end value forever afterwards. The element stays
+// animation-controlled, and WebKit keeps it on a compositor layer for as long as that
+// is true. Rapid hovering then forces that layer to re-rasterise through the colour
+// transition, and a layer re-rastered mid-flight paints its text at the wrong scale:
+// one item in the list suddenly renders huge, then corrects. Slow hovering never
+// triggers it; fast sweeps up the list do.
+//
+// The same shape as .c-method's `is-burning`, which brackets its animation for
+// exactly this reason: "Left on permanently, that layer made Safari re-snap the track
+// by a pixel whenever a pill was hovered."
+//
+// nav-panel.js adds .is-arrived on animationend. Safe if that never fires — the item
+// simply keeps the fill it has now, which is the state this rule sets anyway.
+.c-nav-panel[open] .c-nav-panel__item.is-arrived {
+    animation: none;
+    opacity: 1;
+    transform: none;
+}
+
 @for $i from 1 through 6 {
     .c-nav-panel[open] .c-nav-panel__item:nth-child(#{$i}) {
         animation-delay: ($i - 1) * $c-nav-panel-item-step;

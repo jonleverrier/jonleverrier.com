@@ -48,7 +48,27 @@ export function mountNavPanel() {
         document.documentElement.style.setProperty('--nav-scrollbar', `${gutter}px`);
     };
 
+    // Take the entry animation off each item once it has played.
+    //
+    // The animation needs `fill-mode: both` to hold an item hidden through its stagger
+    // delay, but that also means it keeps applying its end value forever — leaving the
+    // element animation-controlled, and WebKit leaving it on a compositor layer. Fast
+    // hovering then re-rasterises that layer through the colour transition, and a
+    // layer re-rastered mid-flight paints its text at the wrong scale: one item in the
+    // list renders huge for a moment. Slow hovering never provokes it.
+    //
+    // .is-arrived hands the final state back to plain CSS so the layer can be dropped.
+    // Idempotent, and harmless if animationend never fires (reduced motion sets
+    // `animation: none`, so there is nothing to end and nothing to correct).
+    const items = [...panel.querySelectorAll('.c-nav-panel__item')];
+    const onItemArrived = (e) => {
+        if (e.animationName && e.target.classList) e.target.classList.add('is-arrived');
+    };
+    items.forEach((el) => el.addEventListener('animationend', onItemArrived));
+
     const open = () => {
+        // Replay the entry on every open, so the stagger isn't spent after the first.
+        items.forEach((el) => el.classList.remove('is-arrived'));
         lockGutter(); // before the class, or the scrollbar is already gone
         panel.show();
         document.documentElement.classList.add('is-nav-open');
@@ -165,6 +185,7 @@ export function mountNavPanel() {
     document.addEventListener('keydown', onKey);
 
     return () => {
+        items.forEach((el) => el.removeEventListener('animationend', onItemArrived));
         toggle.removeEventListener('click', onToggle, true);
         panel.removeEventListener('close', onClose);
         panel.removeEventListener('click', onPanelNavigate);
