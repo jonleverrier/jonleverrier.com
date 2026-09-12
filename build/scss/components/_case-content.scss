@@ -494,6 +494,26 @@ $cc-hosts:   '.c-case-content__text, .c-case-content__code, .c-case-content__quo
     // The slab shows through while the image loads, so the rounded box is already
     // the right shape and colour rather than a white rectangle that pops.
     background-color: getmap($colour, light, 700);
+
+    // FULL BLEED ON A PHONE, out to the slab's own edge.
+    //
+    // What stands between the figure and that edge is .c-content's inline padding —
+    // rhythm500 at this width — so cancelling exactly that, and nothing else, lands
+    // the image on the slab edge rather than the window's. The page inset either side
+    // of the slab stays: the cream band is the page's frame and the work sits inside
+    // it, not over it.
+    //
+    // The radius goes with it. A rounded corner reads as a card, which is right when
+    // the image sits inset with slab either side of it; run to the edge there is no
+    // card left to round, and the curve just clips the photograph.
+    //
+    // Written against the same token .c-content pads with, so the two cannot drift —
+    // that padding steps up at md and lg, which is precisely why this is scoped below
+    // md rather than given a number of its own.
+    @include mq(until, md) {
+        margin-inline: calc(-1 * #{getmap($space, rhythm, 500)});
+        border-radius: 0;
+    }
 }
 
 // A legacy image without its breakout (AFTER the figure rule above, whose
