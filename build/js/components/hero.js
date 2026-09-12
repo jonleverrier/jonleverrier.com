@@ -985,17 +985,51 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
     warpFailsafe = setTimeout(finishWarp, WARP_MS + 120);
   }
 
-  // ~30fps rather than whatever the display offers. The sweep is a 23-second cycle
-  // and the pointer ease is expressed in seconds, so both are unchanged to look at —
-  // but half the frames means half the GPU and half the main-thread cost, on every
-  // device rather than only the slow ones. The check sits BEFORE lastFrame is
-  // updated, so dt measures the gap between frames actually drawn.
-  const FRAME_MS = 1000 / 30;
+  // ADAPTIVE FRAME BUDGET, not a flat cap.
+  //
+  // This was pinned at 30fps to stop weak machines drowning in it, which worked but
+  // took the smoothness away from every machine — including the ones with headroom to
+  // spare. So it now starts at 60 and only falls back to 30 if the device turns out
+  // not to afford it.
+  //
+  // The measure is how long a frame's own work takes, timed around the body below —
+  // not the gap between frames, which on an idle tab or a slow network says more about
+  // the browser's scheduling than about this hero. Anything under HEALTHY_MS leaves
+  // roughly half the 60fps budget free for everything else on the page.
+  //
+  // Decided over a run of frames rather than on any single one: the first frames after
+  // mount include shader compilation and the first upload, and a lone slow frame
+  // during a scroll is not evidence about the device. Re-evaluated in both directions,
+  // so plugging in an external display or closing a heavy tab is noticed too.
+  const FRAME_60 = 1000 / 60;
+  const FRAME_30 = 1000 / 30;
+  const HEALTHY_MS = 8;   // a frame costing less than this can afford 60fps
+  const STRAINED_MS = 14; // and one costing more than this cannot
+  const RUN = 20;         // consecutive frames agreeing before the budget moves
+
+  let FRAME_MS = FRAME_60;
+  let healthyRun = 0;
+  let strainedRun = 0;
+  // Skip the first frames outright: shader compile and the initial buffer upload land
+  // there and would condemn a perfectly capable GPU on its opening frame.
+  let warmup = 10;
+
+  const gradeFrame = (cost) => {
+    if (warmup > 0) { warmup -= 1; return; }
+    if (cost > STRAINED_MS) { strainedRun += 1; healthyRun = 0; }
+    else if (cost < HEALTHY_MS) { healthyRun += 1; strainedRun = 0; }
+    else { return; } // between the two: leave the budget where it is
+    if (strainedRun >= RUN && FRAME_MS === FRAME_60) { FRAME_MS = FRAME_30; strainedRun = 0; }
+    else if (healthyRun >= RUN && FRAME_MS === FRAME_30) { FRAME_MS = FRAME_60; healthyRun = 0; }
+  };
 
   function loop() {
     raf = requestAnimationFrame(loop);
     const nowMs = performance.now();
-    if (nowMs - lastFrame < FRAME_MS) return;
+    // -0.5 so a 60fps budget isn't missed by the sub-millisecond jitter in rAF's own
+    // timing, which would halve the rate for no reason.
+    if (nowMs - lastFrame < FRAME_MS - 0.5) return;
+    const workStart = nowMs;
     // Clamped hard: the loop stops entirely while the tab is hidden or the hero is
     // scrolled away, so the first frame back would otherwise carry a delta of seconds
     // and snap the pointer ease straight onto its target.
@@ -1167,6 +1201,16 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
       shown = true;
       renderer.domElement.style.opacity = "1";
     }
+
+    // What this frame actually cost, which is what decides whether the next one is
+    // allowed at 60fps. Measured here rather than at the top of the next frame, so
+    // it covers this hero's own work and not the browser's idle time between frames.
+    //
+    // WebGL is asynchronous, so this is the CPU cost of issuing the frame, not the
+    // GPU's cost of drawing it. That is the right thing to measure anyway: the main
+    // thread is what everything else on the page is competing for, and it is what
+    // Lighthouse counts as a long task.
+    gradeFrame(performance.now() - workStart);
   }
   start();
 
