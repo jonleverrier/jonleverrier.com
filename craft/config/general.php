@@ -30,6 +30,30 @@ $config = GeneralConfig::create()
     // `_views/error` — which is the only one that exists (see the note in it).
     ->errorTemplatePrefix('_views/')
     ->sendPoweredByHeader(false)
+    // ?v=<timestamp> on every asset and transform URL.
+    //
+    // The built assets under /dist carry a content hash in the filename, so a changed
+    // stylesheet is a changed URL and nothing stale can be served. Asset URLs had no
+    // equivalent: a transform is
+    //
+    //     /assets/<folder>/_<transform params>/<asset id>/<original filename>.<ext>
+    //
+    // and replacing a file through the CP keeps the id AND the filename, so Craft
+    // rewrote the bytes on disk behind a URL that never moved. With Cache-Control
+    // public, max-age=2592000 and Cloudflare caching it at the edge, a swapped logo
+    // could go on being the old logo for thirty days, in browsers and at the CDN.
+    //
+    // Craft revs transforms as well as originals — ImageTransformer uses the transform
+    // index's own dateUpdated — so a regenerated transform gets a fresh value too.
+    //
+    // Derived from dateModified rather than a hash of the file, which is worth knowing:
+    // it busts when CRAFT knows the file changed. A file dropped onto the server
+    // underneath Craft won't move it until the asset is re-indexed.
+    //
+    // NOTE: this only reaches the CDN if Cloudflare keys its cache on the query string.
+    // The default "Standard" caching level does; "Ignore query string" would leave the
+    // edge serving the old file to everyone regardless of what browsers do.
+    ->revAssetUrls()
     // GraphQL off. Nothing on this site queries it — no tokens, no schema beyond the
     // one Craft creates itself — so it was a nav item pointing at an unused feature and
     // a query endpoint nobody was watching. This removes both; hiding only the nav item
