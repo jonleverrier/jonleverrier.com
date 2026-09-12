@@ -348,7 +348,20 @@ $c-case-studies-slide: calc((#{$g-measure-wide} - #{$c-case-studies-marquee-gap}
 // if the JS ran here you'd get every case study twice down the stack.
 $c-case-studies-stack-max: getmap($mq-breakpoints, md) - 0.01em;
 
-@media (max-width: #{$c-case-studies-stack-max}), (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+// The exact inverse of clients-marquee.js's condition — stack when the marquee is NOT
+// allowed. Written as plain comma-separated conditions rather than a Level 4 `or`, so
+// it reads the same way the JS does and needs no feature-query support of its own:
+//
+//   reduced motion              always stacks
+//   narrower than md            always stacks (a phone)
+//   no hover / coarse pointer   stacks ONLY below lg — which is what lets a tablet in
+//                               landscape have the marquee while a phone still doesn't
+$c-case-studies-tablet-max: getmap($mq-breakpoints, lg) - 0.01em;
+
+@media (prefers-reduced-motion: reduce),
+       (max-width: #{$c-case-studies-stack-max}),
+       (hover: none) and (max-width: #{$c-case-studies-tablet-max}),
+       (pointer: coarse) and (max-width: #{$c-case-studies-tablet-max}) {
     .c-case-studies.c-case-studies--marquee {
         overflow: visible;
     }

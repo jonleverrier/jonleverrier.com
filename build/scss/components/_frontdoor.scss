@@ -46,8 +46,18 @@
     min-height: calc(100vh - 2 * #{getmap($space, rhythm, 500)});
     min-height: calc(100svh - 2 * #{getmap($space, rhythm, 500)});
 
+    // svh here too, and for the same reason as the base rule above — this was the
+    // half that got missed.
+    //
+    // The 960 cap makes a desktop stable by accident: 100dvh is well past it, so the
+    // cap binds and the height never moves. A TABLET IN LANDSCAPE sits in the gap
+    // where it doesn't — an iPad is ~730px tall there, under the cap — so the dvh term
+    // won, and every time Safari retracted its chrome on scroll the section resized,
+    // which resized the hero's container, which changed its aspect, which triggered a
+    // refit: four projection passes over 37k points, mid-scroll. That is the flicker.
     @include mq(from, md) {
-        min-height: min(calc(100dvh - 2 * #{getmap($space, rhythm, 500)}), rem(960));
+        min-height: min(calc(100vh - 2 * #{getmap($space, rhythm, 500)}), rem(960));
+        min-height: min(calc(100svh - 2 * #{getmap($space, rhythm, 500)}), rem(960));
     }
 
     display: flex;

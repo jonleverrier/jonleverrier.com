@@ -21,11 +21,26 @@ const CLIENTS = {
     speed: SPEED,
 };
 
-// The case-study strip only auto-scrolls with a real pointer AND room to show more
-// than one 538px slide. MUST match the media query in _case-study.scss, which stacks
-// the cards everywhere else — if the two disagree you either get an animation running
-// on a column, or every case study twice down that column from the cloned run.
+// The case-study strip runs when EITHER holds:
+//
+//   POINTER   a real pointer and room for more than one 538px slide (a laptop)
+//   WIDE      any device at least 64em across, pointer or not (a tablet in landscape)
+//
+// The second was added because `pointer: fine` alone excluded every tablet at every
+// width — an iPad reports `hover: none` and `pointer: coarse`, so a 1024px landscape
+// screen with room for three slides still got the stack. The condition was stricter
+// than the interaction needs: this marquee is driven by POINTER events, which touch
+// raises too, so dragging it already worked on a touchscreen — nothing was reaching
+// the code to try.
+//
+// Two queries rather than one `or`, because both files have to agree and the SCSS
+// side expresses the same thing in plain comma-separated conditions.
+//
+// MUST MATCH the media query in _case-study.scss, which stacks the cards everywhere
+// else — if the two disagree you get either an animation running on a column, or
+// every case study twice down that column from the cloned run.
 const MARQUEE_MQ = '(hover: hover) and (pointer: fine) and (min-width: 48em)';
+const MARQUEE_WIDE_MQ = '(min-width: 64em)';
 const REDUCED_MQ = '(prefers-reduced-motion: reduce)';
 
 const caseStudyMarquees = new Set();
@@ -40,7 +55,8 @@ const built = new WeakSet();
 let watching = false;
 
 const marqueeAllowed = () =>
-    window.matchMedia(MARQUEE_MQ).matches && !window.matchMedia(REDUCED_MQ).matches;
+    (window.matchMedia(MARQUEE_MQ).matches || window.matchMedia(MARQUEE_WIDE_MQ).matches)
+    && !window.matchMedia(REDUCED_MQ).matches;
 
 // Build or unwind every registered case-study strip to match the current viewport.
 // Runs on content arrival AND whenever the query flips, so resizing across the
@@ -75,6 +91,7 @@ function watchViewport() {
     if (watching) return;
     watching = true;
     window.matchMedia(MARQUEE_MQ).addEventListener('change', syncCaseStudyMarquees);
+    window.matchMedia(MARQUEE_WIDE_MQ).addEventListener('change', syncCaseStudyMarquees);
     window.matchMedia(REDUCED_MQ).addEventListener('change', syncCaseStudyMarquees);
 
     // Rebuild on any width change, not just crossing the breakpoint. How many copies
