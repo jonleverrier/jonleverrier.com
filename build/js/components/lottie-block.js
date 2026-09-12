@@ -23,9 +23,27 @@ const THRESHOLD = 0.25;
 // Start fetching this far before the box scrolls in, so it's ready on arrival.
 const PREFETCH_MARGIN = '100% 0px';
 
+// THE LIGHT BUILD, and it has to be: `lottie_svg` bundles the EXPRESSIONS engine,
+// which evaluates an animation's expression strings with eval() — so loading it threw
+// a CSP violation against script-src, and the only way to keep it would have been
+// 'unsafe-eval', which hands back most of what the policy is for.
+//
+// `lottie_light` is the same SVG renderer with expressions removed. Nothing is lost
+// here: both animations carry exactly two expressions and both are the same
+// self-referential no-op After Effects emits —
+//
+//     ks.s = { a: 0, k: [100, 100, 100], x: "var $bm_rt;\n$bm_rt = transform.scale;" }
+//
+// a scale property assigned its own value, sitting on a baked 100%. The light build
+// ignores `x` and uses `k`, which is the number the expression was returning anyway.
+//
+// CHECK BEFORE ADDING AN ANIMATION THAT USES REAL EXPRESSIONS: it will render without
+// them and fail silently, no warning, no error. `grep -c '"x": "var \$bm_rt'` on the
+// JSON says how many it has; if any do something, they have to be baked into keyframes
+// in After Effects rather than the full build brought back.
 let lib = null;
 const loadLib = () => {
-    lib ??= import('lottie-web/build/player/esm/lottie_svg.min.js').then((m) => m.default ?? m);
+    lib ??= import('lottie-web/build/player/esm/lottie_light.min.js').then((m) => m.default ?? m);
     return lib;
 };
 
