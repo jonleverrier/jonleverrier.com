@@ -119,7 +119,7 @@ const VERT = `
 attribute float aEdge;
 attribute float aAmbient;
 uniform float uSize, uScale, uTime, uAmp, uAmpAll, uTwinkle, uSpeed, uBurst, uReveal;
-uniform float uOrbit, uAmbientSize, uAmbientAlpha, uNearFade, uMaxSize;
+uniform float uOrbit, uAmbientSize, uAmbientAlpha, uNearFade, uMaxSize, uMinSize;
 uniform vec3 uBurstAxis, uOrbitC;
 varying vec3 vCol;
 varying float vAlpha;
@@ -193,6 +193,22 @@ void main() {
   // and the shell would read as a uniform grid of dots laid over the scene.
   if (aAmbient > 0.5) sizeMul = uAmbientSize * (0.45 + hash(position + 9.1) * 1.70);
   gl_PointSize = uSize * sizeMul * (uScale / max(-mv.z, 0.0001)) * (1.0 + (tw - 1.0) * 0.6);
+  // A FLOOR, in framebuffer pixels, and it is the scan that needs it.
+  //
+  // Size is uScale/distance with uScale = clientHeight * 0.5 — a CSS-pixel number
+  // driving a framebuffer-pixel output. On a wide screen the camera sits close, the
+  // points land around 4-5px, and they overlap into a continuous surface. Frame the
+  // same cloud into a phone's width and the camera pulls back until they are nearer
+  // 2px, which a soft-edged round sprite cannot make solid: at that size it is almost
+  // all falloff and no core, so the gaps between points open and whatever is behind
+  // shows through. Where the scan samples a seam sparsely — the hairline above the
+  // temple — those gaps join up and read as a dark gash across the forehead.
+  //
+  // Raising it by a hair costs nothing where points are already bigger (the max is a
+  // no-op there, so the desktop look is untouched) and closes the seam where they are
+  // not. Ambient specks are excluded: they are meant to be small, and the line below
+  // caps them anyway.
+  if (aAmbient < 0.5) gl_PointSize = max(gl_PointSize, uMinSize);
   // Backstop for the same case: the fade handles the approach, this catches anything
   // that slips past it (a resize mid-orbit re-solves the camera distance under it).
   if (aAmbient > 0.5) gl_PointSize = min(gl_PointSize, uMaxSize);
@@ -415,6 +431,9 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
       uOrbitC:       { value: new THREE.Vector3() },
       uNearFade:     { value: 0 },  // set from the scan's radius once it's measured
       uMaxSize:      { value: 14 }, // device px, before pixel ratio
+      // Framebuffer px. Below this the scan stops being a surface and becomes a sieve
+      // — see the floor in the vertex shader. Only ever binds on a narrow viewport.
+      uMinSize:      { value: 3.0 },
       uContrast: { value: 1.2 },
       uBright:   { value: -0.13 },
       uSpeed:    { value: 0.25 },
