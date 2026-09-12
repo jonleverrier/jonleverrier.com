@@ -164,33 +164,18 @@
         animation: c-field-arrow-send 300ms linear;
     }
 
-    // THE ARRIVAL plays the same whoosh, once, as the button lands — the greeting a
-    // pointer would get, given to everyone, since a touch visitor never hovers.
-    //
-    // DELAYED past the opening. The button is clipping its own contents while it
-    // widens, so a sparkle flying out during those 260ms is half-hidden behind the
-    // clip; held back, it sweeps across a button that has arrived and settled.
-    //
-    // Its own TRANSIENT class, and not .is-armed, for two reasons. The obvious one:
-    // .is-armed persists, and an svg left holding a finished animation stays
-    // animation-controlled — its own compositor layer, in a bar with the point cloud
-    // running behind it. The one that actually bites: the hover rule above sets the
-    // IDENTICAL animation shorthand, so if .is-armed already carried it, hovering
-    // afterwards would compute to the same value and never restart — arming the
-    // button once would have quietly killed its hover for the rest of the visit.
-    // submit-arm.js takes this off again on animationend.
-    &.is-arming svg {
-        animation: c-field-arrow-send 300ms linear 180ms;
-    }
-
+    // NO WHOOSH ON ARRIVAL. It was tried: the same sparkle a pointer gets, fired as
+    // the button landed. Two motions on one small control in the same breath is one
+    // too many — the button opening IS the event, and a glyph flying out of it a
+    // moment later reads as a second thing happening rather than the same thing
+    // finishing. The whoosh stays where it started, as the answer to a pointer.
     @media (prefers-reduced-motion: reduce) {
         // It still appears and disappears — that is information, not decoration — but
         // it arrives rather than animating in.
         transition: background-color 200ms ease, visibility 0s;
 
         &.is-armed:hover svg,
-        &.is-armed:focus-visible svg,
-        &.is-arming svg {
+        &.is-armed:focus-visible svg {
             animation: none;
         }
     }

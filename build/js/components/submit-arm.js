@@ -18,14 +18,14 @@
  * that appeared on a different rule from the one deciding what pressing it does would
  * be worse than no button at all: it would be confidently wrong.
  *
- * TWO CLASSES, and the CSS owns the motion (field-submit in _field.scss).
- * `.is-armed` is the STATE — it holds the button open for as long as the question
- * lasts. `.is-arming` is the ARRIVAL — one sparkle as it lands, taken off again on
- * animationend so the svg isn't left animation-controlled and, more to the point, so
- * the hover whoosh (the same keyframes) can still restart later.
+ * ONE CLASS, and the CSS owns the motion (field-submit in _field.scss). `.is-armed`
+ * holds the button open for as long as the question lasts, and the opening itself is
+ * the only motion — the submit's whoosh stays a reply to a pointer, not something
+ * that fires at the same time as the button arriving.
  *
- * Both fire only on the CROSSING — the keystroke where the answer actually changes —
- * so nothing is restarted mid-flight by the rest of the sentence being typed.
+ * It flips only on the CROSSING — the keystroke where the answer actually changes —
+ * so the transition is never restarted mid-flight by the rest of the sentence being
+ * typed.
  *
 **/
 
@@ -51,41 +51,15 @@ export function armSubmit(form) {
     // lands — a field that arrives pre-filled has to open the button on mount.
     let armed = null;
 
-    const onEnd = () => button.classList.remove('is-arming');
-
     const sync = () => {
         const value = input.value.trim();
         const ok = value !== '' && !looksLikeJunk(value);
         if (ok === armed) return; // nothing crossed; leave the transition alone
-        const first = armed === null;
         armed = ok;
         button.classList.toggle('is-armed', ok);
-
-        if (!ok) {
-            button.classList.remove('is-arming'); // collapsing: nothing to celebrate
-            return;
-        }
-
-        // Not on the settle-in run. A field that arrives already holding a question —
-        // a restored thread, a back-navigation — has a button that was always going to
-        // be there, and sparkling at something that didn't just happen is noise.
-        if (first) return;
-
-        // Read fresh each time rather than once at mount, so someone who changes the
-        // setting mid-visit is obeyed. Under reduced motion the class is never added:
-        // added-but-not-animating would never fire animationend, and it would sit on
-        // the button forever, blocking the hover whoosh for good.
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-        // Restart cleanly — removing the class and forcing a reflow is what lets the
-        // same animation play from the top on a second arming.
-        button.classList.remove('is-arming');
-        void button.offsetWidth;
-        button.classList.add('is-arming');
     };
 
     input.addEventListener('input', sync);
-    button.addEventListener('animationend', onEnd);
     // A field can arrive already filled — a restored thread, a back-navigation, or the
     // browser refilling it — so settle the state now rather than waiting for a
     // keystroke that may never come.
@@ -93,8 +67,6 @@ export function armSubmit(form) {
 
     return () => {
         input.removeEventListener('input', sync);
-        button.removeEventListener('animationend', onEnd);
         button.classList.remove('is-armed');
-        button.classList.remove('is-arming');
     };
 }

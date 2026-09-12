@@ -152,13 +152,26 @@ $c-case-toc-num: rem(34);
     // title opens — the hover fill that used to say so is gone — so it has to read as
     // a control from across the bar, not as punctuation after a word.
     //
-    // line-height 0 with a fixed width, so growing it can neither push the bar taller
-    // nor nudge the title: a box-drawing glyph at 26px otherwise sets the line box for
-    // the whole row.
-    font-size: rem(26);
-    line-height: 0;
+    // A FIXED SQUARE BOX that centres the glyph on both axes, rather than a
+    // zero-line-height sliver that centred it on neither.
+    //
+    // `line-height: 0` kept a 26px glyph from setting the line box for the whole row —
+    // which it has to, or the bar grows to fit the caret. But a zero-height box has no
+    // middle to sit in: the glyph hung off the baseline, which put it low against the
+    // label beside it. A square box with its own centring does the same job (nothing
+    // here can push the row taller, since the box is 18px whatever the font does) and
+    // has a middle for the glyph to occupy.
+    //
+    // Square, not just fixed-width, for a second reason: the open state turns this
+    // 180°, and a rotation spins about the box's centre. A box the glyph sits
+    // off-centre in would make the turn wobble rather than pivot.
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: rem(18);
-    text-align: center;
+    height: rem(18);
+    font-size: rem(26);
+    line-height: 1;
     color: getmap($colour, primary, 600);
     transition: transform 160ms ease;
 
@@ -166,12 +179,15 @@ $c-case-toc-num: rem(34);
         color: getmap($colour, primary, 650);
     }
 
-    // Ships pointing right; a quarter turn takes it to down. Rotating rather than
-    // swapping the character keeps it the same object moving, and means the turn can
-    // be animated — 180° on a triangle that already pointed down was a flip with
-    // nothing to watch.
+    // Ships pointing DOWN, at the sheet it will drop; half a turn takes it to up,
+    // at the bar the list folds back into. Rotating rather than swapping the
+    // character keeps it the same object moving, and means the turn can be animated.
+    //
+    // The rotation is what makes a 180° turn legible here. Down and up are mirror
+    // images, so as a straight character swap the change would be easy to miss —
+    // watching it travel is what says which way it just went.
     .c-case-toc__title[aria-expanded='true'] & {
-        transform: rotate(90deg);
+        transform: rotate(180deg);
     }
 }
 

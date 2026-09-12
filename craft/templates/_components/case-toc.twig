@@ -51,11 +51,12 @@
                     aria-controls="case-toc-list"
                 >
                     <span class="c-case-toc__label" data-case-toc-label>{{ headings|first.text }}</span>
-                    {# A RIGHT-pointing glyph, rotated to ▾ when open (see _case-toc.scss).
-                       Closed it points at what it will reveal; open it points down at the
-                       list it revealed — and one glyph turning says "this is the same
-                       thing, in its other state" where swapping ▸ for ▾ would not. #}
-                    <span class="c-case-toc__caret" aria-hidden="true">▸</span>
+                    {# A DOWN-pointing glyph, rotated to ▴ when open (see _case-toc.scss).
+                       Closed it points down at the list it will drop; open it points back
+                       up at the bar, which is where pressing again puts things. One glyph
+                       turning says "this is the same thing, in its other state" where
+                       swapping ▾ for ▴ would not. #}
+                    <span class="c-case-toc__caret" aria-hidden="true">▾</span>
                 </button>
 
                 {# aria-pressed, not a checkbox: this is a toggle on the view, and a

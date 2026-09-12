@@ -268,6 +268,51 @@ $c-clients-card-w--small: calc((#{$g-measure-wide} - 5 * #{$c-clients-gap}) / 6)
 }
 
 
+// FINGER-SCROLLABLE ON TOUCH — the Jonson strip only.
+//
+// The drift is a pointer-device flourish. On a phone it is the ONLY way the logos
+// move, which is the wrong way round: the strip visibly has more in it than fits, and
+// the reader has no way to get to the rest. Hand them the scroll.
+//
+// The auto-scroll STOPS rather than running alongside it. The track is two runs looped
+// by a transform, and a transform sliding underneath a native scroll position means
+// the two disagree about where any given logo is — you push a logo left and the
+// animation carries it back. Only one of them can answer to the finger, and it has to
+// be the finger.
+//
+// (hover: none) and (pointer: coarse) rather than a width breakpoint: this is about
+// what the visitor is pointing with, not how wide their screen is. A touchscreen
+// laptop keeps the drift, since it also has a real pointer.
+@media (hover: none) and (pointer: coarse) {
+    .c-jonson .c-clients {
+        overflow-x: auto;
+        overflow-y: hidden;
+        // Horizontal only — a strip is a row, and letting a diagonal swipe steal the
+        // page's vertical scroll makes it a trap to scroll PAST.
+        touch-action: pan-x;
+        overscroll-behavior-x: contain; // don't hand a flick at the end to the page
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        // THE EDGE FADE GOES. It is an absolutely-positioned ::after with inset: 0,
+        // and its containing block is now a scroll container's padding box — so it
+        // sizes to one screenful and scrolls away with the content, leaving a cream
+        // smear parked over the middle of the strip. It is also doing less here:
+        // it exists to say "this continues past the edge", which a strip you can
+        // actually push says better by moving.
+        &::after {
+            content: none;
+        }
+    }
+
+    .c-jonson .c-clients.is-ready .c-clients__track {
+        animation: none;
+    }
+}
+
 @keyframes c-clients-scroll {
     // Starts a run in and travels back to 0, so the logos drift LEFT TO RIGHT — the
     // opposite of the usual marquee, and of the case study strip on the same pages,

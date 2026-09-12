@@ -138,10 +138,11 @@ export function revealPictures(root = document, {immediate = false} = {}) {
         // painted gives the browser one state, and it simply draws the image — no
         // fade at all.
         //
-        // That is the common case, not a corner: a cached image is already
-        // `complete` when this runs, which covers every repeat visit, every
-        // back-navigation, and every image on a local dev server. The reveal was
-        // effectively invisible on exactly the machines it gets looked at on.
+        // A cached image no longer reaches here at all — it is caught above and
+        // snapped straight to the end state — so this now only ever runs for an
+        // image that genuinely arrived over the network while the placeholder was
+        // on screen. The two frames still matter for that case: the placeholder
+        // has to be painted before the loaded state can be interpolated from it.
         //
         // Two rather than one because a single rAF still lands inside the frame
         // being assembled; the second guarantees the placeholder state has been
@@ -182,6 +183,36 @@ export function revealPictures(root = document, {immediate = false} = {}) {
             armed.set(pic, start);
         };
 
+        // ALREADY HERE — so there is nothing to reveal. Snap to the end state and
+        // leave: no observer, no frames, no fade.
+        //
+        // This is the cached case, and it is most of them — a repeat visit, a
+        // back-navigation, scrolling back up to something already fetched, every
+        // page on a local dev server. The image is sitting in memory ready to
+        // paint, and playing a colour wash over it to fade it in says the opposite:
+        // that something is loading. An effect whose whole job is to cover a wait
+        // is noise when there was no wait.
+        //
+        // NOTE this reverses a deliberate decision. The two-frame `paint()` below
+        // exists precisely so the transition would still play for a `complete`
+        // image, on the grounds that the reveal was otherwise invisible on the
+        // machines it gets looked at on. That was solving for seeing the effect
+        // rather than for the effect doing its job. It still plays where it earns
+        // its place — a real first load, where the photo genuinely isn't there yet.
+        //
+        // `complete` is also true for an image that FAILED, and that is fine: the
+        // error path below does the same thing, since alt text has to be readable
+        // and a gradient sitting over it would make it illegible.
+        //
+        // Checked BEFORE observing, so a cached picture is never registered with
+        // the observer at all — nothing to unobserve, and no intersection callback
+        // for an element that is already finished.
+        if (img.complete) {
+            seen.add(pic);
+            pic.classList.add('is-loaded', 'is-developed');
+            return;
+        }
+
         // Observe from the start, not from the load event, so a picture already on
         // screen is known to be visible by the time its image arrives and reveals
         // without waiting for a second observer callback.
@@ -196,10 +227,6 @@ export function revealPictures(root = document, {immediate = false} = {}) {
         // `load` has neither problem, and the browser has decoded by the time it
         // fires in practice.
         //
-        // `complete` first, because for a cached image no load event is ever
-        // coming — that's the common case on a repeat visit or a back-navigation.
-        if (img.complete) { done(); return; }
-
         img.addEventListener('load', done, {once: true});
         // An image that fails still has to clear — the alt text needs to be
         // readable, and the blur underneath it would make it illegible.
