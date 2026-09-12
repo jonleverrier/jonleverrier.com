@@ -111,6 +111,21 @@ class AskController extends Controller
     private const RATE_WINDOW = 3600;   // 1 hour, rolling — matches CrmController's limiter
     private const RATE_REPLY = 'You’ve given me a real going over — I need a breather. Try me again shortly.';
     private const RATE_REPLY_FIELD = 'jonsonRateLimit'; // on the Home single, like the other two
+    // Analytics rows per IP per RATE_WINDOW. A SEPARATE ceiling from RATE_LIMIT above,
+    // because it is defending a different resource against a different cost.
+    //
+    // RATE_LIMIT protects the API bill, so junk, repeats and cached replays are
+    // answered ABOVE it and deliberately cost a visitor nothing — they spend no money.
+    // They do spend disk: logTurn() writes a row on every one of those paths, and
+    // nothing between the junk gate and the database bounded how often.
+    //
+    // Set far above honest use. A real visit writes a handful of turns; the busiest
+    // genuine session this site has seen is nowhere near 200, so no person will meet
+    // this. It exists for a script that lifts a CSRF token and posts junk with an
+    // invented sid, which is the one shape that reaches the writes without reaching
+    // the API.
+    private const LOG_LIMIT = 200;
+
     private const MAX_SUGGESTIONS = 3; // "where next?" prompt chips per answer — a cap, not a floor
     private const MUSIC_STRIP_MAX = 6; // latest N artists shown in the [[music]] strip
     private const SUBJECT_WINDOW_TURNS = 3; // how many recent turns still name the subject of a follow-up (see recentTurnsText)
@@ -2960,7 +2975,17 @@ class AskController extends Controller
         if ($this->logDone || $this->logSid === '') {
             return;
         }
+        // Set BEFORE the budget check, so a dropped write is still "handled" and no
+        // later completion point in this request tries again.
         $this->logDone = true;
+
+        // Bounds the WRITE, never the answer. By the time logTurn runs the visitor has
+        // already been served, so a dropped row costs them nothing — it costs only a
+        // line in the stats, which is the right thing to sacrifice when someone is
+        // hammering the endpoint hard enough to be writing 200 rows an hour.
+        if (!$this->withinLogBudget()) {
+            return;
+        }
 
         $vip = Jonson::getInstance()->vip->current();
 
@@ -3024,6 +3049,63 @@ class AskController extends Controller
      * that silences the site when its own bookkeeping breaks is worse than the loop
      * it is guarding against.
      */
+    /**
+     * Is this IP still within its analytics-write budget?
+     *
+     * The same INCR-with-fallback shape as withinRateLimit() below, and the same
+     * reasons for it — read that one's comments for why there are two keys and why the
+     * two windows differ. What differs here is only what it is protecting.
+     *
+     * SEPARATE KEYS AGAIN, and not shared with the rate limiter's: these count
+     * different events (every logged turn, versus only the ones that reach the API), so
+     * one counter could not answer both questions.
+     *
+     * FAILS OPEN, like the limiter. A cache outage should cost statistics, not
+     * correctness — and the disk exposure during one is no worse than it was before
+     * this existed.
+     */
+    private function withinLogBudget(): bool
+    {
+        if (Craft::$app->getConfig()->getGeneral()->devMode) {
+            return true;
+        }
+
+        try {
+            $cache = Craft::$app->getCache();
+            $ip = md5((string) Craft::$app->getRequest()->getUserIP());
+            $key = 'jonson-log:' . $ip;
+            $fallbackKey = 'jonson-log-files:' . $ip;
+
+            $counted = $cache instanceof ResilientRedisCache
+                ? $cache->increment($key, self::RATE_WINDOW)
+                : null;
+
+            if ($counted !== null) {
+                if ($counted > self::LOG_LIMIT) {
+                    // Logged once per turn it drops, which is itself bounded: the thing
+                    // that trips this is by definition already being counted.
+                    Craft::info(sprintf('analytics write budget reached for this IP (%d/%d), row dropped', $counted, self::LOG_LIMIT), 'jonson.rate');
+
+                    return false;
+                }
+
+                return true;
+            }
+
+            $count = (int) ($cache->get($fallbackKey) ?: 0);
+            if ($count >= self::LOG_LIMIT) {
+                Craft::info(sprintf('analytics write budget reached for this IP (%d/%d), row dropped', $count, self::LOG_LIMIT), 'jonson.rate');
+
+                return false;
+            }
+            $cache->set($fallbackKey, $count + 1, self::RATE_WINDOW);
+        } catch (\Throwable $e) {
+            Craft::warning('[jonson] analytics write budget unavailable: ' . $e->getMessage(), __METHOD__);
+        }
+
+        return true;
+    }
+
     private function withinRateLimit(): bool
     {
         if (Craft::$app->getConfig()->getGeneral()->devMode) {
