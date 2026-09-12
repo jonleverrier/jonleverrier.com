@@ -675,6 +675,21 @@ $c-jonson-line: #383910;
     align-items: stretch;
     gap: getmap($space, rhythm, 400);
 
+    // THE CONVERSATION FOOTER'S HOME BUTTON, which is a direct child here.
+    //
+    // Two footers share this class and their markup differs: the ask bar
+    // (_components/ask.twig) wraps its buttons in .c-jonson__nav, which centres them
+    // itself; the conversation footer (_views/single/home) has a single .c-jonson__home
+    // sitting directly in the flex box. So the rule on .c-jonson__nav never reached it
+    // and `align-items: stretch` left a fixed-size circle at the start of the cross
+    // axis — hard against the left edge, under a full-width input.
+    //
+    // align-self rather than changing the parent's align-items: the field and form
+    // still need to stretch, and only this one child wants centring.
+    > .c-jonson__home {
+        align-self: center;
+    }
+
     // From md: a 3-column grid — a left gutter wide enough for the circle, the
     // centred input, and a mirror gutter. In-flow (unlike absolute) so the circle
     // can't be clipped by an overflow ancestor or overlapped by the input. The
