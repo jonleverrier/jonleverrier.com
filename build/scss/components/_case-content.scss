@@ -497,37 +497,6 @@ $cc-hosts:   '.c-case-content__text, .c-case-content__code, .c-case-content__quo
 
 }
 
-// FULL BLEED ON A PHONE, out to the slab's own edge.
-//
-// DIRECT CHILDREN ONLY. A figure inside .c-case-content__pair is one half of a
-// two-up that shares a single box and an aspect-ratio; bleeding those would drag
-// both halves out of a grid whose whole purpose is that they agree about where the
-// bottom is. This is for the full-width figures that stand alone in the flow.
-//
-// What stands between such a figure and the slab edge is .c-content's inline padding
-// — rhythm500 at this width — so cancelling exactly that, and nothing more, lands the
-// image on the slab edge rather than the window's. The page inset either side of the
-// slab stays: the cream band is the page's frame and the work sits inside it.
-//
-// The radius goes with the bleed. A rounded corner reads as a card, which is right
-// when there is slab either side of the image; run to the edge there is no card left
-// to round and the curve just clips the photograph.
-//
-// Written against the same token .c-content pads with, so the two cannot drift — that
-// padding steps up at md and lg, which is why this is scoped below md rather than
-// given a number of its own.
-@include mq(until, md) {
-    .c-case-content > .c-case-content__figure {
-        margin-inline: calc(-1 * #{getmap($space, rhythm, 500)});
-        border-radius: 0;
-    }
-}
-
-// A legacy image without its breakout (AFTER the figure rule above, whose
-// `margin: 0` would otherwise beat the auto margins here): held to the reading measure and no wider
-// than the picture itself. `fit-content` hugs the image, so a 500px photo is a
-// 500px figure, centred — not a 740px slab with tan either side of it — and
-// the image never stretches past its own pixels.
 .c-case-content__figure--inline {
     width: fit-content;
     max-width: min(100%, #{rem(740)});
