@@ -31,14 +31,15 @@ $c-vip-ease: cubic-bezier(0.16, 1, 0.3, 1); // the site's settle curve (see _jon
 // matching is up in a header that has scrolled away.
 //
 // One number, no breakpoints: the disc is the same size everywhere and it is not
-// aligning to anything but the corner.
+// aligning to anything but the corner. 4rem — 40px on this site's 10px root — which
+// reads as deliberately placed where 20px read as nearly touching.
 
 .c-vip {
     position: fixed;
-    right: rem(20);
-    // The 20 plus whatever a notched phone reserves, so it clears the home bar rather
+    right: rem(40);
+    // The 40 plus whatever a notched phone reserves, so it clears the home bar rather
     // than sitting under it.
-    bottom: calc(#{rem(20)} + env(safe-area-inset-bottom, 0px));
+    bottom: calc(#{rem(40)} + env(safe-area-inset-bottom, 0px));
     // Above the sticky header (xl) would be wrong — this is chrome, not a dialog.
     // Under the contact panel, which lives in the top layer regardless.
     z-index: getmap($z-index, lg);
