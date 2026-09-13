@@ -37,6 +37,15 @@
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: rem(14);
+
+    // THREE ACROSS ON A PHONE. Six columns of a 12-cover list is two tidy rows on a
+    // desktop and six thumbnails to the row on a 390px screen — at that size the
+    // artwork stops being artwork, and the names under it wrap to two and three lines
+    // trying to fit a sixth of the width. Three doubles the cover and gives the name
+    // room to sit on one line.
+    @include mq(until, md) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
     margin-block: 0;
     padding: 0;
     list-style: none;
