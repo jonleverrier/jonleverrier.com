@@ -17,8 +17,19 @@
                         {% include '_includes/page/social.twig' %}
                     </div>
                     <div class="b-footer__primary-col">
-                        <h3 class="b-footer__whisper">Quick Links</h3>
-                        <ul class="c-footer__items">
+                        {# COLLAPSED ON A PHONE, open from md — see _footer.scss and
+                           footer-sections.js. The heading stays an h3 and the button goes
+                           INSIDE it: the outline still reads as a heading, and the thing
+                           you press is a real button with a real pressed state.
+
+                           Ships aria-expanded="true" so the list is open with no JS at all;
+                           the script closes it on a narrow screen rather than the markup
+                           hiding content the visitor might never get back. #}
+                        <h3 class="b-footer__whisper">
+                            <button type="button" class="b-footer__toggle" data-footer-toggle
+                                    aria-expanded="true" aria-controls="footer-quick-links">Quick Links</button>
+                        </h3>
+                        <ul class="c-footer__items" id="footer-quick-links" data-footer-panel>
                             {# Deliberately NOT data-wipe-thread: going to look at the
                                work isn't starting over, and the visitor may well come
                                back to the conversation — thread-memory restores it.
@@ -64,8 +75,11 @@
                     </div>
                     {% if discussCtas %}
                         <div class="b-footer__primary-col">
-                            <h3 class="b-footer__whisper">Discuss a project</h3>
-                            <ul class="c-footer__items">
+                            <h3 class="b-footer__whisper">
+                                <button type="button" class="b-footer__toggle" data-footer-toggle
+                                        aria-expanded="true" aria-controls="footer-discuss">Discuss a project</button>
+                            </h3>
+                            <ul class="c-footer__items" id="footer-discuss" data-footer-panel>
                                 {% for cta in discussCtas %}
                                     {% set href = cta.ctaUrl.url ?? null %}
                                     {% if href %}

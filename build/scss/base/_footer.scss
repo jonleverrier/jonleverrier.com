@@ -17,6 +17,83 @@ $b-footer-strapline: getmap($colour, primary, 430);
     color: getmap($colour, primary, 430); // the light blue every whisper label now shares
 }
 
+// ── The two link columns fold away on a phone ───────────────────────────────
+//
+// Stacked, the footer is a long scroll of links before the copyright line, and most
+// of it is not what a visitor came down here for. Below md each list collapses behind
+// its own heading; from md the columns sit side by side and there is nothing to save,
+// so the button stops being one.
+//
+// The button lives INSIDE the h3 (see footer.twig) and inherits its type, so it reads
+// as the heading it replaced rather than as a control dropped into the footer.
+.b-footer__toggle {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: inherit;
+    text-align: left;
+
+    @include mq(until, md) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        // A tap target the width of the column, with room above and below it: this is
+        // the only thing to press in a stack of them, and a whisper-sized label is a
+        // few pixels tall on its own.
+        gap: getmap($space, rhythm, 400);
+        padding-block: getmap($space, rhythm, 400);
+        cursor: pointer;
+
+        // THE TRIANGLE, drawn with borders — the same one the case study strip uses
+        // (see _case-toc.scss). Points down at the list it will drop, and turns to
+        // point up when that list is open. Borders rather than a glyph because a
+        // rotation turns about the box centre while a glyph's ink sits wherever the
+        // font puts it, so a character hops as it turns; a border triangle IS its
+        // border box and half a turn maps it onto itself.
+        &::after {
+            content: '';
+            flex: 0 0 auto;
+            width: 0;
+            height: 0;
+            border-left: rem(7) solid transparent;
+            border-right: rem(7) solid transparent;
+            border-top: rem(9) solid getmap($colour, primary, 600); // the brand red
+            transition: transform 160ms ease;
+        }
+
+        &[aria-expanded='true']::after {
+            transform: rotate(180deg);
+        }
+    }
+
+    // From md there is no folding, so there is no control: no pointer, no triangle,
+    // and it is taken out of the tab order — a button that cannot do anything should
+    // not be a stop on the way through the footer.
+    @include mq(from, md) {
+        pointer-events: none;
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid getmap($colour, primary, 430);
+        outline-offset: rem(2);
+    }
+}
+
+// The fold itself, and it is CSS that owns it rather than the script. Keyed on the
+// column's own aria-expanded and scoped to below md, so widening the window reveals
+// both lists whatever state they were left in — no resize handler, nothing to keep in
+// step, and no way for a list to be stranded hidden on a desktop.
+@include mq(until, md) {
+    .b-footer__primary-col:has([data-footer-toggle][aria-expanded='false']) [data-footer-panel] {
+        display: none;
+    }
+}
+
 // The site strapline, at the top of the footer's first column, above "Find me
 // elsewhere". Set at the `p` step — the size .b-logo__title ("Jon Leverrier") takes,
 // a step up from the description beneath it.

@@ -33,6 +33,7 @@ import {mountContactPanel} from './components/contact-panel.js';
 import {mountNavPanel} from './components/nav-panel.js';
 import {mountJonsonExit} from './components/jonson-exit.js';
 import {mountPictures} from './components/picture.js';
+import {mountFooterSections} from './components/footer-sections.js';
 import {mountTitleAway} from './components/title-away.js';
 import {mountToc} from './components/toc.js';
 import {mountCaseToc} from './components/case-toc.js';
@@ -279,6 +280,12 @@ window.addEventListener('beforeunload', disposeCodeBlocks, {once: true});
 // and NOT deferred behind anything: the placeholder is showing from first paint,
 // so every moment before this runs is a moment a cached image sits blurred.
 mountPictures();
+
+// Fold the footer's two link columns away on a phone. Runs on load rather than on
+// demand: it closes them, and a footer that opens its sections a beat after the page
+// settles is worse than one that was never going to fold at all.
+const disposeFooterSections = mountFooterSections(document);
+window.addEventListener('beforeunload', disposeFooterSections, {once: true});
 
 // Reveal-on-scroll for any element with `js-observe` (adds `is-inview`).
 const disposeObserver = mountObserver();
