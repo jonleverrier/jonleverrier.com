@@ -44,9 +44,12 @@ $b-footer-strapline: getmap($colour, primary, 430);
         justify-content: space-between;
         // A tap target the width of the column, with room above and below it: this is
         // the only thing to press in a stack of them, and a whisper-sized label is a
-        // few pixels tall on its own.
+        // few pixels tall on its own. rhythm500 either side takes the row past 44px,
+        // which matters more here than usual — with the two headings closed up
+        // against each other, thin rows would put two targets edge to edge with no
+        // dead space between them to miss into.
         gap: getmap($space, rhythm, 400);
-        padding-block: getmap($space, rhythm, 400);
+        padding-block: getmap($space, rhythm, 500);
         cursor: pointer;
 
         // THE TRIANGLE, drawn with borders — the same one the case study strip uses
@@ -117,6 +120,14 @@ $b-footer-strapline: getmap($colour, primary, 430);
 @include mq(until, md) {
     .b-footer__primary-col:has([data-footer-toggle][aria-expanded='false']) [data-footer-panel] {
         display: none;
+    }
+
+    // Air under an OPEN list. With the row gap at zero the last link sat almost on
+    // top of the next heading, so an open section ran straight into the closed one
+    // below it and the two read as one block. This only ever applies when the list is
+    // showing — closed, it is display:none and the padding goes with it.
+    [data-footer-panel] {
+        padding-bottom: getmap($space, rhythm, 600);
     }
 }
 
