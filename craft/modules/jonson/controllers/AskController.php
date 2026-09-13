@@ -327,6 +327,12 @@ class AskController extends Controller
         // the same text in the same order; it just stops invalidating the cache.
         $volatile = '';
 
+        // The clock first, because it used to sit at the end of the cached block and
+        // this keeps it in the same place in the prompt the model reads. It is the
+        // reason that block was being rewritten rather than read: it is accurate to
+        // the minute, and a cached prefix has to be byte-identical to be a hit.
+        $volatile .= "\n\n" . Jonson::getInstance()->persona->nowContext();
+
         // Turn-aware lead-gen nudge: the deeper into the conversation, the more the
         // [[next:]] onward prompts should lean toward the work / working together
         // rather than looping on generic get-to-know-you questions. Shapes only the

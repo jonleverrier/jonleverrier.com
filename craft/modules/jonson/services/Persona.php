@@ -22,9 +22,18 @@ class Persona extends Component
     {
         $personality = trim($this->personality() ?? '');
 
+        // NO nowContext() HERE. This is the CACHED block (AskController sets the
+        // cache_control breakpoint on it), and the clock changes every minute — so
+        // appending it re-keyed 25,400 tokens on almost every turn, at 2x input, to
+        // save nothing. Measured before the move: 551,437 tokens written against
+        // 50,126 read back, a ratio of 0.09 where a conversation should write once and
+        // read on every turn after. The two turns that DID hit the cache were the ones
+        // asked within the same minute as the turn before them.
+        //
+        // It is served from nowContext() into the volatile block instead — same text,
+        // same position in the prompt, just after the breakpoint. See AskController.
         return $this->directives()
-            . "\n\n" . $personality
-            . "\n\n" . $this->nowContext();
+            . "\n\n" . $personality;
     }
 
     /**
@@ -32,10 +41,15 @@ class Persona extends Component
      * when he mentions it. Uses Craft's system timezone (Settings → General) purely
      * for the CLOCK — it must NOT be used to name a location: the zone is
      * "Europe/Paris", which would read as "Paris", whereas his actual city lives in
-     * the CMS personality field. Built fresh on every request (the system prompt
-     * isn't cached), so it's always current — without it the model guesses "morning".
+     * the CMS personality field.
+     *
+     * PUBLIC, and it goes in the VOLATILE block. It used to be appended to prompt()
+     * under a comment reading "the system prompt isn't cached" — true when it was
+     * written, and false from the moment the cache breakpoint was added. A clock
+     * accurate to the minute inside a cached prefix means the prefix is never the same
+     * twice. Anything that moves belongs after the breakpoint, not before it.
      */
-    private function nowContext(): string
+    public function nowContext(): string
     {
         $now = new \DateTimeImmutable('now', new \DateTimeZone(Craft::$app->getTimeZone()));
         $hour = (int) $now->format('G');
