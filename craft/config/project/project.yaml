@@ -1,4 +1,4 @@
-dateModified: 1789124733
+dateModified: 1789323963
 elementSources:
   craft\elements\Entry:
     -
@@ -371,6 +371,18 @@ plugins:
     edition: standard
     enabled: true
     schemaVersion: 5.6.0.0
+  cloudflare:
+    edition: standard
+    enabled: true
+    schemaVersion: 1.0.1
+    settings:
+      apiKey: $CF_API_KEY
+      apiToken: null
+      authType: key
+      email: $CF_EMAIL
+      purgeElements:
+        - craft\elements\Asset
+      zone: $CF_ZONE
   cryptographer:
     edition: standard
     enabled: true
