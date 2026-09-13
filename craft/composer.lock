@@ -7796,11 +7796,11 @@
         },
         {
             "name": "verbb/doxter",
-            "version": "6.0.2",
+            "version": "6.0.3",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/verbb/doxter/zipball/c5e7c45e76ce298ccb565210b0fb8959fbf1d190",
-                "reference": "c5e7c45e76ce298ccb565210b0fb8959fbf1d190",
+                "url": "https://api.github.com/repos/verbb/doxter/zipball/38bd313549fd776ce1df20c32b089087417742dc",
+                "reference": "38bd313549fd776ce1df20c32b089087417742dc",
                 "shasum": ""
             },
             "require": {
@@ -7851,15 +7851,15 @@
                 "docs": "https://github.com/verbb/doxter",
                 "rss": "https://github.com/verbb/doxter/commits/v2.atom"
             },
-            "time": "2026-05-10T02:14:15+00:00"
+            "time": "2026-09-12T14:35:51+00:00"
         },
         {
             "name": "verbb/expanded-singles",
-            "version": "3.0.3",
+            "version": "3.0.4",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/verbb/expanded-singles/zipball/72d6c2942245ae3e0d2aa34509fabfc064423913",
-                "reference": "72d6c2942245ae3e0d2aa34509fabfc064423913",
+                "url": "https://api.github.com/repos/verbb/expanded-singles/zipball/c9acc86d551a3f7b97761f089397cf61258c3fd7",
+                "reference": "c9acc86d551a3f7b97761f089397cf61258c3fd7",
                 "shasum": ""
             },
             "require": {
@@ -7905,7 +7905,7 @@
                 "docs": "https://github.com/verbb/expanded-singles",
                 "rss": "https://github.com/verbb/expanded-singles/commits/v2.atom"
             },
-            "time": "2025-07-18T14:04:19+00:00"
+            "time": "2026-09-12T14:35:59+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
