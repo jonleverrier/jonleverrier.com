@@ -103,13 +103,12 @@ $b-footer-strapline: getmap($colour, primary, 430);
         row-gap: 0;
     }
 
+    // Nothing between the folded columns: all three are rows of one list now, and the
+    // separation that used to be needed above the first of them is gone with it —
+    // that column leads with the strapline, and the gap under THAT is the heading's
+    // own top margin, inside the column where it belongs.
     .b-footer__primary-col:has([data-footer-toggle]) {
-        margin-top: getmap($space, rhythm, 800); // the gap it used to get from the grid
-    }
-
-    .b-footer__primary-col:has([data-footer-toggle])
-        + .b-footer__primary-col:has([data-footer-toggle]) {
-        margin-top: 0; // sits straight under the one above it
+        margin-top: 0;
     }
 }
 
@@ -135,6 +134,13 @@ $b-footer-strapline: getmap($colour, primary, 430);
     [data-footer-panel] {
         margin-top: 0;
         padding-bottom: getmap($space, rhythm, 600);
+
+        // And nothing on the first thing INSIDE it either. The social row carries its
+        // own top margin, which would collapse straight out through this wrapper and
+        // put the icons further off their heading than the link lists are off theirs.
+        > :first-child {
+            margin-top: 0;
+        }
     }
 }
 

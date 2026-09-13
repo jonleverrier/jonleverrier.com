@@ -13,8 +13,15 @@
                         {% if strapline %}
                             <p class="b-footer__strapline">{{ strapline }}</p>
                         {% endif %}
-                        <h3 class="b-footer__whisper">Find me elsewhere</h3>
-                        {% include '_includes/page/social.twig' %}
+                        {# Folds like the two link columns below it. The strapline above
+                           stays put — it is the footer's opening line, not a section. #}
+                        <h3 class="b-footer__whisper">
+                            <button type="button" class="b-footer__toggle" data-footer-toggle
+                                    aria-expanded="true" aria-controls="footer-social">Find me elsewhere</button>
+                        </h3>
+                        <div id="footer-social" data-footer-panel>
+                            {% include '_includes/page/social.twig' %}
+                        </div>
                     </div>
                     <div class="b-footer__primary-col">
                         {# COLLAPSED ON A PHONE, open from md — see _footer.scss and
