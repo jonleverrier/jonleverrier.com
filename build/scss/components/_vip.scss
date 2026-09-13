@@ -19,29 +19,26 @@
 $c-vip-size: rem(65);
 $c-vip-ease: cubic-bezier(0.16, 1, 0.3, 1); // the site's settle curve (see _jonson.scss)
 
-// Where the header's Contact button sits in from the viewport's right edge: the
-// outer page padding (body > .b-wrap) plus the inner wrap's, which steps up at md
-// and lg. Past the design canvas the page centres and the slab's edge moves in by
-// half the surplus — the max() term follows it. The disc's right edge lands on the
-// button's right edge at every width.
-$c-vip-outer: var(--b-page-inset);
-@function vip-right($inner) {
-    @return calc(max(0px, (100vw - #{getmap($mq-breakpoints, xxl)}) / 2) + #{$c-vip-outer} + #{$inner});
-}
+// PEGGED TO THE WINDOW, 20px off the bottom-right corner at every width.
+//
+// It used to be aligned to the grid: the outer page padding plus the inner wrap's,
+// plus a `max(0px, (100vw - xxl) / 2)` term that tracked the page as it centres past
+// the design canvas, so the disc's right edge landed on the header Contact button's
+// right edge. Faithful to the layout and wrong on a wide screen — that term is half
+// the surplus, so the disc sat 310px in from the edge at 1920 and 630px at 2560,
+// floating a third of the way across the window with nothing near it to explain the
+// alignment. Fixed chrome reads as attached to the WINDOW, and the button it was
+// matching is up in a header that has scrolled away.
+//
+// One number, no breakpoints: the disc is the same size everywhere and it is not
+// aligning to anything but the corner.
 
 .c-vip {
     position: fixed;
-    right: vip-right(getmap($space, rhythm, 500));
-    @include mq(from, md) {
-        right: vip-right(getmap($space, rhythm, 600));
-    }
-    @include mq(from, lg) {
-        right: vip-right(getmap($space, rhythm, 800));
-    }
-    // The header's inset from the top, mirrored at the bottom (outer padding + the
-    // header's own top offset), so the disc sits where the Contact button would if
-    // the header ran along the foot of the slab. Clear of a notched phone's home bar.
-    bottom: calc(#{$c-vip-outer} + #{getmap($space, rhythm, 700)} + env(safe-area-inset-bottom, 0px));
+    right: rem(20);
+    // The 20 plus whatever a notched phone reserves, so it clears the home bar rather
+    // than sitting under it.
+    bottom: calc(#{rem(20)} + env(safe-area-inset-bottom, 0px));
     // Above the sticky header (xl) would be wrong — this is chrome, not a dialog.
     // Under the contact panel, which lives in the top layer regardless.
     z-index: getmap($z-index, lg);
