@@ -7,15 +7,22 @@
  *
  * THE SCRIPT OWNS ALMOST NOTHING. The markup ships open (aria-expanded="true"), so
  * with no JS the footer is exactly what it always was — every link there, nothing
- * hidden behind a control that cannot run. All this does is close them once on a
- * narrow screen, and flip the attribute when one is pressed.
+ * hidden behind a control that cannot run. All this does is set the attribute to
+ * match the width, and flip it when one is pressed.
  *
  * The FOLD is CSS, keyed on that same attribute and scoped to below md (see
- * _footer.scss). That is deliberate: widening the window reveals both lists whatever
- * state they were left in, with no resize handler, nothing to keep in step, and no
- * way to strand a list hidden on a desktop. The attribute is the state, the
- * stylesheet decides whether the state means anything at this width, and both agree
- * because there is only one of them.
+ * _footer.scss). The attribute is the state; the stylesheet decides whether the state
+ * means anything at this width.
+ *
+ * ON THE CROSSING, both ways. Reading the width once at mount was not enough: land on
+ * a desktop, where all three ship open, then narrow the window, and the fold applied
+ * to three sections still marked expanded — every list open, which is the one thing
+ * folding them was for. The reverse was quieter but worse: collapse a section on a
+ * phone, widen, and the button reported aria-expanded="false" over a list plainly on
+ * screen, which is a lie to anything reading the page rather than looking at it.
+ *
+ * So the attribute follows the query in both directions. Crossing the breakpoint
+ * resets what was open — deliberate, since the layout it belonged to is gone.
  *
 **/
 
@@ -27,11 +34,15 @@ export function mountFooterSections(root = document) {
     const toggles = [...root.querySelectorAll('[data-footer-toggle]')];
     if (!toggles.length) return () => {};
 
-    // Closed to start with, but only where closing means anything. Read once: a
-    // visitor who resizes past the breakpoint is handled by the stylesheet, not here.
-    if (window.matchMedia(NARROW).matches) {
-        toggles.forEach((t) => t.setAttribute('aria-expanded', 'false'));
-    }
+    // Closed where closing means something, open where it does not — and kept in step
+    // as the window crosses the breakpoint, in both directions.
+    const narrow = window.matchMedia(NARROW);
+    const syncToWidth = () => {
+        const collapsed = narrow.matches ? 'false' : 'true';
+        toggles.forEach((t) => t.setAttribute('aria-expanded', collapsed));
+    };
+    syncToWidth();
+    narrow.addEventListener('change', syncToWidth);
 
     const onClick = (e) => {
         const toggle = e.target.closest('[data-footer-toggle]');
@@ -45,6 +56,7 @@ export function mountFooterSections(root = document) {
     document.addEventListener('click', onClick);
 
     return () => {
+        narrow.removeEventListener('change', syncToWidth);
         document.removeEventListener('click', onClick);
         // Left open on teardown: the attribute is what the stylesheet reads, and a
         // footer whose links are hidden with nothing listening for a press would be

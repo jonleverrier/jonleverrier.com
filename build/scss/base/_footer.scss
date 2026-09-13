@@ -113,9 +113,11 @@ $b-footer-strapline: getmap($colour, primary, 430);
 }
 
 // The fold itself, and it is CSS that owns it rather than the script. Keyed on the
-// column's own aria-expanded and scoped to below md, so widening the window reveals
-// both lists whatever state they were left in — no resize handler, nothing to keep in
-// step, and no way for a list to be stranded hidden on a desktop.
+// column's own aria-expanded and scoped to below md, so the stylesheet decides whether
+// the state means anything at this width and can never strand a list hidden on a
+// desktop. footer-sections.js keeps the attribute honest across the breakpoint — it
+// has to, or a window narrowed from desktop folds three sections that are all still
+// marked open.
 @include mq(until, md) {
     .b-footer__primary-col:has([data-footer-toggle][aria-expanded='false']) [data-footer-panel] {
         display: none;
