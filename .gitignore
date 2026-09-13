@@ -17,6 +17,19 @@ node_modules
 /public/dist/*
 .tpl
 
+# The sprite map's Sass, written by @spiriit/vite-plugin-svg-spritemap on every
+# build from whatever is in build/icons. Generated output, so it changed whenever
+# the plugin version did and showed up dirty after a build nobody had asked to
+# make a change — most recently gaining an `icon-mask` entry that corresponds to no
+# icon at all.
+#
+# Safe to ignore even though build/scss/mixins/_icon.scss @use's it: the plugin
+# writes the file during the same build that compiles the Sass, so it exists by the
+# time it is needed. Verified by deleting it and building from nothing — 159 lines
+# back, CSS out, no error — which is exactly what a fresh clone and the server's own
+# `npm run build` do.
+/build/scss/templates/_sprite.scss
+
 # Designer mockup tool — kept locally, never committed
 vsp.html
 
