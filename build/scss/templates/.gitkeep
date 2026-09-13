@@ -1,0 +1,9 @@
+# This directory must exist in a fresh clone, even though its only occupant is
+# generated and ignored.
+#
+# @spiriit/vite-plugin-svg-spritemap writes _sprite.scss in here on every build, and
+# build/scss/mixins/_icon.scss @use's it. The plugin will not create the directory —
+# it opens the file for writing and fails with ENOENT if the path is not there — so
+# without this placeholder a clean checkout cannot build at all. That is exactly how
+# the 2026-09-13 deploy broke: untracking the generated file took the last tracked
+# file out of this directory with it, and git does not carry empty directories.
