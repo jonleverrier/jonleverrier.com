@@ -126,7 +126,14 @@ $b-footer-strapline: getmap($colour, primary, 430);
     // top of the next heading, so an open section ran straight into the closed one
     // below it and the two read as one block. This only ever applies when the list is
     // showing — closed, it is display:none and the padding goes with it.
+    //
+    // And NO top margin. The stack's own rhythm600 landed on top of the toggle's
+    // rhythm500 padding, which put 76px between "Quick Links" and its first link
+    // where "Find me elsewhere" sits 40px off its icons — the same relationship,
+    // spaced twice as far apart. The toggle's padding is the gap; it does not need a
+    // second one underneath it.
     [data-footer-panel] {
+        margin-top: 0;
         padding-bottom: getmap($space, rhythm, 600);
     }
 }
