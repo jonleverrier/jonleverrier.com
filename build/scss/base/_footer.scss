@@ -84,6 +84,32 @@ $b-footer-strapline: getmap($colour, primary, 430);
     }
 }
 
+// STACKED, THE TWO FOLDED COLUMNS ARE ONE LIST, so they close up against each other.
+//
+// The grid's rhythm800 row gap is right between the strapline block and the links,
+// which are different kinds of thing. Between two collapsed headings it is far too
+// much: each toggle already carries its own rhythm400 top and bottom, so the gap and
+// the padding stacked to about 68px of empty navy between two single lines of text.
+//
+// Row gap to zero and the separation put back as a margin on the FIRST folded column
+// only — positive margins, so nothing is clawing back space it was given. The second
+// one is identified as the folded column that follows another, which is exactly what
+// it is; no nth-child to fall out of step if a column is ever added or dropped.
+@include mq(until, md) {
+    .b-footer__primary-cols {
+        row-gap: 0;
+    }
+
+    .b-footer__primary-col:has([data-footer-toggle]) {
+        margin-top: getmap($space, rhythm, 800); // the gap it used to get from the grid
+    }
+
+    .b-footer__primary-col:has([data-footer-toggle])
+        + .b-footer__primary-col:has([data-footer-toggle]) {
+        margin-top: 0; // sits straight under the one above it
+    }
+}
+
 // The fold itself, and it is CSS that owns it rather than the script. Keyed on the
 // column's own aria-expanded and scoped to below md, so widening the window reveals
 // both lists whatever state they were left in — no resize handler, nothing to keep in
