@@ -81,6 +81,7 @@ class Vip extends Component
 
     /** The field holding the door's alternate slug — the short code form of the URL. */
     public const ALT_SLUG_FIELD = 'altSlug';
+    public const MAIN_SLUG_FIELD = 'mainSlug';
 
     private ?Entry $current = null;
     private bool $resolved = false;
@@ -106,6 +107,43 @@ class Vip extends Component
         }
 
         return strtolower($plugin->cryptographer->maskNumbers([crc32($slug)]));
+    }
+
+    /**
+     * Set the door's own URL on a vip entry — the full https://…/vip/{slug}, so Jon can
+     * copy it straight out of the CP and paste it into a message without assembling it
+     * by hand. Called before the entry saves (see Jonson::init), so it lands in the
+     * same save rather than needing a second one.
+     *
+     * Rebuilt from the slug on EVERY save, which is what keeps it in sync: rename the
+     * entry and this follows, exactly as the real URL does. It is therefore not
+     * hand-editable — whatever is typed in the field is replaced on save. That mirrors
+     * ALT_SLUG_FIELD below, and for the same reason: the slug is the door's identity,
+     * and both fields are only ever spellings of it.
+     *
+     * Built from the SLUG rather than read off $entry->uri, because the uri is not
+     * guaranteed to have been rebuilt yet at this point in the save — the slug has,
+     * since it is normalised during validation. siteUrl() supplies the host, so a door
+     * minted on dev reads as dev and the same entry on production reads as production.
+     */
+    public function fillMainSlug(Entry $entry): void
+    {
+        if (($entry->getSection()?->handle ?? '') !== self::SECTION) {
+            return;
+        }
+        if (!$entry->getFieldLayout()?->getFieldByHandle(self::MAIN_SLUG_FIELD)) {
+            return;
+        }
+
+        $slug = trim((string) $entry->slug);
+        if ($slug === '') {
+            // A brand-new entry saved before Craft has derived a slug from the title.
+            // Leave the field alone rather than write a URL that points at /vip/ —
+            // the next save, which will have one, fills it in.
+            return;
+        }
+
+        $entry->setFieldValue(self::MAIN_SLUG_FIELD, \craft\helpers\UrlHelper::siteUrl('vip/' . $slug));
     }
 
     /**

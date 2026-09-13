@@ -1,4 +1,4 @@
-dateModified: 1789323963
+dateModified: 1789336784
 elementSources:
   craft\elements\Entry:
     -
@@ -300,6 +300,7 @@ meta:
     56248dc5-d5bc-4930-84e1-33a86621fb8c: Topics # Topics
     85738cb0-617b-45ba-9842-28cb680b4591: Company # Company
     534287de-d8ca-48b9-ac50-33adaece4775: Pages # Pages
+    02125299-2fff-497a-b65d-fc5688b73020: Slug # Slug
     3126289e-aa51-4063-8ac8-7a3fa6f80dc6: 'Has breakout?' # Has breakout?
     20283626-153e-4279-aec4-3b29e5285338: 'Loop Animation?' # Loop Animation?
     56356920-3742-4704-9bb9-9dda638fcf8d: 'Has line numbers?' # Has line numbers?

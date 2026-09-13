@@ -78,6 +78,7 @@ class Jonson extends BaseModule
             function (ModelEvent $event) {
                 /** @var Entry $entry */
                 $entry = $event->sender;
+                $this->vip->fillMainSlug($entry);
                 $this->vip->fillAltSlug($entry);
             }
         );
