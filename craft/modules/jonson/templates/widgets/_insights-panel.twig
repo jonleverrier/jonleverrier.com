@@ -43,6 +43,15 @@
         {# "avg questions", not "avg turns" — same number, but nobody has to ask what a
            turn is. It is the drop-off read: how far a conversation gets before it stops. #}
         <div class="jonson-w__stat"><div class="jonson-w__n">{{ stats.avgTurns }}</div><div class="jonson-w__label" title="Average questions per session — how far a conversation gets before it stops">avg questions</div></div>
+        {# How fast Jonson FEELS: the silence before the first word, not how long the
+           whole reply takes to finish. A long answer is not a slow one — nobody sits
+           there feeling the length of something they are already reading.
+
+           Shown in seconds once it passes a second, because "4.2s" is a wait a person
+           recognises and "4200ms" is a number they have to convert. A median, so one
+           cold start cannot make a normal week look bad; a dash when nothing in the
+           period was measured, rather than a zero that would read as instant. #}
+        <div class="jonson-w__stat"><div class="jonson-w__n">{% if stats.waitMs is null %}—{% elseif stats.waitMs >= 1000 %}{{ (stats.waitMs / 1000)|number_format(1) }}s{% else %}{{ stats.waitMs }}ms{% endif %}</div><div class="jonson-w__label" title="Median time from pressing send to the first word appearing. Measures the wait, not the length of the answer — replies that never call the model (the junk gate, API errors) are excluded.">typical wait</div></div>
         {# No "suggestions taken" headline. It was totals over totals — chips offered on
            one turn are pressed on the next, so it could never pair exactly — and the
            Most suggested column below says the same thing properly, per chip, where a

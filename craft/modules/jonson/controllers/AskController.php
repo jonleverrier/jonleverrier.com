@@ -49,6 +49,10 @@ class AskController extends Controller
     private int $logPromptUses = 0;
     private ?int $logFromChip = null;
     private float $logStartedAt = 0.0;
+    // When the FIRST token reached the browser, on the same clock as $logStartedAt.
+    // 0.0 means none ever did — a degraded reply, or a turn that failed before it
+    // spoke — and that stays null in the log rather than being recorded as instant.
+    private float $logFirstTokenAt = 0.0;
     private string $logQuestion = '';
     // Token usage for this turn, accumulated across every API call it takes. Kept
     // apart rather than as one total because they are priced differently — a cache
@@ -184,6 +188,7 @@ class AskController extends Controller
         // Wall clock for the turn, started before any work so the number means what a
         // visitor experienced rather than what the API took.
         $this->logStartedAt = microtime(true);
+        $this->logFirstTokenAt = 0.0;
         $this->logQuestion = $question;
 
         // Conversation history for follow-ups — kept in Craft's cache (reliable
@@ -970,6 +975,14 @@ class AskController extends Controller
                     if (($delta['type'] ?? '') === 'text_delta' && ($cur['type'] ?? '') === 'text') {
                         $text = $delta['text'] ?? '';
                         if ($text !== '') {
+                            // The moment the silence ends. Taken HERE rather than at the
+                            // first event off the API: the earlier ones are message_start
+                            // and content_block_start, which carry no words, so timing to
+                            // them would flatter the number by however long the model
+                            // spends before its first actual token.
+                            if ($this->logFirstTokenAt === 0.0) {
+                                $this->logFirstTokenAt = microtime(true);
+                            }
                             $cur['text'] .= $text;
                             yield $this->sse('text', ['text' => $text]);
                         }
@@ -3002,6 +3015,11 @@ class AskController extends Controller
                 // and waffly", and that is a word count in any language worth counting.
                 'answerWords' => $answer === '' ? null : count(preg_split('/\s+/u', trim($answer)) ?: []),
                 'ms' => (int) round((microtime(true) - $this->logStartedAt) * 1000),
+                // The wait, as opposed to the duration. Null when nothing was ever
+                // streamed — see the migration.
+                'ttftMs' => $this->logFirstTokenAt === 0.0
+                    ? null
+                    : (int) round(($this->logFirstTokenAt - $this->logStartedAt) * 1000),
                 'inTokens' => $this->logInTokens,
                 'cacheReadTokens' => $this->logCacheRead,
                 'cacheWriteTokens' => $this->logCacheWrite,

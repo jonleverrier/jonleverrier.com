@@ -40,7 +40,7 @@ class Analytics extends Component
      * the write can never delay a reply.
      *
      * $turn keys: question, outcome, fromChip, chipsOffered, surfaces, pageUrl,
-     *             answerWords, ms
+     *             answerWords, ms, ttftMs
      * $visit keys: cid, originUrl, originEntryId, vipId, promptUses
      */
     public function recordTurn(string $sid, array $turn, array $visit = []): void
@@ -113,6 +113,7 @@ class Analytics extends Component
                 'outcome' => (string) ($turn['outcome'] ?? 'answered'),
                 'answerWords' => $this->int($turn['answerWords'] ?? null),
                 'ms' => $this->int($turn['ms'] ?? null),
+                'ttftMs' => $this->int($turn['ttftMs'] ?? null),
                 'inTokens' => $this->int($turn['inTokens'] ?? null),
                 'cacheReadTokens' => $this->int($turn['cacheReadTokens'] ?? null),
                 'cacheWriteTokens' => $this->int($turn['cacheWriteTokens'] ?? null),
@@ -306,7 +307,7 @@ class Analytics extends Component
         $sinceDb = Db::prepareDateForDb($since);
 
         $empty = [
-            'days' => $days, 'chats' => 0, 'questions' => 0, 'avgTurns' => 0.0,
+            'days' => $days, 'chats' => 0, 'questions' => 0, 'avgTurns' => 0.0, 'waitMs' => null,
             'tokensPerChat' => 0, 'tokensPeriod' => 0, 'tokensMonth' => 0,
             'cacheWriteMonth' => 0, 'cacheReadMonth' => 0,
             'chipCtr' => 0.0, 'toWork' => 0.0, 'toLead' => 0.0, 'leads' => 0,
@@ -340,7 +341,7 @@ class Analytics extends Component
 
             $sids = array_column($visits, 'sid');
             $turns = (new \craft\db\Query())
-                ->select(['question', 'fromChip', 'chipsOffered', 'outcome'])
+                ->select(['question', 'fromChip', 'chipsOffered', 'outcome', 'ttftMs'])
                 ->from(self::TURNS)
                 ->where(['sid' => $sids])
                 ->all();
@@ -573,6 +574,15 @@ class Analytics extends Component
                 'cacheReadMonth' => (int) ($month['readT'] ?? 0),
                 'questions' => count($turns),
                 'avgTurns' => $chats > 0 ? round($totalTurns / $chats, 1) : 0.0,
+                // How long Jonson takes to START answering — the wait, not the length
+                // of the reply. See the ttft migration for why that is the number worth
+                // watching.
+                //
+                // A MEDIAN, not a mean. One cold start or one retry is several seconds
+                // on its own, and at this volume a single outlier drags an average far
+                // enough to hide a typical turn that is perfectly fine. The median says
+                // what most visitors actually got.
+                'waitMs' => $this->median(array_column($turns, 'ttftMs')),
                 // Totals over totals, not a true per-impression rate: chips offered on
                 // one turn are pressed on the next, so they can't be paired exactly.
                 // Fine for trend, and labelled as approximate in the widget.
@@ -754,6 +764,31 @@ class Analytics extends Component
         usort($byVip, static fn($a, $b) => [$b['questions'], $b['visits']] <=> [$a['questions'], $a['visits']]);
 
         return $byVip;
+    }
+
+    /**
+     * The middle value, with the nulls dropped first.
+     *
+     * Null means "not measured" — a degraded reply that never called the model, or a
+     * turn logged before the column existed — and counting those as zero would be
+     * reporting a wait nobody had.
+     */
+    private function median(array $values): ?int
+    {
+        $values = array_values(array_filter($values, static fn($v) => $v !== null));
+        if (!$values) {
+            return null;
+        }
+
+        sort($values);
+        $n = count($values);
+        $mid = intdiv($n, 2);
+
+        // Even count: the two middle values averaged, so the answer does not depend on
+        // which side of the pair gets picked.
+        return $n % 2 === 1
+            ? (int) $values[$mid]
+            : (int) round(($values[$mid - 1] + $values[$mid]) / 2);
     }
 
     // ——— normalising, so nothing reaches the table longer or odder than the column ———
