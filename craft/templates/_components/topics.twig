@@ -25,7 +25,7 @@
     {% set total = craft.entries().section('notes').status('live').count() %}
     <div class="c-topics">
         <nav class="c-topics__panel" aria-label="Topics">
-        <h2 class="c-topics__whisper">Topics</h2>
+        <h2 class="c-topics__whisper u-font-whisper">Topics</h2>
         <ul class="c-topics__items">
             {% set isAll = (current is not defined or not current) and (allCurrent ?? true) %}
             <li class="c-topics__item">

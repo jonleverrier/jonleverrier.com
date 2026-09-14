@@ -67,8 +67,20 @@ p, .u-font-p {
     font-family: $g-font-primary;
 }
 
+// The whisper label — the small uppercase line above a section. Twelve components had
+// grown their own copy of this (footer, contact panel, content, share, ctas, jonson,
+// next, toc, topics…), every one of them setting typography(whisper) and uppercase, and
+// eleven of them setting weight 600. Only the colour genuinely differs between them,
+// because it changes with the surface. This is the shared part; components keep the
+// colour.
+//
+// 600, NOT THE 500 THIS USED TO CARRY. JonSonSans ships exactly two cuts — 500 Light and
+// 600 Bold — and every whisper on the site renders in the Bold one. The footer's labels
+// reached it by a different road: they were <h3>, asked the user agent for 700, and the
+// browser resolved that to the nearest face, which is the 600. So 600 is not a new
+// decision, it is what has always been on screen; 500 would have been the change.
 .u-font-whisper {
-    font-weight: 500;
+    font-weight: 600;
     font-style: normal;
     @include typography(whisper);
     text-transform: uppercase;

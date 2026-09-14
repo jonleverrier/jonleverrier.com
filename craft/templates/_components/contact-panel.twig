@@ -38,7 +38,7 @@
             </svg>
         </button>
 
-        <p class="c-contact-panel__whisper">{{ contact.title }}</p>
+        <p class="c-contact-panel__whisper u-font-whisper">{{ contact.title }}</p>
         {# A VIP gets the question asked of them by name, and asked for the reason the
            door was made — "Want to talk about the role, Marcus?" for a hiring manager
            (see services\Vip::contactLine; the single's own copy for anyone else). #}
@@ -76,7 +76,7 @@
                contact-panel.js on open — a strip measured while the dialog is closed
                has no width to size its loop from. #}
             <div class="c-contact-panel__clients">
-                <p class="c-contact-panel__clients-whisper">Trusted by</p>
+                <p class="c-contact-panel__clients-whisper u-font-whisper">Trusted by</p>
                 {% include '_components/clients' with { clients: clients, contained: true, small: true } only %}
             </div>
         {% endif %}

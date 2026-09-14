@@ -151,12 +151,11 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
 
 // Top cap: a line above the whisper, capped with a dot at its top end.
 .c-content__whisper {
-    @include typography(whisper);
+    // Type, case and weight come from .u-font-whisper in the markup; what stays here
+    // is this whisper's own colour and placing.
     position: relative; // anchor the top-cap dot
     margin: 0;
     text-align: center;
-    text-transform: uppercase;
-    font-weight: 600;
     color: $c-content-whisper;
 
     &::before {
@@ -459,15 +458,14 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
 // instead makes the outer box 1600 + 2 × padding, which is exactly the width
 // .c-content resolves to at the point its own children stop growing.
 .c-content__work-whisper {
-    @include typography(whisper);
+    // Type, case and weight come from .u-font-whisper in the markup; what stays here
+    // is this whisper's own colour and placing.
     box-sizing: content-box;
     max-width: rem(740); // mirrors .c-case-content__text
     margin: 0 auto getmap($space, rhythm, 500);
     // .b-wrap's inset + .c-content's, summed. Written as an addition rather than the
     // total so the two sources stay visible — change either and this follows.
     padding-inline: calc(var(--b-page-inset) + #{getmap($space, rhythm, 500)});
-    text-transform: uppercase;
-    font-weight: 600;
     // Green, matching .c-content__clients-whisper and the page's top whisper, NOT the
     // white .c-music__whisper — that one is set for the dark Jonson panel and would
     // disappear into the cream slab here.
@@ -529,10 +527,9 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
 }
 
 .c-content__clients-whisper {
-    @include typography(whisper);
+    // Type, case and weight come from .u-font-whisper in the markup; what stays here
+    // is this whisper's own colour and placing.
     margin: 0 0 getmap($space, rhythm, 500);
-    text-transform: uppercase;
-    font-weight: 600;
     color: $c-content-whisper; // green — matches the top whisper
 }
 
@@ -838,10 +835,9 @@ $c-content-foot-wide: 1440px; // the viewport at which the space beside the meas
 }
 
 .c-share__whisper {
-    @include typography(whisper);
+    // Type, case and weight come from .u-font-whisper in the markup; what stays here
+    // is this whisper's own colour and placing.
     margin: 0 0 getmap($space, rhythm, 600);
-    text-transform: uppercase;
-    font-weight: 600;
     color: $c-content-whisper;
 }
 

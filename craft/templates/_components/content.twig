@@ -97,7 +97,7 @@
 {% if (title ?? false) or (whisper ?? false) or hasBodyBlock %}
     <div class="c-content{{ modifier ? ' c-content--' ~ modifier : '' }}" data-content-grid>
         {% if whisper ?? false %}
-            <p class="c-content__whisper">{{ whisper }}</p>
+            <p class="c-content__whisper u-font-whisper">{{ whisper }}</p>
         {% endif %}
         {% if title ?? false %}
             <h1 class="c-content__title">{{ title }}</h1>
@@ -222,7 +222,7 @@
             <div class="c-content__work">
                 <div class="c-content__work-inner js-reveal">
                     {% if caseStudiesTitle %}
-                        <p class="c-content__work-whisper">{{ caseStudiesTitle }}</p>
+                        <p class="c-content__work-whisper u-font-whisper">{{ caseStudiesTitle }}</p>
                     {% endif %}
                     {% include '_components/case-studies-strip' with { studies: caseStudies } only %}
                 </div>
@@ -241,7 +241,7 @@
         {% if clients %}
             <div class="c-content__clients">
                 <div class="c-content__clients-inner js-reveal">
-                    <p class="c-content__clients-whisper">Brands I have worked with</p>
+                    <p class="c-content__clients-whisper u-font-whisper">Brands I have worked with</p>
                     {% include '_components/clients' with { clients: clients, contained: true, small: true } only %}
                 </div>
             </div>

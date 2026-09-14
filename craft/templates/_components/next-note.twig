@@ -15,7 +15,7 @@
     {% set isPrev = direction == 'prev' %}
     <a class="c-ctas__item c-next{{ isPrev ? ' c-next--prev' : '' }}" href="{{ note.url }}">
         <span class="c-next__text">
-            <span class="c-next__whisper">{{ isPrev ? 'Previous note' : 'Next note' }}</span>
+            <span class="c-next__whisper u-font-whisper">{{ isPrev ? 'Previous note' : 'Next note' }}</span>
             <span class="c-next__title">{{ note.title }}</span>
         </span>
         {# The arrow, drawn — the same path the testimonials' buttons use — so it

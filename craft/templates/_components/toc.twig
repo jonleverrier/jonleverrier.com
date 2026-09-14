@@ -13,7 +13,7 @@
 {% if headings is defined and headings|length %}
     <nav class="c-toc" aria-label="Summary" data-toc>
         <details class="c-toc__details" open>
-            <summary class="c-toc__whisper">Summary</summary>
+            <summary class="c-toc__whisper u-font-whisper">Summary</summary>
             <ol class="c-toc__items">
                 {% for h in headings %}
                     <li class="c-toc__item"><a class="c-toc__link" href="#{{ h.id }}">{{ h.text }}</a></li>

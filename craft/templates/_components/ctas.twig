@@ -6,7 +6,7 @@
 {% if ctas ?? false %}
     <div class="c-ctas">
         {% if heading ?? false %}
-            <p class="c-ctas__whisper">{{ heading }}</p>
+            <p class="c-ctas__whisper u-font-whisper">{{ heading }}</p>
         {% endif %}
         {% for cta in ctas %}
             {% set href = cta.ctaUrl.url ?? null %}

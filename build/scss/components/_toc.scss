@@ -128,13 +128,12 @@ $c-toc-top: rem(120); // clear of the sticky header
 // the end that turns when open; from wide it's a plain title — the details is
 // held open by toc.js, and the marker and pointer go.
 .c-toc__whisper {
+    // Type, case and weight come from .u-font-whisper in the markup; what stays here
+    // is this whisper's own colour and placing.
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: rem(12);
-    @include typography(whisper);
-    text-transform: uppercase;
-    font-weight: 600;
     color: getmap($colour, primary, 450); // the content-page whisper blue
     cursor: pointer;
     list-style: none; // no disclosure triangle — the chevron below instead

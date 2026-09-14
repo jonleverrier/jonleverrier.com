@@ -15,10 +15,10 @@
                         {% endif %}
                         {# Folds like the two link columns below it. The strapline above
                            stays put — it is the footer's opening line, not a section. #}
-                        <h3 class="b-footer__whisper">
+                        <p class="b-footer__whisper u-font-whisper">
                             <button type="button" class="b-footer__toggle" data-footer-toggle
                                     aria-expanded="true" aria-controls="footer-social">Find me elsewhere</button>
-                        </h3>
+                        </p>
                         <div id="footer-social" data-footer-panel>
                             {% include '_includes/page/social.twig' %}
                         </div>
@@ -32,10 +32,10 @@
                            Ships aria-expanded="true" so the list is open with no JS at all;
                            the script closes it on a narrow screen rather than the markup
                            hiding content the visitor might never get back. #}
-                        <h3 class="b-footer__whisper">
+                        <p class="b-footer__whisper u-font-whisper">
                             <button type="button" class="b-footer__toggle" data-footer-toggle
                                     aria-expanded="true" aria-controls="footer-quick-links">Quick Links</button>
-                        </h3>
+                        </p>
                         <ul class="c-footer__items" id="footer-quick-links" data-footer-panel>
                             {# Deliberately NOT data-wipe-thread: going to look at the
                                work isn't starting over, and the visitor may well come
@@ -82,10 +82,10 @@
                     </div>
                     {% if discussCtas %}
                         <div class="b-footer__primary-col">
-                            <h3 class="b-footer__whisper">
+                            <p class="b-footer__whisper u-font-whisper">
                                 <button type="button" class="b-footer__toggle" data-footer-toggle
                                         aria-expanded="true" aria-controls="footer-discuss">Discuss a project</button>
-                            </h3>
+                            </p>
                             <ul class="c-footer__items" id="footer-discuss" data-footer-panel>
                                 {% for cta in discussCtas %}
                                     {% set href = cta.ctaUrl.url ?? null %}

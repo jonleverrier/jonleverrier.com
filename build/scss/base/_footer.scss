@@ -11,9 +11,14 @@
 // and it reads as disabled rather than secondary.
 $b-footer-strapline: getmap($colour, primary, 430);
 
+// Type, case and weight come from .u-font-whisper in the markup — the shared label
+// treatment. What is left here is the only thing that is the footer's own: its colour,
+// which changes with the surface a whisper sits on.
+//
+// Margins were never at stake in the move from <h3> to <p>: the reset zeroes them on
+// both, and the space above each label belongs to the column's `> * + *` flow rule,
+// which does not care what the element is.
 .b-footer__whisper {
-    @include typography(whisper);
-    text-transform: uppercase;
     color: getmap($colour, primary, 430); // the light blue every whisper label now shares
 }
 
