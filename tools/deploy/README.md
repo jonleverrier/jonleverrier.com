@@ -1,5 +1,8 @@
 # Production deploy
 
+Standing up a **new server** from scratch is a different job with its own traps —
+see `NEW-SERVER.md` beside this file.
+
 `forge-deploy.sh` is the canonical copy of the script that lives in **Laravel Forge →
 Site → Deploy Script**. Nothing runs it from the repo. Edit it here, commit, then
 select-all in the Forge textarea and paste the whole file over the top.
