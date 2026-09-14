@@ -11,7 +11,13 @@
            <clipPath>, and the sprite's svgo pass strips exactly those attributes
            (see vite.config.js). The portrait is decoration — aria-hidden, and the
            roundel keeps the accessible name — so a screen reader hears one logo. #}
-        <a class="b-logo__link" href="{{ baseUrl }}" title="Home" data-wipe-thread>
+        {# NAMED, not just titled. The link's accessible name would otherwise come from
+   the roundel's own <title> ("Jon Leverrier Logo"), which names the picture
+   rather than saying where the link goes — and it would disagree with the
+   tooltip a sighted user sees. aria-label sets the link's name and title shows
+   the same words on hover, so the two cannot drift apart. #}
+        <a class="b-logo__link" href="{{ baseUrl }}"
+           title="{{ siteName }}: Home" aria-label="{{ siteName }}: Home" data-wipe-thread>
             <svg class="b-logo__mark b-logo__mark--roundel" role="img" aria-labelledby="svg-logo" xmlns="http://www.w3.org/2000/svg" width="65" height="65" viewBox="0 0 65 65">
                 <title id="svg-logo">{{ siteName }} Logo</title>
                 <style>
