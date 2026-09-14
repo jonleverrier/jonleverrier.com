@@ -28,6 +28,14 @@ Escape hatch: if the build fails for reasons unrelated to the code (Chrome crash
 page erroring under the crawler), run it once with `SKIP_CRITICAL=1 npm run build` to
 get a release out, then regenerate.
 
+**`APP` and `SHARED` are pinned, not derived from `FORGE_SITE_PATH`.** Forge exports
+that variable as the *site* directory — `/home/forge/jonleverrier.com` — while the code
+lives one level down in `current/`, with `shared/` as its sibling. An earlier version
+derived `APP` from it and every deploy on a rebuilt server died immediately with
+`No app at /home/forge/jonleverrier.com`. The guard did its job; the path was simply
+wrong. Pinning both to `$HOME/jonleverrier.com` removes the guesswork, at the cost of
+the script no longer being portable to a differently-named site — which it never was.
+
 **No `craft up`.** Composer's own post-install hooks already run `clear-caches/all`,
 `migrate/all` and `project-config/apply`. Adding one would do the same work twice.
 
@@ -68,7 +76,7 @@ before ever reaching the last line.
 
 **If a deploy fails with a "command not found" for something that is obviously
 output**, check the script field for pasted log text before believing anything else.
-After pasting, `forge-deploy.sh` should be 36 lines ending in `echo "Deploy
+After pasting, `forge-deploy.sh` should be 41 lines ending in `echo "Deploy
 complete"`.
 
 ## If the tail keeps getting skipped

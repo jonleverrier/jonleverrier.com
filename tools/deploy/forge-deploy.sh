@@ -4,8 +4,13 @@
 # commit, then paste the whole file into Forge. See README.md beside it.
 set -euo pipefail
 
-APP="${FORGE_SITE_PATH:-$HOME/jonleverrier.com/current}"
-SHARED="$(dirname "$APP")/shared"
+# PINNED, NOT INHERITED. Forge exports FORGE_SITE_PATH as the SITE directory
+# (/home/forge/jonleverrier.com) — one level above the app, because this site keeps the
+# code in current/ with shared/ as its sibling. Deriving APP from it lands on the parent,
+# the craft/composer.json guard below fires, and the deploy aborts before doing anything.
+SITE="$HOME/jonleverrier.com"
+APP="$SITE/current"
+SHARED="$SITE/shared"
 BRANCH="${FORGE_SITE_BRANCH:-main}"
 FPM="${FORGE_PHP_FPM:-php8.4-fpm}"
 
