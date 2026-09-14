@@ -33,12 +33,18 @@ composer install --no-dev --no-interaction --optimize-autoloader --no-progress
 echo "==> front end"
 cd "$APP"
 npm ci --no-audit --no-fund
-# TEMPORARY — MIGRATION ONLY. Remove SKIP_CRITICAL=1 once DNS points at this server.
-# The critical-CSS step renders URL in headless Chrome to find what is above the fold,
-# and jonleverrier.com still resolves to the OLD box, so it would either measure the old
-# site or fail outright. Deploy once with it set, cut DNS over, then delete this line's
-# prefix and deploy again to generate real critical CSS.
-SKIP_CRITICAL=1 URL=https://jonleverrier.com/ npm run build
+# NO SKIP_CRITICAL HERE. It was set during the server migration, when jonleverrier.com
+# still resolved to the old box and the critical step would have measured the wrong site.
+# DNS has moved, and leaving it set cost more than the whole JS budget: with no critical
+# CSS the stylesheet is loaded async (media=print/onload), so the page painted UNSTYLED
+# and re-laid out when it landed — the front door jumped 133px -> 789px at ~2.1s on a
+# throttled phone. Measured on prod 2026-09-15: CLS 0.446 (0.409 of it that one reflow)
+# and LCP 4.1s, against 22kB of inlined critical CSS locally versus 2.2kB on prod.
+#
+# If this ever needs to come back (Chrome crashing in the build, a page erroring under
+# the crawler), set it for ONE deploy to get a release out, then remove it and deploy
+# again. Do not leave it.
+URL=https://jonleverrier.com/ npm run build
 
 echo "==> reloading $FPM"
 sudo -n /usr/sbin/service "$FPM" reload

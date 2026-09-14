@@ -18,6 +18,24 @@ derived from anything in the repo.
 does if the site's PHP version is ever changed. Everything above the reload has run
 by then, so the deploy *looks* complete and only the last step is missing.
 
+**`SKIP_CRITICAL=1` must not be left in the script.** It was set for the server
+migration, while jonleverrier.com still resolved to the old box and the critical step
+would have measured the wrong site. It then stayed set, and it was the single most
+expensive thing on the site. Without critical CSS the stylesheet is loaded async
+(`media="print" onload="this.media='all'"`), so the page paints unstyled and re-lays
+out when it arrives: measured on prod 2026-09-15, the front door jumped 133px to 789px
+at ~2.1s on a throttled phone, giving **CLS 0.446** (0.409 of it that one reflow) and
+**LCP 4.1s**. Locally the homepage inlines 22kB of critical CSS; prod was sending 2.2kB
+with no `.c-frontdoor` or `.b-header` rules in it at all.
+
+If it ever has to come back (Chrome crashing in the build, a page erroring under the
+crawler), set it for ONE deploy to get a release out, then remove it and deploy again.
+
+Check it is working from outside: `curl -s https://jonleverrier.com/` and look for a
+~20kB inline `<style>` containing `c-frontdoor`. Note the critical CSS is only inlined
+on a visitor's FIRST load — there is a `criticalcss` cookie (see
+`modules/frontend/variables/FrontEndVariable.php`), so test with a clean jar.
+
 **`URL=` on the build is not optional.** The build defaults to the local hostname, and
 the critical-CSS step renders that URL in headless Chrome to work out what is above
 the fold. Pointed at localhost it silently produces nothing useful.
