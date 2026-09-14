@@ -33,9 +33,6 @@ class NotifyNewLead extends BaseJob
 {
     public int $entryId;
 
-    /** Telegram rejects anything longer, and a lead's message can run on. */
-    private const MAX_MESSAGE = 4096;
-
     public function execute($queue): void
     {
         $token = App::env('TELEGRAM_BOT_TOKEN');
@@ -74,19 +71,18 @@ class NotifyNewLead extends BaseJob
     }
 
     /**
-     * The message — DELIBERATELY WITHOUT THE LEAD'S DETAILS.
+     * The message — ONE SENTENCE, AND NOTHING ELSE.
      *
-     * It carries the fact and the time, and a link to go and read the rest. Nothing
-     * about the person: no name, no email, no words of theirs, not even the page they
-     * wrote from.
+     * The fact and the time. No name, no email, no words of theirs, not the page they
+     * wrote from, and no link.
      *
-     * That is a privacy decision, not a brevity one. A notification puts whatever it
-     * contains into Telegram's servers and onto a lock screen, where it is readable by
+     * That is a privacy decision rather than a stylistic one. A notification puts
+     * whatever it contains into Telegram's servers and onto a lock screen, readable by
      * anyone who glances at the phone — and an enquiry is someone else's personal data,
-     * held on a lawful basis that does not obviously extend to being pushed to a chat
-     * app. The control panel is behind a login and is where it belongs.
+     * held on a basis that does not obviously stretch to a chat app. Even the control
+     * panel link went: it is one tap from knowing, and knowing is the whole job here.
      *
-     * The link leaks nothing: an entry id and a hostname.
+     * $entry is still the parameter because the TIME comes from it. Nothing else does.
      */
     private function body(Entry $entry): string
     {
@@ -99,14 +95,6 @@ class NotifyNewLead extends BaseJob
             ? $entry->dateCreated->setTimezone(new \DateTimeZone(\Craft::$app->getTimeZone()))->format('H:i')
             : '';
 
-        $lines = ['You got a new lead from Jonson' . ($when !== '' ? ' at ' . $when : '')];
-
-        $cpUrl = $entry->getCpEditUrl();
-        if ($cpUrl) {
-            $lines[] = '';
-            $lines[] = '<a href="' . htmlspecialchars($cpUrl, ENT_QUOTES, 'UTF-8') . '">Read it in the control panel</a>';
-        }
-
-        return mb_substr(implode("\n", $lines), 0, self::MAX_MESSAGE);
+        return 'You got a new lead from Jonson' . ($when !== '' ? ' at ' . $when : '');
     }
 }
