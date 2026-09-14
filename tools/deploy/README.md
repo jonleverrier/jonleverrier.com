@@ -45,9 +45,12 @@ the code it started with, and a deploy that changes a job would not take effect 
 something happened to restart it. `forge` has passwordless sudo for
 `supervisorctl restart *`, so this needs nothing extra.
 
-This matters more than it sounds since `runQueueAutomatically` is now **off**: web
-requests no longer run queued work, so the daemon is the only thing that does. If it is
-down, nothing runs — no lead notifications, no note memories.
+`runQueueAutomatically` is left ON, at its default. It was briefly turned off here on
+the reasoning that web requests should not run queued work — which is wrong: Craft only
+runs the queue automatically **on control panel visits**, never on front-end requests.
+Disabling it saved visitors nothing and removed the one backstop there was, since
+opening the CP will drain a queue the daemon has stopped consuming. The two together
+are belt and braces, and Craft's queue reserves rows, so nothing runs twice.
 
 **No `craft up`.** Composer's own post-install hooks already run `clear-caches/all`,
 `migrate/all` and `project-config/apply`. Adding one would do the same work twice.
