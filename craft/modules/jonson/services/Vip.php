@@ -223,6 +223,17 @@ class Vip extends Component
         if (!$entry->getFieldLayout()?->getFieldByHandle(self::HITS_FIELD)) {
             return;
         }
+
+        // NOT JON. There is one kind of logged-in user here and it is whoever reads
+        // this number in the CP, so opening a door to check it works was adding to the
+        // count of times the recipient had opened it — the one thing the number is for.
+        //
+        // Guarded HERE rather than in enter(), deliberately: the cookie is still set and
+        // the visit is still primed, so testing a door shows exactly what the VIP will
+        // see. Only the counter looks away.
+        if (Craft::$app->getUser()->getIdentity() !== null) {
+            return;
+        }
         try {
             $entry->setFieldValue(self::HITS_FIELD, (int) $entry->{self::HITS_FIELD} + 1);
             if (!Craft::$app->getElements()->saveElement($entry, false, false, false)) {
