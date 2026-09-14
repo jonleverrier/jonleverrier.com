@@ -141,6 +141,22 @@
     @include mq(from, lg) {
         font-size: rem(80);
     }
+
+    // NO ORPHANS. The measure below wraps this to two lines by design, but the browser
+    // fills the first line and leaves whatever is over: "How can I" / "help?", a single
+    // word stranded under a full line. `balance` asks for lines of even length instead
+    // — "How can" / "I help?" — which is what the hero was drawn with.
+    //
+    // Chosen over the alternatives because the headline is CMS copy (longTitle), so it
+    // has to work for any wording: a non-breaking space between the last two words
+    // would need re-typing for every title and silently do nothing when the title
+    // changed. `pretty` is the other candidate and is the better choice for body text,
+    // where it only guards the final line; for a two-line display heading, evening both
+    // lines is the point.
+    //
+    // Unsupported browsers ignore it and wrap exactly as they do today — Chrome 114+,
+    // Safari 17.5+, Firefox 121+ get the balanced version, and nobody gets worse.
+    text-wrap: balance;
     font-weight: 600;
     margin: 0 auto;
     // A fixed measure, NOT ch. This was 16ch, and in JonSonSans the "0" glyph is a
