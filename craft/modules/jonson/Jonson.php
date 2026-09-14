@@ -107,17 +107,54 @@ class Jonson extends BaseModule
         // PRESENCE — who is on the site right now (services\Analytics).
         //
         // EVENT_AFTER_RENDER_PAGE_TEMPLATE, not a request event: it fires once per
-        // actual page render, so assets, action requests and the CP never reach it,
-        // and it costs no extra round trip — the visitor already asked for this page.
+        // actual page render, so assets never reach it, and it costs no extra round
+        // trip — the visitor already asked for this page.
         //
-        // Guarded on a site request with a real response, so a 404 template or a
-        // preview doesn't put a phantom visitor on the dashboard.
+        // EVERYTHING ELSE IS GUARDED EXPLICITLY BELOW. This comment used to claim that
+        // action requests, 404s and previews never got here, and the live presence table
+        // disagreed: an asset-transform action and a probe at /x were both sitting in it
+        // as people. The event narrows the field; it does not do the filtering.
         Event::on(
             View::class,
             View::EVENT_AFTER_RENDER_PAGE_TEMPLATE,
             function() {
                 $request = Craft::$app->getRequest();
                 if (!$request->getIsSiteRequest() || $request->getIsConsoleRequest()) {
+                    return;
+                }
+
+                // getIsSiteRequest() ONLY MEANS "NOT THE CONTROL PANEL". It was doing the
+                // job the comment above claims for it — keeping the CP out — and none of
+                // the rest. A front-end action request passes it happily, which is how
+                // /actions/assets/generate-transform ended up in the presence table as a
+                // live visitor. So the other three exclusions have to be stated.
+                if ($request->getIsActionRequest()) {
+                    return;
+                }
+
+                // A 404 is a page render like any other — the error template goes through
+                // this same event — so a crawler probing /x counted as somebody on the
+                // site. Measured, not assumed: with devMode off (as in production) the
+                // presence row for a real page was overwritten by the probe.
+                //
+                // ASKED OF THE ERROR HANDLER, NOT THE RESPONSE. The obvious check —
+                // getStatusCode() !== 200 — does nothing here: the status is still 200
+                // while the template renders and only becomes 404 on the way out. The
+                // error handler, by contrast, is already holding the exception it is
+                // rendering a page for.
+                //
+                // devMode hides all of this locally, which is why it went unnoticed: with
+                // devMode on, a 404 is the developer exception page, not a site template,
+                // and the event never fires at all.
+                if (Craft::$app->getErrorHandler()->exception !== null || $request->getIsPreview()) {
+                    return;
+                }
+
+                // AND NOT JON. There is exactly one kind of logged-in user here, and it
+                // is whoever is reading this dashboard: a tab left open on the live site
+                // put the author into his own "who is here right now" count. VIP visitors
+                // are unaffected — a VIP door is a signed cookie, not a Craft account.
+                if (Craft::$app->getUser()->getIdentity() !== null) {
                     return;
                 }
 
@@ -151,7 +188,13 @@ class Jonson extends BaseModule
 
                 $this->analytics->touchPresence(
                     $token,
-                    (string) $request->getPathInfo(),
+                    // getPathInfo() returns '' for the homepage, and Analytics::url()
+                    // answers null to an empty string — so every homepage visit stored a
+                    // null path. Normalised HERE rather than in that helper, because the
+                    // helper also cleans originUrl/exitUrl/pageUrl, where empty means
+                    // "unknown" and turning it into '/' would invent homepage visits in
+                    // the turn stats.
+                    $request->getPathInfo() ?: '/',
                     // Mid-conversation if a thread exists for this session — the same
                     // cache key AskController keeps the history under.
                     (bool) Craft::$app->getCache()->exists('jonson-history:' . $token),
