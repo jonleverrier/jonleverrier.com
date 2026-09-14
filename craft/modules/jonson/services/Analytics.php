@@ -45,6 +45,10 @@ class Analytics extends Component
      */
     public function recordTurn(string $sid, array $turn, array $visit = []): void
     {
+        if ($this->isStaff()) {
+            return;
+        }
+
         $sid = $this->id($sid);
         if ($sid === null) {
             return;
@@ -136,6 +140,10 @@ class Analytics extends Component
      */
     public function recordExit(string $sid, ?string $from, ?string $to): void
     {
+        if ($this->isStaff()) {
+            return;
+        }
+
         $sid = $this->id($sid);
         if ($sid === null) {
             return;
@@ -173,6 +181,10 @@ class Analytics extends Component
      */
     public function convert(string $cid, int $leadEntryId): void
     {
+        if ($this->isStaff()) {
+            return;
+        }
+
         $cid = $this->id($cid);
         if ($cid === null || $leadEntryId <= 0) {
             return;
@@ -224,6 +236,10 @@ class Analytics extends Component
      */
     public function touchPresence(string $token, string $path, bool $inChat = false): void
     {
+        if ($this->isStaff()) {
+            return;
+        }
+
         $token = $this->id($token);
         if ($token === null) {
             return;
@@ -811,6 +827,27 @@ class Analytics extends Component
      * token someone pasted), and this table is about which PAGE, not which request.
      * Dropping it means there is nothing to scrub later.
      */
+    /**
+     * Is this request Jon, signed into the control panel?
+     *
+     * EVERY WRITE IN THIS SERVICE ASKS FIRST. The numbers here answer questions about
+     * VISITORS — how many are on the site, what they asked, which conversation turned
+     * into a lead — and the author testing his own work is not one. A tab left open on
+     * the live site was putting him in his own "who is here right now" count, and every
+     * question asked while checking an answer was landing in the turn stats as demand.
+     *
+     * There is exactly one kind of logged-in user on this site and it is whoever reads
+     * these numbers, so "is anyone authenticated" is the whole test. VIP visitors are
+     * untouched: a VIP door is a signed cookie, not a Craft account.
+     *
+     * The same rule is applied to the VIP door counter in services\Vip — different
+     * table, same reasoning.
+     */
+    private function isStaff(): bool
+    {
+        return Craft::$app->getUser()->getIdentity() !== null;
+    }
+
     private function url(?string $value): ?string
     {
         $value = trim((string) $value);

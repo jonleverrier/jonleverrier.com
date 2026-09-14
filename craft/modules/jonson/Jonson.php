@@ -150,13 +150,10 @@ class Jonson extends BaseModule
                     return;
                 }
 
-                // AND NOT JON. There is exactly one kind of logged-in user here, and it
-                // is whoever is reading this dashboard: a tab left open on the live site
-                // put the author into his own "who is here right now" count. VIP visitors
-                // are unaffected — a VIP door is a signed cookie, not a Craft account.
-                if (Craft::$app->getUser()->getIdentity() !== null) {
-                    return;
-                }
+                // Not-Jon is handled in services\Analytics now, alongside the same rule
+                // for turns, exits and conversions — one place, so the four cannot drift
+                // apart. The guards left here are about what counts as a PAGE VIEW,
+                // which is this event's business rather than the analytics service's.
 
                 // THE VISITOR MUST BE CARRYING A SESSION COOKIE ALREADY — not merely
                 // be issued one by this request.
