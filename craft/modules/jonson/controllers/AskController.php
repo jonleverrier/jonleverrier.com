@@ -665,14 +665,26 @@ class AskController extends Controller
                     // One block per handle per response, and the cross-turn budget by
                     // slot (a variant such as [[casestudies:all]] claims its own).
                     $slot = $this->panelSlot($handle, $modifier);
-                    if (isset($panels[$handle]) || (!empty($surface['once']) && $this->hasShownOnce($session, $slot))) {
+                    if (isset($panels[$handle])) {
+                        continue;
+                    }
+                    // Said out loud, because a surface the model DID mark and the budget
+                    // then swallowed looks identical from the outside to one the model
+                    // never marked: an empty turn either way. Without this line the only
+                    // way to tell them apart is to reason about the session.
+                    if (!empty($surface['once']) && $this->hasShownOnce($session, $slot)) {
+                        Craft::info("[jonson] [[{$handle}]] dropped: already shown this conversation", __METHOD__);
                         continue;
                     }
                     if (array_intersect($surface['excludes'] ?? [], array_keys($panels))) {
                         continue;
                     }
 
-                    $payload = ($surface['data'])($question . ' ' . $clean, $modifier, $question, $hits, $session);
+                    // $clean — the answer WITHOUT the question — is passed last, for
+                    // surfaces that must read only what Jonson said. Extra arguments to
+                    // a closure that doesn't declare them are ignored, so every other
+                    // surface is untouched and still gets the combined text it expects.
+                    $payload = ($surface['data'])($question . ' ' . $clean, $modifier, $question, $hits, $session, $clean);
                     if (!$payload) {
                         continue;
                     }
@@ -1459,18 +1471,62 @@ class AskController extends Controller
             ],
             [
                 'handle' => 'casestudies',
-                'once' => true,
+                // NOT once-gated as a whole — each STUDY shows once, exactly as each
+                // photo does on the rail above. The panel was spent by the first turn
+                // that earned any cards at all: "why should I hire you" took it for a
+                // curated taste, and the next turn, which named White Paper and
+                // StreetPal outright, was dropped before selection even ran.
+                'once' => false,
                 'template' => '_components/case-studies',
                 'var' => 'caseStudies',
                 // Selection is FindContext's: what the question names wins, else the
                 // answer's context. `:all` hands over the catalogue — unless the
                 // visitor's own words named a study, when the whole strip is the
                 // wrong answer to a targeted ask.
-                'data' => static fn(string $text, ?string $modifier, string $question) => $ctx->caseStudies(
-                    $text,
-                    $modifier === 'all' && !$ctx->studiesNamedIn($question),
-                    $question,
-                ),
+                // THE ANSWER, NOT THE EXCHANGE. Every other surface reads the question
+                // and the answer together, which is right for them — they are asking
+                // "what is this turn about?". The rail is answering a narrower question:
+                // "which work did Jonson just describe?", and the visitor's phrasing is
+                // actively misleading for it. "What have you worked on since Vaiie?" put
+                // three Vaiie studies in the pool at client tier, which tipped the count
+                // past the sweep threshold and discarded StreetPal — leaving one card
+                // under a paragraph about two projects.
+                //
+                // $question is still passed separately, and still decides the pick when
+                // the answer named nothing at all.
+                'data' => function (string $text, ?string $modifier, string $question, array $hits, $session, string $answer) use ($ctx): array {
+                    $picked = $ctx->caseStudies(
+                        $answer,
+                        $modifier === 'all' && !$ctx->studiesNamedIn($question),
+                        $question,
+                    );
+
+                    // THE BUDGET DECIDES WHETHER TO SHOW THE PANEL, NEVER WHAT IS IN IT.
+                    //
+                    // Filtering already-seen studies out of the selection itself put the
+                    // rail back in the business of contradicting the prose: a turn whose
+                    // answer led with White Paper showed a lone StreetPal card, because
+                    // White Paper's card had appeared earlier for a different reason.
+                    //
+                    // So the whole selection stands, and history only answers a narrower
+                    // question — "is there anything here the visitor has not already
+                    // seen?" If not, the panel is skipped and the turn says nothing it
+                    // has already said. If so, it shows in full, White Paper included.
+                    $shown = $this->shownStudies($session);
+                    if (!$shown) {
+                        return $picked;
+                    }
+                    foreach ($picked as $study) {
+                        foreach ([$study['client'] ?? '', $study['title'] ?? ''] as $name) {
+                            $name = mb_strtolower(trim((string) $name));
+                            if ($name !== '' && !in_array($name, $shown, true)) {
+                                return $picked;
+                            }
+                        }
+                    }
+
+                    return [];
+                },
                 // More than a couple of studies is a strip, not a stack of cards.
                 'present' => static fn(array $studies, ?string $modifier) => count($studies) > 2 ? 'all' : $modifier,
                 // Which studies are on screen, so a later chip can't offer one again.

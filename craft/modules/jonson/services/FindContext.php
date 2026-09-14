@@ -497,29 +497,6 @@ class FindContext extends Component
             return $out;
         }
 
-        // A specific client ("do you know white paper") or sector ("worked in events")
-        // was named → the studies that actually match it.
-        //
-        // A CLIENT match outranks a sector match. An answer about one client names
-        // it once and then talks about the work — "a startup", "0 to 1" — and those
-        // words match every other study in the same sector. Treated as one pool that
-        // was a sweep of five, narrowed to the featured ones, and the study the answer
-        // was actually about (not featured) fell out. So: studies matched by name
-        // first; the sector pool only when no name was matched.
-        // Four tiers, the first that matches wins: the study's own TITLE ("logos"
-        // names the Logo Design study, and nothing else), then its client, then
-        // its sector, then a skill it lists. Title above client because an answer
-        // name-drops clients freely ("…as I did for Vaiie"), and a client match
-        // alongside a title match used to outvote it: three matches read as a
-        // sweep, the sweep narrowed to the featured, and the one study actually
-        // asked for — not featured — fell out. Skills last and only as a
-        // fallback: they are the trade's vocabulary and match broadly (five
-        // studies list Logo Design).
-        // The visitor's own words first. A study the QUESTION names — by title,
-        // client, sector OR skill — is what they asked to see, and every study it
-        // names is the selection: "show me your logos" is the five studies whose
-        // skills list Logo Design, not a curated taste of them. The answer's
-        // name-drops ("…as I did for Vaiie") get no vote here. Featured lead.
         // THE CARDS FOLLOW WHAT JONSON ACTUALLY SAID.
         //
         // The answer is consulted FIRST, and the question only when the answer named
@@ -577,7 +554,20 @@ class FindContext extends Component
         $askedByTitle = ($question !== null && trim($question) !== '')
             ? array_filter($named, fn(array $st) => $this->studyMatchTier($question, $st) === 1)
             : [];
-        if (!$askedByTitle && count($named) > 1 && $this->sharedClient($named) !== null) {
+        // THE VISITOR NAMED ONE STUDY BY TITLE, and the answer talked about it: that
+        // study is the selection, whatever else the answer's wording brushed against.
+        // "Did you design Vaiie Identify?" means the one project, not its two siblings
+        // and not whatever a stray phrase collided with. The answer still has to have
+        // named it — $askedByTitle is filtered from the answer's own matches — so this
+        // cannot resurrect work Jonson never mentioned.
+        if ($askedByTitle) {
+            $askedByTitle = array_values($askedByTitle);
+            usort($askedByTitle, static fn(array $a, array $b) => ($b['featured'] <=> $a['featured']));
+
+            return $askedByTitle;
+        }
+
+        if (count($named) > 1 && $this->sharedClient($named) !== null) {
             usort($named, static fn(array $a, array $b) => ($b['featured'] <=> $a['featured']));
             return $named;
         }
@@ -771,12 +761,61 @@ class FindContext extends Component
             if ($label === '') {
                 continue;
             }
-            // The whole label, then its distinctive words — or the whole label alone.
-            $terms = $wholeOnly ? [$label] : array_merge([$label], preg_split('/\s+/', $label) ?: []);
+            // The whole label, then — depending on how much the label has to give —
+            // either its single words or only its adjacent PAIRS.
+            //
+            // A label with one distinctive word has nothing else to offer: "Identify
+            // Product Design" is named by "identify" and must stay matchable that way.
+            // But a label with several is a phrase, and any one of its words on its own
+            // is a trap: "The White Paper Conference Company" matched an answer that
+            // said clients could "white label" their verification journey, putting White
+            // Paper's study under a question about Vaiie. Requiring two adjacent words
+            // keeps "White Paper" working and drops "white label", "paper trail",
+            // "conference call" and the rest.
+            $words = preg_split('/\s+/', $label) ?: [];
+            $distinctive = array_filter(
+                $words,
+                static fn(string $w): bool => mb_strlen($w) >= 4 && !in_array(mb_strtolower($w), $generic, true),
+            );
+            if ($wholeOnly) {
+                $terms = [$label];
+            } elseif (count($distinctive) > 1) {
+                $pairs = [];
+                for ($i = 0, $n = count($words) - 1; $i < $n; $i++) {
+                    $pairs[] = $words[$i] . ' ' . $words[$i + 1];
+                }
+                $terms = array_merge([$label], $pairs);
+            } else {
+                $terms = array_merge([$label], $words);
+            }
             foreach ($terms as $term) {
                 $term = mb_strtolower(trim((string) $term));
                 if (mb_strlen($term) < 4 || in_array($term, $generic, true)) {
                     continue;
+                }
+                // A MULTI-WORD LABEL MADE ONLY OF TRADE WORDS NAMES NOTHING. The generic
+                // list above filters single words, but a label is also tried as a whole
+                // phrase — and "Product Branding", which is what both "Vaiie Product
+                // Branding" and "Urban.co.uk Product Branding" are called once the
+                // client is stripped, sailed through that path. An answer about Vaiie
+                // that said "the product branding for their regtech suite" matched both,
+                // and Urban's card appeared under a question about Vaiie.
+                //
+                // One distinctive word is enough: "White Paper Conference Company" keeps
+                // "conference", "Putting design back into regulatory technology" keeps
+                // "regulatory". Only a label with nothing of its own is dropped.
+                if (str_contains($term, ' ')) {
+                    $distinctive = false;
+                    foreach (preg_split('/\s+/', $term) ?: [] as $word) {
+                        $word = trim($word);
+                        if (mb_strlen($word) >= 4 && !in_array($word, $generic, true)) {
+                            $distinctive = true;
+                            break;
+                        }
+                    }
+                    if (!$distinctive) {
+                        continue;
+                    }
                 }
                 // Whole word, with a plural tolerated: "logos" names the logo work.
                 if (preg_match('/(?<![a-z0-9])' . preg_quote($term, '/') . '(?:e?s)?(?![a-z0-9])/u', $haystack)) {

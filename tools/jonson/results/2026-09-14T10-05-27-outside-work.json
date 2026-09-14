@@ -1,0 +1,92 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 4,
+  "started": "2026-09-14T10:05:20.853Z",
+  "scenarios": [
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "bordeaux"
+          ],
+          "imgs": 1,
+          "chips": 1,
+          "answer": "Plenty, as it turns out. I'm big into street photography — I shoot with a Leica rangefinder and I collect photography books, so a fair bit of my downtime goes on wandering cities with a camera and getting nothing worth keeping, which is most of the point.\n\nI also love music, cooking, and travel — I've spent a good chunk of my life abroad, and I currently live in Bordeaux[[bordeaux]] after stints in Paris and Brighton.\n\n[[next: what draws you to street photography? | where have you travelled? | what do you listen to while you work? @music]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo",
+            "music"
+          ],
+          "imgs": 4,
+          "chips": 3,
+          "answer": "Outside work I'm usually out with a camera doing street photography[[street-photo]] — it's the hardest kind to get right, you set out hoping a good frame just happens and mostly it doesn't. I collect photography books, I love to cook, and there's always music on while I do any of it[[music]]. I've also travelled a fair bit and lived in a few places along the way.\n\n[[next: what do you shoot when you're out with the camera? | where have you travelled? | what got you into street photography? @photo:street-photo | what music do you put on while you work? @music]]"
+        }
+      ],
+      "failures": [
+        "T1 showed music"
+      ]
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "music",
+            "suggestions"
+          ],
+          "marked": [
+            "music",
+            "bordeaux"
+          ],
+          "imgs": 1,
+          "chips": 3,
+          "answer": "A fair bit, as it happens. I'm a street photographer — I shoot with a Leica rangefinder and I'm forever drawn to places with a bit of a rough reputation. I collect photography books, I used to DJ and I still have music on constantly[[music]], and I love to travel — I once spent a year working my way around South East Asia and India.\n\nLiving in Bordeaux[[bordeaux]] with a young family keeps me grounded between all that too.\n\n[[next: what draws you to street photography? | where have you travelled recently? | what music do you have on while you work?]]"
+        }
+      ],
+      "failures": [
+        "T1 showed music"
+      ]
+    },
+    {
+      "id": "outside-work",
+      "turns": [
+        {
+          "q": "What do you do outside of work?",
+          "shown": [
+            "context",
+            "suggestions"
+          ],
+          "marked": [
+            "street-photo",
+            "bordeaux"
+          ],
+          "imgs": 4,
+          "chips": 2,
+          "answer": "A fair bit, honestly. Street photography is the big one — I shoot with a Leica rangefinder and I'm forever wandering cities hoping a good frame turns up.[[street-photo]] I collect photography books, I love to cook, I used to DJ, and I've done a good chunk of travelling — I spent a year working my way around South East Asia and India once.\n\nThere's also just life in Bordeaux with my family, which keeps me nicely grounded.[[bordeaux]]\n\n[[next: what kind of street photography do you shoot? @photo:street-photo | where have you travelled? @note:last-stop-parvati | what do you listen to while you shoot? @music]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}
