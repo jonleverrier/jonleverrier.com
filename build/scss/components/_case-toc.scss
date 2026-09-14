@@ -194,6 +194,39 @@ $c-case-toc-num: rem(34);
 // phrase. 600 is stated rather than left to <b>'s default: JonSonMono ships 500 and 600
 // only, so a request for 700 is resolved to whatever is nearest and the intent stops
 // being legible in the stylesheet.
+// THE STATE, SAID TWICE — the word and a mark beside it. A cross and a tick read at a
+// glance in a strip the reader is only half looking at, which the words alone do not:
+// "Image Mode: Off" and "Image Mode: On" differ by two letters in the middle of a phrase.
+//
+// MASKED, not a background image. The sprite arrives as a flat data URI, so as a
+// background it would carry whatever colour was baked into the file — and this button
+// inverts completely when pressed (navy ink on a pale tint at rest, white on solid navy
+// when on). Painted as a mask over `currentColor` the mark simply comes along with the
+// text, in both states and on hover, with nothing to keep in sync by hand.
+//
+// The shorthand resets mask-size, so the `contain` below has to follow the include
+// rather than precede it.
+.c-case-toc__mode::after {
+    content: '';
+    flex: 0 0 auto;
+    width: rem(16);
+    height: rem(16);
+    background-color: currentColor;
+    @include icon($name: icon_mode_off, $include-size: false, $type: $sprite-type, $mode: -webkit-mask);
+    @include icon($name: icon_mode_off, $include-size: false, $type: $sprite-type, $mode: mask);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+// Pressed reads as ON, and the mark changes shape with it — painted from the same
+// aria-pressed the fill and the words are driven by, so the three cannot disagree.
+.c-case-toc__mode[aria-pressed='true']::after {
+    @include icon($name: icon_mode_on, $include-size: false, $type: $sprite-type, $mode: -webkit-mask);
+    @include icon($name: icon_mode_on, $include-size: false, $type: $sprite-type, $mode: mask);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
 .c-case-toc__mode-name {
     font-weight: 600;
 }
