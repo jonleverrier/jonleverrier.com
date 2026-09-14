@@ -33,7 +33,12 @@ composer install --no-dev --no-interaction --optimize-autoloader --no-progress
 echo "==> front end"
 cd "$APP"
 npm ci --no-audit --no-fund
-URL=https://jonleverrier.com/ npm run build
+# TEMPORARY — MIGRATION ONLY. Remove SKIP_CRITICAL=1 once DNS points at this server.
+# The critical-CSS step renders URL in headless Chrome to find what is above the fold,
+# and jonleverrier.com still resolves to the OLD box, so it would either measure the old
+# site or fail outright. Deploy once with it set, cut DNS over, then delete this line's
+# prefix and deploy again to generate real critical CSS.
+SKIP_CRITICAL=1 URL=https://jonleverrier.com/ npm run build
 
 echo "==> reloading $FPM"
 sudo -n /usr/sbin/service "$FPM" reload
