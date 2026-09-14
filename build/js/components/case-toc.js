@@ -121,6 +121,19 @@ export function mountCaseToc(root = document) {
             clearTimeout(hideTimer);
             if (want) {
                 strip.hidden = false;
+                // FLUSH BEFORE THE CLASS. The strip is display:none until the line
+                // above, and an element that gains a box in the same frame it gains
+                // .is-in has no previous computed transform to move away FROM — the
+                // browser resolves one style, sees translateY(none), and paints the bar
+                // in place. It appeared rather than slid, and only on the way in; the
+                // way out animates because the element is already on screen when the
+                // class comes off.
+                //
+                // Reading offsetHeight forces style and layout to resolve now, which
+                // makes translateY(-100%) a real previous value for the transition to
+                // start from. It is a deliberate synchronous reflow on one element, at
+                // the moment it becomes visible — not in a scroll loop.
+                void strip.offsetHeight;
             } else {
                 closeList();
                 // HIDDEN once the slide is done, not just translated away. Parked at
