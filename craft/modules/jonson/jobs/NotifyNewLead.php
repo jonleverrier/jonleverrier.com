@@ -36,9 +36,6 @@ class NotifyNewLead extends BaseJob
     /** Telegram rejects anything longer, and a lead's message can run on. */
     private const MAX_MESSAGE = 4096;
 
-    /** How much of their message to quote before it stops being a notification. */
-    private const EXCERPT = 600;
-
     public function execute($queue): void
     {
         $token = App::env('TELEGRAM_BOT_TOKEN');
@@ -77,54 +74,37 @@ class NotifyNewLead extends BaseJob
     }
 
     /**
-     * The message. Enough to decide whether to stop what you are doing, and a link
-     * to the entry for everything else — the transcript especially, which is far too
-     * long to put in a notification but is the most useful part of the lead.
+     * The message — DELIBERATELY WITHOUT THE LEAD'S DETAILS.
+     *
+     * It carries the fact and the time, and a link to go and read the rest. Nothing
+     * about the person: no name, no email, no words of theirs, not even the page they
+     * wrote from.
+     *
+     * That is a privacy decision, not a brevity one. A notification puts whatever it
+     * contains into Telegram's servers and onto a lock screen, where it is readable by
+     * anyone who glances at the phone — and an enquiry is someone else's personal data,
+     * held on a lawful basis that does not obviously extend to being pushed to a chat
+     * app. The control panel is behind a login and is where it belongs.
+     *
+     * The link leaks nothing: an entry id and a hostname.
      */
     private function body(Entry $entry): string
     {
-        $e = static fn($v): string => htmlspecialchars(trim((string) $v), ENT_QUOTES, 'UTF-8');
-
-        // THE TIME OF THE LEAD, NOT OF THE MESSAGE. These two are the same thing only
-        // when the queue is running promptly, and production has no daemon — jobs wait
-        // for the next web request, which on a quiet night can be hours. A notification
-        // that said "at 07:12" about something that happened at 03:40 would be worse
-        // than one with no time on it at all.
-        //
-        // Craft's own timezone (Europe/Paris), so it reads as the clock Jon is looking
-        // at rather than UTC.
+        // THE TIME OF THE LEAD, NOT OF THE MESSAGE. These are the same only when the
+        // queue is running promptly, and production has no daemon — jobs wait for the
+        // next web request, which on a quiet night is hours. A message claiming "at
+        // 07:12" about something that happened at 03:40 would be worse than one with no
+        // time at all. Craft's own timezone, so it reads as the clock Jon is looking at.
         $when = $entry->dateCreated
             ? $entry->dateCreated->setTimezone(new \DateTimeZone(\Craft::$app->getTimeZone()))->format('H:i')
             : '';
 
-        $name = $e(trim(($entry->firstName ?? '') . ' ' . ($entry->surname ?? '')));
-        $lines = ['<b>You got a new lead from Jonson' . ($when !== '' ? ' at ' . $when : '') . '</b>'];
-        if ($name !== '') {
-            $lines[] = $name;
-        }
-
-        if (!empty($entry->email)) {
-            $lines[] = '✉️ ' . $e($entry->email);
-        }
-
-        $message = trim((string) ($entry->message ?? ''));
-        if ($message !== '') {
-            $short = mb_substr($message, 0, self::EXCERPT);
-            $lines[] = '';
-            $lines[] = '<blockquote>' . $e($short) . (mb_strlen($message) > self::EXCERPT ? '…' : '') . '</blockquote>';
-        }
-
-        // Where they were standing when they wrote it — a case study tells you
-        // something a contact page doesn't.
-        if (!empty($entry->referrerUrl)) {
-            $lines[] = '';
-            $lines[] = '📄 ' . $e($entry->referrerUrl);
-        }
+        $lines = ['You got a new lead from Jonson' . ($when !== '' ? ' at ' . $when : '')];
 
         $cpUrl = $entry->getCpEditUrl();
         if ($cpUrl) {
             $lines[] = '';
-            $lines[] = '<a href="' . $e($cpUrl) . '">Open in the control panel</a>';
+            $lines[] = '<a href="' . htmlspecialchars($cpUrl, ENT_QUOTES, 'UTF-8') . '">Read it in the control panel</a>';
         }
 
         return mb_substr(implode("\n", $lines), 0, self::MAX_MESSAGE);
