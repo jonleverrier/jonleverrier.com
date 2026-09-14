@@ -11,6 +11,7 @@
   template.
 #}
 {% extends '_layouts/page.twig' %}
+{% import '_macros/text' as text %}
 
 {% set tplPath = _self %}
 
@@ -32,7 +33,7 @@
     {% if summary %}
         {% set standfirst %}
             {% for para in summary|split("\n\n") %}
-                <p class="c-content__summary">{{ para|trim|nl2br }}</p>
+                <p class="c-content__summary">{{ text.standfirst(para) }}</p>
             {% endfor %}
         {% endset %}
     {% endif %}

@@ -1,0 +1,83 @@
+{#
+  text.twig — typographic helpers for body copy.
+#}
+
+{#
+  standfirst(text)
+
+  A plain-text summary rendered as one paragraph's worth of HTML: line breaks kept as
+  <br>, and the LAST TWO WORDS OF EVERY LINE made unbreakable, so a line can never end
+  on a word by itself.
+
+  ── WHY NOT `text-wrap: pretty` ──────────────────────────────────────────────────
+  Because SAFARI DOES NOT IMPLEMENT IT. Measured 2026-09-15 via tools/safari:
+  `CSS.supports('text-wrap','pretty')` is false in Safari, true in Chrome. Safari also
+  measures this mono a shade tighter and fits one more word on the line above, so
+  /ai-policy renders as
+
+      Chrome:  "Every design on this website is my" / "own work."
+      Safari:  "Every design on this website is my own" / "work."     <- orphan
+
+  at every width from 1024 up. Sweeping all 52 pages in CHROME reports no orphan
+  anywhere on the site; the same sweep in Safari finds them immediately. TEST WRAPPING
+  IN SAFARI. The guarantee therefore lives in the markup, where every browser honours
+  it, not in a property one of them ignores.
+
+  ── WHY NOT `text-wrap: balance` ─────────────────────────────────────────────────
+  It works, and it was tried and reverted: balance re-flows EVERY line of the
+  paragraph to even them up, which is a whole-paragraph change to stop one word being
+  lonely. This moves one word and leaves every other break where the browser put it.
+
+  ── WHY NOT Craft's own `|widont` ────────────────────────────────────────────────
+  Craft ships one (Html::widont) and it is one regex: `&nbsp;` before the last word.
+  It misses both things that actually matter below — the hyphen and the cap — and it
+  is registered `is_safe => html`, so `{{ summary|widont }}` marks the WHOLE string
+  safe and silently stops Twig escaping a plain-text CMS field.
+
+  ── WHY NOT a `white-space: nowrap` span ─────────────────────────────────────────
+  Tried, measured, reverted. In Safari an inline nowrap run at the end of a paragraph
+  makes the line REFUSE TO BREAK AT ALL rather than move the run down: /ai-policy at
+  1440 went to a single line 750px wide in a 740px column — 10px hanging out of the
+  measure — where the same text as plain characters wrapped to two lines cleanly.
+  Invisible characters do not have that effect.
+
+  ── WHAT IT ACTUALLY DOES ────────────────────────────────────────────────────────
+  1. A NON-BREAKING SPACE joins the last two words, removing the break between them.
+  2. A WORD JOINER (U+2060) after any hyphen, slash or dash INSIDE that pair. The nbsp
+     alone is not enough and this is the case that proved it: "everything else
+     in-between." duly kept "else" with "in-between.", and Safari broke at the HYPHEN
+     instead, stranding "between." — the same orphan one word further on.
+  3. A 20-CHARACTER CAP, above which the pair is left alone. Not a taste call, the
+     measure: an unbreakable run wider than the column has nowhere to go and
+     .c-content__summary is `overflow-wrap: normal`, so nothing would catch it. The
+     narrowest this standfirst gets is 264px at 21px mono — exactly 20 characters. An
+     orphan is cosmetic; text hanging out of its column is a bug.
+
+  Applied per LINE, not per paragraph: a single newline becomes a <br> and each run
+  wraps independently, so the last line is not the only one that can strand a word.
+
+  The text is a plain-text CMS field, so each line is escaped here and the only raw
+  markup is the <br> we generate ourselves.
+#}
+{% macro standfirst(text) %}
+{%- set out = [] -%}
+{%- for line in text|split("\n") -%}
+    {#- split(' ') with no filter: consecutive spaces survive the re-join, so the
+        author's own spacing comes back untouched. -#}
+    {%- set words = line|trim|split(' ') -%}
+    {%- set n = words|length -%}
+    {#- measured on the PLAIN pair: nbsp and the joiners are zero-width, so counting
+        them would make the cap drift with punctuation. -#}
+    {%- set plain = n > 1 ? words[n - 2] ~ ' ' ~ words|last : '' -%}
+    {%- if n > 1 and plain|length <= 20 -%}
+        {%- set head = words|slice(0, n - 2)|join(' ') -%}
+        {%- set glued = (words[n - 2] ~ " " ~ words|last)|replace({
+            '-': '-⁠', '/': '/⁠', '–': '–⁠', '—': '—⁠'
+        }) -%}
+        {%- set out = out|merge([((head ? head ~ ' ' : '') ~ glued)|e]) -%}
+    {%- else -%}
+        {%- set out = out|merge([line|trim|e]) -%}
+    {%- endif -%}
+{%- endfor -%}
+{{- out|join('<br>')|raw -}}
+{% endmacro %}
