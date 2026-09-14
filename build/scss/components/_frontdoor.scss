@@ -128,13 +128,18 @@
 .c-frontdoor__title {
     color: getmap($colour, light, 100);
     @include typography(h1);
-    // Trim the hero headline ~10% below the global h1 scale (66/88/110).
+    // Trimmed below the global h1 scale on small screens — the hero is full-bleed and
+    // wants more presence there than a note's title does — and level with it from lg.
+    //
+    // THERE IS NO xxl STEP, deliberately. There was one, at rem(100), under a comment
+    // calling the whole thing "~10% below the global h1 scale (66/88/110)". The scale
+    // has since become 66/80 with no xxl step of its own, for a stated reason: past lg
+    // the slab is a fixed width (b-wrap caps at 108em), so a bigger headline only buys
+    // more lines inside the same box. The trim had quietly become a boost, and the
+    // homepage ran to 10rem where every other h1 on the site stops at 8.
     font-size: rem(60);
     @include mq(from, lg) {
         font-size: rem(80);
-    }
-    @include mq(from, xxl) {
-        font-size: rem(100);
     }
     font-weight: 600;
     margin: 0 auto;
