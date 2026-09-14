@@ -85,8 +85,23 @@ class NotifyNewLead extends BaseJob
     {
         $e = static fn($v): string => htmlspecialchars(trim((string) $v), ENT_QUOTES, 'UTF-8');
 
+        // THE TIME OF THE LEAD, NOT OF THE MESSAGE. These two are the same thing only
+        // when the queue is running promptly, and production has no daemon — jobs wait
+        // for the next web request, which on a quiet night can be hours. A notification
+        // that said "at 07:12" about something that happened at 03:40 would be worse
+        // than one with no time on it at all.
+        //
+        // Craft's own timezone (Europe/Paris), so it reads as the clock Jon is looking
+        // at rather than UTC.
+        $when = $entry->dateCreated
+            ? $entry->dateCreated->setTimezone(new \DateTimeZone(\Craft::$app->getTimeZone()))->format('H:i')
+            : '';
+
         $name = $e(trim(($entry->firstName ?? '') . ' ' . ($entry->surname ?? '')));
-        $lines = ['<b>New enquiry' . ($name !== '' ? ' from ' . $name : '') . '</b>'];
+        $lines = ['<b>You got a new lead from Jonson' . ($when !== '' ? ' at ' . $when : '') . '</b>'];
+        if ($name !== '') {
+            $lines[] = $name;
+        }
 
         if (!empty($entry->email)) {
             $lines[] = '✉️ ' . $e($entry->email);
