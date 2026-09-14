@@ -245,7 +245,9 @@
    `as="fetch"` + `crossorigin` to match what hero.js issues: a plain fetch(),
    which is CORS mode with same-origin credentials. #}
 {% if entry is defined and entry and entry.section.handle == 'homepage' %}
-    <link rel="preload" as="fetch" fetchpriority="low" crossorigin href="{{ craft.vite.asset('build/assets/hero.bin') }}">
+    {# .gz, because that is the copy hero.js asks for — a preload that does not match
+       the real request is a second download rather than a saved one. #}
+    <link rel="preload" as="fetch" fetchpriority="low" crossorigin href="{{ craft.vite.asset('build/assets/hero.bin') }}.gz">
 {% endif %}
 
 {# COLOUR-REVEAL INITIAL STATE — inline, on every page, deliberately duplicated

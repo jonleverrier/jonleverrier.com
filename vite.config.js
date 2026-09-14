@@ -71,6 +71,35 @@ export default defineConfig(({command}) => ({
             },
         }),
         viteCompression(),
+        // The point cloud's geometry, compressed at build time. It is 365kB and nobody
+        // gzips it in flight: compression is chosen by CONTENT TYPE, and no sane
+        // gzip_types list includes application/octet-stream — you would end up
+        // recompressing every zip and jpeg on the server to catch this one file.
+        //
+        // So it ships pre-compressed and hero.js inflates it itself (DecompressionStream,
+        // see the fetch there). That keeps the whole arrangement in the repo rather than
+        // in a server config the deploy script cannot see.
+        //
+        // Written here rather than with a second vite-plugin-compression: the plugin
+        // registers under a fixed name, so a duplicate instance is silently dropped and
+        // the file simply never appeared. Ten lines of zlib is also easier to read than
+        // a filter option that has to disagree with the first instance's defaults.
+        {
+            name: 'gzip-hero-bin',
+            apply: 'build',
+            async closeBundle() {
+                const {gzipSync} = await import('node:zlib');
+                const {readFileSync, writeFileSync, readdirSync} = await import('node:fs');
+                const dir = path.resolve('./public/dist/assets');
+                for (const f of readdirSync(dir).filter(f => f.endsWith('.bin'))) {
+                    const raw = readFileSync(path.join(dir, f));
+                    // level 9: this runs once per build, never per request.
+                    const gz = gzipSync(raw, {level: 9});
+                    writeFileSync(path.join(dir, f + '.gz'), gz);
+                    console.log(`  gzip ${f}  ${raw.length} -> ${gz.length} bytes`);
+                }
+            },
+        },
         terser({
             format: {
                 comments: false,

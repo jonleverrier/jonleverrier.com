@@ -286,8 +286,33 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
   // 373kB that a dynamic import can't even ask for until it has parsed.
   // Mode and credentials have to keep matching that preload's `crossorigin`.
   // HAND-EDITED, not from the exporter — re-apply if hero.js is regenerated.
-  const res = await fetch(binUrl);
-  const buf = await res.arrayBuffer();
+  //
+  // THE COMPRESSED COPY FIRST. The build writes a .gz beside the binary (see
+  // vite.config.js) because nothing compresses it in flight — gzip is selected by
+  // content type, and application/octet-stream is in no sensible gzip_types list.
+  // 373kB becomes 291kB, and the inflating costs a few milliseconds off the main
+  // thread in a stream.
+  //
+  // Falls back to the raw binary if DecompressionStream is missing (Safari before
+  // 16.4) or the .gz is not there — an older build, or a deploy that copied only the
+  // files it recognised. The fallback is the file that was always being fetched, so
+  // the worst case is exactly today's behaviour.
+  const buf = await (async () => {
+      if (typeof DecompressionStream === "function") {
+          try {
+              const gz = await fetch(binUrl + ".gz");
+              if (gz.ok) {
+                  return await new Response(
+                      gz.body.pipeThrough(new DecompressionStream("gzip")),
+                  ).arrayBuffer();
+              }
+          } catch (e) {
+              // fall through to the plain binary
+          }
+      }
+
+      return (await fetch(binUrl)).arrayBuffer();
+  })();
   const dv = new DataView(buf);
   if (dv.getUint32(0, false) !== 0x52334844) throw new Error("Not a hero.bin file");
   if (dv.getUint16(4, true) !== 2) throw new Error("Unsupported hero.bin version");
