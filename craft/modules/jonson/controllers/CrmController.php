@@ -7,6 +7,7 @@ use craft\elements\Entry;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use modules\jonson\Jonson;
+use modules\jonson\jobs\NotifyNewLead;
 use yii\web\Response;
 
 /**
@@ -121,6 +122,12 @@ class CrmController extends Controller
                 (string) $this->request->getBodyParam('cid', ''),
                 (int) $entry->id,
             );
+
+            // Tell Jon it landed. QUEUED, so the visitor's thank-you never waits on
+            // Telegram — and so a blip retries rather than losing the notification.
+            // The job does nothing when the environment has no bot token, which is
+            // what keeps local and staging quiet.
+            \craft\helpers\Queue::push(new NotifyNewLead(['entryId' => (int) $entry->id]));
         } else {
             Craft::error('[jonson] CRM save failed: ' . json_encode($entry->getErrors()), __METHOD__);
             return $this->fail(
