@@ -45,7 +45,7 @@ export function mountCaseToc(root = document) {
     // use is guarded rather than the component bailing: the section nav is the reason
     // this strip exists and it has to work with or without the toggle.
     const modeBtn = strip.querySelector('[data-case-toc-mode]');
-    const modeLabel = strip.querySelector('[data-case-toc-mode-label]');
+    const modeValue = strip.querySelector('[data-case-toc-mode-value]');
     let current = 0;
     let shown = false;
     let hideTimer = 0;
@@ -93,8 +93,11 @@ export function mountCaseToc(root = document) {
         //
         // aria-label tracks the visible words rather than staying fixed: the two must
         // agree, or a voice-control user says what they can see and nothing happens.
+        // Only the VALUE is written. "Image Mode:" is static text in the markup so it
+        // can carry its own weight (see _case-toc.scss) — setting the whole phrase from
+        // here would mean writing markup from JS to keep the bold half.
         const words = on ? 'Image Mode: On' : 'Image Mode: Off';
-        if (modeLabel) modeLabel.textContent = words;
+        if (modeValue) modeValue.textContent = on ? 'On' : 'Off';
         modeBtn.setAttribute('aria-label', words);
 
         // The section nav goes away with the prose. Not merely because naming a hidden

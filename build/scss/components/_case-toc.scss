@@ -189,6 +189,15 @@ $c-case-toc-num: rem(34);
     transform: rotate(180deg);
 }
 
+// The label half of the toggle — "Image Mode:" — set against the changing On/Off beside
+// it, so the button reads as a named control with a value rather than one four-word
+// phrase. 600 is stated rather than left to <b>'s default: JonSonMono ships 500 and 600
+// only, so a request for 700 is resolved to whatever is nearest and the intent stops
+// being legible in the stylesheet.
+.c-case-toc__mode-name {
+    font-weight: 600;
+}
+
 .c-case-toc__mode {
     flex: 0 0 auto;
     display: inline-flex;
