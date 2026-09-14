@@ -301,7 +301,10 @@ class Vip extends Component
         if ($first === '' || $line === '') {
             return $line;
         }
-        if (preg_match('/^(.*?)([?!.])$/u', $line, $m)) {
+        // An ELLIPSIS counts as one mark, not as a full stop with two dots in front of
+        // it. Without this, "Ask me anything..." came back as "Ask me anything..,
+        // Marcus." — the greedy-looking match takes only the final character.
+        if (preg_match('/^(.*?)(\.{3}|\x{2026}|[?!.])$/u', $line, $m)) {
             return $m[1] . ', ' . $first . $m[2];
         }
 
