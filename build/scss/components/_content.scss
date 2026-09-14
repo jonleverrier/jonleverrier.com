@@ -25,6 +25,7 @@ $c-content-ink: getmap($colour, light, 950); // near-black — body prose. Neutr
 $c-content-title: getmap($colour, primary, 700); // logo navy — the main title
 $c-content-summary: getmap($colour, light, 850); // deep olive — the standfirst (an entry's Summary)
 $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
+$c-content-subheading: getmap($colour, light, 880); // the sub-heading grey — same as .c-case-content__text > h3
 
 .c-content {
     position: relative;
@@ -374,6 +375,14 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
 .c-content__reveal-inner {
     @include prose-body($marker: $c-content-whisper); // bullets in the whisper blue, on the cream
 
+    // THE PROSE INK, SET ON THE BLOCK. Until now only `> p` carried it and everything
+    // else inherited from an ancestor, which is the page TITLE's navy — so on /terms
+    // the list items rendered navy (rgb(12,36,60)) while the paragraphs beside them
+    // were near-black, and h3 came out the same navy as the h2 above it. prose-body
+    // deliberately sets no colour (it's used on cream and on olive), so the consumer
+    // has to, exactly as .c-case-content__text does.
+    color: $c-content-ink;
+
     // Everything the prose can contain, not just paragraphs. The body box is the wide
     // measure so the form and CTAs can sit side by side; the reading column is
     // narrower and centred inside it. Capping only `p` left headings and lists running
@@ -391,7 +400,31 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
         margin-inline: auto;
     }
 
-    > p { color: $c-content-ink; }
+    // The same two-tone the case studies use: the section title in the logo navy, the
+    // sub-heading a step back in grey. They were both navy by inheritance, which left
+    // an h3 indistinguishable from the h2 it sits under.
+    > h2 { color: $c-content-title; }
+
+    > h3,
+    > h4 { color: $c-content-subheading; }
+
+    // Prose links. These had NO rule at all and were rendering in the browser default
+    // — rgb(0,0,238), blue and underlined — on every page in the `pages` section;
+    // /terms is where it shows. Same treatment as a case study's prose (one shared
+    // mixin, not a second copy of it).
+    //
+    // Listed per prose element rather than a bare descendant `a`, because this
+    // wrapper also holds .c-content__form-cols: the form and the CTA buttons are
+    // inside it, and they bring their own styling that an accent link would trample.
+    > p a,
+    > ul a,
+    > ol a,
+    > blockquote a,
+    > h2 a,
+    > h3 a,
+    > h4 a {
+        @include accent-link;
+    }
 }
 
 // Form + CTAs joined into one block. Stacked below lg (form above the white CTA
