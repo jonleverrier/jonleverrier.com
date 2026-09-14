@@ -15,6 +15,7 @@ import {methodApply} from './method.js';
 // the touch-swipe handler below still needs it to snap after a drag.
 import {slideTo} from './testimonials.js';
 import {pauseOffscreenWithin} from './pause-offscreen.js';
+import {mountThinkingOrb} from './thinking-orb.js';
 import {looksLikeJunk} from './junk-question.js';
 import {armSubmit} from './submit-arm.js';
 import {revealPictures} from './picture.js';
@@ -344,8 +345,16 @@ export function mountJonson({warpOut} = {}) {
 
         const a = document.createElement('div');
         a.className = 'c-jonson__response';
+        // The thinking orb is a CANVAS, not a decorated element: it is a sphere of
+        // particles projected every frame (see thinking-orb.js), which is the one thing
+        // CSS cannot fake — points on the far side have to be smaller, dimmer and
+        // travelling the other way. aria-hidden because the status and its label are on
+        // the wrapper; the drawing says nothing a screen reader needs.
         a.innerHTML = '<span class="c-jonson__thinking" role="status" aria-label="Thinking">'
-            + '<span></span></span>';
+            + '<canvas class="c-jonson__orb" aria-hidden="true"></canvas></span>';
+        // No teardown kept: the orb stops itself once commit() empties this node, which
+        // is the only way it ever ends.
+        mountThinkingOrb(a.querySelector('.c-jonson__orb'));
 
         turn.append(q, a);
         thread.append(turn);

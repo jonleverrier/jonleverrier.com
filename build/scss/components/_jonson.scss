@@ -184,14 +184,15 @@ $c-jonson-line: #383910;
         radial-gradient(circle, $c-jonson-line rem(8), transparent rem(8)) center bottom / rem(16) rem(16) no-repeat;
 }
 
-// Matches .b-footer__whisper (an <h3>, hence bold — whisper sets no weight).
+// Matches .b-footer__whisper, which states its own weight now that it is a <p>
+// (whisper sets none). Note that one is 700 and this is 600 — a pre-existing
+// difference, kept rather than quietly changed here.
 .c-jonson__whisper {
-    @include typography(whisper);
+    // Type, case and weight come from .u-font-whisper in the markup; what stays here
+    // is this whisper's own colour and placing.
     position: relative; // anchor the top-cap dot
     margin: 0;
     text-align: center;
-    text-transform: uppercase;
-    font-weight: 600;
     color: getmap($colour, primary, 430); // light blue, flat — matches .c-jonson__suggestions-whisper
 }
 
@@ -511,124 +512,69 @@ $c-jonson-line: #383910;
     }
 }
 
-// Thinking indicator — a 3×3 grid of dots that ripple while we wait on the
-// first token (also covers retry waits). Drawn from a single element via
-// box-shadow; the shadows inherit `color` (currentColor).
+// Thinking indicator — a sphere of particles, drawn on canvas (see thinking-orb.js).
+//
+// EVERYTHING HERE USED TO BE THE BALL. There were five background layers faking
+// spherical shading, a rim, a specular, and gradient ellipses turning inside a mask.
+// It looked more like a ball at every step and never was one: a flat circle with
+// shading painted on, where nothing could pass behind anything else. That is the one
+// thing CSS cannot do and the whole reason a sphere reads as a sphere.
+//
+// So the drawing moved to a canvas and this file kept only what surrounds it: the
+// space it occupies, and the halo it sits in.
 .c-jonson__thinking {
     display: flex;
     justify-content: center;
     align-items: center;
-    position: relative; // anchor the spherical glow behind the dots
-    min-height: rem(72); // reserve space for the rotated box-shadow grid (no layout box)
+    position: relative;
+    min-height: rem(72); // the orb is absolute, so it costs no layout
     // No own margin. The gap ABOVE is owned by the connector line's margin-bottom
     // (22px, which collapses with any top margin here anyway); the gap BELOW is the
     // trailing line's margin-top (22px, a separate flex item so it does NOT collapse
-    // with a bottom margin here). A margin here only pads the bottom — leaving the
-    // dots visibly lower in their space. Zero gives a symmetric 22px top and bottom.
+    // with a bottom margin here). Zero gives a symmetric 22px top and bottom.
     margin: 0;
 
-    // Soft spherical glow behind the rippling dots — a faint radial highlight (lifted
-    // a touch above centre) fading to nothing, breathing noticeably, so the grid reads
-    // as if suspended inside a gently-pulsing lit orb. Kept low-intensity; the pulse
-    // carries most of the life.
-    //
-    // Cool blue rather than white: against the olive slab a white glow just reads as
-    // haze, where a blue one reads as light with a source. Low alpha either way, so
-    // the hue only shows in the brightest part of the falloff.
+    // THE HALO. Cool blue rather than white: against the olive slab a white glow reads
+    // as haze, where a blue one reads as light with a source. It sits proud of the
+    // particle shell so the sphere's edge stays the edge.
     &::before {
         content: '';
         position: absolute;
         top: 50%;
         left: 50%;
-        width: rem(130);
+        width: rem(146);
         aspect-ratio: 1;
         transform: translate(-50%, -50%);
         border-radius: 50%;
         background: radial-gradient(
             circle at 50% 50%,
-            rgba(getmap($colour, primary, 430), 0.22),
-            rgba(getmap($colour, primary, 430), 0.10) 38%,
-            transparent 68%
+            rgba(getmap($colour, primary, 430), 0.16),
+            rgba(getmap($colour, primary, 430), 0.07) 44%,
+            transparent 70%
         );
         pointer-events: none;
-        z-index: 0; // behind the dots
+        z-index: 0;
         animation: c-jonson-orb 2.4s ease-in-out infinite;
     }
 
-    span {
-        position: relative; // above the orb glow
+    // The canvas. Absolute and centred, so a 124px sphere costs nothing in a 72px line
+    // and the thread's rhythm is untouched. Its backing store is sized in JS from the
+    // device pixel ratio; these are the CSS dimensions it is painted into, and the two
+    // numbers must agree — SIZE in thinking-orb.js is this 124.
+    .c-jonson__orb {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: rem(124);
+        height: rem(124);
+        transform: translate(-50%, -50%);
         z-index: 1;
-        width: 4px;
-        aspect-ratio: 1;
-        color: getmap($colour, light, 700);
-        border-radius: 50%;
-        // All nine at rest, so the LATTICE is what you see and the wave passes over
-        // it. It used to sit with the middle row pre-swollen to 5px spread while the
-        // animation lit 2–3 scattered cells — which meant no frame ever showed the
-        // 3x3 arrangement, and the thing read as a few big dots and some specks in no
-        // order at all. The structure was there and invisible.
-        box-shadow:
-            19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 0,
-            19px 0     0 0, 38px 0     0 0, 57px 0     0 0,
-            19px 19px  0 0, 38px 19px  0 0, 57px 19px  0 0;
-        // translateX centres the grid; transform-origin pins the rotation to the
-        // grid's visual centre (≈40px,2px) so it spins in place rather than
-        // swinging around the tiny source element.
-        transform-origin: 40px 2px;
-        transform: translateX(-38px) rotate(45deg);
-        animation: c-jonson-think 2s infinite linear;
+        pointer-events: none;
     }
 }
 
-// The wave. Cells are lit by ANTI-DIAGONAL — every cell where (column + row) is the
-// same — which after the 45deg rotation above lands as a straight band travelling
-// across the grid on screen. That rotation was doing nothing before; this is what it
-// was for.
-//
-// Five bands (1, 2, 3, 2, 1 cells), swept out to the far corner and back rather than
-// wrapped. A wrap would teleport the band from one corner to the other on the loop;
-// the return leg costs nothing and reads as the wave washing back.
-//
-// Spread, not opacity: box-shadow interpolates between keyframes, so each dot grows
-// and shrinks smoothly through the band passing over it.
-@keyframes c-jonson-think {
-    0% { box-shadow:
-        19px -19px 0 3px, 38px -19px 0 0, 57px -19px 0 0,
-        19px 0 0 0, 38px 0 0 0, 57px 0 0 0,
-        19px 19px 0 0, 38px 19px 0 0, 57px 19px 0 0; }
-    12.5% { box-shadow:
-        19px -19px 0 0, 38px -19px 0 3px, 57px -19px 0 0,
-        19px 0 0 3px, 38px 0 0 0, 57px 0 0 0,
-        19px 19px 0 0, 38px 19px 0 0, 57px 19px 0 0; }
-    25% { box-shadow:
-        19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 3px,
-        19px 0 0 0, 38px 0 0 3px, 57px 0 0 0,
-        19px 19px 0 3px, 38px 19px 0 0, 57px 19px 0 0; }
-    37.5% { box-shadow:
-        19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 0,
-        19px 0 0 0, 38px 0 0 0, 57px 0 0 3px,
-        19px 19px 0 0, 38px 19px 0 3px, 57px 19px 0 0; }
-    50% { box-shadow:
-        19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 0,
-        19px 0 0 0, 38px 0 0 0, 57px 0 0 0,
-        19px 19px 0 0, 38px 19px 0 0, 57px 19px 0 3px; }
-    62.5% { box-shadow:
-        19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 0,
-        19px 0 0 0, 38px 0 0 0, 57px 0 0 3px,
-        19px 19px 0 0, 38px 19px 0 3px, 57px 19px 0 0; }
-    75% { box-shadow:
-        19px -19px 0 0, 38px -19px 0 0, 57px -19px 0 3px,
-        19px 0 0 0, 38px 0 0 3px, 57px 0 0 0,
-        19px 19px 0 3px, 38px 19px 0 0, 57px 19px 0 0; }
-    87.5% { box-shadow:
-        19px -19px 0 0, 38px -19px 0 3px, 57px -19px 0 0,
-        19px 0 0 3px, 38px 0 0 0, 57px 0 0 0,
-        19px 19px 0 0, 38px 19px 0 0, 57px 19px 0 0; }
-    100% { box-shadow:
-        19px -19px 0 3px, 38px -19px 0 0, 57px -19px 0 0,
-        19px 0 0 0, 38px 0 0 0, 57px 0 0 0,
-        19px 19px 0 0, 38px 19px 0 0, 57px 19px 0 0; }
-}
+
+
 
 // The thinking orb's breathing glow — a pronounced scale + brightness pulse (the
 // glow itself is faint, so the movement is what gives it life).
@@ -1357,12 +1303,10 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
         opacity: 0; // leave only the static base grid
     }
 
-    .c-jonson__thinking span {
-        animation: none;
-        opacity: 0.6;
-    }
-
+    // The orb itself reads prefers-reduced-motion directly (thinking-orb.js) and paints
+    // a single still frame of the sphere rather than stopping mid-turn, so there is
+    // nothing to switch off here. Only the halo behind it is CSS.
     .c-jonson__thinking::before {
-        animation: none; // hold the orb glow steady (no breathing)
+        animation: none; // hold the glow steady (no breathing)
     }
 }

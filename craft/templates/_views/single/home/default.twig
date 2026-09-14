@@ -3,6 +3,24 @@
 
 {% set tplPath = _self %}
 
+{# The ask bar's prompt, with the visitor's name in it when they came through a VIP
+   door: "Ask me anything, Lee...". vip.personalise() returns the line untouched when
+   there is no VIP and no first name, so both bars below can use it blind.
+
+   Set once here rather than called twice: the two bars are the same invitation in two
+   places (the front door, and the thread's own bar once a conversation is running) and
+   they must not drift apart.
+
+   Safe to personalise because this page is never cached for anyone else — HTML goes out
+   `no-cache, no-store` and Cloudflare reports it DYNAMIC. The VIP strip in the layout
+   already relies on that.
+
+   The LABEL keeps no ellipsis: it is read aloud, where trailing dots are noise rather
+   than an invitation. #}
+{% set jonson = craft.app.getModule('jonson') %}
+{% set askPlaceholder = jonson.vip.personalise('Ask me anything...') %}
+{% set askLabel = jonson.vip.personalise('Ask me anything') %}
+
 {# Which backdrop the hero section draws behind the title and ask bar.
 
    'hero'   the Record3D point cloud (build/js/components/hero.js + the baked
@@ -46,8 +64,8 @@
                 class="c-frontdoor__input"
                 type="text"
                 name="question"
-                placeholder="Ask me anything..."
-                aria-label="Ask me anything"
+                placeholder="{{ askPlaceholder }}"
+                aria-label="{{ askLabel }}"
                 {# Matches AskController::MAX_QUESTION_CHARS. A courtesy, not a control —
                    the server truncates regardless, since anything can post to the
                    endpoint. This just stops an honest paste being silently cut later. #}
@@ -109,7 +127,7 @@
 
 {# Conversation view — revealed in-place on the first question. #}
 <section class="c-jonson" data-jonson-view hidden>
-    <p class="c-jonson__whisper">Ask me anything</p>
+    <p class="c-jonson__whisper u-font-whisper">Ask me anything</p>
 
     <div class="c-jonson__thread" data-jonson-thread></div>
 
@@ -132,10 +150,10 @@
                 class="c-jonson__input"
                 type="text"
                 name="question"
-                placeholder="Ask me anything..."
+                placeholder="{{ askPlaceholder }}"
                 {# No ellipsis on the label — it's read aloud, where trailing dots are
                    noise rather than an invitation. #}
-                aria-label="Ask me anything"
+                aria-label="{{ askLabel }}"
                 {# Matches AskController::MAX_QUESTION_CHARS. A courtesy, not a control —
                    the server truncates regardless, since anything can post to the
                    endpoint. This just stops an honest paste being silently cut later. #}
