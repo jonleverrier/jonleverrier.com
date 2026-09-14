@@ -19,7 +19,7 @@ require_ssh
 LOCAL_BACKUP="$BACKUP_DIR/local-before-pull-$STAMP.sql.gz"
 PROD_DUMP="$BACKUP_DIR/prod-$STAMP.sql.gz"
 
-step "1/3  Backing up the local database first"
+step "1/4  Backing up the local database first"
 ddev export-db --gzip=true --file="$LOCAL_BACKUP" >/dev/null
 say "saved $(basename "$LOCAL_BACKUP") ($(du -h "$LOCAL_BACKUP" | cut -f1))"
 
