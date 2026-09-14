@@ -329,7 +329,21 @@ $c-content-whisper: getmap($colour, primary, 450); // blue — the whisper
     @include typography(standfirst); // a tenth up on p-lg at each size — see the scale
     font-family: $g-font-secondary; // JonSonMono
     font-weight: 600; // the mono's bold face — see theme/_typography.scss
-    text-wrap: pretty; // a description: no lone short word on the last line
+    // BALANCE, NOT PRETTY — the same treatment as the front door's h1.
+    //
+    // `pretty` only intervenes when the last line is a LONE short word, and these
+    // summaries are one or two lines that rarely end that way: "Every design on this
+    // website is my / own work." keeps its two-word last line and its stranded "my",
+    // because two words is not an orphan by the spec's definition. `balance` evens
+    // every line instead, which is what a standfirst wants — it is a headline in
+    // paragraph clothing, read once, not running text where an even rag would look
+    // fussy. It also pulls the dangling conjunctions down: "...launch and / maintain"
+    // becomes "...launch / and maintain".
+    //
+    // Safe at any length: browsers stop balancing past a handful of lines (Chrome
+    // caps at six) and fall back to normal wrapping, so a long summary is never worse
+    // off than it is today.
+    text-wrap: balance;
     // Looser than the scale's 1.3: a bold mono at this size sets dense, and a
     // three-line standfirst wants air between the lines. Unitless, so it scales
     // with the font size at every breakpoint rather than needing a value each.
