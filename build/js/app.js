@@ -7,7 +7,6 @@
 
 import '../scss/app.scss';
 
-import {mountTunnel} from './components/tunnel.js';
 import {mountCycleLogoDescription} from './components/cycle-logo-description.js';
 import {mountLostForWords} from './components/lost-for-words.js';
 import {mountJonson} from './components/jonson-ask.js';
@@ -100,8 +99,19 @@ if ('scrollRestoration' in history) {
 }
 if (hero) {
     window.scrollTo(0, 0);
-    tunnel = mountTunnel(hero);
-    window.addEventListener('beforeunload', tunnel.dispose, {once: true});
+
+    // The tunnel is imported ON DEMAND, and only when its canvas is actually in the
+    // markup. It pulls in three — and a static import here put three in the bundle
+    // EVERY page loads, to power a backdrop the template currently doesn't render
+    // (see `backdrop` in _views/single/home/default.twig, presently 'hero'). The hero
+    // below was already deferred for exactly this reason; the deferral saved nothing
+    // while this import was hoisting the same library into the main chunk.
+    if (hero.querySelector('[data-tunnel-canvas]')) {
+        import('./components/tunnel.js').then(({mountTunnel}) => {
+            tunnel = mountTunnel(hero);
+            window.addEventListener('beforeunload', tunnel.dispose, {once: true});
+        });
+    }
 
     // The point-cloud backdrop, when the template asks for it instead of the tunnel
     // canvas (see _views/single/home/default.twig). mountTunnel above still runs
