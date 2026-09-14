@@ -53,6 +53,16 @@ $config = GeneralConfig::create()
     // NOTE: this only reaches the CDN if Cloudflare keys its cache on the query string.
     // The default "Standard" caching level does; "Ignore query string" would leave the
     // edge serving the old file to everyone regardless of what browsers do.
+    // The queue is run by a DAEMON now (Forge → server → Daemons, running
+    // `craft/craft queue/listen`), so web requests should stop doing it. Left on, every
+    // visitor's request can end up executing somebody's queued work — which is how a
+    // lead notification used to sit until the next person happened to browse the site,
+    // and why a 3am enquiry could go unannounced until morning.
+    //
+    // THE TRADE: if the daemon dies and supervisor cannot restart it, nothing runs the
+    // queue at all — there is no longer a fallback. Measured after switching: a pushed
+    // job is consumed in about 1.75s with no request involved.
+    ->runQueueAutomatically(false)
     ->revAssetUrls()
     // GraphQL off. Nothing on this site queries it — no tokens, no schema beyond the
     // one Craft creates itself — so it was a nav item pointing at an unused feature and

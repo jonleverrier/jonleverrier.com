@@ -43,4 +43,11 @@ SKIP_CRITICAL=1 URL=https://jonleverrier.com/ npm run build
 echo "==> reloading $FPM"
 sudo -n /usr/sbin/service "$FPM" reload
 
+# The queue daemon holds PHP in memory, so it keeps running the code it started with —
+# a deploy that changes a job would otherwise not take effect until something happened
+# to restart it. `restart all` is safe here because the queue listener is the only
+# supervisor program on this box; name it explicitly if that ever stops being true.
+echo "==> restarting the queue daemon"
+sudo -n /usr/bin/supervisorctl restart all || echo "(no daemon to restart)"
+
 echo "Deploy complete"

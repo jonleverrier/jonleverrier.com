@@ -39,6 +39,16 @@ derived `APP` from it and every deploy on a rebuilt server died immediately with
 wrong. Pinning both to `$HOME/jonleverrier.com` removes the guesswork, at the cost of
 the script no longer being portable to a differently-named site — which it never was.
 
+**The queue daemon is restarted at the end.** It is a Forge daemon (server → Daemons)
+running `craft/craft queue/listen`, and it holds PHP in memory — so it keeps executing
+the code it started with, and a deploy that changes a job would not take effect until
+something happened to restart it. `forge` has passwordless sudo for
+`supervisorctl restart *`, so this needs nothing extra.
+
+This matters more than it sounds since `runQueueAutomatically` is now **off**: web
+requests no longer run queued work, so the daemon is the only thing that does. If it is
+down, nothing runs — no lead notifications, no note memories.
+
 **No `craft up`.** Composer's own post-install hooks already run `clear-caches/all`,
 `migrate/all` and `project-config/apply`. Adding one would do the same work twice.
 
@@ -79,7 +89,7 @@ before ever reaching the last line.
 
 **If a deploy fails with a "command not found" for something that is obviously
 output**, check the script field for pasted log text before believing anything else.
-After pasting, `forge-deploy.sh` should be 41 lines ending in `echo "Deploy
+After pasting, `forge-deploy.sh` should be 53 lines ending in `echo "Deploy
 complete"`.
 
 ## If the tail keeps getting skipped
