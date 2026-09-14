@@ -520,26 +520,25 @@ class FindContext extends Component
         // names is the selection: "show me your logos" is the five studies whose
         // skills list Logo Design, not a curated taste of them. The answer's
         // name-drops ("…as I did for Vaiie") get no vote here. Featured lead.
-        if ($question !== null && trim($question) !== '') {
-            $named = $this->studiesNamedIn($question);
-            if ($named) {
-                // The most specific name wins. "Did you design Vaiie Identify?" names
-                // one study by TITLE and three by client, and the visitor meant the
-                // one: the title is the sharper claim, and the client name inside it
-                // is just how that study is called. So when the question names any
-                // study by title, those are the selection; only a question with no
-                // title in it falls to everything it named ("worked for Vaiie?" →
-                // all three; "show me your logos" → every study with the skill).
-                $byTitle = array_values(array_filter($named, fn(array $s) => $this->studyMatchTier($question, $s) === 1));
-                if ($byTitle) {
-                    $named = $byTitle;
-                }
-                usort($named, static fn(array $a, array $b) => ($b['featured'] <=> $a['featured']));
-                return $named;
-            }
-        }
-        // Nothing named outright: the whole exchange decides, by tier, and a broad
-        // match narrows to the featured.
+        // THE CARDS FOLLOW WHAT JONSON ACTUALLY SAID.
+        //
+        // The answer is consulted FIRST, and the question only when the answer named
+        // nothing. It used to be the other way round, and the rail could contradict the
+        // prose directly above it: asked "what have you been working on since Vaiie?",
+        // Jonson talked about White Paper and StreetPal and the rail showed three Vaiie
+        // studies. The question had named Vaiie — as the thing being moved PAST — and
+        // question-wins returned it before the answer was ever read.
+        //
+        // That is the general case, not a quirk of the word "since". A question sets up
+        // an answer and is often not a description of it: "who else have you worked
+        // with?", "anything outside fintech?", "what came after that?" all name the
+        // thing they are moving away from. What Jonson then chose to talk about is the
+        // best statement of what the cards should be, because the cards sit underneath
+        // it and are read as its illustration.
+        //
+        // The question still decides when the answer names nothing — a bare "show me
+        // your logos" answered with "here they are" has only the question to go on, and
+        // the five studies whose skills list Logo Design are what was asked for.
         //
         // Title and client are ONE pool. Both are the answer naming a study
         // outright, and an answer that talks about two projects will often name
@@ -559,6 +558,29 @@ class FindContext extends Component
         }
         $byTitle = $tiers[1] ?? [];
         $named = array_merge($byTitle, $tiers[2] ?? []);
+
+        // ONE CLIENT'S WORK IS NEVER A SWEEP.
+        //
+        // The narrowing below exists to catch a broad answer that name-drops half the
+        // catalogue. Three studies that all belong to the same client are the opposite
+        // of that: "have you worked for Vaiie?" has exactly three right answers, and
+        // showing two of them because three crossed a threshold reads as though the
+        // third does not exist.
+        //
+        // Checked before the count, so the threshold never applies to a single-client
+        // set however large it grows. Featured lead, so the strongest is still first.
+        // …UNLESS THE VISITOR NAMED ONE STUDY BY TITLE. "Did you design Vaiie Identify?"
+        // is about one project that happens to have two siblings, and answering it with
+        // the client's whole shelf is the specificity bug this file already fixed once.
+        // The answer still chooses WHICH studies; the question decides how fine-grained
+        // the pick should be.
+        $askedByTitle = ($question !== null && trim($question) !== '')
+            ? array_filter($named, fn(array $st) => $this->studyMatchTier($question, $st) === 1)
+            : [];
+        if (!$askedByTitle && count($named) > 1 && $this->sharedClient($named) !== null) {
+            usort($named, static fn(array $a, array $b) => ($b['featured'] <=> $a['featured']));
+            return $named;
+        }
         if ($named && count($named) > self::CASE_STUDY_TARGETED_MAX
             && $byTitle && count($byTitle) <= self::CASE_STUDY_TARGETED_MAX
         ) {
@@ -578,6 +600,31 @@ class FindContext extends Component
             $featuredRelevant = array_values(array_filter($relevant, static fn(array $s) => $s['featured']));
             if ($featuredRelevant) {
                 return $featuredRelevant;
+            }
+        }
+
+        // THE ANSWER NAMED NOTHING — now the question gets its say.
+        //
+        // "Show me your logos" answered with "here they are, have a look" leaves the
+        // cards nothing to read off the prose, and the visitor's own words are then the
+        // only statement of what they wanted: every study whose skills list Logo Design,
+        // not a curated taste of them.
+        //
+        // Reached only when the answer was silent about specific work, which is why it
+        // can no longer overrule a reply that named studies outright.
+        if ($question !== null && trim($question) !== '') {
+            $asked = $this->studiesNamedIn($question);
+            if ($asked) {
+                // The most specific name wins. "Did you design Vaiie Identify?" names
+                // one study by TITLE and three by client, and the visitor meant the
+                // one: the title is the sharper claim, and the client name inside it
+                // is just how that study is called.
+                $byTitle = array_values(array_filter($asked, fn(array $s) => $this->studyMatchTier($question, $s) === 1));
+                if ($byTitle) {
+                    $asked = $byTitle;
+                }
+                usort($asked, static fn(array $a, array $b) => ($b['featured'] <=> $a['featured']));
+                return $asked;
             }
         }
 
@@ -657,6 +704,30 @@ class FindContext extends Component
         return 0;
     }
 
+    /**
+     * The client every one of these studies belongs to, or null if they differ or any
+     * is unattributed. Used to tell a complete answer about one client apart from a
+     * sweep across many.
+     */
+    private function sharedClient(array $studies): ?string
+    {
+        $seen = null;
+        foreach ($studies as $s) {
+            $client = trim((string) ($s['client'] ?? ''));
+            if ($client === '') {
+                return null;
+            }
+            $key = mb_strtolower($client);
+            if ($seen === null) {
+                $seen = $key;
+            } elseif ($seen !== $key) {
+                return null;
+            }
+        }
+
+        return $seen;
+    }
+
     /** The studies a piece of text names — by title, client, sector or skill. */
     public function studiesNamedIn(string $text): array
     {
@@ -680,6 +751,13 @@ class FindContext extends Component
             'product', 'products', 'digital', 'development', 'developer', 'developing',
             'web', 'website', 'websites', 'online', 'service', 'services', 'work', 'works',
             'app', 'apps', 'application', 'applications', 'system', 'systems', 'platform',
+            // Branding is the trade's word for the work, not a name. "Urban.co.uk
+            // Product Branding" minus its client is "Product Branding", every word of
+            // which is generic — and an answer about Vaiie that said "the regtech suite
+            // branding" pulled Urban's study into a question about Vaiie. Another
+            // client's work under a question naming one client is never right, and no
+            // ranking further down can be trusted to hide it.
+            'brand', 'brands', 'branding',
         ];
         $haystack = ' ' . mb_strtolower($context) . ' ';
         if ($labels === null) {
