@@ -229,14 +229,23 @@
    fetched: gated, the preload went missing on precisely the visit that needed it.
 
    Ungated it costs nothing on a repeat homepage view — the preload resolves out of
-   the HTTP cache with no request. Placed after the block rather than in with the
-   fonts so the fonts and the critical CSS are still discovered first; this is a
-   backdrop, and it must not take early priority from what decides first paint.
+   the HTTP cache with no request.
+
+   fetchpriority="low" IS WHAT KEEPS IT OUT OF THE WAY, not its position in the head.
+   Being written after the fonts was meant to do that and does nothing: the preload
+   scanner finds every tag in one pass, and Chrome was starting this 365kB fetch at
+   HIGH priority 6ms in, alongside the fonts and the bundle — measured. Which is the
+   opposite of the intention, because the homepage's LCP element is the <h1>, and the
+   thing competing with it for a mobile connection was the backdrop behind it.
+
+   Low priority rather than no preload at all: hero.js is a dynamic import, so
+   without a tag here the binary cannot even be requested until the bundle has parsed
+   and the chunk has loaded. This keeps the early discovery and drops the urgency.
 
    `as="fetch"` + `crossorigin` to match what hero.js issues: a plain fetch(),
    which is CORS mode with same-origin credentials. #}
 {% if entry is defined and entry and entry.section.handle == 'homepage' %}
-    <link rel="preload" as="fetch" crossorigin href="{{ craft.vite.asset('build/assets/hero.bin') }}">
+    <link rel="preload" as="fetch" fetchpriority="low" crossorigin href="{{ craft.vite.asset('build/assets/hero.bin') }}">
 {% endif %}
 
 {# COLOUR-REVEAL INITIAL STATE — inline, on every page, deliberately duplicated
