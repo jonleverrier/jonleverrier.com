@@ -244,6 +244,25 @@
 
    `as="fetch"` + `crossorigin` to match what hero.js issues: a plain fetch(),
    which is CORS mode with same-origin credentials. #}
+{# The point cloud's CODE, discovered from the HTML rather than three levels into a
+   chain. app.js dynamically imports hero.js, which statically imports three — so the
+   browser could not learn that three exists until app.js had downloaded, parsed and
+   run, and then hero.js had done the same. Lighthouse measures that as a four-link
+   critical path; in bytes it meant 123kB starting its download 416ms in.
+
+   modulepreload fixes the DISCOVERY without touching the order of execution: the
+   module is fetched and parsed early and sits in the map until app.js asks for it.
+   Naming hero.js is enough — three is its static import, so it is found as soon as
+   this parses instead of waiting for the chain.
+
+   fetchpriority="low" for the same reason as the binary below: this is a backdrop.
+   Early discovery is worth having; early PRIORITY would put 123kB back in front of
+   the <h1>, which is the LCP element and the thing we just spent the afternoon
+   getting out of the way. #}
+{% if entry is defined and entry and entry.section.handle == 'homepage' %}
+    <link rel="modulepreload" fetchpriority="low" crossorigin href="{{ craft.vite.asset('build/js/components/hero.js') }}">
+{% endif %}
+
 {% if entry is defined and entry and entry.section.handle == 'homepage' %}
     {# .gz, because that is the copy hero.js asks for — a preload that does not match
        the real request is a second download rather than a saved one. #}
