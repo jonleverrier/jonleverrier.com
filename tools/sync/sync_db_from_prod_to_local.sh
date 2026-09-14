@@ -23,7 +23,7 @@ step "1/3  Backing up the local database first"
 ddev export-db --gzip=true --file="$LOCAL_BACKUP" >/dev/null
 say "saved $(basename "$LOCAL_BACKUP") ($(du -h "$LOCAL_BACKUP" | cut -f1))"
 
-step "2/3  Dumping production"
+step "2/4  Dumping production"
 DB="$(remote_env CRAFT_DB_DATABASE)"
 DU="$(remote_env CRAFT_DB_USER)"
 DP="$(remote_env CRAFT_DB_PASSWORD)"
@@ -41,13 +41,29 @@ sshx "MYSQL_PWD='$DP' mysqldump --single-transaction --quick --no-tablespaces \
 [ -s "$PROD_DUMP" ] || die "the dump came back empty"
 say "saved $(basename "$PROD_DUMP") ($(du -h "$PROD_DUMP" | cut -f1))"
 
-step "3/3  Importing into ddev"
+step "3/4  Importing into ddev"
 ddev import-db --file="$PROD_DUMP" >/dev/null
 ddev exec "rm -rf craft/storage/runtime/cache/*" >/dev/null 2>&1 || true
 
 TABLES=$(ddev mysql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()" 2>/dev/null | tr -d ' ')
 ENTRIES=$(ddev mysql -N -e "SELECT COUNT(*) FROM entries" 2>/dev/null | tr -d ' ')
 say "imported: $TABLES tables, $ENTRIES entries"
+
+step "4/4  Re-pointing the VIP door URLs at this environment"
+# mainSlug and altSlug store FULLY-QUALIFIED urls so they can be copied straight out
+# of the CP — which means a dump carries production's hostname into wherever it lands.
+# Left alone, every door in the local CP reads https://jonleverrier.com/vip/… and
+# clicking one leaves the machine you are working on.
+#
+# Both fields are rebuilt from UrlHelper::siteUrl() on EVERY save (services/Vip.php),
+# so a resave here regenerates them against this environment. Reusing the save handler
+# rather than rewriting hostnames in SQL: there is one definition of what these fields
+# contain, and it stays in PHP.
+#
+# The CLI is craft/craft — `php craft` exits 0 and does nothing at all.
+ddev exec "php craft/craft resave/entries --section=vip" >/dev/null 2>&1 \
+    && say "vip doors now point at this environment" \
+    || say "WARNING: vip resave failed — doors still hold production URLs"
 
 step "Done. Local now matches production."
 say "rollback: ddev import-db --file=$LOCAL_BACKUP"
