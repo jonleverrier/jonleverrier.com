@@ -7,6 +7,12 @@ import VitePluginSvgSpritemap from '@spiriit/vite-plugin-svg-spritemap';
 import critical from 'rollup-plugin-critical';
 
 // https://vitejs.dev/config/
+// Where the critical-CSS crawl should actually send its requests. See the long note
+// beside the plugin below: on the server the public URL comes back as a Cloudflare
+// challenge, so it resolves to the origin instead. Empty string = no rewriting.
+const CRITICAL_ORIGIN = process.env.CRITICAL_ORIGIN
+    ?? (process.env.IS_DDEV_PROJECT === 'true' ? '' : '127.0.0.1');
+
 export default defineConfig(({command}) => ({
     base: command === 'serve' ? '' : '/dist/',
     publicDir: path.resolve(__dirname, './build/static'),
@@ -127,6 +133,32 @@ export default defineConfig(({command}) => ({
         // Opt-OUT rather than opt-in, so local behaviour is untouched: `npm run
         // build` in ddev still generates critical CSS exactly as before, and only
         // the deploy script sets SKIP_CRITICAL=1.
+        // The origin to point the critical crawl at, and WHY IT DEFAULTS ON.
+        //
+        // Deriving it rather than requiring an env var is deliberate: the deploy
+        // script Forge actually runs is a copy pasted into its UI, not the file in
+        // tools/deploy/, so anything that has to be added THERE does not take effect
+        // until someone remembers to paste it. This needs no such step — off ddev,
+        // the bypass is simply on. IS_DDEV_PROJECT is set in the container and
+        // nowhere else, and CRITICAL_ORIGIN still overrides both ways.
+        // CRITICAL_ORIGIN — the reason the server's critical CSS was worthless.
+        //
+        // The step renders the LIVE url in headless Chromium, and on the box that
+        // request goes out to Cloudflare and comes back 403 "Just a moment..." —
+        // Bot Fight Mode does not know the origin from any other bot. Penthouse duly
+        // extracted the critical CSS of the CHALLENGE PAGE: 1,734 bytes of @font-face
+        // and reset, byte-identical for all six templates, with no .c-frontdoor,
+        // .b-header or .b-slab in it. Nothing errored; the deploy looked clean.
+        //
+        // Set CRITICAL_ORIGIN=127.0.0.1 and both fetchers are pointed at the origin
+        // instead, keeping the real Host and SNI so nginx serves the right vhost:
+        //   · Chromium via --host-resolver-rules (penthouse already passes
+        //     --ignore-certificate-errors, which the origin cert needs);
+        //   · critical's own HTML fetch via got's `lookup`, which is the DNS call
+        //     itself — the URL is untouched, so every asset it then resolves is
+        //     still same-origin.
+        // Unset locally, where ddev's url resolves to the container and there is no
+        // Cloudflare in the way, so nothing here changes for `npm run build`.
         ...(process.env.SKIP_CRITICAL === '1' ? [] : [critical({
             criticalUrl: process.env.URL,
             criticalBase: './public/dist/criticalcss/',
@@ -171,8 +203,24 @@ export default defineConfig(({command}) => ({
                 // TLS opt-out needed.
                 request: {
                     https: {rejectUnauthorized: false},
+                    // Signature is node's dns.lookup: (hostname, options, callback).
+                    ...(CRITICAL_ORIGIN ? {
+                        lookup: (_hostname, _options, callback) =>
+                            callback(null, CRITICAL_ORIGIN, 4),
+                    } : {}),
                 },
                 penthouse: {
+                    // MAP the site's host to the origin, rather than `MAP *`: the
+                    // page pulls fonts and the stylesheet from its own host, and
+                    // anything genuinely third-party should still fail normally
+                    // instead of being silently redirected at localhost.
+                    ...(CRITICAL_ORIGIN && process.env.URL ? {
+                        puppeteer: {
+                            args: [
+                                `--host-resolver-rules=MAP ${new URL(process.env.URL).hostname} ${CRITICAL_ORIGIN}`,
+                            ],
+                        },
+                    } : {}),
                     // The page-transition rules live in _utilities.scss, but neither
                     // class is on <html> when the page is captured, so penthouse would
                     // drop them as unmatched — and a first-time visitor gets the main
