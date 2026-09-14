@@ -135,9 +135,19 @@ export function mountThinkingOrb(canvas) {
         const cosX = Math.cos(ax);
         const sinX = Math.sin(ax);
 
-        // The sphere breathes very slightly — 4%. Enough to feel alive next to the
-        // halo pulsing behind it, small enough that the silhouette never wobbles.
-        const breathe = reduced ? 1 : 1 + Math.sin((t * 1000 / BREATHE_MS) * Math.PI * 2) * 0.04;
+        // THE SPHERE BREATHES FROM 80% TO FULL SIZE AND BACK.
+        //
+        // It was 4% either side of full — technically a pulse, and invisible; 4% of a
+        // 124px sphere is about two pixels. A fifth of the radius moves the whole
+        // shape, which is what makes it read as waiting rather than as a still picture
+        // with something twitching inside it.
+        //
+        // -cos rather than sin, so the cycle STARTS at the small end and grows: the orb
+        // appears the instant the question is sent, so the first frame is the one
+        // everybody actually sees, and it should be gathering itself rather than caught
+        // mid-deflate. 1.0 is the ceiling, never more — the sphere is sized to sit
+        // inside the halo, and overshooting would push points out through it.
+        const breathe = reduced ? 1 : 0.9 - Math.cos((t * 1000 / BREATHE_MS) * Math.PI * 2) * 0.1;
 
         // A plane of brightness travelling through the ball along x. Points it passes
         // gain radius AND alpha together — the same pairing the canvas grid applies
