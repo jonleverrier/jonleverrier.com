@@ -252,15 +252,30 @@
 
    modulepreload fixes the DISCOVERY without touching the order of execution: the
    module is fetched and parsed early and sits in the map until app.js asks for it.
-   Naming hero.js is enough — three is its static import, so it is found as soon as
-   this parses instead of waiting for the chain.
+
+   Naming hero.js is NOT enough, which is what this originally assumed. Chrome
+   fetches the module named in the tag and does not walk its import graph, so three
+   stayed exactly where it was — measured on prod, it was requested script-initiated
+   at ~1.3s, i.e. only once app.js had downloaded, parsed and run. Preloading a
+   dynamic import means naming its static imports too, which craft.frontend.chunkImports
+   reads out of the manifest (the chunk is content-hashed, so it cannot be written
+   out by hand without going stale silently).
 
    fetchpriority="low" for the same reason as the binary below: this is a backdrop.
    Early discovery is worth having; early PRIORITY would put 123kB back in front of
    the <h1>, which is the LCP element and the thing we just spent the afternoon
-   getting out of the way. #}
+   getting out of the way.
+
+   Measured either side, 5 cold runs each, 1.6Mbps/150ms/4x CPU: three moves from
+   1260ms (script-initiated) to 321ms (parser-initiated), and LCP is 520ms vs 524ms —
+   i.e. unchanged. It is free because the <h1> waits on the document and nothing
+   after it; holding hero.js, three and the binary back by 4s does not improve LCP
+   either, which is the same fact from the other side. #}
 {% if entry is defined and entry and entry.section.handle == 'homepage' %}
     <link rel="modulepreload" fetchpriority="low" crossorigin href="{{ craft.vite.asset('build/js/components/hero.js') }}">
+    {% for url in craft.frontend.chunkImports('build/js/components/hero.js') %}
+        <link rel="modulepreload" fetchpriority="low" crossorigin href="{{ url }}">
+    {% endfor %}
 {% endif %}
 
 {% if entry is defined and entry and entry.section.handle == 'homepage' %}

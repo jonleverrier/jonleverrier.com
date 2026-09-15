@@ -11,6 +11,7 @@ use modules\frontend\helpers\Notes;
 use modules\frontend\helpers\Social;
 use modules\frontend\helpers\Testimonials;
 use modules\jonson\Jonson;
+use nystudio107\pluginvite\helpers\FileHelper;
 use nystudio107\vite\Vite;
 
 /**
@@ -428,4 +429,62 @@ class FrontEndVariable
     {
         return sprintf('#%02x%02x%02x', $rgb[0], $rgb[1], $rgb[2]);
     }
+
+    /**
+     * URLs of the chunks a manifest entry statically imports.
+     *
+     * For preloading a dynamic import's dependencies. `craft.vite.asset()` resolves
+     * one entry and stops there: a dynamically-imported chunk's OWN static imports
+     * are not reachable through it. Naming the parent in a modulepreload does not
+     * reach them either — Chrome fetches the module named in the tag and does not
+     * walk its import graph, which is measurable: with only hero.js named, three was
+     * requested script-initiated ~1.3s in, and with this it is parser-initiated at
+     * ~0.3s alongside the bundle.
+     *
+     * Resolved THROUGH the manifest rather than written out as a filename, because
+     * the chunk carries a content hash — three.module.<hash>.js — and a hard-coded
+     * one stops matching the day the dependency is updated. That failure would be
+     * silent in the way this codebase keeps getting caught by: a preload pointing at
+     * a URL that 404s costs a request, warns only in the console, and leaves the page
+     * working normally otherwise.
+     *
+     * Empty while the dev server is running — it serves modules individually and
+     * there is no manifest to read — and empty rather than throwing if the manifest
+     * is missing or unreadable, which just means no preload hint.
+     */
+    public function chunkImports(string $path): array
+    {
+        $vite = Vite::$plugin?->vite;
+        if ($vite === null || $vite->devServerRunning()) {
+            return [];
+        }
+
+        $manifest = self::viteManifest($vite->manifestPath);
+        $urls = [];
+
+        foreach ($manifest[$path]['imports'] ?? [] as $key) {
+            $file = $manifest[$key]['file'] ?? null;
+            if ($file !== null) {
+                $urls[] = FileHelper::createUrl($vite->serverPublic, $file);
+            }
+        }
+
+        return $urls;
+    }
+
+    /** The decoded Vite manifest, memoized for the request. */
+    private static function viteManifest(string $path): array
+    {
+        if (self::$viteManifest !== null) {
+            return self::$viteManifest;
+        }
+
+        $json = is_readable($path) ? file_get_contents($path) : false;
+        $decoded = $json === false ? null : json_decode($json, true);
+
+        return self::$viteManifest = is_array($decoded) ? $decoded : [];
+    }
+
+    /** @var array|null Memoized manifest, see viteManifest(). */
+    private static ?array $viteManifest = null;
 }
