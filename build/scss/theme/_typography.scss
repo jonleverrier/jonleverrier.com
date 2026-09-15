@@ -26,7 +26,7 @@ body {
     font-family: 'JonSonSans';
     src: url('@fonts/Baikal-ExpandedBold.woff2') format(woff2),
          url('@fonts/Baikal-ExpandedBold.otf') format(opentype);
-    font-display: fallback;
+    font-display: swap;
     font-style: normal;
     font-stretch: normal;
     font-weight: 600;
@@ -36,7 +36,7 @@ body {
     font-family: 'JonSonSans';
     src: url('@fonts/Baikal-ExpandedLight.woff2') format(woff2),
          url('@fonts/Baikal-ExpandedLight.otf') format(opentype);
-    font-display: fallback;
+    font-display: swap;
     font-style: normal;
     font-stretch: normal;
     font-weight: 500;
@@ -45,7 +45,7 @@ body {
 @font-face {
     font-family: 'JonSonMono';
     src: url('@fonts/soehne-mono-leicht.woff2') format('woff2');
-    font-display: fallback;
+    font-display: swap;
     font-style: normal;
     font-stretch: normal;
     font-weight: 500;
@@ -54,7 +54,7 @@ body {
 @font-face {
     font-family: 'JonSonMono';
     src: url('@fonts/soehne-mono-halbfett.woff2') format('woff2');
-    font-display: fallback;
+    font-display: swap;
     font-style: normal;
     font-stretch: normal;
     font-weight: 600;
