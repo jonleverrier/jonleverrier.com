@@ -58,6 +58,28 @@ const marqueeAllowed = () =>
     (window.matchMedia(MARQUEE_MQ).matches || window.matchMedia(MARQUEE_WIDE_MQ).matches)
     && !window.matchMedia(REDUCED_MQ).matches;
 
+// Run `fn` once the browser has laid the page out by itself.
+//
+// Every entry point in this file ends in a measurement, and a measurement made from
+// script is a FORCED layout: the browser has to stop and lay out the whole document
+// before it can answer. Reached from app.js — one long synchronous pass that has just
+// rewritten half the page — that was both the most expensive layout the page ever did
+// (115ms on /case-studies, 4x throttled) and a wasted one, because the rest of app.js
+// dirties the layout again and the browser lays the page out a second time before it
+// paints. It was the only forced reflow on the page; nothing else in app.js measures.
+//
+// A frame out, layout is already clean and the very same reads cost nothing.
+//
+// rAF TWICE, not once: a single rAF callback runs BEFORE that frame's layout, so a
+// read inside it forces one just the same. The second lands after the first frame has
+// laid out and painted.
+//
+// Safe to be a beat late: `is-ready` only switches the CSS animation on (see
+// _clients.scss) and the case-study strip paints its starting offset before its first
+// frame, so nothing moves, flashes or reflows in the meantime — the drift simply
+// starts a frame later than it used to, which is not a thing anyone can see.
+const afterLayout = (fn) => requestAnimationFrame(() => requestAnimationFrame(fn));
+
 // Build or unwind every registered case-study strip to match the current viewport.
 // Runs on content arrival AND whenever the query flips, so resizing across the
 // breakpoint works in both directions — enlarge and the strip starts moving, narrow
@@ -128,7 +150,7 @@ export function setupMarquees(scope) {
     // window is narrow still has to start moving if the window is later widened.
     scope.querySelectorAll('.c-case-studies--marquee').forEach((el) => caseStudyMarquees.add(el));
     watchViewport();
-    syncCaseStudyMarquees();
+    afterLayout(syncCaseStudyMarquees);
     // Panels are composed off-screen and revealed as a piece, so the first attempt
     // usually measures zero and mountCaseStudyMarquee returns null. Retry until it
     // takes; each call is a no-op once a strip is mounted.
@@ -195,11 +217,13 @@ export function setupMarquee(marquee, options = {}) {
     // and revealed as a whole, so at this point everything here often measures 0 —
     // which silently pinned the duration to its 8s floor and made the fill loop a
     // no-op.
+    //
+    // Never called straight from here, though it used to be. Measuring on this line
+    // forces the layout described at afterLayout; the observer below already does the
+    // job, and it is handed its reading AFTER the browser's own layout, so it pays
+    // nothing for it. A strip that is genuinely ready still builds on the very next
+    // frame — the wait was never what this guard was for.
     const ready = () => marquee.clientWidth > 0 && run.scrollWidth > 0;
-    if (ready()) {
-        build();
-        return;
-    }
 
     // Any previous watchers for this element are stale — a fresh call means another
     // chance to build (new content arrived, or the viewport crossed the breakpoint).
