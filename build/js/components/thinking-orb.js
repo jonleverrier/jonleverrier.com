@@ -135,19 +135,28 @@ export function mountThinkingOrb(canvas) {
         const cosX = Math.cos(ax);
         const sinX = Math.sin(ax);
 
-        // THE SPHERE BREATHES FROM 80% TO FULL SIZE AND BACK.
+        // THE SPHERE BREATHES FROM 64% TO 80% OF ITS RADIUS AND BACK.
         //
         // It was 4% either side of full — technically a pulse, and invisible; 4% of a
         // 124px sphere is about two pixels. A fifth of the radius moves the whole
         // shape, which is what makes it read as waiting rather than as a still picture
-        // with something twitching inside it.
+        // with something twitching inside it. That fifth is kept here: 0.64 to 0.80 is
+        // the same 1.25x swell the 0.80-to-1.00 version had, moved down the scale.
+        //
+        // The CEILING is the part that changed — it used to reach 1.0, filling the box
+        // it is drawn into. At ~107px against a 124px canvas the sphere was the whole
+        // component, and the halo behind it had nothing to be a halo AROUND. Topping
+        // out at 0.80 (~85px) leaves the glow somewhere to sit.
         //
         // -cos rather than sin, so the cycle STARTS at the small end and grows: the orb
         // appears the instant the question is sent, so the first frame is the one
         // everybody actually sees, and it should be gathering itself rather than caught
-        // mid-deflate. 1.0 is the ceiling, never more — the sphere is sized to sit
-        // inside the halo, and overshooting would push points out through it.
-        const breathe = reduced ? 1 : 0.9 - Math.cos((t * 1000 / BREATHE_MS) * Math.PI * 2) * 0.1;
+        // mid-deflate. 0.80 is now the ceiling, never more — overshooting would push
+        // points out through the halo.
+        //
+        // Reduced motion holds it at the CEILING, not at 1.0 — a still sphere should be
+        // the same size as the moving one at its fullest, and 1.0 stopped being that.
+        const breathe = reduced ? 0.8 : 0.72 - Math.cos((t * 1000 / BREATHE_MS) * Math.PI * 2) * 0.08;
 
         // A plane of brightness travelling through the ball along x. Points it passes
         // gain radius AND alpha together — the same pairing the canvas grid applies

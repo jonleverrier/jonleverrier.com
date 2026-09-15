@@ -576,11 +576,14 @@ $c-jonson-line: #383910;
 
 
 
-// The thinking orb's breathing glow — a pronounced scale + brightness pulse (the
-// glow itself is faint, so the movement is what gives it life).
+// The thinking orb's breathing glow. The BRIGHTNESS carries it — 0.25 to 1 is a
+// four-fold swing and that is what reads as breathing. The scale is deliberately
+// held to a narrow 0.80-0.90 band: the halo used to swell to 1.15 (168px against a
+// 124px shell) and the outward travel was doing more than the glow needed, pulling
+// the eye away from the sphere it is meant to sit behind.
 @keyframes c-jonson-orb {
-    0%, 100% { opacity: 0.25; transform: translate(-50%, -50%) scale(0.85); }
-    50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.15); }
+    0%, 100% { opacity: 0.25; transform: translate(-50%, -50%) scale(0.8); }
+    50%      { opacity: 1;    transform: translate(-50%, -50%) scale(0.9); }
 }
 
 @keyframes c-jonson-rise {
