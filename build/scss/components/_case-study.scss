@@ -1251,7 +1251,27 @@ $c-case-study-client-drop: rem(22);
     line-height: 1.2;
 }
 
+// Everything moves up a rung on a desktop: the tiles and slides take the shared p-lg
+// (24/26/28) and the LEAD takes h4 (25/28/32) above it.
+//
+// `p` was too quiet here. It tops out at 23 against a 547px card — the same size the
+// body prose runs at, on a title that is the only text the card has and the thing the
+// visitor is scanning for. h4 on the lead is what keeps the hierarchy once the tiles
+// are at p-lg; it is the one place on this card where h4 being a step ABOVE p-lg is
+// the point rather than the bug it was when the tiles had it.
 @include mq(from, lg) {
+    .c-case-studies--stacked .c-case-studies__item:first-child .c-case-study__title {
+        @include typography(h4);
+        line-height: 1.2;
+    }
+
+    // The tiles and slides stay a size down. They are half the lead's width, so the
+    // same type on them is a wall rather than a heading, and the gap between the two is
+    // what says which card the page is leading with.
+    //
+    // Note h4 here is a step ABOVE p-lg on the scale (25/28/32 against 24/26/28) — it
+    // is the right call on the lead, and was the wrong one when these tiles had it,
+    // because it made a 547px card's title larger than the 1110px one's.
     .c-case-studies--stacked .c-case-studies__item:not(:first-child) .c-case-study__title,
     .c-case-studies--marquee .c-case-study__title {
         @include typography(p);
