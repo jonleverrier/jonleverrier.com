@@ -285,16 +285,22 @@
    the canvas is up at ~4.1-4.4s either way.
 
    What it actually buys is the removal of a Lighthouse critical-chain link, and the
-   head start is there to be spent if the binary ever stops being the long pole. It
-   costs nothing for repeat visitors, for whom the chunk is simply a cache hit. #}
-{% if entry is defined and entry and entry.section.handle == 'homepage' %}
+   head start is there to be spent if the binary ever stops being the long pole.
+
+   FIRST VISIT ONLY, like the fonts above and for the reason written there: a
+   returning visitor already holds these (max-age=2592000, public), so the hint buys
+   nothing and spends early bandwidth on a request the cache would have served.
+   `firstVisit` comes off the criticalcss cookie at the top of this file, which is
+   keyed to the build — so a deploy re-arms it, which is right, because a deploy is
+   also what rehashes these filenames. #}
+{% if firstVisit and entry is defined and entry and entry.section.handle == 'homepage' %}
     <link rel="modulepreload" fetchpriority="low" crossorigin href="{{ craft.vite.asset('build/js/components/hero.js') }}">
     {% for url in craft.frontend.chunkImports('build/js/components/hero.js') %}
         <link rel="modulepreload" fetchpriority="low" crossorigin href="{{ url }}">
     {% endfor %}
 {% endif %}
 
-{% if entry is defined and entry and entry.section.handle == 'homepage' %}
+{% if firstVisit and entry is defined and entry and entry.section.handle == 'homepage' %}
     {# .gz, because that is the copy hero.js asks for — a preload that does not match
        the real request is a second download rather than a saved one. #}
     <link rel="preload" as="fetch" fetchpriority="low" crossorigin href="{{ craft.vite.asset('build/assets/hero.bin') }}.gz">
