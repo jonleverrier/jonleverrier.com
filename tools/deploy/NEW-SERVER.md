@@ -295,3 +295,18 @@ du -sb ~/jonleverrier.com/shared/assets | cut -f1
 3. Check Cloudflare's caching level is **Standard**. "Ignore query string" would defeat
    `revAssetUrls()` and serve stale images for the full 30-day max-age; "No query
    string" would make every revved asset uncacheable.
+
+
+## /etc/hosts — required, and silent when missing
+
+    grep -q "^127.0.0.1 jonleverrier.com$" /etc/hosts \
+      || echo "127.0.0.1 jonleverrier.com" >> /etc/hosts     # as root, e.g. a Forge Recipe
+
+The deploy's critical-CSS step renders the live site in headless Chromium. Without
+this line that request leaves for Cloudflare and returns a `403` bot challenge, and
+penthouse extracts the CHALLENGE PAGE's CSS — six byte-identical 1,734-byte files
+with no layout rules in them. No error, clean deploy log, and a homepage that paints
+unstyled and reflows when the async stylesheet arrives (CLS 0.446).
+
+Bot Fight Mode cannot be bypassed with an IP allow rule; this is the way round it.
+See README.md beside this file for the full measurement.

@@ -36,6 +36,46 @@ Check it is working from outside: `curl -s https://jonleverrier.com/` and look f
 on a visitor's FIRST load — there is a `criticalcss` cookie (see
 `modules/frontend/variables/FrontEndVariable.php`), so test with a clean jar.
 
+**THE SERVER NEEDS `127.0.0.1 jonleverrier.com` IN `/etc/hosts`.** Without it the
+critical-CSS step is worse than useless and says nothing about it.
+
+The step renders the live URL in headless Chromium. From the box that request goes
+out to Cloudflare and comes back `403` with `cf-mitigated: challenge` — Bot Fight
+Mode (`bot_management.fight_mode`) cannot tell the origin from any other bot.
+Penthouse then extracts the critical CSS OF THE CHALLENGE PAGE: 1,734 bytes of
+@font-face and reset, byte-identical for all six templates, no `.c-frontdoor`,
+`.b-header` or `.b-slab`. Nothing errors and the deploy log is clean.
+
+Bot Fight Mode is the one Cloudflare protection that IP Access Rules, WAF skip rules
+and Page Rules all CANNOT bypass — an allow rule for the origin IP was tried and
+does nothing. The hosts entry sidesteps Cloudflare at the OS resolver instead, which
+curl, got and Chromium all honour, and leaves the public security untouched:
+
+    grep -q "^127.0.0.1 jonleverrier.com$" /etc/hosts \
+      || echo "127.0.0.1 jonleverrier.com" >> /etc/hosts     # as root
+
+Forge Recipes run as root, which is the easiest way in — `forge` has no passwordless
+sudo for this.
+
+Measured either side, mobile: CLS **0.446 -> 0** (the 0.409 reflow of `.b-slab--p500`
+when the async stylesheet landed at ~2.1s), performance 63 -> 83 on the same harness.
+FCP gives back ~0.7s for the 22kB of inlined CSS, which is the trade.
+
+Verify from outside with a clean cookie jar (it is only inlined on a FIRST visit —
+see `criticalcss` in modules/frontend/variables/FrontEndVariable.php):
+
+    curl -s https://jonleverrier.com/ | grep -c c-frontdoor
+
+and on the box, that the six files differ and are 16-25kB, not 1,734 bytes each:
+
+    find public/dist/criticalcss -name '*.min.css' -exec md5sum {} \;
+
+Two traps worth knowing. rollup-plugin-critical writes its files AFTER vite prints
+`✓ built in` — counting them immediately reports zero and looks exactly like failure.
+And do not try to fix this inside the build: resolving the host to 127.0.0.1 in got
+(`dnsLookup`, not `lookup`) and Chromium (`--host-resolver-rules`) was tried, took
+three bugs to stop erroring, and still produced nothing.
+
 **`URL=` on the build is not optional.** The build defaults to the local hostname, and
 the critical-CSS step renders that URL in headless Chrome to work out what is above
 the fold. Pointed at localhost it silently produces nothing useful.
