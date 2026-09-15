@@ -266,11 +266,27 @@
    the <h1>, which is the LCP element and the thing we just spent the afternoon
    getting out of the way.
 
-   Measured either side, 5 cold runs each, 1.6Mbps/150ms/4x CPU: three moves from
-   1260ms (script-initiated) to 321ms (parser-initiated), and LCP is 520ms vs 524ms —
-   i.e. unchanged. It is free because the <h1> waits on the document and nothing
-   after it; holding hero.js, three and the binary back by 4s does not improve LCP
-   either, which is the same fact from the other side. #}
+   Measured on a FIRST-TIME visitor specifically — fresh profile per run, so the
+   document is the 89kB one carrying 21kB of inlined critical CSS, and nothing is in
+   the HTTP cache. That distinction matters and was got wrong first time round: with
+   one profile reused, run 1 is a first visit and the rest are repeat visits (the
+   criticalcss cookie suppresses the inlining), so the median silently reports the
+   repeat visitor. 5 runs each, 1.6Mbps/150ms/4x CPU:
+
+       three starts   1565ms (script)  ->  620ms (parser)
+       FCP             780ms           ->  772ms
+       LCP             852ms           ->  840ms
+
+   So: free, but do not oversell it. LCP is unchanged — the <h1> waits on the
+   document and nothing after it, which the other direction confirms (holding
+   hero.js, three AND the binary back by four seconds moves LCP 896ms -> 920ms, i.e.
+   not at all). And the hero does not appear any sooner either: the 293kB point-cloud
+   binary gates that, and it lands 0.7-0.8s AFTER three with or without this tag, so
+   the canvas is up at ~4.1-4.4s either way.
+
+   What it actually buys is the removal of a Lighthouse critical-chain link, and the
+   head start is there to be spent if the binary ever stops being the long pole. It
+   costs nothing for repeat visitors, for whom the chunk is simply a cache hit. #}
 {% if entry is defined and entry and entry.section.handle == 'homepage' %}
     <link rel="modulepreload" fetchpriority="low" crossorigin href="{{ craft.vite.asset('build/js/components/hero.js') }}">
     {% for url in craft.frontend.chunkImports('build/js/components/hero.js') %}
