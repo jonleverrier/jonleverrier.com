@@ -71,9 +71,15 @@ const TILT = 0.38;      // radians of resting lean, so we never look straight do
 
 const BREATHE_MS = 2400; // matches the halo's breathing in the stylesheet
 // Sweeps of the brightening plane per second. 0.55 (one pass every 1.8s) read as a
-// wipe hurrying across; at 0.3 it takes about three and a third seconds, which is long
-// enough to watch it travel rather than catch it having travelled.
-const SCAN_HZ = 0.3;
+// wipe hurrying across; 0.3 took about three and a third seconds, which was long
+// enough to watch it travel rather than catch it having travelled. 0.24 is a little
+// slower again — 4.2s — now that the sphere it crosses is smaller and the plane has
+// less distance to cover, so the same rate read faster than it did.
+//
+// Not 0.25, which would be a tidy 4.0s against the 2.4s breathe: a 5:3 ratio puts the
+// two back in phase every 12s, and a backdrop that visibly repeats is a backdrop you
+// start watching. 0.24 pushes that out to ~25s.
+const SCAN_HZ = 0.24;
 
 /**
  * Points spread evenly over a unit sphere by the Fibonacci spiral.
