@@ -127,6 +127,25 @@ if (hero) {
         // together cost about 135ms, of which 57ms is main-thread work — three or four
         // frames. Waiting out the 640ms warp-in to dodge that traded a hitch nobody
         // would notice for two thirds of a second of blank slab, which everybody does.
+        //
+        // Tried a second time once head.twig began preloading hero.js and three, on
+        // the reasoning that the bytes now arrive early so a deferral would only move
+        // the main-thread work rather than the download. It moves nothing worth
+        // having, because there is nothing there to move:
+        //
+        //   · three is parsed on a BACKGROUND thread — 190ms at v8.parseOnBackground,
+        //     not on the one that matters.
+        //   · createHero does not run until the 293kB point-cloud binary lands, which
+        //     is ~3.6s in. By then the page has been interactive for three seconds.
+        //
+        // Measured with requestIdleCallback and a 400ms ceiling, 4 first-visit runs
+        // each, built bundle, 1.6Mbps/150ms/4x CPU:
+        //
+        //     TBT      174ms -> 163ms    ranges 97-209 vs 155-187, i.e. noise
+        //     canvas  3618ms -> 3765ms   the backdrop just turns up later
+        //
+        // The binary is the long pole. Anything done to the mount is rearranging what
+        // happens after it — if this wants to be faster, that 293kB is the thing.
         import('./components/hero.js')
             .then(({createHero}) => createHero(heroCloud))
             .then((cloud) => {
