@@ -24,8 +24,8 @@ $c-cursor-icon-size: rem(20);
 // once you've left the card the badge's only job is to get out of the way. The fade
 // and the scale share a duration in each direction so neither outlives the other.
 $c-cursor-in:        320ms;
-$c-cursor-in-fade:   160ms;  // fill arrives ahead of the scale settling
-$c-cursor-out:       140ms;
+$c-cursor-in-fade:   $c-badge-fade-in;  // shared with the card's ring, see theme/_setup
+$c-cursor-out:       $c-badge-fade-out; // shared with the card's ring, see theme/_setup
 $c-cursor-stagger:    60ms;  // arrow behind the disc, on entry only
 $c-cursor-ease-in:   cubic-bezier(0.16, 1, 0.3, 1);   // decelerate into place
 $c-cursor-ease-out:  cubic-bezier(0.4, 0, 1, 1);      // accelerate away
@@ -90,16 +90,22 @@ $c-cursor-ease-out:  cubic-bezier(0.4, 0, 1, 1);      // accelerate away
 // base rule it applied to the exit too, leaving the arrow hanging after the disc had
 // started collapsing. Same reasoning as the card's staggered lines: stagger in,
 // leave together.
+// Rotated to point north east, matching the ring on the feature card — the pointer
+// badge and the card's own arrow are the same gesture, so they should aim the same way.
+//
+// Folded INTO both transforms rather than declared beside them: transform is one
+// property, and a second declaration would simply replace the scale that does the
+// pop-in. The rotation is constant across both states, so only the scale animates.
 .c-cursor__icon {
     position: relative;
     width: $c-cursor-icon-size;
     height: $c-cursor-icon-size;
-    transform: scale(0.4);
+    transform: rotate(-45deg) scale(0.4);
     transition: transform $c-cursor-out $c-cursor-ease-out;
 }
 
 .c-cursor.is-visible .c-cursor__icon {
-    transform: none;
+    transform: rotate(-45deg);
     transition: transform $c-cursor-in $c-cursor-ease-in $c-cursor-stagger;
 }
 

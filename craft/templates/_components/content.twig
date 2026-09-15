@@ -219,12 +219,15 @@
            timeline's trailing spine and end node (.c-content::after) still come
            after it rather than the strip hanging off the bottom of the page. #}
         {% if caseStudies %}
-            <div class="c-content__work">
+            <div class="c-content__work{{ (caseStudiesStacked ?? false) ? ' c-content__work--column' : '' }}">
                 <div class="c-content__work-inner js-reveal">
                     {% if caseStudiesTitle %}
                         <p class="c-content__work-whisper u-font-whisper">{{ caseStudiesTitle }}</p>
                     {% endif %}
-                    {% include '_components/case-studies-strip' with { studies: caseStudies } only %}
+                    {% include '_components/case-studies-strip' with {
+                        studies: caseStudies,
+                        stacked: caseStudiesStacked ?? false,
+                    } only %}
                 </div>
             </div>
         {% endif %}

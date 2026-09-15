@@ -148,7 +148,11 @@ export function setupMarquees(scope) {
 
     // Register regardless of the current viewport — a strip that arrives while the
     // window is narrow still has to start moving if the window is later widened.
-    scope.querySelectorAll('.c-case-studies--marquee').forEach((el) => caseStudyMarquees.add(el));
+    // :not(--stacked) — a strip can ask to be a column instead (see case-studies-strip).
+    // Registering one would mount the drift on it, clone its run and set a transform,
+    // all of which the stacked CSS then has to fight.
+    scope.querySelectorAll('.c-case-studies--marquee:not(.c-case-studies--stacked)')
+        .forEach((el) => caseStudyMarquees.add(el));
     watchViewport();
     afterLayout(syncCaseStudyMarquees);
     // Panels are composed off-screen and revealed as a piece, so the first attempt

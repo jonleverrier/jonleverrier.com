@@ -29,6 +29,9 @@ const KEY = 'jonson.vip'; // the uid of the last VIP door this browser came thro
 // How long the greeting stays open on its own before folding away. Two lines now,
 // so long enough to read both; short enough that it never feels parked.
 const GREETING_MS = 6000;
+// How often the crown hops on its own while the greeting is shut. Long enough that it
+// reads as the badge catching your eye rather than as something animating at you.
+const HOP_EVERY_MS = 10000;
 
 export function mountVip() {
     const strip = document.querySelector('[data-vip]');
@@ -92,4 +95,50 @@ function mountGreeting(root) {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && root.classList.contains('is-open')) set(false);
     });
+
+    mountIdleHop(root);
+}
+
+/**
+ * The crown hops by itself every ten seconds or so.
+ *
+ * A CLASS TOGGLE, not an infinite CSS animation. The alternative was one long cycle
+ * with the hop squeezed into its first nine percent, which would mean a second copy of
+ * the keyframes with every percentage rescaled — and an element held on a compositor
+ * layer continuously for a 900ms effect. This file's neighbours have been bitten by
+ * exactly that: the method shimmer and the clients marquee both re-rasterised in Safari
+ * because something animated forever. Toggling reuses the existing keyframes untouched.
+ *
+ * The class comes off on animationend rather than a second timer, so the two can't
+ * drift apart if a frame is late.
+ */
+function mountIdleHop(root) {
+    const crown = root.querySelector('.c-vip__crown');
+    if (!crown) return;
+
+    // Nothing to catch the eye with if the visitor has asked for stillness.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let timer = 0;
+
+    const hop = () => {
+        // Not while the greeting is open — the same crown is mid-hop from that already,
+        // and restarting the animation underneath it would cut it off.
+        if (!root.classList.contains('is-open') && !document.hidden) {
+            root.classList.add('is-hopping');
+        }
+        timer = setTimeout(hop, HOP_EVERY_MS);
+    };
+
+    crown.addEventListener('animationend', () => root.classList.remove('is-hopping'));
+
+    // Stop the clock off-screen: a background tab throttles timers anyway, but this way
+    // the badge is not mid-hop on a tab nobody is looking at, and the first hop after
+    // coming back is a fresh ten seconds rather than whatever the throttle left over.
+    document.addEventListener('visibilitychange', () => {
+        clearTimeout(timer);
+        if (!document.hidden) timer = setTimeout(hop, HOP_EVERY_MS);
+    });
+
+    timer = setTimeout(hop, HOP_EVERY_MS);
 }

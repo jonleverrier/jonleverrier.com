@@ -480,6 +480,28 @@ $c-content-subheading: getmap($colour, light, 880); // the sub-heading grey — 
     width: 100vw;
 }
 
+// The stacked list stays in the content column instead of full-bleeding.
+//
+// A drifting strip wants the whole window — that is the point of it. A list is read, and
+// it should start where everything else on the page starts: the site logo's gutter, the
+// h1's, the prose's. Cancelling the breakout here is what makes that automatic — the box
+// takes .c-content's content box at every width, with no inset arithmetic to keep in step
+// with the two paddings that produce it.
+//
+// Worth knowing before reconstructing that measure by hand instead: the 100vw above is
+// FLEX-SHRUNK back to the content column at narrow widths, so the breakout it describes
+// only actually happens on a wide screen. An inset built to cancel it is right at 1500
+// and 68px wrong at 700.
+.c-content__work--column {
+    // align-self as well as width: .c-content is a flex column that CENTRES its
+    // children, so `width: auto` alone sizes this to its content — it came out 1111
+    // rather than the 1375 the column actually offers. Stretching is what makes "auto"
+    // mean "the column".
+    align-self: stretch;
+    width: auto;
+}
+
+
 // Label above the strip, in the content column while the strip below it keeps the
 // full-bleed — the .c-music__whisper arrangement, done without container queries,
 // which .c-content has no container to answer.

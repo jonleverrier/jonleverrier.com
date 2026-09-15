@@ -11,6 +11,10 @@
     skills  — list of skill labels (chips)
     image   — Asset for the media (cream placeholder shows until one exists)
     loading — 'eager' (default) | 'lazy' for a card in normal document flow
+    restTitle — true to show the title WITHOUT a hover (the feature layout). It moves
+                the h3 out of the collapsing box rather than revealing it in place:
+                that box animates 0fr -> 1fr and clips, so nothing inside it can be
+                visible at rest. Summary and skills stay where they are.
 #}
 {% import '_macros/media' as media %}
 {% set client = client ?? '' %}
@@ -21,6 +25,7 @@
    on the ones a caller omits — the marquee passes no logo, and without this the
    whole panel failed to render (silently, since renderComponent swallows it). #}
 {% set logo = logo ?? null %}
+{% set restTitle = restTitle ?? false %}
 {# Eager by DEFAULT because of where this card is usually met: inside a Jonson answer,
    in a panel composed off-screen and revealed as one piece. A lazy image there never
    intersects a viewport while it's being built, so it never loads and the card arrives
@@ -94,10 +99,44 @@
            (0fr → 1fr) AND a child that clips while it does. One element can't be
            both. See _case-study.scss. #}
         <div class="c-case-study__text">
-            {% if client %}<p class="c-case-study__client">{{ client }}</p>{% endif %}
+            {% if not restTitle %}
+                {# Marquee. The arrow is the card's one resting mark, so this row renders
+                   whether or not there is a client to put in it — gated on `client` it
+                   meant a study with no client on file got no arrow at all, and nothing
+                   said the card was a link. The arrow is positioned against the card
+                   rather than this row (see _case-study.scss), so an empty row costs
+                   nothing and places it identically. #}
+                <div class="c-case-study__head">
+                    {% if client %}<p class="c-case-study__client">{{ client }}</p>{% endif %}
+                    <svg class="c-case-study__go" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            {% elseif client %}
+                <p class="c-case-study__client">{{ client }}</p>
+            {% endif %}
+            {% if restTitle %}
+                {# Title and arrow are one row so the arrow can sit on the title's FIRST
+                   line — it used to be pinned to the card's top right, which put it a
+                   long way from the thing it acts on. In the row it is pushed to the
+                   right edge by margin-left:auto and aligned to the top, so a title that
+                   wraps to two lines leaves it on line one. #}
+                <div class="c-case-study__head">
+                    <h3 class="c-case-study__title">{{ title }}</h3>
+                    <svg class="c-case-study__go" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            {% endif %}
             <div class="c-case-study__reveal">
                 <div class="c-case-study__reveal-inner">
-                    <h3 class="c-case-study__title">{{ title }}</h3>
+                    {% if not restTitle %}<h3 class="c-case-study__title">{{ title }}</h3>{% endif %}
+                    {# Feature cards show logo, client and title at rest, which left this
+                       collapsing box with nothing in it — an empty 0fr -> 1fr animation
+                       and a hover that revealed nothing. This is what it reveals now.
+                       NOT an <a>: the whole card is already the link, and a link inside
+                       a link is invalid and unreachable. #}
+
                     {% if summary %}<p class="c-case-study__summary">{{ summary }}</p>{% endif %}
                     {% if skills is not empty %}
                         <ul class="c-case-study__skills">

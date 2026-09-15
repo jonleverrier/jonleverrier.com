@@ -85,10 +85,19 @@
         {% endif %}
     {% endfor %}
 
+    {# The column, not the drifting strip. This page IS the list — every study, in the
+       order they are arranged in the CP — so it should sit still and be read, where the
+       strip's job elsewhere is to suggest there is more.
+
+       Set here rather than inline in the hash below: a Twig comment inside a hash
+       literal is a parse error, and it takes the whole page with it. #}
+    {% set caseStudiesStacked = true %}
+
     {% include '_components/content' with {
         whisper: entry.title,
         title: entry.longTitle ?: entry.title,
         caseStudies: ordered,
+        caseStudiesStacked: caseStudiesStacked,
         testimonials: quotes,
         clients: clients,
     } only %}

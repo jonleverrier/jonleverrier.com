@@ -212,11 +212,20 @@ $c-case-studies-slide: calc((#{$g-measure-wide} - #{$c-case-studies-marquee-gap}
 // makes it a stacking context, so nothing inside it can be raised above a layer
 // outside it. A per-slide filter was the only mechanism, which is why it existed.)
 @media (hover: hover) and (min-width: #{getmap($mq-breakpoints, xl)}) {
-    .c-case-studies--marquee .c-case-studies__item {
-        transition: opacity 260ms ease;
+    // :not(--stacked) on both — dimming the siblings is a MARQUEE idea. Slides drift
+    // past in a row and stepping the others back is what picks one out of the motion.
+    // The stacked list is a page of work standing still, every card equally there to be
+    // read; greying five of them because the pointer happened to cross a sixth is the
+    // page flinching. Nothing else about the hover changes, so the transition goes with
+    // it — with no opacity change left to animate it had nothing to do.
+    .c-case-studies--marquee:not(.c-case-studies--stacked) .c-case-studies__item {
+        transition: opacity $c-badge-fade-out ease;
     }
 
-    html:not(.has-stale-hover) .c-case-studies--marquee .c-case-studies__items:hover .c-case-studies__item:not(:hover) {
+    html:not(.has-stale-hover)
+        .c-case-studies--marquee:not(.c-case-studies--stacked)
+        .c-case-studies__items:hover
+        .c-case-studies__item:not(:hover) {
         opacity: 0.55;
     }
 }
@@ -325,7 +334,11 @@ $c-case-studies-slide: calc((#{$g-measure-wide} - #{$c-case-studies-marquee-gap}
 // up with a 160px chip. Left as-is, a title-only card floats in the middle of that
 // empty box while a card with an eyebrow sits lower. Bottom-align instead, so every
 // slide's last line lands on the same baseline whatever it contains.
-.c-case-studies--marquee .c-case-study__text {
+//
+// :not(--stacked) — the stacked variant DOES carry a chip (see case-studies-strip), so
+// it wants the centring and the 160px floor this rule undoes. Everything above is still
+// true of the drifting slides, which pass no logo.
+.c-case-studies--marquee:not(.c-case-studies--stacked) .c-case-study__text {
     justify-content: flex-end;
     min-height: 0;
 }
@@ -497,10 +510,42 @@ $c-case-studies-tablet-max: getmap($mq-breakpoints, lg) - 0.01em;
     }
 }
 
-// Below xl the meta sits OUTSIDE the well, in normal flow beneath the image. There's
-// no hover to reveal it with at that size (see the hover query), so laying it over
-// the picture would just mean permanently dimming the photograph to read text that
-// could simply sit under it. Chip on the left, text to its right, as above.
+
+// The meta as an OVERLAY on the picture rather than a panel beneath it.
+//
+// A mixin because there are two consumers at two different widths: every card takes
+// this from xl, and the stacked strip takes it at ALL widths (see the block at the
+// foot of this file). Copying eleven declarations to serve the second would have left
+// two sets to keep in step.
+@mixin c-case-study-meta-overlay {
+    position: absolute;
+    inset: 0;
+    // Back to the BOTTOM here. This is an overlay covering the whole image, and the
+    // text belongs at the foot of it, over the heaviest part of the scrim — the
+    // base rule's flex-start is for the panel that sits under the picture below xl.
+    align-items: flex-end;
+    z-index: 2; // clears the well's z-index: 1 — the overlay sits over the image
+    margin-top: 0; // no longer tucked; it covers the well entirely
+    background-color: transparent; // the gradient below is the only fill here
+    gap: getmap($space, rhythm, 800); // same step as this box's own padding
+    // Matches .c-testimonial's rhythm-800 padding, but uniform: the testimonial
+    // bumps its right side to 900 to keep a long quote off the cycle control,
+    // and there's no control here to clear.
+    padding: getmap($space, rhythm, 800);
+    border-radius: $b-radius-200; // match the well it covers
+    color: getmap($colour, light, 100);
+    // Clips the scrim to these corners, which is the only thing that keeps them
+    // round while it's part-scaled. The scrim inherits this radius, but scaleY
+    // squashes a radius along with the box — at the resting 0.28 a 12.5px corner
+    // becomes a 3.5px ellipse, so its bottom corners sat almost square inside the
+    // card's rounded ones. Invisible while the whole overlay was hidden at rest;
+    // the moment the band showed, so did they.
+    //
+    // Clipping rather than compensating in the radius itself: the correction
+    // would have to be a different number at every point in the transition.
+    overflow: hidden;
+}
+
 .c-case-study__meta {
     display: flex;
     flex-direction: row;
@@ -549,34 +594,10 @@ $c-case-study-client-drop: rem(22);
 // Bottom-aligned so the text rises off the lower edge rather than floating in the
 // middle of the picture, and carrying its own scrim — white text straight onto an
 // unknown photograph is a coin toss.
-@include mq(from, xl) {
+    @include mq(from, xl) {
     .c-case-study__meta {
-        position: absolute;
-        inset: 0;
-        // Back to the BOTTOM here. This is an overlay covering the whole image, and the
-        // text belongs at the foot of it, over the heaviest part of the scrim — the
-        // base rule's flex-start is for the panel that sits under the picture below xl.
-        align-items: flex-end;
-        z-index: 2; // clears the well's z-index: 1 — the overlay sits over the image
-        margin-top: 0; // no longer tucked; it covers the well entirely
-        background-color: transparent; // the gradient below is the only fill here
-        gap: getmap($space, rhythm, 800); // same step as this box's own padding
-        // Matches .c-testimonial's rhythm-800 padding, but uniform: the testimonial
-        // bumps its right side to 900 to keep a long quote off the cycle control,
-        // and there's no control here to clear.
-        padding: getmap($space, rhythm, 800);
-        border-radius: $b-radius-200; // match the well it covers
-        color: getmap($colour, light, 100);
-        // Clips the scrim to these corners, which is the only thing that keeps them
-        // round while it's part-scaled. The scrim inherits this radius, but scaleY
-        // squashes a radius along with the box — at the resting 0.28 a 12.5px corner
-        // becomes a 3.5px ellipse, so its bottom corners sat almost square inside the
-        // card's rounded ones. Invisible while the whole overlay was hidden at rest;
-        // the moment the band showed, so did they.
-        //
-        // Clipping rather than compensating in the radius itself: the correction
-        // would have to be a different number at every point in the transition.
-        overflow: hidden;
+        @include c-case-study-meta-overlay;
+    }
     }
 
     // The scrim lives on a pseudo-element so its growth can be a transform.
@@ -618,10 +639,13 @@ $c-case-study-client-drop: rem(22);
         // only because the whole overlay was held at opacity 0 on top of it. That
         // master fade has gone (see the hover query), so this number is now doing
         // the hiding on its own and has to be small enough to read as a hint.
-        transform: scaleY($c-case-study-scrim-rest);
+        // Through a custom property so a card can raise its own resting band without
+        // having to re-state the hover rule too: that sets scaleY(1) at a lower
+        // specificity, and an override here would have outranked it and pinned the
+        // scrim at its resting height for good.
+        transform: scaleY(var(--c-case-study-scrim-rest, #{$c-case-study-scrim-rest}));
         transform-origin: bottom;
     }
-}
 
 // Only hide it where there's a pointer to hover with AND room to justify it. Touch
 // has no hover state to discover the meta with, and below xl the cards are 1-up and
@@ -749,29 +773,75 @@ $c-case-study-client-drop: rem(22);
         transform: none;
     }
 
-    // The feature card — one study on its own — keeps its client line for the
-    // hover like every other line. The eyebrow-at-rest is a marquee idea: a strip
-    // of cards scrolling past needs a name on each to be scannable without
-    // stopping on one. A single card fills its row and has nothing to be scanned
-    // against, so at rest it's just the picture and the overlay arrives as one.
-    // Same treatment as the reveal lines, and it takes the first stagger slot,
-    // which the marquee leaves unused. The column clips, so this emerges from the
-    // chip's edge like the rest.
-    .c-case-studies--feature .c-case-study__client {
-        opacity: 0;
-        transform: translateX(-#{rem(24)});
-        transition:
-            opacity 300ms ease,
-            transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .c-case-studies--feature .c-case-study:hover .c-case-study__client,
-    .c-case-studies--feature .c-case-study:focus-visible .c-case-study__client {
+    // THE FEATURE CARD NAMES THE WORK WITHOUT BEING TOUCHED.
+    //
+    // It used to do the opposite: the client was hidden at rest along with
+    // everything else, on the reasoning that an eyebrow-at-rest is a marquee idea —
+    // a strip of cards scrolling past needs a name on each to be scannable, and a
+    // single card fills its row with nothing to be scanned against, so it could be
+    // just the picture with the overlay arriving as one.
+    //
+    // That holds for a card on a page, where the picture is the point and the
+    // visitor is browsing. It does not hold here. A feature card is Jonson's
+    // EVIDENCE — it lands mid-answer as the thing being cited — and a citation that
+    // withholds who and what until you touch it is not a citation. It also assumes a
+    // pointer: this is the layout that carries the logo, and in an answer it is as
+    // likely to be read as clicked.
+    //
+    // So logo, client and title are all on at rest. Summary and skills still wait
+    // for the hover — they are the detail, and the card would be a wall of text
+    // otherwise.
+    .c-case-studies--feature .c-case-study__logo,
+    .c-case-studies--stacked .c-case-study__logo {
         opacity: 1;
         transform: none;
-        transition-delay: 90ms;
     }
 
+    // The resting nudge is for a column whose only line with height is the client
+    // (see __text above). The feature card now has the title standing beside it, so
+    // the column is already the height it should be and the drop would push both
+    // lines down onto the card's edge.
+    .c-case-study__text {
+        transform: none;
+    }
+
+    // SAFARI: keep the text off the scrim's raster.
+    //
+    // ::before animates transform: scaleY() for 340ms directly underneath these, and
+    // in Safari that re-rasterises the layer they share — at the card's fractional
+    // offset (measured: left 290.63 / 596.25, top 611.25 / 641.25 / 663.25) the
+    // re-raster lands a subpixel off and the logo and lines visibly jiggle for the
+    // length of the transition. Same failure the clients marquee hit with a mask over
+    // its moving track, and the method's shimmer before that; this file's turn.
+    //
+    // It only started showing when logo, client and title moved to being on at REST.
+    // They used to fade and slide in across those same 340ms, so a subpixel snap had
+    // its own motion to hide inside. Static and fully visible, it has nowhere to hide.
+    //
+    // will-change rather than translateZ(0): the hover rules below already set
+    // `transform: none` on both of these at a higher specificity, so a transform used
+    // as a layer hint would be overridden the moment the pointer arrives — destroying
+    // the layer and causing the very re-raster this is here to stop. will-change is
+    // not a transform value, so nothing fights it.
+    //
+    // Held permanently, not applied on hover: a layer created AS the animation starts
+    // is itself a re-raster. There are only ever one or two feature cards.
+    .c-case-studies--feature .c-case-study__logo,
+    .c-case-studies--feature .c-case-study__text,
+    .c-case-studies--stacked .c-case-study__logo,
+    .c-case-studies--stacked .c-case-study__text {
+        will-change: transform;
+    }
+
+    // MARQUEE: the picture and the arrow, and nothing else, until the pointer arrives.
+    //
+    // The eyebrow used to be on at rest here, on the reasoning that a strip scrolling
+    // past needs a name on each card to be scannable. The arrow takes that job over: it
+    // says the card is a door, which is what a moving strip actually has to
+    // communicate, and it does it without putting a word over every photograph.
+    //
+    // Same treatment as the reveal lines it now joins, and it takes the first stagger
+    // slot, which this variant leaves unused.
     // Delays live on the hover state only, so the lines stagger IN but drop out
     // together — a staggered exit reads as the card being slow to let go.
     // nth-child rather than a --i custom property: it needs no markup, and the
@@ -795,8 +865,7 @@ $c-case-study-client-drop: rem(22);
         }
 
         .c-case-study__logo,
-        .c-case-study__reveal-inner > *,
-        .c-case-studies--feature .c-case-study__client {
+        .c-case-study__reveal-inner > * {
             transform: none;
             transition-duration: 1ms;
         }
@@ -814,9 +883,7 @@ $c-case-study-client-drop: rem(22);
         }
 
         .c-case-study:hover .c-case-study__reveal-inner > *,
-        .c-case-study:focus-visible .c-case-study__reveal-inner > *,
-        .c-case-studies--feature .c-case-study:hover .c-case-study__client,
-        .c-case-studies--feature .c-case-study:focus-visible .c-case-study__client {
+        .c-case-study:focus-visible .c-case-study__reveal-inner > * {
             transition-delay: 0s;
         }
     }
@@ -849,6 +916,24 @@ $c-case-study-client-drop: rem(22);
     justify-content: center;
     gap: rem(6);
     min-width: 0;
+}
+
+// The height the comment above describes, which was never actually declared: without
+// it the column is only as tall as its own lines, and in a bottom-aligned row that
+// leaves the text sitting low against the chip rather than on its midline. Measured on
+// a stacked card: chip 1051-1211 (mid 1131), text 1109-1205 (mid 1157) — 26px adrift.
+//
+// :has() rather than a variant scope, because the condition really is "is there a chip
+// in this row". A card whose study has no logo on file renders no chip, and giving its
+// text a 160px floor would push it down for nothing. This file already uses :has in
+// twenty-odd places, so it is not a new dependency.
+// Scoped to xl, where the chip is actually DRAWN. The element exists in the markup
+// below that and is display:none, which :has still matches — so unscoped this put a
+// 160px floor under the text of a card showing no chip at all.
+@include mq(from, xl) {
+    .c-case-study__meta:has(.c-case-study__logo) .c-case-study__text {
+        min-height: $c-case-study-logo-h;
+    }
 }
 
 // The collapsing box and its clip. Two elements, because the 0fr → 1fr row is what
@@ -937,7 +1022,95 @@ $c-case-study-client-drop: rem(22);
 .c-case-study__title {
     @include typography(p-lg);
     margin: 0;
+    // Room before the arrow sharing its row, so a long title wraps rather than running
+    // up to the ring. The row's gap is the minimum when the title is short; this is the
+    // distance it keeps when the title is long enough to claim the space.
+    margin-right: getmap($space, rhythm, 700);
     color: getmap($colour, primary, 400); // house yellow, as links use
+}
+
+// Title and arrow on one row, so the arrow rides the title's FIRST line rather than
+// the card's corner. align-items: flex-start is what keeps it there when the title
+// wraps — centred, a two-line title would drop it into the gap between the lines.
+.c-case-study__head {
+    display: flex;
+    align-items: flex-start;
+    gap: getmap($space, rhythm, 400);
+}
+
+// The ring steps aside for the pointer badge.
+//
+// Over a card the native cursor is replaced by .c-cursor — the same north east arrow,
+// in a red disc, following the pointer (see components/cursor). Two of the same arrow
+// on one card is one too many, so the pinned one fades out on the way in and returns
+// on the way out.
+//
+// (hover: hover) WITHOUT a width bound, unlike the reveal machinery this used to live
+// in. The badge is mounted wherever there is a fine pointer, not only from xl, so on a
+// narrower window the badge arrived and the ring stayed — both arrows at once. This is
+// a pointer behaviour and the query should say so.
+//
+// :hover only, deliberately not :focus-visible. A keyboard user gets no pointer badge,
+// so fading the ring for them would take the affordance away and put nothing in its
+// place.
+@media (hover: hover) {
+    .c-case-study:hover .c-case-study__go {
+        opacity: 0;
+        // Leaving on the badge's IN timing, because that is what it hands over to.
+        transition: opacity $c-badge-fade-in ease;
+    }
+}
+
+
+//
+// A plain CSS grid, not the flex wrap the feature panel uses: the cards want to be
+// equal columns on a fixed count, which is what grid-template-columns says in one line
+// and flex-basis percentages only approximate once a gap is in play.
+//
+// One up, two from md, three from lg. Three is the ask; the steps below it are because
+// a 3-up of these at phone width would be three postage stamps.
+//
+// $c-case-studies-marquee-gap for both axes, so the spacing between cards is the same
+// measurement the drifting strip uses between slides — the two layouts show the same
+// cards and should space them the same way.
+// On the marquee the ring pins to the card's bottom right rather than riding a line of
+// text — there is no line on show there any more (see the hover block). Tighter into
+// the corner than the feature card's 800, because it is the only thing on the card and
+// has nothing to line up with.
+//
+// Absolute against __meta, which covers the card, so the inset is measured from the
+// card's edge rather than from the overlay's padding.
+// The hover's payoff on a feature card.
+//
+// Shaped after .c-jonson__home--up, the site's existing round arrow control: a 44px
+// ring, 3px stroke, artwork inset rather than filling the circle. Sizes mirrored from
+// it — 44 outer, 18 of arrow — so the two read as the same object. White rather than
+// that one's dim cream, because this sits over photography.
+//
+// Same arrow path as the cycle buttons and the card cursor, turned 45 degrees to point
+// north east. Rotating the whole element is free: a ring is the same ring rotated, and
+// only the arrow inside reads the change. (It does inflate the element's BOUNDING box
+// to 44 x root-2 — worth knowing before measuring its position and concluding it has
+// drifted; the circle itself has not moved.)
+//
+// In the row rather than absolutely placed: `will-change: transform` on __text makes
+// that element a containing block, so an absolutely positioned arrow anchors to the
+// text column rather than the card — which is how it ended up beside the title by
+// accident before it was put there on purpose.
+.c-case-study__go {
+    flex: none;
+    margin-left: auto; // hold the right edge whatever the title's width
+    box-sizing: border-box;
+    // 44 outer, less the 3px ring either side, less 10px inset = 18px of arrow.
+    width: rem(44);
+    height: rem(44);
+    padding: rem(10);
+    border: rem(3) solid getmap($colour, light, 100);
+    border-radius: 50%;
+    color: getmap($colour, light, 100);
+    transform: rotate(-45deg); // north east
+    // Returning as the badge fades away, on the badge's own out timing.
+    transition: opacity $c-badge-fade-out ease;
 }
 
 .c-case-study__summary {
@@ -963,3 +1136,275 @@ $c-case-study-client-drop: rem(22);
     background-color: getmap($colour, light, 700); // cream chip
     color: getmap($colour, primary, 700); // navy text
 }
+
+// THE STACKED STRIP — a column, on purpose.
+//
+// The marquee already collapses to this under reduced motion and at narrow widths (see
+// the query above); the modifier asks for the same thing at any width, for a page where
+// the list IS the content rather than a hint that more exists.
+//
+// The declarations are the same ones that query makes, and for the same reasons: the
+// track exists only to be transformed, the items only run in a row for a horizontal
+// loop, and the edge fade only makes sense on something moving past an edge. Kept as a
+// separate block rather than folded into that query's selector list, because the two
+// are answering different questions — that one asks "can this move here?", this one
+// asks "should this move at all?".
+.c-case-studies.c-case-studies--stacked {
+    overflow: visible;
+
+    // Cancel --static's full-bleed and take the shared measure instead.
+    //
+    // --static exists to throw the strip edge to edge, which is right for something
+    // drifting past: the movement wants the whole window. A column is read, not
+    // watched, and at 1500 the cards were running the full width of the viewport.
+    //
+    // $g-measure-wide is the same rem(1110) the Jonson panels use — the measure the
+    // testimonial and the feature card already share, so a stack of studies lines up
+    // with them rather than inventing a third width. Centred with auto margins, which
+    // lands it identically to centring inside the content column: that column is itself
+    // centred, so both give left 195 at 1500.
+    //
+    // Same specificity as the --static rule it is undoing (two classes on one element),
+    // so this has to stay after it in the file. Not in a media query, so the media-query
+    // sorter cannot reorder it.
+    // The content column is the parent (see the wrapper above), capped at the shared
+    // measure and centred in it. Below 1110 the column is the narrower of the two, so
+    // the cards fill it and sit on the page's own gutter; above, the cap holds and the
+    // remaining room splits evenly either side.
+    width: auto;
+    max-width: $g-measure-wide;
+    margin-inline: auto;
+}
+
+.c-case-studies--stacked .c-case-studies__track {
+    display: block;
+    width: 100%;
+    will-change: auto;
+    transform: none;
+}
+
+// LEAD CARD FULL WIDTH, THE REST TWO UP.
+//
+// Grid rather than the flex column it replaces: the shape is "one item spans, the rest
+// tile", which is one line of grid-column and cannot be said in flex without wrapping
+// tricks that depend on widths adding up.
+//
+// minmax(0, 1fr) and NOT 1fr on the tracks, with min-width: 0 on the items. `1fr` is
+// minmax(auto, 1fr), and that auto minimum is min-content — so a card holding an image
+// that has loaded a large source pins its track open and the pair stop being equal. It
+// shows up going narrow then wide, which is when the browser has fetched the bigger
+// candidate. Both minimums have to be released or the symptom only half goes.
+.c-case-studies--stacked .c-case-studies__items {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: $c-case-studies-marquee-gap;
+    padding-right: 0; // the seam gap only exists for a horizontal loop
+
+    @include mq(from, lg) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.c-case-studies--stacked .c-case-studies__item {
+    width: auto;
+    min-width: 0;
+}
+
+// The lead study gets the full measure. It is the one the ordering put first, and at
+// half width it would read as a peer of the six below it.
+//
+// The tiled cards take h4 for their titles, the lead keeps p-lg.
+@include mq(from, lg) {
+    .c-case-studies--stacked .c-case-studies__item:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+// The edge fade: nothing arrives at an edge any more.
+.c-case-studies--stacked::before {
+    display: none;
+}
+
+// A step DOWN for the tiled cards' titles.
+//
+// The lead keeps the shared p-lg; these take `p`, one rung under it. Tried h4 first and
+// it went the wrong way — on the scale in theme/_setup h4 runs 25/28/32 against p-lg's
+// 24/26/28, so a 547px card's title came out larger than the 1110px one's. The point of
+// the lead card is that it leads.
+// Every card in the stack keeps the shared p-lg by default. In one column there is no
+// lead and no tiles, only a list, and each card has the full measure to itself — so a
+// title set down to `p` there is just small for no reason.
+//
+// The step DOWN happens once the cards tile: from lg the second card on is half the
+// width, and a title at the lead's size on a 479px card is a wall of type.
+//
+// lg and not md: at md the column is only 722 wide, so tiling there gave 352px cards —
+// narrower than the drifting slides next door, which is the width the whole no-chip,
+// smaller-title treatment exists to cope with. One column holds until there is room for
+// two proper ones.
+//
+// Leading is 1.2 throughout, tighter than either size carries on the scale. p-lg brings
+// 1.3 and `p` brings 1.4 — body leading, sized for paragraphs of running text — and on a
+// two or three line title both read as gappy.
+.c-case-studies--stacked .c-case-study__title,
+.c-case-studies--feature .c-case-study__title {
+    line-height: 1.2;
+}
+
+@include mq(from, lg) {
+    .c-case-studies--stacked .c-case-studies__item:not(:first-child) .c-case-study__title,
+    .c-case-studies--marquee .c-case-study__title {
+        @include typography(p);
+        line-height: 1.2;
+    }
+}
+
+// The tiled cards' content sits on the bottom.
+//
+// Same reasoning as the drifting slides they are the width of, and the same pair of
+// declarations: with no chip in the row there is nothing to centre against, so a
+// title-only card would float in the middle of the box while one with an eyebrow sat
+// lower. Bottom-aligned, every card's last line lands on the same baseline whatever it
+// carries — which is what makes a row of two read as a row.
+//
+// The LEAD card is excluded because it does have a chip: it keeps the centring and the
+// 160px floor that put its text on the chip's midline.
+.c-case-studies--stacked .c-case-study__text {
+    justify-content: flex-end;
+    min-height: 0;
+}
+
+@include mq(from, lg) {
+    .c-case-studies--stacked .c-case-studies__item:first-child .c-case-study__text {
+        justify-content: center;
+    }
+}
+
+// The tiled cards need a taller resting band than the lead does.
+//
+// Not a taste call — the same two or three lines sit on a card half the height, so they
+// claim a much bigger share of it. Measured at 1500: the lead's text starts 0.278 of the
+// way up its 740px card, which the shared 0.28 just covers; a tiled card's starts at
+// 0.356, and at three lines 0.431, both of them above the band entirely.
+//
+// 0.6 rather than 0.44: the gradient fades to nothing across the top fifth of whatever
+// band it is given (see the stops above), so a band that merely reaches the first line
+// leaves that line sitting in the transparent part of it.
+.c-case-studies--stacked .c-case-studies__item,
+.c-case-studies--marquee .c-case-studies__item {
+    --c-case-study-scrim-rest: 0.6;
+}
+
+@include mq(from, lg) {
+    .c-case-studies--stacked .c-case-studies__item:first-child {
+        --c-case-study-scrim-rest: #{$c-case-study-scrim-rest};
+    }
+}
+
+// THE LEAD CARD'S TREATMENT — shared by the stacked lead and the Jonson feature panel.
+//
+// They are the same object: one study, on the full measure, with its chip beside a
+// resting client and title. The feature card is that card inside an answer and the
+// stacked lead is that card at the head of the index, so they should not drift apart on
+// padding or leading — which they had, at 45.63/1.3 against 34.38/1.2.
+//
+// THE OVERLAY AT EVERY WIDTH.
+//
+// The hover gate on the xl version is there because up there the meta is HIDDEN until
+// the pointer arrives, and a touch device has no pointer — so below xl it drops to a
+// panel under the picture with the light-800 fill behind the text.
+//
+// None of that reasoning applies here. This card's client and title are on show at
+// rest, so there is nothing a touch visitor is locked out of, and the panel was putting
+// the title in a green box on mobile while the same card on desktop had it over the
+// photograph. One card, two different objects, at the width where the difference is
+// least defensible.
+.c-case-studies--stacked .c-case-study__meta,
+.c-case-studies--feature .c-case-study__meta,
+.c-case-studies--marquee .c-case-study__meta {
+    @include c-case-study-meta-overlay;
+
+    // Three steps, because the card's size moves a long way across them and the inset
+    // has to move with it or it reads wrong at one end.
+    //
+    // 500 on a phone: the card is only ~223px tall there, and the mixin's rhythm-800 —
+    // sized for the Jonson panel's card sitting alone in an answer — would be most of
+    // it. 700 from md, where the cards are 418-854 and 600 left the text floating in
+    // the middle of the picture rather than sitting on its lower edge. Applies to the
+    // lead as well as the tiles, so the stack keeps one inset throughout: a lead card
+    // with visibly deeper padding reads as a different component, not the same one
+    // larger.
+    gap: getmap($space, rhythm, 500);
+    padding: getmap($space, rhythm, 500);
+
+    @include mq(from, md) {
+        gap: getmap($space, rhythm, 700);
+        padding: getmap($space, rhythm, 700);
+    }
+}
+
+// PHONE: the scrim has to cover almost the whole card, and be denser while it does.
+//
+// Measured at 390, where the card is 223px tall and the title runs to four lines — six
+// on the longest one. The text starts 0.637 of the way up the card, and 0.852 on that
+// six-line card, against a 0.6 band: both were sitting above it.
+//
+// Raising the band alone does not fix it. The gradient fades to nothing across its top
+// fifth (see the stops on the base rule), so even a full-height band leaves the upper
+// lines on roughly a tenth of its opacity — so the stops move with it.
+//
+// They are deliberately LIGHT, though. A first pass at 0.95/0.88/0.55 measured 10:1 and
+// looked like a dark slab with a photograph faintly behind it: the picture stopped being
+// the point of the card. These hold the text legible while leaving the image readable —
+// the band is doing the least it can rather than the most it could.
+//
+// The Jonson feature card takes the same treatment, for the same measured reason: on a
+// phone it is 260px tall, its text starts 0.545 of the way up, and it was carrying the
+// shared 0.28. It has an overlay at every width now (see the block above), so there is
+// no panel underneath to fall back on — without this its client and title sit on bare
+// photograph.
+//
+// This is a phone-shaped problem rather than a design preference — the same cards at 600
+// need 0.364 and the existing values are ample.
+@include mq(until, md) {
+    // Cap the title at three lines.
+    //
+    // This is the actual cause of the scrim problem, not the scrim. The longest title
+    // ran to SIX lines on a phone — 190px of text on a 223px card — and any band that
+    // covers that is covering the picture. Tuning the gradient could trade legible text
+    // against a visible image but never win both, because the text was the card.
+    //
+    // Three lines is 83px, so the band below has a known height to work to and the top
+    // half of every photograph stays clear. The full title is still the link's
+    // accessible name and is never truncated anywhere else.
+    .c-case-studies--stacked .c-case-study__title,
+    .c-case-studies--feature .c-case-study__title,
+    .c-case-studies--marquee .c-case-study__title {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
+    }
+
+    // A band behind the text, not a wash over the picture. 0.62 clears the three lines
+    // and the eyebrow with a little room, and the stops fall away fast enough that the
+    // upper third of the image is untouched.
+    .c-case-studies--stacked .c-case-studies__item,
+    .c-case-studies--feature .c-case-studies__item,
+    .c-case-studies--marquee .c-case-studies__item {
+        --c-case-study-scrim-rest: 0.62;
+    }
+
+    .c-case-studies--stacked .c-case-study__meta::before,
+    .c-case-studies--feature .c-case-study__meta::before,
+    .c-case-studies--marquee .c-case-study__meta::before {
+        background-image: linear-gradient(
+            to top,
+            rgba(20, 22, 12, 0.92) 0%,
+            rgba(20, 22, 12, 0.74) 50%,
+            rgba(20, 22, 12, 0.28) 82%,
+            rgba(20, 22, 12, 0) 100%
+        );
+    }
+}
+

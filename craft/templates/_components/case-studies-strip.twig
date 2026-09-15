@@ -8,6 +8,9 @@
   for that, and a content page has no container.
 
   Expects: studies — a list of caseStudies entries, already ordered and filtered.
+           stacked — true to render the column instead of the drifting strip. It is the
+                     same layout the marquee already falls back to under reduced motion
+                     and at narrow widths; this asks for it deliberately, at any width.
 
   Thumbnails load lazily. Unlike the Jonson marquee this strip is in normal document
   flow — at the foot of a case study, below everything — so the browser can be left to
@@ -19,8 +22,9 @@
   relation rather than its Title. Those used to be the same thing; they aren't now that
   a client can have more than one study.
 #}
+{% set stacked = stacked ?? false %}
 {% if studies is defined and studies %}
-    <div class="c-case-studies c-case-studies--marquee c-case-studies--static"
+    <div class="c-case-studies c-case-studies--marquee c-case-studies--static{{ stacked ? ' c-case-studies--stacked' : '' }}"
          role="group" aria-label="Case studies">
         <div class="c-case-studies__track">
             <ul class="c-case-studies__items">
@@ -45,6 +49,12 @@
                        client, which drops the line — the card still reads as itself. #}
                     {% set client = craft.frontend.caseStudyClientName(study) %}
                     {% set heading = (study.longTitle ?? '')|trim ?: study.title|trim %}
+                    {# The chip and the big thumbnail are the LEAD card's, not every
+                       card's. From the second study on these tile two-up at 547 — half
+                       the measure — and a 260px chip beside the text leaves about 205
+                       for the title, which is the same arithmetic that keeps the logo
+                       off the drifting slides next door. The 1110 image would be twice
+                       the size those cards can show, too. #}
                     <li class="c-case-studies__item">
                         {% include '_components/case-study' with {
                             url: study.url,
@@ -52,6 +62,11 @@
                             client: client,
                             image: study.largeImage.one() ?? null,
                             loading: 'lazy',
+                            logo: stacked and loop.first ? craft.frontend.caseStudyClientLogo(study) : null,
+                            restTitle: true,
+                            imageWidths: stacked and loop.first ? [1110, 2220] : [547, 1094],
+                            imageSizes: stacked and loop.first ? '(min-width: 80em) 1110px, 100vw' : imageSizes ?? null,
+                            imageFallback: stacked and loop.first ? 1110 : null,
                         } only %}
                     </li>
                 {% endfor %}

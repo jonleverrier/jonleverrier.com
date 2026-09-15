@@ -41,7 +41,11 @@ const TTL_MS = 10800 * 1000;
 // BUMP THIS whenever the markup a panel emits changes — class names, nesting,
 // wrappers. A mismatch throws the snapshot away and shows the front door, which is
 // the same call the TTL and cid checks already make: a stale view is worse than none.
-const SNAPSHOT_VERSION = 2;
+// 3: the feature card's <h3> moved OUT of .c-case-study__reveal so it shows without
+//    a hover. A v2 snapshot styled by v3 CSS is the failure this guard exists for and
+//    it looks like a CSS bug: the logo and client obey the new rules and appear, while
+//    the title sits in the collapsed box the new markup no longer puts it in.
+const SNAPSHOT_VERSION = 3;
 
 const read = () => {
     try {

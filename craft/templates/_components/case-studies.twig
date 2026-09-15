@@ -68,6 +68,7 @@
                                 title: cs.title,
                                 client: cs.client,
                                 image: cs.image ?? null,
+                                restTitle: true,
                             } only %}
                         </li>
                     {% endfor %}
@@ -94,6 +95,7 @@
                             client: cs.client,
                             image: cs.image ?? null,
                             logo: cs.logo ?? null,
+                            restTitle: true,
                             imageWidths: [1110, 2220],
                             imageSizes: '(min-width: 80em) 1110px, 100vw',
                             imageFallback: 1110,

@@ -101,7 +101,12 @@ $c-vip-ease: cubic-bezier(0.16, 1, 0.3, 1); // the site's settle curve (see _jon
 // The crown hops and wobbles as the greeting opens — up, a hard tilt one way, a
 // rock back the other, settling in a couple of diminishing swings. Pivoting on its
 // base, so it rocks like a crown knocked askew rather than spinning on its centre.
-.c-vip.is-open .c-vip__crown {
+// Also fired on a timer while the greeting is shut — see mountIdleHop in vip.js, which
+// adds `is-hopping` and takes it off again on animationend. One set of keyframes serves
+// both: the open beat and the idle one are the same movement, so they should not be two
+// declarations that can drift.
+.c-vip.is-open .c-vip__crown,
+.c-vip.is-hopping .c-vip__crown {
     animation: c-vip-crown-hop 900ms $c-vip-ease;
 }
 

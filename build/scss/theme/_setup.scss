@@ -239,3 +239,16 @@ $typography: (
         ),
     ),
 );
+
+// POINTER-BADGE TIMING
+//
+// The card cursor's fade, here rather than in _cursor.scss because two components have
+// to agree on it: the badge fading in over a card (components/_cursor) and the card's
+// own pinned arrow fading out from under it (components/_case-study). They are one
+// exchange — the same arrow handing over to itself — so a drift between the two shows
+// as both being visible at once, or neither.
+//
+// Asymmetric on purpose, and these are the badge's OPACITY timings specifically: its
+// scale runs longer (320ms in), but what the ring is matching is the fade.
+$c-badge-fade-in:  160ms; // fill arrives ahead of the scale settling
+$c-badge-fade-out: 140ms;

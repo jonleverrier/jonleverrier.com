@@ -22,8 +22,19 @@ $c-meta-value: getmap($colour, light, 900);   // near-black — matches body pro
 // The gap between rows, not a margin on each: margins on <dd> are a browser-default
 // minefield (they carry an inline indent too), so both are zeroed below and the
 // spacing lives here where it can't be doubled.
+//
+// A hairline rule sits in that gap, the same padding either side of it so it reads as
+// centred between the two rows rather than belonging to the one below. border-top and
+// not a pseudo-element: a border IS the line, where a pseudo would need a height, a
+// width and a position to say the same thing.
+//
+// White, which on the cream slab this sits on is a LIGHTER line rather than a darker
+// one — it reads as a seam in the surface instead of a rule drawn over it, which is the
+// same move .c-content's timeline spine makes.
 .c-meta__row + .c-meta__row {
     margin-top: getmap($space, rhythm, 500);
+    padding-top: getmap($space, rhythm, 500);
+    border-top: rem(1) solid getmap($colour, light, 100);
 }
 
 .c-meta__label {
