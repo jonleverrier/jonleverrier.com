@@ -24,9 +24,17 @@
    its rel="next" (a child template's top-level `set`s run before the layout).
    Six a page, newest first. count() ignores the limit, so it's the total. #}
 {% set perPage = 6 %}
+{# Notes whose topic is marked "Hide entries from index?" are dropped here, and only
+   here: the exclusion has to be on the query BEFORE the count below, or the page
+   count would promise pages the listing can no longer fill. The topic keeps its pill
+   in the panel and its own page at /notes/{topic}, so nothing becomes unreachable —
+   see craft.frontend.notesHiddenByTopic(). `.id(null)` is a no-op, so the usual case
+   (nothing hidden) adds no constraint. #}
+{% set hiddenNotes = craft.frontend.notesHiddenByTopic() %}
 {% set notesQuery = craft.entries()
     .section('notes')
     .status('live')
+    .id(hiddenNotes ? ['not']|merge(hiddenNotes) : null)
     .orderBy('postDate DESC')
     .limit(perPage) %}
 {% set pageCount = (notesQuery.count() / perPage)|round(0, 'ceil') %}

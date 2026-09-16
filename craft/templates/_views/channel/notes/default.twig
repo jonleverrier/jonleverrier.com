@@ -70,8 +70,22 @@
     {# The notes either side: next is the next older one, previous the next
        newer, newest-first being the order the index lists them in — and each
        wraps round at the end (past the oldest, the newest; before the newest,
-       the oldest), so there's always somewhere to go. A lone note gets neither. #}
-    {% set notesInOrder = craft.entries().section('notes').status('live').orderBy('postDate DESC') %}
+       the oldest), so there's always somewhere to go. A lone note gets neither.
+
+       "the order the index lists them in" is meant literally, so the index's own
+       exclusion applies here too: a note whose topic is marked "Hide entries from
+       index?" is not somewhere to send a reader who did not choose that topic. Without
+       this, the one place the hidden set stayed reachable by accident was this control
+       — read a normal note, press next, land in a weeknote.
+
+       Reading a hidden note yourself, the pair walks the visible sequence from where
+       that note sits in the timeline. That is deliberate: it is a way back to the main
+       stream rather than a dead end, and the topic's own page is still the place to
+       read the set in order. #}
+    {% set hiddenNotes = craft.frontend.notesHiddenByTopic() %}
+    {% set notesInOrder = craft.entries().section('notes').status('live')
+        .id(hiddenNotes ? ['not']|merge(hiddenNotes) : null)
+        .orderBy('postDate DESC') %}
     {% set nextNote = entry.getNext(notesInOrder) ?: notesInOrder.one() %}
     {% set prevNote = entry.getPrev(notesInOrder) ?: notesInOrder.orderBy('postDate ASC').one() %}
     {% if nextNote and nextNote.id == entry.id %}

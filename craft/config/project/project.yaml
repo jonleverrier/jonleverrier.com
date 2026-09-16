@@ -1,4 +1,4 @@
-dateModified: 1789415026
+dateModified: 1789556416
 elementSources:
   craft\elements\Entry:
     -
@@ -160,7 +160,7 @@ elementSources:
         - status
       type: native
     -
-      heading: ''
+      heading: Settings
       key: 'heading:e55a5d62-7a85-4614-b790-a64e44baa647'
       page: Entries
       type: heading
@@ -265,8 +265,10 @@ meta:
     9a729bf7-4da1-42b6-90a3-6a4c12666f0c: Context # Context
     9d03f484-8451-4fdb-a587-204054e6a7dc: '3UP Image' # 3UP Image
     16eff64f-e755-49ec-9bac-66c60032a09d: Strapline # Strapline
+    23d5ad16-5f00-488c-8d54-ec6a454aa3ef: 'Job Titles' # Job Titles
     24d25123-4314-4ccb-a64f-a450d200cb1d: URL # URL
     27e9120b-2988-4328-b1a1-00f9aea77134: 'Lottie JSON' # Lottie JSON
+    29e777f6-69e7-4f1e-85bc-2b9cda1d9f2f: Purpose # Purpose
     34ff84d5-a7af-4a84-b293-3ad3aadbb438: Page # Page
     38c53f0d-1602-478d-87f7-ad35b7b0211f: Personality # Personality
     48a345a5-15fa-438d-9106-72cc3204d789: 'Profile Image' # Profile Image
@@ -318,6 +320,7 @@ meta:
     b1d9fee8-8250-4688-b6f7-b8e7bffa0569: 'Client Long Title' # Client Long Title
     b7cbdaa4-0dca-4396-ac30-8a87d96757d7: Tags # Tags
     ba6e18f9-ba13-4201-8c29-03a1ebd3ad4e: Video # Video
+    bb8f9d67-a41f-4ece-a83f-9bf12de5011e: 'Hide entries from index?' # Hide entries from index?
     bf05dd31-0643-4d5f-985c-90849d0e4ebc: 'Case Study' # Case Study
     bfb56d7d-fee2-4410-9f56-4f8c6ec62176: Testimonial # Testimonial
     bfce2a98-eed7-4c67-b3a4-39e5122ec983: 'Role Item' # Role Item

@@ -4,6 +4,8 @@ description: null
 fieldLayouts:
   45ecc0e6-eaa1-4e67-ba14-d6bf5da2c515:
     cardThumbAlignment: end
+    cardView:
+      - 'layoutElement:0291b0d2-0397-4ed0-b457-2f4584ddd040'
     tabs:
       -
         elementCondition: null
@@ -45,10 +47,28 @@ fieldLayouts:
             handle: null
             instructions: null
             label: null
+            oldFieldUid: null
             required: false
             tip: null
             type: craft\fieldlayoutelements\CustomField
             uid: c6546aaa-5404-49c5-9805-0afe1666d215
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-16T10:33:39+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 29e777f6-69e7-4f1e-85bc-2b9cda1d9f2f # Purpose
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 0291b0d2-0397-4ed0-b457-2f4584ddd040
             userCondition: null
             warning: null
             width: 100
@@ -61,7 +81,7 @@ hasTitleField: true
 icon: null
 name: CTA
 showSlugField: false
-showStatusField: true
+showStatusField: false
 slugTranslationKeyFormat: null
 slugTranslationMethod: site
 titleFormat: null

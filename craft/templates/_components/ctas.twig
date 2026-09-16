@@ -9,7 +9,9 @@
             <p class="c-ctas__whisper u-font-whisper">{{ heading }}</p>
         {% endif %}
         {% for cta in ctas %}
-            {% set href = cta.ctaUrl.url ?? null %}
+            {# safeUrl strips invisible Unicode — a pasted phone number brings bidi
+               controls with it, which percent-encode into the href and 404 the link. #}
+            {% set href = craft.frontend.safeUrl(cta.ctaUrl.url ?? null) %}
             <a class="c-ctas__item"{% if href %} href="{{ href }}"{% endif %}>
                 <span class="c-ctas__label">{{ cta.title }}</span>
             </a>

@@ -4,6 +4,7 @@ namespace modules\frontend\variables;
 
 use Craft;
 use craft\elements\Asset;
+use craft\elements\Category;
 use craft\elements\Entry;
 use modules\frontend\helpers\CaseStudies;
 use modules\frontend\helpers\Headings;
@@ -22,6 +23,18 @@ use nystudio107\vite\Vite;
  */
 class FrontEndVariable
 {
+    /** @var string[]|null Memo for roles() — see the note there. */
+    private static ?array $roles = null;
+
+    /** @var int[]|null Memo for notesHiddenByTopic() — see the note there. */
+    private static ?array $hiddenNotes = null;
+
+    /** The purposeOptions value meaning "show this to everyone" — see ctas(). */
+    private const CTA_GENERAL = 'general';
+
+    /** @var Entry[]|null Memo for ctas() — see the note there. */
+    private static ?array $ctas = null;
+
     /** Name of the cookie recording which build's critical CSS the visitor already has. */
     private const CRITICAL_COOKIE = 'criticalcss';
 
@@ -403,6 +416,189 @@ class FrontEndVariable
     public function methodology(): array
     {
         return Jonson::getInstance()->findContext->methodology();
+    }
+
+    /**
+     * The lines under the name in the header — what Jon is, one at a time.
+     *
+     * ONE list, TWO consumers, and that is the whole reason this lives in code rather
+     * than being read straight out of the field in each template: the cycling ticker in
+     * _includes/page/logo.twig shows all of them in order, and the Person node's
+     * `jobTitle` in _includes/page/scripts.twig takes the FIRST one only. The schema
+     * must not be able to claim a title the site does not show, so both ask here.
+     *
+     * Source is the Global entry's `jobTitles` table field, one `title` column. Blank
+     * rows are dropped — a table field keeps whatever the CP left behind, and an empty
+     * row would print as a blank line in the ticker and, if it landed first, hand the
+     * schema an empty jobTitle.
+     *
+     * Falls back to config/roles.php when the field is empty or the entry is missing.
+     * Not for tidiness: the ticker is in the header of every page, so an empty field
+     * would silently blank a line under the name site-wide, and the JSON-LD would drop
+     * its jobTitle without anything looking broken.
+     *
+     * Memoised — the header renders once per request but the schema asks again, and
+     * neither should cost a second query.
+     */
+    public function roles(): array
+    {
+        if (self::$roles !== null) {
+            return self::$roles;
+        }
+
+        // 'globals', plural — the section handle (see project config). Worth being
+        // careful with: the entry type inside it is named 'global', singular.
+        $global = Entry::find()->section('globals')->one();
+        $rows = $global?->jobTitles ?? [];
+
+        $titles = [];
+        foreach ($rows as $row) {
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title !== '') {
+                $titles[] = $title;
+            }
+        }
+
+        if (!$titles) {
+            $titles = Craft::$app->getConfig()->getConfigFromFile('roles');
+        }
+
+        return self::$roles = $titles;
+    }
+
+    /**
+     * Note IDs to keep off the /notes index, because a topic they carry is marked
+     * "Hide entries from index?" (a Lightswitch on the Topics category group).
+     *
+     * IDs rather than a filtered query, because the caller builds its own query and
+     * needs the exclusion to apply BEFORE `paginate` — the index's page count comes
+     * from `count()` on the same query, so filtering after the fact would leave the
+     * pagination claiming pages that no longer exist.
+     *
+     * This is the INDEX only, and deliberately so. The topic keeps its pill in the
+     * topics panel and its own page at /notes/{topic}, which is the whole point: the
+     * writing stays reachable and indexable, it just does not fill the front page.
+     * Nothing here touches the sitemap, which queries sections directly.
+     *
+     * A note carrying two topics, one hidden and one not, is hidden — being related to
+     * ANY hidden topic is enough. That is the reading the switch's name asks for, and
+     * the safer one: the alternative surfaces a note the author has asked to bury.
+     */
+    /**
+     * The CTAs to show this visitor — the globals single's `ctas` matrix, minus any
+     * whose Purpose does not apply.
+     *
+     * A CTA carries a Purpose checkbox set (`purposeOptions`); a VIP door carries one
+     * `purpose` from the same list, minus 'general'. The rule:
+     *
+     *   'general' ticked    → shown to everyone, VIP or not. This is the ONLY way a CTA
+     *                         reaches an ordinary visitor.
+     *   a purpose ticked    → shown to a visitor who came through a VIP door with that
+     *                         purpose. No door, or a door with the dropdown left blank,
+     *                         and it stays hidden.
+     *   nothing ticked      → shown to nobody. Not an oversight: showing it would mean
+     *                         guessing, and the guess is wrong either way — treat a
+     *                         blank field as "everyone" and a CTA written for one person
+     *                         leaks to the whole site the moment someone forgets to tick
+     *                         a box. Silence is the safe reading, and an empty Purpose
+     *                         is visibly empty in the CP.
+     *
+     * The two combine: 'general' plus 'lookingForAJob' is an ordinary CTA that also
+     * suits that door. And 'general' is additive, not exclusive — a VIP still sees the
+     * general CTAs, because losing "Send me an email" is not something being recognised
+     * at the door should cost you.
+     *
+     * Resolved once: three templates render this list (footer, contact page, contact
+     * panel) and each used to fetch the globals single for itself.
+     */
+    /**
+     * A URL from the CMS with invisible Unicode stripped out.
+     *
+     * Copy a phone number out of Contacts, WhatsApp or a messaging app on a Mac or a
+     * phone and you get a bidi control character with it — the WhatsApp CTA arrived
+     * carrying U+202D LEFT-TO-RIGHT OVERRIDE between the slash and the number. It is a
+     * real character in the string, so it is percent-encoded into the href
+     * (`%E2%80%AD`) and the link 404s, but it has no glyph: it cannot be seen in the CP,
+     * it cannot be selected, and there is nothing to delete. An author can only retype
+     * the whole field and hope.
+     *
+     * So the strip happens here rather than being left to whoever pastes next. Bidi
+     * controls, zero-width characters and the BOM — everything in this class is
+     * invisible, and none of it is ever meant in a URL.
+     *
+     * Deliberately NOT a general cleaner: no case changes, no scheme guessing, no
+     * trailing-slash opinions. Removing characters that cannot be seen is a fix; the
+     * rest would be this code overruling what the author typed.
+     */
+    public function safeUrl(?string $url): ?string
+    {
+        if ($url === null) {
+            return null;
+        }
+
+        $clean = preg_replace(
+            '/[\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2060}-\x{2064}\x{2066}-\x{2069}\x{FEFF}]/u',
+            '',
+            $url,
+        );
+
+        return trim($clean ?? $url);
+    }
+
+    public function ctas(): array
+    {
+        if (self::$ctas !== null) {
+            return self::$ctas;
+        }
+
+        $globals = Entry::find()->section('globals')->one();
+        $all = $globals?->ctas?->all() ?? [];
+
+        $vip = Jonson::getInstance()->vip;
+        $door = $vip->current();
+        $purpose = $door ? $vip->purpose($door) : '';
+
+        $shown = [];
+        foreach ($all as $cta) {
+            $wanted = [];
+            foreach ($cta->purposeOptions ?? [] as $option) {
+                $value = trim((string) $option->value);
+                if ($value !== '') {
+                    $wanted[] = $value;
+                }
+            }
+
+            $everyone = in_array(self::CTA_GENERAL, $wanted, true);
+            $thisDoor = $purpose !== '' && in_array($purpose, $wanted, true);
+
+            if ($everyone || $thisDoor) {
+                $shown[] = $cta;
+            }
+        }
+
+        return self::$ctas = $shown;
+    }
+
+    public function notesHiddenByTopic(): array
+    {
+        if (self::$hiddenNotes !== null) {
+            return self::$hiddenNotes;
+        }
+
+        $hiddenTopics = Category::find()
+            ->group('topics')
+            ->hideEntriesFromIndex(true)
+            ->ids();
+
+        if (!$hiddenTopics) {
+            return self::$hiddenNotes = [];
+        }
+
+        return self::$hiddenNotes = Entry::find()
+            ->section('notes')
+            ->status(null) // exclusion by id — status is the index query's business
+            ->relatedTo($hiddenTopics)
+            ->ids();
     }
 
     /** Straight-line distance in RGB. Crude next to a perceptual space, but this

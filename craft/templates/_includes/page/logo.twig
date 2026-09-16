@@ -79,11 +79,14 @@
     </div>
     <div class="b-logo__meta">
         <p class="b-logo__title">Jon Leverrier</p>
-        {# From craft/config/roles.php — one list, shared with the Person node's
-           jobTitle in the JSON-LD (the first entry), so the title the schema
-           claims is the one the header shows. #}
+        {# From the Global entry's Job Titles field — one list, shared with the Person
+           node's jobTitle in the JSON-LD (the first entry), so the title the schema
+           claims is the one the header shows. craft.frontend.roles() is what keeps
+           those two honest: it drops blank rows and falls back to config/roles.php if
+           the field is ever emptied, so this line under the name cannot go blank on
+           every page of the site. #}
         <ul class="b-logo__items" data-cycle-logo-description>
-            {% for role in craft.app.config.getConfigFromFile('roles') %}
+            {% for role in craft.frontend.roles() %}
                 <li class="b-logo__item{{ loop.first ? ' is-current' }}">{{ role }}</li>
             {% endfor %}
         </ul>

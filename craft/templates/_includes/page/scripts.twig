@@ -176,7 +176,7 @@
        /contact, for no gain a visitor ever sees. The email is a work address
        and answering strangers is the point of it. #}
     {% set contactUrls = globals
-        ? globals.ctas.all()|map(c => c.ctaUrl.url ?? '')|filter(u => u)|values
+        ? globals.ctas.all()|map(c => craft.frontend.safeUrl(c.ctaUrl.url ?? ''))|filter(u => u)|values
         : [] %}
     {% set mailtos = contactUrls|filter(u => u starts with 'mailto:')|values %}
     {% set email = mailtos|length ? mailtos|first|slice(7) : null %}
@@ -185,13 +185,14 @@
        is one @id describing one man, so it has to say the same thing wherever
        it appears, and the About page is where those facts live.
 
-       jobTitle is the first line of the header's role list (craft/config/roles.php)
-       — the same source, so the schema can't claim a title the site doesn't show.
+       jobTitle is the first line of the header's role list (the Global entry's Job
+       Titles field, via craft.frontend.roles()) — the same source, so the schema can't
+       claim a title the site doesn't show.
        knowsAbout is the method timeline's service names, the things the site says
        he does, deduplicated. image is the About page's first large image, as an
        original asset URL (a transform URL would have Craft render a file no
        visitor loads). Each drops out when its source is empty. #}
-    {% set roles = craft.app.config.getConfigFromFile('roles') %}
+    {% set roles = craft.frontend.roles() %}
     {% set jobTitle = roles|length ? roles|first : null %}
 
     {% set knowsAbout = [] %}

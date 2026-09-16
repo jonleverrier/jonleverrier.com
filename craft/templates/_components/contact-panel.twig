@@ -17,7 +17,8 @@
 #}
 {% set contact = craft.entries().section('contact').status('live').one() %}
 {% set globals = craft.entries().section('globals').one() %}
-{% set ctas = globals ? globals.ctas.all() : [] %}
+{# Filtered by the visitor's VIP purpose — see craft.frontend.ctas(). #}
+{% set ctas = craft.frontend.ctas() %}
 {# The brands strip at the foot — the contact page's own: every client with a logo
    that isn't switched Hidden (see the note there). #}
 {% set clients = [] %}

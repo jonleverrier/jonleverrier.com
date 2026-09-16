@@ -2,7 +2,10 @@
    state for either — the strapline block drops out rather than leaving a gap above
    the columns, and the CTA row renders nothing without blocks. #}
 {% set globals = craft.entries().section('globals').one() %}
-{% set discussCtas = globals ? globals.ctas.all() : [] %}
+{# Purpose-aware: a CTA with Purpose ticked shows only to a visitor who came through
+   a VIP door with that purpose (see craft.frontend.ctas()). Untagged ones show to
+   everyone, as they always have. #}
+{% set discussCtas = craft.frontend.ctas() %}
 {% set strapline = globals ? (globals.strapline ?? '')|trim : '' %}
 <footer class="b-footer">
     <div class="b-slab b-slab--p700">
@@ -88,7 +91,7 @@
                             </p>
                             <ul class="c-footer__items" id="footer-discuss" data-footer-panel>
                                 {% for cta in discussCtas %}
-                                    {% set href = cta.ctaUrl.url ?? null %}
+                                    {% set href = craft.frontend.safeUrl(cta.ctaUrl.url ?? null) %}
                                     {% if href %}
                                         <li class="c-footer__item">
                                             <a class="c-footer__link" href="{{ href }}"><span>{{ cta.title }}</span></a>

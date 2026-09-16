@@ -6,9 +6,10 @@
 {% set slabModifier = 'b-slab--l600' %}
 
 {% block siteContent %}
-    {# CTAs live on the globals single (same source the footer uses). #}
+    {# CTAs live on the globals single (same source the footer uses), filtered by the
+       visitor's VIP purpose — see craft.frontend.ctas(). #}
     {% set globals = craft.entries().section('globals').one() %}
-    {% set ctas = globals ? globals.ctas.all() : [] %}
+    {% set ctas = craft.frontend.ctas() %}
 
     {# Client logos → "Brands I have worked with" marquee. Same source as the Jonson rail: only
        clients that actually have a logo asset. #}

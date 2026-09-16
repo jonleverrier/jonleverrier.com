@@ -22,7 +22,14 @@
 {% set topics = topics|sort((a, b) => b.count <=> a.count) %}
 {% if topics %}
     {% set notesIndex = craft.entries().section('note').one() %}
-    {% set total = craft.entries().section('notes').status('live').count() %}
+    {# "All" counts what /notes actually lists, which is not every live note: a topic
+       marked "Hide entries from index?" keeps its own pill and its own page, but its
+       notes are off the index. Counting them here would put a number on a link that
+       leads somewhere showing fewer — the per-topic counts beside it stay whole,
+       because each of those DOES lead to a page listing that many. #}
+    {% set hiddenNotes = craft.frontend.notesHiddenByTopic() %}
+    {% set total = craft.entries().section('notes').status('live')
+        .id(hiddenNotes ? ['not']|merge(hiddenNotes) : null).count() %}
     <div class="c-topics">
         <nav class="c-topics__panel" aria-label="Topics">
         <h2 class="c-topics__whisper u-font-whisper">Topics</h2>
