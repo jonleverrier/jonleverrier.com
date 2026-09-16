@@ -4,7 +4,9 @@ instructions: null
 name: URL
 searchable: false
 settings:
-  fullGraphqlData: true
+  advancedFields:
+    - target
+  fullGraphqlData: false
   maxLength: 255
   showLabelField: true
   typeSettings:
@@ -22,10 +24,27 @@ settings:
             -
               - allowCustomSchemes
               - ''
+      -
+        - asset
+        -
+          __assoc__:
+            -
+              - sources
+              - '*'
+            -
+              - allowedKinds
+              - '*'
+            -
+              - showUnpermittedVolumes
+              - ''
+            -
+              - showUnpermittedFiles
+              - ''
   types:
     - url
     - email
     - tel
+    - asset
 translationKeyFormat: null
 translationMethod: none
 type: craft\fields\Link
