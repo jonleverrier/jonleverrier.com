@@ -92,9 +92,13 @@
                             <ul class="c-footer__items" id="footer-discuss" data-footer-panel>
                                 {% for cta in discussCtas %}
                                     {% set href = craft.frontend.safeUrl(cta.ctaUrl.url ?? null) %}
+                                    {# Target and its noopener — see _components/ctas.twig,
+                                       which renders the same CTAs on /contact and in the panel. #}
+                                    {% set target = cta.ctaUrl.target ?? null %}
                                     {% if href %}
                                         <li class="c-footer__item">
-                                            <a class="c-footer__link" href="{{ href }}"><span>{{ cta.title }}</span></a>
+                                            <a class="c-footer__link" href="{{ href }}"
+                                               {%- if target %} target="{{ target }}"{% if target == '_blank' %} rel="noopener"{% endif %}{% endif %}><span>{{ cta.title }}</span></a>
                                         </li>
                                     {% endif %}
                                 {% endfor %}

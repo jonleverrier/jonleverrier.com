@@ -12,7 +12,13 @@
             {# safeUrl strips invisible Unicode — a pasted phone number brings bidi
                controls with it, which percent-encode into the href and 404 the link. #}
             {% set href = craft.frontend.safeUrl(cta.ctaUrl.url ?? null) %}
-            <a class="c-ctas__item"{% if href %} href="{{ href }}"{% endif %}>
+            {# The Link field's own target (Advanced → Target on the CTA). rel="noopener"
+               rides along with _blank: current browsers imply it, older ones do not, and
+               without it the opened page can reach back through window.opener and
+               retarget the tab it came from. #}
+            {% set target = cta.ctaUrl.target ?? null %}
+            <a class="c-ctas__item"{% if href %} href="{{ href }}"{% endif %}
+               {%- if target %} target="{{ target }}"{% if target == '_blank' %} rel="noopener"{% endif %}{% endif %}>
                 <span class="c-ctas__label">{{ cta.title }}</span>
             </a>
         {% endfor %}
