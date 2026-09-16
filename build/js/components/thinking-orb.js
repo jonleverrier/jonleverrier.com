@@ -64,8 +64,16 @@ const R = 0.86;         // sphere radius as a fraction of the half-box, leaving 
 // of. 2.6 is enough that the near face clearly stands proud.
 const PERSP = 2.6;
 
-const SPIN = 0.46;      // radians/sec about Y — the main turn
-const TUMBLE = 0.11;    // radians/sec about X — a second, slower axis, so the poles
+// Both slowed by 30% together — 0.46/0.11 was a turn every 13.7s and read as busy for
+// something whose job is to say "thinking", not "working hard". 19.6s is slow enough to
+// look like it is holding still until you watch it.
+//
+// The RATIO is what matters and is kept: the two axes at 4.2:1 never come back into
+// phase, which is what stops the poles landing in the same place twice and the sphere
+// reading as a spinning label. Slowing one without the other would have traded the
+// speed for a visible repeat.
+const SPIN = 0.32;      // radians/sec about Y — the main turn
+const TUMBLE = 0.077;   // radians/sec about X — a second, slower axis, so the poles
                         //   drift and the thing never looks like a spinning label
 const TILT = 0.38;      // radians of resting lean, so we never look straight down a pole
 

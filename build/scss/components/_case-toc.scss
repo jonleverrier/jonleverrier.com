@@ -104,7 +104,13 @@ $c-case-toc-num: rem(34);
     // matched, it reads as the start of the sentence rather than a label stuck in front
     // of one.
     font-family: $g-font-primary;
-    font-weight: 600;
+    // 500, the sans's Light face, where the title beside it stays at 600. The typeface
+    // and the ink are still shared — that is what the note above is about, and it holds
+    // — but a counter set at the title's weight competed with it: two bold things side
+    // by side, and the eye has to pick. Lighter, "1/4" reads as the run-up to the words
+    // rather than as a second heading. It is the only axis that can give here, since
+    // changing the face or the colour is what the note rules out.
+    font-weight: 500;
     color: getmap($colour, primary, 700);
     font-variant-numeric: tabular-nums;
 }
@@ -288,7 +294,9 @@ $c-case-toc-num: rem(34);
 // Reading progress. scaleX from the left, so it animates on the compositor rather than
 // relaying out a width on every scroll frame.
 .c-case-toc__progress {
-    height: rem(2);
+    // rem(3) — 0.3rem at this root — written through the helper like every other
+    // length here rather than as a literal, so it moves with the scale.
+    height: rem(3);
     background-color: getmap($colour, light, 700);
 
     > i {

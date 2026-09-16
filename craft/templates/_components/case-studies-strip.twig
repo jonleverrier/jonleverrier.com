@@ -22,6 +22,23 @@
   relation rather than its Title. Those used to be the same thing; they aren't now that
   a client can have more than one study.
 #}
+{# THE `sizes` STRINGS, which have to describe the LAYOUT and not the intention.
+   Measured with the browser's own picks against the real slot widths; the previous
+   pair described an older arrangement and were wrong at two of five widths.
+
+   Three bands, because the layout has three:
+     >= 80em   tiling, capped at the 1110 measure — lead 1110, tile (1110 - gap) / 2
+     64-80em   tiling, but the column is narrower than the cap, so both scale with it
+     < 64em    ONE column: every card is the content column, whatever its position
+
+   The old tile string broke at 48em, which is where tiling USED to start. Between 768
+   and 1024 the card is a single full-width 699 and it was fetching a 547 source for it.
+
+   vw units and px, never rem: a rem in a sizes attribute is 16px, not this site's 10px
+   root, so a rem here would silently mean 1.6x what it says. #}
+{% set leadSizes = '(min-width: 80em) 1110px, (min-width: 64em) 88vw, 90vw' %}
+{% set tileSizes = '(min-width: 80em) 547px, (min-width: 64em) 43vw, 90vw' %}
+
 {% set stacked = stacked ?? false %}
 {% if studies is defined and studies %}
     <div class="c-case-studies c-case-studies--marquee c-case-studies--static{{ stacked ? ' c-case-studies--stacked' : '' }}"
@@ -64,9 +81,9 @@
                             loading: 'lazy',
                             logo: stacked and loop.first ? craft.frontend.caseStudyClientLogo(study) : null,
                             restTitle: true,
-                            imageWidths: stacked and loop.first ? [1110, 2220] : [547, 1094],
-                            imageSizes: stacked and loop.first ? '(min-width: 80em) 1110px, 100vw' : imageSizes ?? null,
-                            imageFallback: stacked and loop.first ? 1110 : null,
+                            imageWidths: stacked and loop.first ? [1110, 2220] : [547, 1094, 1888],
+                            imageSizes: stacked and loop.first ? leadSizes : tileSizes,
+                            imageFallback: stacked and loop.first ? 1110 : 547,
                         } only %}
                     </li>
                 {% endfor %}

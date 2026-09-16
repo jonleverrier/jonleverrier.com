@@ -224,11 +224,12 @@ $c-jonson-line: #383910;
     // Opening question matches the homepage hero headline (.c-frontdoor__title).
     @include typography(h1);
     font-size: rem(60);
+    // Tops out at rem(80) — 8rem on this site's 10px root. It used to take another step
+    // to rem(100) from xxl, which on a 1728 canvas put the question at a size the ANSWER
+    // beneath it could never answer at: the reply is prose, and a headline twice its
+    // height reads as the page shouting its own question back.
     @include mq(from, lg) {
         font-size: rem(80);
-    }
-    @include mq(from, xxl) {
-        font-size: rem(100);
     }
     font-weight: 600;
     width: 100%;
