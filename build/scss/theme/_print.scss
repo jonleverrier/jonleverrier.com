@@ -1,0 +1,1198 @@
+/**
+ * PRINT
+ *
+ * What a page should be when it leaves the screen: the words, the pictures, and where
+ * to find the thing online. Everything that exists to be interacted with goes, because
+ * paper cannot be interacted with — and everything that exists to set a mood goes too,
+ * because a mood costs ink.
+ *
+ * Loaded last (see app.scss) so these rules win on source order without needing
+ * !important on every line. The few that do carry it are the ones fighting an inline
+ * style or a JS-set value, and they say so.
+ */
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// Screen never shows it. Outside the print block on purpose: a rule inside @media
+// print cannot hide anything on screen, and this has to be invisible by default
+// rather than revealed by a stylesheet that might not have loaded yet.
+.c-print-footer {
+    display: none;
+}
+
+@media print {
+
+    // ── The page itself ────────────────────────────────────────────────────────────
+    //
+    // The site is built on dark slabs — olive and navy — which on paper is a solid
+    // block of toner per page and grey text on top of it. Everything resets to black
+    // on white and the slabs stop being slabs.
+    //
+    // print-color-adjust is deliberately NOT set: the default is to let the printer
+    // drop backgrounds, and that default is right here. Forcing them would put the
+    // olive back.
+    html,
+    body,
+    .b-wrap,
+    .b-slab,
+    .b-slab--p500,
+    .b-slab--l100,
+    .b-slab--l600 {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    // The sand panels are the light half of the same idea — a tint to lift a block off
+    // the page. On screen that costs nothing; ticking "Background graphics" in the
+    // print dialog would lay a flat wash under a third of the document. The border and
+    // the whitespace already say where a block starts.
+    .c-content__cols-inner,
+    .c-case-content__figure,
+    .c-testimonial,
+    .c-case-study__media,
+    .c-jonson__footer {
+        background: none !important;
+    }
+
+    // ...and with the tint gone, the inset that held the text off its edge has nothing
+    // to hold it off. It was indenting the intro and the whole meta list 34px while the
+    // eyebrow, the headline and every image ranged from the margin — one page, two left
+    // edges. Nothing else on the sheet is inset, so neither is this.
+    // padding-INLINE only: the block padding is the air between the headline and the
+    // intro, and zeroing all four sides closed that up and set the first paragraph
+    // hard against the h1.
+    .c-content__cols-inner {
+        padding-inline: 0 !important;
+        border-radius: 0 !important;
+    }
+
+    // A4 with room for a printer's own margins. `cm` rather than this site's rem scale:
+    // the scale is tuned to a 10px root for screens and means nothing on paper.
+    @page {
+        size: A4;
+        margin: 1.6cm;
+    }
+
+    body {
+        font-size: 11pt;
+        line-height: 1.45;
+    }
+
+    // ── Alignment ──────────────────────────────────────────────────────────────────
+    //
+    // The display type is centred on screen, over a 1728px canvas where a centred
+    // headline has room to be a composition. On a sheet it has 17cm and a hard left
+    // margin, and a centred heading sitting over left-set prose reads as two documents
+    // stapled together. Everything ranges left.
+    //
+    // Blanket, because centring here is only ever applied to TEXT — the layouts that
+    // centre a box do it with grid, flex or auto margins, none of which this touches.
+    * {
+        text-align: left !important;
+    }
+
+    // ── Prose ──────────────────────────────────────────────────────────────────────
+    //
+    // Body copy is 18px on screen (13.5pt) — sized for a mono face read at arm's length
+    // on a monitor. Printed at that size it was LARGER than its own h3 (13pt), so the
+    // hierarchy read upside down, and a case study ran to seventeen sheets. 10.5pt puts
+    // it back under the sub-heading and is still comfortably above the 8pt floor where
+    // a mono face starts to fill in.
+    p,
+    li,
+    dd,
+    dt,
+    blockquote,
+    figcaption {
+        font-size: 10.5pt !important;
+        line-height: 1.45 !important;
+    }
+
+    // The whisper is an EYEBROW — the small tracked caps above a headline. On screen it
+    // is 14px against 18px body, already the smaller of the two; printed at 10.5pt
+    // against 10.5pt body it became the same size as the prose, and tracked caps at the
+    // body size read as larger than the body. It has to sit clearly under it. The meta
+    // labels (CLIENT, ROLE) are the same device at the same size and move with it, or
+    // the two tracked-caps treatments on one page disagree.
+    // 7.5pt, and the tracking pulled in. At 8pt it MEASURED smaller than the 10.5pt
+    // body and still read larger, which is a real effect rather than an illusion: it is
+    // set in the sans while the body is mono, it is uppercase — so every letter stands
+    // at cap height where the body's lowercase sits at x-height — it is semibold, and
+    // it carried 0.19em of tracking, which spreads a short label across a lot of page.
+    // Size alone could not fix that; the tracking had to come down with it.
+    .u-font-whisper,
+    .c-content__whisper,
+    .c-content__work-whisper,
+    .c-content__clients-whisper,
+    .c-meta__label {
+        font-size: 7.5pt !important;
+        letter-spacing: 0.1em !important;
+        line-height: 1.4 !important;
+    }
+
+    // The attribution under a quote is 16px — 12pt, larger than the quote it attributes
+    // and larger than every paragraph on the page. It is a caption; it goes under both.
+    .c-testimonial__name {
+        font-size: 10.5pt !important;
+        line-height: 1.35 !important;
+    }
+
+    .c-testimonial__role {
+        font-size: 9.5pt !important;
+        line-height: 1.35 !important;
+    }
+
+    // ── Chrome, and anything that only exists to be used ───────────────────────────
+    //
+    // Nav, panels, the ask bar, the floating badge and the custom cursor are all
+    // controls. The canvases are backdrops: a point cloud, a dot grid and a thinking
+    // orb print as a grey rectangle at best and an empty one at worst.
+    //
+    // .c-frontdoor is the WHOLE front door, not just its input: the orb, the question
+    // and the suggestion chips are one interactive surface, and it carries
+    // `min-height: 100dvh` — which in print resolves to the PAGE, so it claimed a full
+    // sheet on its own and pushed the provenance line onto a second one. The homepage
+    // now prints as what it is on paper: a sheet with a letterhead and a note of where
+    // it came from. A conversation is NOT lost with it — the thread is a separate
+    // `.c-jonson` section (see _views/single/home/default.twig), which still prints.
+    .b-footer,
+    .b-footer__primary,
+    .c-nav-panel,
+    .c-contact-panel,
+    .c-vip,
+    .c-cursor,
+    .c-toc,
+    .c-case-toc,
+    .c-frontdoor,
+    .c-jonson__field,
+    .c-jonson__home,
+    .c-voice,
+    .c-hero,
+    canvas,
+    [data-tunnel-canvas],
+    [data-lost-for-words] {
+        display: none !important;
+    }
+
+    // NOT [data-content-grid]. That attribute is on .c-content — the whole content
+    // wrapper — and the dot grid it names is a canvas mountGrid appends INSIDE it. The
+    // `canvas` rule above already removes the drawing; hiding the attribute took the
+    // entire page with it, which print emulation reported as a body with zero
+    // characters of text in it.
+
+    // ── The content column ─────────────────────────────────────────────────────────
+    //
+    // Two screen measurements that mean nothing on paper:
+    //
+    //   min-height: 100dvh — there so the trailing spine reaches the footer. In print
+    //   the viewport unit resolves to the PAGE, so .c-content claims a full sheet
+    //   whatever it holds: on /case-studies that left the bottom half of page one
+    //   empty under a single card. The spine it was propping up is removed below, so
+    //   nothing is left to hold up.
+    //
+    //   padding-top: 900 — clearance for the absolutely-placed header, which is the
+    //   first thing this sheet hides. Kept, but a third of it: enough to open the page,
+    //   not 3cm of it on top of the @page margin.
+    // ── The gutter ─────────────────────────────────────────────────────────────────
+    //
+    // ONE gutter on a sheet, and @page's 1.6cm margin is it. The site stacks two side
+    // paddings to make its own — .b-wrap's, then .c-content's — and .c-content's steps
+    // up by breakpoint (rhythm 500 / 600 / 800). That is a problem here and not only an
+    // unneeded one: which step applies depends on how wide the print page box is, and
+    // that differs by engine — Chrome's A4 box lands below `md`, Safari's above it. So
+    // anything positioned to match the column by hand (the provenance block, which is a
+    // sibling of .b-main rather than a child of the column) matched in one browser and
+    // was out by the difference in the other.
+    //
+    // Zeroing both leaves every element on the sheet starting at the page margin, with
+    // no breakpoint in the answer.
+    .b-wrap,
+    .c-content {
+        padding-inline: 0 !important;
+    }
+
+    .c-content {
+        min-height: 0 !important;
+        padding-top: 0.8cm !important;
+    }
+
+    // The standfirst's box reserves 156px — "exactly the spinner's band (connector
+    // height + spinner height)", so the connector above and the spine below sit
+    // symmetrically around the loading spinner while the answer streams in. There is no
+    // spinner and no beat on paper, and the standfirst itself is one 20px line, so it
+    // printed as 136px of nothing between the summary and the first image on every page
+    // that has one.
+    .c-content__body {
+        min-height: 0 !important;
+    }
+
+    // Same clearance, same reason.
+    .b-wrap {
+        padding-top: 0 !important;
+    }
+
+    // ── Fragmentation barriers ─────────────────────────────────────────────────────
+    //
+    // Everything between a figure and the page is a plain block. Three things sat in
+    // that chain, none of which means anything on paper:
+    //
+    //   .b-wrap   flex
+    //   .c-content   flex (a column, centring its children)
+    //   .b-slab   overflow: clip
+    //
+    // A `break-inside: avoid` has to survive every ancestor between the element and the
+    // page box to be honoured, and WebKit drops it through flex containers and through
+    // boxes that clip — which is why figures still split across sheets in Safari while
+    // Chrome held them whole. The flex is only there to centre and to stretch the
+    // column for the spine, and the clip is there to contain the sticky header and the
+    // canvas; the spine, the header and the canvas are all already gone.
+    //
+    // This also replaces the `align-items: flex-start` that used to range the children
+    // left: as blocks they are full-width and range left on their own.
+    .b-wrap,
+    .c-content {
+        display: block !important;
+    }
+
+    .b-slab,
+    .b-slab--p500,
+    .b-slab--l100,
+    .b-slab--l600 {
+        overflow: visible !important;
+    }
+
+    // ── The page box is narrower than the phone breakpoint ─────────────────────────
+    //
+    // Worth knowing before changing anything below. A print page box is the PAPER, not
+    // the window: A4 at 96dpi is 794px, less this sheet's 1.6cm margins, so components
+    // lay out at about 672px — BELOW the `md` breakpoint (768px). Every media query on
+    // the site therefore resolves to its narrowest arm and the whole document prints in
+    // its mobile layout, which is why the two halves of a pair stacked.
+    //
+    // It cannot be fixed by widening the page: reaching 768px would need a margin under
+    // 13px, which is inside most printers' unprintable edge. So the few places where the
+    // mobile arm is wrong for paper opt back out by hand, here.
+    //
+    // A pair is two images meant to be read against each other — stacked they are just
+    // two images, and at 817px each they also could not share a sheet. Side by side the
+    // whole pair is ~378px and comfortably fits one. Ratio and columns both mirror the
+    // `from md` arm in _case-content.scss (16/9 is $c-case-content-ratio).
+    .c-case-content__pair {
+        grid-template-columns: 1fr 1fr !important;
+        aspect-ratio: 16 / 9;
+    }
+
+    .c-case-content__trio {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+
+    // The rounded corner lives on the FIGURE, which clips the image to shape with
+    // `overflow: clip`. Printed, the bottom two corners came back square: the clip is
+    // an ancestor's, and it is not reliably honoured through pagination. Putting the
+    // same radius on the picture and on the <img> makes the shape a property of the
+    // thing being painted, so no ancestor has to hold it. Scoped to case-content
+    // figures — .c-picture is also the testimonial avatar, which is a circle.
+    .c-case-content__figure .c-picture,
+    .c-case-content__figure .c-picture__img {
+        border-radius: $b-radius-200 !important;
+        overflow: hidden !important;
+    }
+
+    // ── The stacked case-study list ────────────────────────────────────────────────
+    //
+    // Two up. One card per row ran the full measure, so a 3:2 image was ~340px tall and
+    // only one fitted a sheet — seven studies, seven pages. Halved, the whole list is
+    // three. The lead card spans the row on screen from `lg`; on paper it takes a cell
+    // like the rest, because a row of one is what made this a seven-page document.
+    //
+    // minmax(0, 1fr), not 1fr: `1fr` is `minmax(auto, 1fr)` and `auto` is min-content,
+    // which an image refuses to shrink below — the tracks blow out and the second column
+    // runs off the page. The min-width on the item is the other half of that same fix.
+    .c-case-studies--stacked .c-case-studies__items {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        gap: 0.7cm 0.5cm !important;
+    }
+
+    .c-case-studies--stacked .c-case-studies__item {
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        grid-column: auto !important;
+    }
+
+    // ── The testimonials carousel ──────────────────────────────────────────────────
+    //
+    // The same shape as the method: a clipped viewport over a flex track whose slides
+    // are sized in container-query units (`flex: 0 0 min(slide, 100cqi)`), offset by a
+    // centring `padding-left`, translated by JS, and scaled down to 0.85 unless active.
+    //
+    // Printed as-is it was a 377px void with a stray avatar arc poking out of it —
+    // every quote stacked in the same place, one of them scaled, the rest clipped.
+    // `contain: layout paint` has to go too: it lets the browser skip a slide's
+    // contents entirely, which is precisely what you do not want on paper.
+    //
+    // As a plain list every quote prints, in order, at full size.
+    .c-testimonials__viewport {
+        display: block !important;
+        position: static !important;
+        overflow: visible !important;
+    }
+
+    .c-testimonials__viewport::after {
+        content: none !important; // the edge fade over the clipped window
+    }
+
+    .c-testimonials__track {
+        display: block !important;
+        width: auto !important;
+        padding-left: 0 !important;
+        transform: none !important;
+    }
+
+    .c-testimonials .c-testimonial {
+        flex: none !important;
+        width: auto !important;
+        max-width: none !important;
+        transform: none !important;
+        contain: none !important;
+    }
+
+    // Each quote is its own piece — a different voice and a different client — so the
+    // gap has to be bigger than the paragraph gap inside one, or the three run together
+    // as a single wall of text. It is doing the work the card's edge does on screen.
+    .c-testimonial + .c-testimonial {
+        margin-top: 1.8cm !important;
+    }
+
+    // The gold opening quote goes. It is a 150px glyph (276 from md) in a box with
+    // `line-height: 0.6` — about 90px — so the mark deliberately OVERFLOWS its own line
+    // box upward, and a negative bottom margin tucks the quote up under it. That is a
+    // flourish on screen and a bug on paper: the box can sit legitimately inside a page
+    // while the ink it paints reaches above the top margin, so the glyph came out split
+    // across two sheets. `break-inside: avoid` on the card cannot help with that — the
+    // card's BOX never straddled anything.
+    //
+    // Scaling it down fixed the overflow, but a flourish sized not to misbehave is not
+    // doing the job it exists for. The gap above each quote and the attribution below
+    // already mark where one ends and the next begins.
+    .c-testimonial::before {
+        content: none !important;
+    }
+
+    // Dots, arrows and the autoplay toggle: controls.
+    .c-testimonials__controls,
+    .c-testimonials__dots,
+    .c-testimonials__nav,
+    .c-testimonials__cycle {
+        display: none !important;
+    }
+
+    // ── "Brands I have worked with" ────────────────────────────────────────────────
+    //
+    // The logo strip is a marquee: a clipped window over a flex track of 260x160 cards,
+    // each card a slider that swaps the logo for a summary panel on hover. None of that
+    // is a thing on paper. Unclipped and unwrapped it becomes what it actually is — a
+    // list of logos, each at its own width, running left to right and wrapping.
+    //
+    // The card box goes with it. 260x160 is a hit area sized for a pointer, and it made
+    // a 90px-wide wordmark sit in the middle of a 260px hole; at natural width they pack.
+    .c-content__clients-inner {
+        overflow: visible !important;
+    }
+
+    .c-clients {
+        width: auto !important;
+        overflow: visible !important;
+    }
+
+    .c-clients::after {
+        content: none !important; // the edge fade over the clipped window
+    }
+
+    .c-clients__track {
+        display: block !important;
+        width: auto !important;
+        transform: none !important;
+    }
+
+    .c-clients__items {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 0.5cm 0.7cm !important;
+        width: auto !important;
+        padding-right: 0 !important;
+    }
+
+    // The loop clone, as with the case-study strip — every logo twice otherwise.
+    .c-clients__items + .c-clients__items {
+        display: none !important;
+    }
+
+    .c-clients__item {
+        width: auto !important;
+        height: auto !important;
+        flex: none !important;
+    }
+
+    // The slider's two faces are stacked and clipped to the card; on paper only the
+    // logo exists, so the stack flattens and the summary panel goes.
+    .c-clients__inner {
+        position: static !important;
+        overflow: visible !important;
+    }
+
+    .c-clients__slider {
+        display: block !important;
+        transform: none !important;
+    }
+
+    .c-clients__face--summary {
+        display: none !important;
+    }
+
+    .c-clients__face--logo {
+        height: auto !important;
+        padding: 0 !important;
+    }
+
+    // No greyscale: the filter exists to hold the strip back behind the page's own
+    // colour, and a printer has already made that decision. No side padding either —
+    // that was spacing inside the card, and the card is gone.
+    .c-clients__logo {
+        filter: none !important;
+        max-height: 14mm !important;
+        max-width: none !important;
+        width: auto !important;
+        padding-inline: 0 !important;
+    }
+
+    // ── "More case studies" ────────────────────────────────────────────────────────
+    //
+    // The strip at the foot of a case study is the same component as the list on
+    // /case-studies, and printed the same way: seven full-bleed cards at ~550px each,
+    // none able to share a sheet once break-inside holds them together — 3,782px, very
+    // nearly four sheets of navigation hanging off the end of the article.
+    //
+    // It goes. This is a "read next", and a reader holding the printed article cannot
+    // follow it; the case study itself is complete without it.
+    //
+    // Reducing it to a text list of titles and URLs was tried first and abandoned. The
+    // strip is a clipped, transformed flex row of fixed-width slides, and it does not
+    // survive fragmentation: laid out as blocks it still came through the paginator as
+    // a four-pixel column setting each title one character per line, while the DOM
+    // measured at the page-box width reported a perfectly ordinary 606px-wide list. The
+    // paginated layout is not the layout you can inspect, so there was nothing left to
+    // debug against — and a related-links block is not worth a fragile rule.
+    //
+    // The whole beat goes with it, heading included, via :has() — hiding only the strip
+    // would leave a "More case studies" whisper standing over nothing. Scoped to the
+    // strip that is NOT --stacked, because on /case-studies the stacked strip IS the
+    // page and must print.
+    .c-content__work:has(.c-case-studies--marquee:not(.c-case-studies--stacked)) {
+        display: none !important;
+    }
+
+    // ── Centred measures ───────────────────────────────────────────────────────────
+    //
+    // The prose measure is `max-width: 740px; margin-inline: auto` — a reading column
+    // centred in a container that images span the full width of. That is right on a
+    // 1500px screen, where the images being the wide thing is the point of the layout.
+    //
+    // On paper it broke the left edge, and it did so INVISIBLY IN CHROME: the centring
+    // only bites once the container is wider than 740px, and a Chrome print box is
+    // 673px, so the measure filled it and everything lined up. Safari's print box is
+    // wider than 740, so the text centred inside it while the figure above did not —
+    // the image ran the full width and every paragraph under it sat indented. Measured
+    // in Safari with these rules applied on screen: at 1000px the text is 90px in from
+    // the figure's left edge, at 1200px it is 167px.
+    //
+    // So the measure stays — a 95-character line is not worth reading — but it ranges
+    // left instead of centring. Image and prose then share a left edge at any page size,
+    // with the image simply running wider on the right, which is the design's intent.
+    .c-case-content__text,
+    .c-case-content__method-inner,
+    .c-case-content__figure--inline,
+    .c-case-content__figure-inner,
+    .c-case-content__caption,
+    .c-content__method-inner,
+    .c-content__work-whisper,
+    .c-content__aside,
+    .c-pagination,
+    .c-topics,
+    .c-content__blocks blockquote,
+    // The standfirst, and every block of prose inside the reveal wrapper: each is
+    // capped to a measure and centred in a 1110px box by
+    // `.c-content__reveal-inner > p, > h2, …{ margin-inline: auto }`. Same trap as the
+    // case-content measure, same invisibility in Chrome, and the child selector is
+    // written as `> *` so a block type added to that list later cannot miss this.
+    .c-content__summary,
+    .c-content__reveal-inner > *,
+    // The testimonial centres its card and its text with the same device, expressed in
+    // container-query units: `margin-inline: calc((100% - min(100cqi, box)) / 2)`.
+    .c-testimonial__quote,
+    .c-testimonial__quote > *,
+    .c-testimonial__cite {
+        margin-inline: 0 !important;
+    }
+
+    // The testimonial is a padded GRID card: 45px of its own inset, and the quote and
+    // cite placed in columns that start further in again — the cite was 183px from the
+    // page margin. Both are shape given by a fill the printer drops, so what prints is
+    // an unexplained indent. As a block with no padding the quote and its attribution
+    // range with the prose around them.
+    .c-testimonial {
+        display: block !important;
+        padding: 0 !important;
+        margin-inline: 0 !important;
+    }
+
+    // ── Full-bleed boxes ───────────────────────────────────────────────────────────
+    //
+    // These are `width: 100vw` and rely on being FLEX-SHRUNK back to the column by
+    // .c-content (see _content.scss) — which is how they behave at narrow widths on
+    // screen. Making .c-content a block for fragmentation took that shrink away, so the
+    // declared 100vw would stand, and a viewport unit in print is the whole page. Named
+    // explicitly rather than left to a layout side effect.
+    .c-content__clients,
+    .c-content__work {
+        width: auto !important;
+    }
+
+    // Belt and braces on the figures: whatever the component does at whatever width the
+    // page box turns out to be, an image cannot exceed its container or be pulled out of
+    // it by a negative margin.
+    .c-case-content__figure,
+    .c-case-content__figure .c-picture,
+    .c-case-content__figure .c-picture__img {
+        max-width: 100% !important;
+        margin-inline: 0 !important;
+    }
+
+    // ── The timeline spine ─────────────────────────────────────────────────────────
+    //
+    // Every block on a content page is joined to the next by a centred grey connector,
+    // and the page opens with a longer lead-in capped by a dot. It is drawn entirely in
+    // pseudo-elements — no markup — and entirely as `background`, which is the problem:
+    // a printer drops backgrounds by default, so the LINES disappear while the 50px of
+    // space each one occupies stays behind. The result is a page pulled apart by gaps
+    // with nothing in them, and a title pushed 130px down a sheet that has no header
+    // above it any more.
+    //
+    // So the spine comes out and takes its space with it. Everything is `content: none`
+    // rather than `display: none`, because several of these are grid or flex items whose
+    // parents count children; removing the box outright is the cleaner of the two.
+    //
+    // The list is long because the spine is drawn wherever a beat happens rather than by
+    // one shared class. Every entry below is a `$spine-width` pseudo-element — if a new
+    // beat is added to a page, it belongs here too.
+    // The lead-in cap above the first whisper, the dot that tops it, and the trailing
+    // spine that runs from the last block down to the footer. All three are pure
+    // decoration with nowhere to point on paper — the header above the whisper already
+    // opens the page, and nothing follows the last block.
+    .c-content__whisper::before,
+    .c-content__whisper::after,
+    .c-content::after,
+    .c-case-content > * + :is(.c-case-content__text, .c-case-content__code, .c-case-content__quote, .c-case-content__method)::before,
+    .c-case-content > :is(.c-case-content__text, .c-case-content__code, .c-case-content__quote, .c-case-content__method)::after {
+        content: none !important;
+    }
+
+    // The connectors BETWEEN beats are a different case, and removing them outright was
+    // a mistake worth naming: each one is a 50px line with 22px of air either side, so
+    // it was carrying ~94px of vertical rhythm as well as drawing a line. Delete the box
+    // and the rhythm goes with it — whisper, title and summary ended up with literally
+    // zero gap between them, butted against each other.
+    //
+    // So the box stays and only the LINE goes: no background, no width, and a height
+    // cut from 94px to a beat that suits a sheet. Same rhythm everywhere a beat exists,
+    // no ink, and none of the page-splitting waste the full-size version caused.
+    // Two sizes, because the connectors do two jobs at one length on screen.
+    //
+    // Inside the page's HEAD — whisper to title, title to standfirst — the beat is
+    // small: those three lines are one unit and want to read as one.
+    .c-content__title::before,
+    .c-content__cols::before,
+    .c-content__body::before {
+        background: none !important;
+        width: 0 !important;
+        height: 0.4cm !important;
+        margin-block: 0 !important;
+    }
+
+    // BETWEEN SECTIONS — the work list, the quotes, the client logos, a note's footer —
+    // it is the only thing separating one from the next, now that the line itself is
+    // gone and the slabs print white. At the head's 0.4cm the case studies ran straight
+    // into the testimonials. 1.1cm reads as a section break without being a gap.
+    .c-content__blocks-inner::before,
+    .c-content__method-inner::before,
+    .c-content__work-inner::before,
+    .c-content__quotes-inner::before,
+    .c-content__clients-inner::before,
+    .c-content__aside::before,
+    .c-content__foot::before,
+    .c-topics::before,
+    .c-pagination::before,
+    .c-jonson__response::before,
+    .c-jonson__whisper::before {
+        background: none !important;
+        width: 0 !important;
+        height: 1.1cm !important;
+        margin-block: 0 !important;
+    }
+
+    // ── Document header ────────────────────────────────────────────────────────────
+    //
+    // The whole .b-logo — mark, name and role — once, at the top of the first sheet. A
+    // printed page that has left the site still needs to say whose it is, and the mark
+    // alone says it only to someone who already knows it. Everything else in the bar is
+    // chrome: the contact button and the burger.
+    //
+    // The bar is `position: absolute` (and `sticky` on Jonson pages, with its inner
+    // .b-wrap absolutely placed and transformed by sticky-header.js), all of which has
+    // to come off before it will sit in the flow — out of flow it would either print
+    // over the first paragraph or not print at all. Static, it lands at the top of the
+    // document and appears on page one only, which is what a document header is.
+    .b-header,
+    .b-header > .b-wrap,
+    .b-header__inner,
+    .b-header__items,
+    .b-header__item,
+    .b-logo__link {
+        display: block !important;
+        position: static !important;
+        height: auto !important;
+        inset: auto !important;
+        transform: none !important;
+    }
+
+    // .b-logo itself stays the flex row it is on screen, so the name sits beside the
+    // mark rather than under it.
+    .b-logo {
+        position: static !important;
+        transform: none !important;
+    }
+
+    .b-header {
+        margin-bottom: 0.5cm !important;
+    }
+
+    .b-header__contact,
+    .b-header__burger,
+    .b-logo__mark--portrait {
+        display: none !important;
+    }
+
+    // The mark is sized by its wrapper on screen (max 65px, aspect-ratio 1). In print
+    // it is set in mm so it is a known size on paper rather than a translated pixel
+    // count, and the wrapper's promoted layer goes with it.
+    .b-logo__roundel,
+    .b-logo__mark--roundel {
+        width: 12mm !important;
+        max-width: none !important;
+        height: auto !important;
+        transform: none !important;
+    }
+
+    // Both are near-white — they sit on the dark header, and only the eggshell slab
+    // switches them to navy, which this bar is not inside. Left alone they printed
+    // white on white.
+    .b-logo__title {
+        color: #000 !important;
+        font-size: 11pt !important;
+        line-height: 1.3 !important;
+    }
+
+    .b-logo__item {
+        color: #000 !important;
+        font-size: 9.5pt !important;
+        line-height: 1.3 !important;
+    }
+
+    // The role is a TICKER: every line from roles.php sits in the same grid cell
+    // (`grid-area: 1 / 1`), translated 110% out of a masked band, and JS promotes one
+    // at a time to `.is-current`. Printed as-is it works — the mask hides the rest —
+    // but which role you get is whichever the cycle happened to be showing when you
+    // hit print. A document header shouldn't be a lottery, so the band becomes an
+    // ordinary block and only the first role prints, the same one every time.
+    .b-logo__items {
+        display: block !important;
+        overflow: visible !important;
+    }
+
+    .b-logo__item {
+        display: none !important;
+    }
+
+    .b-logo__item:first-child {
+        display: block !important;
+        transform: none !important;
+    }
+
+    // No URL after the logo. It links home, which the mark already says, and the
+    // suffix would print the site's address beside its own logo.
+    .b-logo__link::after {
+        content: none !important;
+    }
+
+    // ── Cards ──────────────────────────────────────────────────────────────────────
+    //
+    // The meta is an overlay on screen: absolutely placed over the picture, white text
+    // on a scrim. Both halves of that fail on paper — the scrim is a background the
+    // printer will drop, leaving white text on a photograph, and even printed it would
+    // be ink over ink. It comes out of the overlay and sits under the image as a
+    // caption, which is what it is.
+    // Block and visible, not flex and clipped. On screen this is a flex box that pins
+    // the text to the bottom (and to the right edge, for the cards that align that way)
+    // with `overflow: hidden` to keep a long title off the picture. On paper there is no
+    // picture to keep it off, and the two together ate the start of every line: the
+    // caption overflowed the START edge of the flex box and was clipped there, printing
+    // "Vaiie" as "AIIE" and "Putting" as "utting" down the whole "More case studies"
+    // list. Nothing in this box needs aligning once it is a caption in the flow.
+    .c-case-study__meta {
+        display: block !important;
+        overflow: visible !important;
+        position: static !important;
+        padding: 0.4cm 0 0 !important;
+        background: none !important;
+        color: #000 !important;
+    }
+
+    .c-case-study__meta::before {
+        content: none !important; // the scrim
+    }
+
+    .c-case-study__client,
+    .c-case-study__title,
+    .c-case-study__summary {
+        opacity: 1 !important;
+        transform: none !important;
+        color: #000 !important;
+    }
+
+    // The collapsing box stops collapsing: on screen it is 0fr until a hover, and a
+    // hover is not available on paper. Anything it was hiding prints.
+    .c-case-study__reveal {
+        display: block !important;
+        grid-template-rows: none !important;
+    }
+
+    .c-case-study__reveal-inner,
+    .c-case-study__reveal-inner > * {
+        overflow: visible !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    // The ring and the logo chip are screen affordances — one says "clickable", which
+    // paper is not, and the other is a white panel that prints as an empty box.
+    .c-case-study__go,
+    .c-case-study__logo {
+        display: none !important;
+    }
+
+    // A drifting strip is a row of clones wider than the page. Stacked, it is a list.
+    .c-case-studies__track {
+        transform: none !important;
+        width: auto !important;
+    }
+
+    .c-case-studies__items {
+        display: block !important;
+    }
+
+    .c-case-studies__item {
+        width: auto !important;
+    }
+
+    // The clone the marquee makes for its seamless loop would print every study twice.
+    .c-case-studies__items + .c-case-studies__items {
+        display: none !important;
+    }
+
+    // ── Collapsed prose ────────────────────────────────────────────────────────────
+    //
+    // read-more and meta-more hide content behind a button on screen. On paper there is
+    // no button, so hidden content is simply lost content.
+    // read-more collapses by adding `is-collapsed` to the wrapper; meta-more sets the
+    // `hidden` ATTRIBUTE on the items past its limit. Two mechanisms, so two rules.
+    // read-more hides the SIBLINGS after the first paragraph — see _read-more.scss,
+    // `.is-collapsed > :not(:first-child):not(.c-read-more)`. It is not a max-height,
+    // so unsetting one did nothing; this is the same selector, undone. `block` and not
+    // `revert` for the reason given below.
+    .is-collapsed > :not(:first-child):not(.c-read-more) {
+        display: block !important;
+    }
+
+    // display: inline, NOT `revert`. Revert rolls back to the USER-AGENT sheet, and the
+    // UA is exactly where `[hidden] { display: none }` lives — so it reverted these
+    // straight back to hidden and the Role row printed as "Logo Design, … +4 more".
+    .c-meta__item[hidden] {
+        display: inline !important;
+    }
+
+    // The controls themselves: a button is not a thing you can press on paper, and
+    // "+4 more" next to the four items it was hiding reads as a mistake.
+    .c-read-more,
+    .c-meta__more {
+        display: none !important;
+    }
+
+    // ── Type ───────────────────────────────────────────────────────────────────────
+    //
+    // The display sizes are set for a 1728px canvas. At A4's ~17cm of text width an
+    // 80px headline is four words a line.
+    h1,
+    .c-jonson__question,
+    .c-frontdoor__title {
+        font-size: 24pt !important;
+        line-height: 1.15 !important;
+    }
+
+    h2 { font-size: 16pt !important; }
+    h3 { font-size: 13pt !important; }
+
+    // h4 was 26px — 19.5pt, LARGER than the h2 above it and than every heading on the
+    // page bar the title. On a note whose settings are each an h4 ("homeTitle",
+    // "customBaseUrl") the hierarchy read upside down for pages at a time.
+    h4 { font-size: 11pt !important; }
+    h5,
+    h6 { font-size: 10.5pt !important; }
+
+    // ── Links ──────────────────────────────────────────────────────────────────────
+    //
+    // A printed page cannot be clicked, so a link has to say where it goes. Internal
+    // hrefs are relative in the markup, so the site's own host is prepended — otherwise
+    // the reader gets "/case-study/vaiie" with no idea whose site that is.
+    //
+    // Skipped for links whose text IS the destination (a written-out URL or an email),
+    // which would otherwise print the same string twice.
+    a[href^="http"]::after {
+        content: " (" attr(href) ")";
+        font-size: 9pt;
+        word-break: break-all;
+    }
+
+    a[href^="/"]::after {
+        content: " (jonleverrier.com" attr(href) ")";
+        font-size: 9pt;
+        word-break: break-all;
+    }
+
+    // Only mailto. There WAS a `a[href*="jonleverrier.com"]` exclusion here, meant to
+    // stop a link whose text is already its own URL printing that URL twice — but Craft
+    // writes internal hrefs absolute, so on production that selector matches EVERY
+    // internal link on the site and the one thing this whole section exists to print
+    // would have been suppressed on all of them. It could not show up locally, where
+    // the host is jonleverrier2.local. Nothing on the site actually has a bare URL as
+    // its link text (checked across the page types), so there is nothing to exclude.
+    a[href^="mailto"]::after {
+        content: none;
+    }
+
+    // Links inherit the text colour they sit in. Several here carry no colour of their
+    // own — they are styled by the slab around them — and once the slab reset above
+    // takes that colour away they fall through to the user agent's #00EE, which on a
+    // mono printer is a mid grey patch in the middle of a black paragraph. The href in
+    // brackets is what marks them as links on paper now, so they need nothing else.
+    a {
+        color: inherit !important;
+    }
+
+    // ── Breaks ─────────────────────────────────────────────────────────────────────
+    //
+    // A figure split across a page break is two half pictures, and a heading stranded
+    // at the foot of a page belongs to nothing.
+    // `picture` and the pair/trio wrappers are named as well as the figure. Chrome does
+    // not honour break-inside on a GRID ITEM when it fragments the grid container, and
+    // the two halves of a pair are exactly that — so the guard has to sit on the
+    // container, which is an ordinary block in the flow, rather than on each half.
+    img,
+    picture,
+    .c-picture,
+    figure,
+    .c-case-content__figure,
+    .c-case-content__pair,
+    .c-case-content__trio,
+    .c-case-studies__item,
+    .c-case-study,
+    .c-testimonial,
+    .c-method__phase,
+    .c-content__clients-inner,
+    .c-print-footer {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    h1, h2, h3 {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    // ── Motion ─────────────────────────────────────────────────────────────────────
+    //
+    // Nothing animates on paper, but a transform or an opacity that was mid-animation
+    // when the print was taken freezes into the output. Reset both, and stop anything
+    // scroll-revealed from printing as the invisible state it starts in.
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .js-reveal,
+    [class*="is-inview"],
+    .c-clients__track,
+    .c-method__phase {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    // Images are max-width constrained on screen by their container; on paper the
+    // container is the page. `height: auto` is the necessary other half — constraining
+    // width alone would squash anything carrying width/height attributes.
+    img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    // ...except an image that IS its own box. The avatar is a 60x60 <img> cropped with
+    // object-fit and rounded with border-radius — no wrapper — so `height: auto` above
+    // let it render at its natural aspect inside a 60px-wide column: the sitter's head
+    // filled the circle and their legs hung out of the bottom of it, which is the small
+    // dark shape that kept appearing under every quote. Re-stated here with a class, so
+    // it out-specifies the element selector above rather than fighting it on !important.
+    .c-testimonial__avatar {
+        width: 12mm !important;
+        height: 12mm !important;
+        object-fit: cover !important;
+        border-radius: 50% !important;
+    }
+
+    // ── Code ───────────────────────────────────────────────────────────────────────
+    //
+    // A code block is a horizontal SCROLL container on screen (`white-space: pre` plus
+    // `overflow-x: auto`, see _code.scss). Paper cannot scroll, so every line longer
+    // than the measure was simply cut at the right edge — a Twig tag printing as
+    // `data-schema="Breadc` and nothing after it. Wrapping is the only way the whole
+    // line survives; the leading indent is preserved, so a wrapped line still reads.
+    //
+    // 8.5pt because a wrapped code line wants to be narrow: at the screen's 12pt a
+    // third of these lines wrapped twice.
+    // All three, because the scroll container moves. Before Shiki hydrates, the block
+    // is a plain <pre class="language-…">; after it, .c-code holds a bare <code> and
+    // the <code> is what scrolls — there is no <pre> in the highlighted markup at all,
+    // which is why a `.c-code pre` rule matched nothing and the clipping survived.
+    .c-code,
+    .c-code code,
+    .c-code pre {
+        white-space: pre-wrap !important;
+        overflow-x: visible !important;
+        overflow-wrap: break-word !important;
+        font-size: 8.5pt !important;
+    }
+
+    // Copy-to-clipboard. A button.
+    .c-code__copy {
+        display: none !important;
+    }
+
+    // 500, not 400. JonSonMono ships exactly two weights — 500 (leicht) and 600
+    // (halbfett) — and the block was set in 600, so a whole page of code printed
+    // semibold and sat heavier than the prose around it. 500 is the same weight the
+    // body mono already uses, and it is a real face rather than a synthesised one:
+    // asking for 400 would have the browser pick 500 anyway or fake a lighter cut.
+    .c-code,
+    .c-code code,
+    .c-code .line,
+    .c-code span {
+        font-weight: 500 !important;
+    }
+
+    // ── A note's meta row ──────────────────────────────────────────────────────────
+    //
+    // Date, time-to-read and topic sit in one centred, wrapping flex row. As a block
+    // each one takes its own line and ranges left with everything else on the sheet.
+    .c-content__meta-items {
+        display: block !important;
+    }
+
+    // The items block-level too. The read-time is `inline-flex` on screen, and an
+    // inline-level box shares a line box with the whitespace in the markup around it —
+    // which printed "2 min read" a couple of characters in from the date above it.
+    .c-content__meta-item {
+        display: block !important;
+    }
+
+    // And the separator goes. Each item after the first carries a ::before that is the
+    // hairline divider between them in the horizontal row — 1px wide with 16px of
+    // margin after it. Stacked, that is not a divider, it is a 17px indent pushing
+    // "2 min read" out of line with the date above it, drawn in a background the
+    // printer drops anyway.
+    .c-content__meta-item::before {
+        content: none !important;
+    }
+
+    // The topic is a link to an index of other notes — a way to keep browsing, which is
+    // exactly what a printed sheet cannot do. It was also printing its own href beside
+    // it, so the line read "Development (https://…/notes/development)". Matched by the
+    // link it contains rather than by the item's position in the row.
+    .c-content__meta-item:has(.c-content__topic) {
+        display: none !important;
+    }
+
+    // ── The method carousel ────────────────────────────────────────────────────────
+    //
+    // On screen the method is one phase at a time in a clipped viewport, with the rest
+    // waiting in a flex track that slides. Two things make that unprintable: the track
+    // sizes its phases in CONTAINER QUERY UNITS (`flex: 0 0 min(slide, 100cqi)`), which
+    // do not resolve in the paginated pass — the phases collapsed to a four-pixel
+    // column of hairlines — and even resolved, a carousel on paper shows one phase and
+    // hides the other four.
+    //
+    // So it stops being a carousel: the track is a block, every phase is a full-width
+    // item at full opacity, and they stack in order. The timeline line and the fade
+    // overlay are drawn across a horizontal track and mean nothing down a vertical one;
+    // the nav is a control.
+    // The viewport is a NEGATIVE-MARGIN BREAKOUT:
+    //
+    //   width: 100cqi
+    //   margin-inline: calc((min($c-method-slide, 100cqi) - 100cqi) / 2)
+    //
+    // pulled out on both sides so phases peek in the gutters, and cancelled exactly by
+    // the track's matching `padding-left`. Zeroing that padding to stack the carousel —
+    // without zeroing this — left the breakout uncancelled, and the phase text printed
+    // at x=-105: off the left edge of the paper and cut off. Both halves of a cancelling
+    // pair have to move together. `width: auto` also drops the container-query unit,
+    // which has no container to resolve against once the track is a plain block.
+    .c-method__viewport {
+        width: auto !important;
+        margin-inline: 0 !important;
+        overflow: visible !important;
+    }
+
+    // The olive band behind the timeline — a 100vw pseudo pulled back by -50vw. A
+    // viewport unit in print is the whole page, and it is a background the printer
+    // drops anyway, so it paints nothing and only risks overflow.
+    .c-method::before {
+        content: none !important;
+    }
+
+    .c-method__viewport::after,
+    .c-method__track::before {
+        content: none !important;
+    }
+
+    .c-method__track {
+        display: block !important;
+        width: auto !important;
+        padding-left: 0 !important;
+        transform: none !important;
+    }
+
+    .c-method__phase {
+        flex: none !important;
+        width: auto !important;
+        max-width: none !important;
+        opacity: 1 !important;
+        margin-left: 0 !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .c-method__phase + .c-method__phase {
+        margin-top: 0.5cm !important;
+    }
+
+    .c-method__nav,
+    .c-method__line--fill,
+    .c-method__ping {
+        display: none !important;
+    }
+
+    // The skill pills are filled chips with 30px of side padding. The printer drops the
+    // fill, and what is left is a row of words each floating 30px in from nothing —
+    // they read as badly indented text rather than as tags. A hairline keeps the chip
+    // shape (a border prints where a background does not), and the padding comes down
+    // to what a 9pt label needs.
+    .c-method__item {
+        padding: 0.12cm 0.25cm !important;
+        border: 1px solid #000;
+        border-radius: 999px;
+        font-size: 9pt !important;
+    }
+
+    // The marker before each label goes with the fill. It is a ::before drawn entirely
+    // in `background-color`, a `clip-path` or a `conic-gradient` (see
+    // mixins/_pill-marker) — every one of which the printer drops — but it keeps its
+    // 1.27em box and its 0.9em margin. So the shape vanished and the indent stayed,
+    // pushing every pill's text 32px in from a pill edge that starts at the margin. It
+    // is colour-coding, which is the first thing a mono printer loses anyway.
+    .c-method__item::before,
+    .c-sectors__tag::before {
+        content: none !important;
+    }
+
+    // ── Read-next and share ────────────────────────────────────────────────────────
+    //
+    // The same call as "More case studies": a reader holding the sheet cannot follow a
+    // previous/next link or press a share button, and the share block printed as a
+    // "SHARE THIS NOTE" heading standing over nothing. Both go, and .c-content__foot
+    // takes the heading with it.
+    .c-content__foot,
+    .c-content__prev,
+    .c-content__next {
+        display: none !important;
+    }
+
+    // ── Provenance ─────────────────────────────────────────────────────────────────
+    //
+    // The last thing on the last sheet: where this came from and when it was taken.
+    // A printed page has no address bar and no history, so without this it is an
+    // undated photocopy. Rendered last in .b-wrap (see _layouts/page.twig) and filled
+    // in at print time by print-footer.js.
+    //
+    // Quiet: it is a reference, not a sign-off, so it sits under a hairline at the
+    // size of the smallest thing on the page.
+    // No inset of its own. It is a sibling of .b-main rather than a child of the content
+    // column, so it used to need the column's padding rebuilt by hand — which only
+    // matched in the browser whose page box happened to pick the same breakpoint. With
+    // the gutter zeroed above, it starts where everything else does.
+    .c-print-footer {
+        display: block !important;
+        margin-top: 0.8cm !important;
+        padding-top: 0.3cm !important;
+        border-top: 1px solid #000;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    // Mono. It is machine output — an address and a timestamp — not prose, and the mono
+    // face is the one this site already uses to say so.
+    .c-print-footer p {
+        margin: 0 !important;
+        font-family: $g-font-secondary !important;
+        font-size: 8pt !important;
+        line-height: 1.5 !important;
+        color: #000 !important;
+    }
+
+    // break-all, because a case study URL is one long unbreakable token and would
+    // otherwise run off the right edge of the sheet rather than wrap.
+    .c-print-footer__url {
+        word-break: break-all;
+    }
+
+    // The date is a beat apart from the address above it, as written. Qualified with
+    // the element, because `.c-print-footer p` above zeroes every margin in here and
+    // is the more specific of the two — unqualified, this lost and the three lines ran
+    // together.
+    .c-print-footer p.c-print-footer__date {
+        margin-top: 0.25cm !important;
+    }
+
+    // No "(url)" suffix. There is no <a> here — this IS the URL, written out.
+}

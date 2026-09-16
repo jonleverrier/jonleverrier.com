@@ -9,3 +9,6 @@
 // theme
 @use "theme/typography";
 @use "theme/utilities";
+
+// Print last, so its rules win on source order rather than on !important.
+@use "theme/print";

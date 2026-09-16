@@ -1,0 +1,21 @@
+{#
+  PRINT FOOTER — the provenance line at the end of a printed page.
+
+  A sheet that has left the site has no address bar and no history: it needs to say
+  where it came from and when it was taken, or it is an undated photocopy. Screen
+  never shows it (see theme/_print.scss).
+
+  The URL is rendered here as well as written by print-footer.js, so it survives with
+  JS off. Craft's absoluteUrl is the right fallback — navigation on this site is real
+  page loads, not pushState, so it cannot go stale.
+
+  The DATE is deliberately NOT rendered here. It has to be the moment the page was
+  PRINTED, and a server-rendered timestamp is the moment the page was rendered — which
+  a template cache would make hours or days old, while claiming otherwise. Empty with
+  JS off is honest; a wrong date is not.
+#}
+<div class="c-print-footer" data-print-footer>
+    <p class="c-print-footer__label">Generated from:</p>
+    <p class="c-print-footer__url" data-print-url>{{ craft.app.request.absoluteUrl }}</p>
+    <p class="c-print-footer__date" data-print-date></p>
+</div>

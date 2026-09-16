@@ -25,6 +25,9 @@
         </main>
         {% include '_includes/page/footer.twig' %}
         {% block siteFooter %}{% endblock %}
+        {# Last thing in the wrap, so it is the last thing on the last sheet. Prints
+           only — see the include and theme/_print.scss. #}
+        {% include '_includes/page/print-footer.twig' %}
     </div>
 {# The contact side panel — the ways in, over any page (see the component). Outside
    the wrap: a dialog in the top layer takes no part in the page's flow, and the

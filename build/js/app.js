@@ -37,6 +37,7 @@ import {mountTitleAway} from './components/title-away.js';
 import {mountToc} from './components/toc.js';
 import {mountCaseToc} from './components/case-toc.js';
 import {mountVoice} from './components/jonson-voice.js';
+import {mountPrint} from './components/print.js';
 
 import '../images/favicon.ico';
 
@@ -333,6 +334,12 @@ window.addEventListener('beforeunload', disposeCardCursor, {once: true});
 // Swap the tab title to an invitation while the visitor is off in another tab.
 const disposeTitleAway = mountTitleAway();
 window.addEventListener('beforeunload', disposeTitleAway, {once: true});
+
+// Prepares the document for printing: stamps where it came from and when, and takes
+// every lazy image off its leash (WebKit does not force-load them for a print the way
+// Chrome does). Both on beforeprint, so the date is the print's, not the page load's.
+const disposePrint = mountPrint();
+window.addEventListener('beforeunload', disposePrint, {once: true});
 
 // "On this page" nav on a note: marks the section in view (see components/toc.js).
 const disposeToc = mountToc();
