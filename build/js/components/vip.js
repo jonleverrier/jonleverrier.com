@@ -25,6 +25,14 @@
 import {wipeThread} from './thread-memory.js';
 
 const KEY = 'jonson.vip'; // the uid of the last VIP door this browser came through
+// The door this VISIT has already been greeted by. sessionStorage, not localStorage,
+// and that is the whole decision: the greeting should open itself once when someone
+// arrives, not on every page they then read, and not never again after the first time
+// they ever followed the link. A visit is the unit that matches "first use" — come back
+// next week on the same 30-day cookie and being welcomed again is right, where being
+// welcomed on page four of one sitting is not. (thread-memory keeps its snapshot in
+// sessionStorage for the same reason: a visit is the natural life of a conversation.)
+const GREETED_KEY = 'jonson.vip.greeted';
 
 // How long the greeting stays open on its own before folding away. Two lines now,
 // so long enough to read both; short enough that it never feels parked.
@@ -32,6 +40,9 @@ const GREETING_MS = 6000;
 // How often the crown hops on its own while the greeting is shut. Long enough that it
 // reads as the badge catching your eye rather than as something animating at you.
 const HOP_EVERY_MS = 10000;
+// How long after the page settles the greeting opens itself on arrival — see
+// greetOnArrival.
+const GREETING_ON_ARRIVAL_MS = 900;
 
 export function mountVip() {
     const strip = document.querySelector('[data-vip]');
@@ -71,23 +82,41 @@ function mountGreeting(root) {
     if (!disc || !greeting) return;
 
     let timer = 0;
+    // Set while the pointer is over the badge. The fold-away clock is not merely paused
+    // in that case but not started at all, so a timer that fires from somewhere else —
+    // the auto-open below, say — cannot close the pill under a pointer that is resting
+    // on it.
+    let held = false;
+
+    const arm = () => {
+        clearTimeout(timer);
+        if (!held) timer = setTimeout(() => set(false), GREETING_MS);
+    };
+
     const set = (open) => {
         root.classList.toggle('is-open', open);
         disc.setAttribute('aria-expanded', open ? 'true' : 'false');
         greeting.setAttribute('aria-hidden', open ? 'false' : 'true');
         clearTimeout(timer);
-        if (open) timer = setTimeout(() => set(false), GREETING_MS);
+        if (open) arm();
     };
 
     disc.addEventListener('click', (e) => {
         e.stopPropagation();
         set(!root.classList.contains('is-open'));
     });
-    // Pointing at the words while they're up keeps them up; the clock restarts
-    // once the pointer leaves.
-    greeting.addEventListener('pointerenter', () => clearTimeout(timer));
-    greeting.addEventListener('pointerleave', () => {
-        if (root.classList.contains('is-open')) timer = setTimeout(() => set(false), GREETING_MS);
+
+    // The whole badge, not just the pill. Hovering the DISC used to leave the clock
+    // running, so the greeting folded away under a pointer that was sitting on the
+    // thing that opened it — and the disc is where the pointer already is, having just
+    // pressed it. `root` is the disc and the pill and the gap between them.
+    root.addEventListener('pointerenter', () => {
+        held = true;
+        clearTimeout(timer);
+    });
+    root.addEventListener('pointerleave', () => {
+        held = false;
+        if (root.classList.contains('is-open')) arm();
     });
     document.addEventListener('click', (e) => {
         if (root.classList.contains('is-open') && !root.contains(e.target)) set(false);
@@ -96,7 +125,40 @@ function mountGreeting(root) {
         if (e.key === 'Escape' && root.classList.contains('is-open')) set(false);
     });
 
+    greetOnArrival(root, set);
     mountIdleHop(root);
+}
+
+/**
+ * Open the greeting by itself the first time this visit sees this door — so a visitor
+ * who has just followed a personal link is welcomed rather than shown a badge to press.
+ *
+ * Keyed by the door's uid, so a second VIP link opened in the same visit greets again
+ * as the new person. Nothing remembered means greet: a browser that refuses storage
+ * gets the greeting on each page rather than never, which is the kinder failure of the
+ * two, and the pill folds itself away regardless.
+ *
+ * A beat's delay so it UNFOLDS on arrival rather than being there when the page paints
+ * — the animation is the greeting, and a pill that is simply already open reads as a
+ * banner. Long enough to clear the page transition; short enough to still belong to
+ * the arrival.
+ */
+function greetOnArrival(root, set) {
+    const door = root.dataset.vip || '';
+    if (!door) return;
+
+    let greeted = '';
+    try {
+        greeted = sessionStorage.getItem(GREETED_KEY) || '';
+    } catch (e) { /* storage refused — greet, as above */ }
+
+    if (greeted === door) return;
+
+    try {
+        sessionStorage.setItem(GREETED_KEY, door);
+    } catch (e) { /* nothing to remember it with */ }
+
+    setTimeout(() => set(true), GREETING_ON_ARRIVAL_MS);
 }
 
 /**

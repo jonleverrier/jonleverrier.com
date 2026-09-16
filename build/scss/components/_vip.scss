@@ -2,9 +2,9 @@
  * COMPONENT: VIP BADGE
  *
  * A small fixed disc in the bottom-right corner for a visitor who came in through a
- * VIP link — a white crown over "VIP" on the yellow. Pressing it unfolds a greeting
- * pill to its left ("Great to have you here, Marcus"), which tucks itself away again
- * after a moment (vip.js). On every page of the visit (see _components/vip-strip
+ * VIP link — a white crown over "VIP" on the red. The greeting pill unfolds to its
+ * left ("Great to have you here, Marcus") — by itself on the first page of the visit,
+ * and on a press after that — and tucks itself away again after a moment (vip.js). On every page of the visit (see _components/vip-strip
  * for when it renders).
  *
  * Fixed to the viewport, outside the warped .b-wrap. The greeting grows LEFT out of
@@ -66,8 +66,11 @@ $c-vip-ease: cubic-bezier(0.16, 1, 0.3, 1); // the site's settle curve (see _jon
     align-items: center;
     justify-content: center;
     gap: rem(1);
-    background-color: getmap($colour, primary, 400); // the yellow
-    color: getmap($colour, primary, 700); // the navy
+    // The button and chip red, with the word in white on it — 4.59:1, which clears AA
+    // for text this size. (600, not the text-only 650: this is a filled control, which
+    // is exactly what 600 is for.)
+    background-color: getmap($colour, primary, 600);
+    color: getmap($colour, light, 100);
     // Lifts it off both slabs — the olive and the cream — without a border.
     box-shadow: 0 rem(2) rem(10) rgba(0, 0, 0, 0.18);
     user-select: none;
@@ -94,7 +97,10 @@ $c-vip-ease: cubic-bezier(0.16, 1, 0.3, 1); // the site's settle curve (see _jon
     display: block;
     width: rem(18);
     height: rem(18);
-    color: getmap($colour, light, 100); // white, over the navy word
+    // Stated rather than inherited, though the disc is white now too: the crown is
+    // white because it is a crown, and it should not follow the word if the word's
+    // colour is ever changed out from under it.
+    color: getmap($colour, light, 100);
     transform-origin: 50% 100%;
 }
 
