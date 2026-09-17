@@ -2670,17 +2670,34 @@ class AskController extends Controller
         $purpose = $vip->purpose($entry);
         $why = $purpose !== '' ? '- WHY YOU MADE THIS DOOR: ' . $vip::PURPOSES[$purpose]['prompt'] . "\n" : '';
 
+        // A DOOR WITHOUT A NOTE still knows who it was made for — the name, the company
+        // and the purpose all sit on the entry, and an empty note stopped disqualifying a
+        // door in services\Vip::enter(). What it hasn't got is private background, and the
+        // block has to SAY so: the wording below promised a note and then handed over an
+        // empty string, which is an invitation to fill the gap with an invented one.
+        $hasNote = $text !== '';
+        $background = $hasNote
+            ? "Below is your own private note on them: who they are, what they're likely weighing up, "
+                . "what of your work and experience speaks to them.\n"
+            : "You have NO NOTE on them. You know you made them a link and you know their name, and "
+                . "not one thing beyond it — so don't invent a history between you, a referral, a "
+                . "mutual contact, or a reason you suppose they're here, and don't imply you know "
+                . "their situation. What they tell you is where it comes from.\n";
+
         return "WHO YOU ARE TALKING TO. This visitor came in through a private link you made for "
             . "\"{$name}\" — you know who they are, the way you'd know a guest someone had introduced.{$who} "
-            . "Below is your own private note on them: who they are, what they're likely weighing up, "
-            . "what of your work and experience speaks to them.\n"
+            . $background
             . $why
             . "- " . $naming . "\n"
-            . "- Draw on what you know about them openly, as shared context between two people who've "
-            . "been introduced — \"as someone who's run a design team…\", \"given what you're building…\" — "
-            . "and let it colour the angle, the examples and the depth you pitch at. What you must NOT do "
-            . "is recite the note, list facts about them back at them, or say you were briefed, given "
-            . "notes or sent a link. You simply know them.\n"
+            . ($hasNote
+                ? "- Draw on what you know about them openly, as shared context between two people who've "
+                    . "been introduced — \"as someone who's run a design team…\", \"given what you're building…\" — "
+                    . "and let it colour the angle, the examples and the depth you pitch at. What you must NOT do "
+                    . "is recite the note, list facts about them back at them, or say you were briefed, given "
+                    . "notes or sent a link. You simply know them.\n"
+                : "- Treat them as someone you invited and are glad to see, and let what they ask tell "
+                    . "you the rest — ask, rather than assume, what brings them here. What you must NOT "
+                    . "do is say you were briefed, given notes or sent a link.\n")
             . "- The work you show is chosen FOR THEM: when work fits the question, pick the case studies, "
             . "clients and sectors that speak to their situation and name those in your reply — the cards "
             . "follow what you name, so naming the right ones is how the right cards appear.\n"
@@ -2689,9 +2706,11 @@ class AskController extends Controller
             . "citation rule: each still ends with its @source, or it's dropped before they see it.\n"
             . "- They were invited, so the moment to connect can come a little sooner than it would for a "
             . "stranger — but still only at a genuine ready-to-act beat, and still once.\n"
-            . "- Don't fawn, and if they say they're someone else, take their word for it and let the "
-            . "note go.\n"
-            . "Your note, in full:\n\n" . $text;
+            . ($hasNote
+                ? "- Don't fawn, and if they say they're someone else, take their word for it and let the "
+                    . "note go.\n"
+                    . "Your note, in full:\n\n" . $text
+                : "- Don't fawn, and if they say they're someone else, take their word for it.\n");
     }
 
     /**

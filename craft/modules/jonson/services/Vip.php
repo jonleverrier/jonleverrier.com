@@ -191,17 +191,22 @@ class Vip extends Component
     }
 
     /**
-     * Walk through the door: remember the VIP (when the entry has a note to prime
-     * Jonson with — an entry without one isn't a door, and nothing is remembered)
-     * and send them to the homepage. The section template and the alt-slug
-     * controller both end here, so the two URLs can't behave differently.
+     * Walk through the door: remember the VIP and send them to the homepage. The
+     * section template and the alt-slug controller both end here, so the two URLs
+     * can't behave differently.
+     *
+     * EVERY LIVE ENTRY IN THE SECTION IS A DOOR. The cookie used to be gated on the
+     * note being filled in, and the failure that bought was silent: a door made in the
+     * CP and sent off was a working URL that did nothing at all — no badge, no name in
+     * the ask bar, no prefilled form — with nothing on the entry to say why. An entry
+     * carrying only a first name still has every one of those to give. Priming Jonson
+     * is the one thing that genuinely needs the note, and that asks for it itself
+     * (AskController::vipPrompt).
      */
     public function enter(?Entry $entry): \yii\web\Response
     {
         if ($entry) {
-            if ($this->note($entry) !== '') {
-                $this->remember($entry);
-            }
+            $this->remember($entry);
             $this->countHit($entry);
         }
 
@@ -328,9 +333,15 @@ class Vip extends Component
 
     /**
      * The VIP this request belongs to, or null: a live entry in the vip section
-     * matching the cookie's uid, with a non-empty note. Anything else — no cookie,
-     * a stale or forged one, a disabled entry, an empty note — is null, and the
-     * visitor is treated as anyone else. Resolved once per request.
+     * matching the cookie's uid. Anything else — no cookie, a stale or forged one, a
+     * disabled entry — is null, and the visitor is treated as anyone else. Resolved
+     * once per request.
+     *
+     * An EMPTY NOTE no longer disqualifies a door (see enter()). Every surface takes
+     * what it needs from the entry and degrades on its own: the badge greets without a
+     * name, personalise() hands its line back untouched, the form prefills whichever
+     * fields are filled in, and the persona block states plainly that there is no note
+     * rather than promising one.
      */
     public function current(): ?Entry
     {
@@ -354,7 +365,7 @@ class Vip extends Component
             ->status(Entry::STATUS_LIVE)
             ->one();
 
-        return $this->current = ($entry && $this->note($entry) !== '') ? $entry : null;
+        return $this->current = $entry;
     }
 
     /** The private note on the VIP — empty if the field isn't on the layout. */
