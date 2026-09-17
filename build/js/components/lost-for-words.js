@@ -37,6 +37,17 @@ const USES_KEY = 'jonson-prompt-uses';
 const CLOSE_MS = 340;
 const TUCK_MS = 260;
 
+// How long the drawer waits after the pointer leaves before it tucks itself away.
+//
+// It used to go on the instant of pointerleave, which punished the obvious gesture:
+// the chips sit in a band ABOVE the field, so reaching one means travelling up and
+// often clipping the edge of the box on the way — and the drawer shut under the
+// pointer that was going for it. Two seconds is long enough to cross a gap or come
+// back after a glance, short enough that a drawer left behind still closes itself.
+//
+// Cancelled on re-entry, so coming back inside is not merely forgiven but forgotten.
+const LEAVE_GRACE_MS = 2000;
+
 // Private mode and blocked storage throw on both read and write, and neither is worth
 // losing the button over — a failed read is "no uses yet", a failed write just means
 // the count doesn't survive the next load.
@@ -144,6 +155,10 @@ export function mountLostForWords(button) {
     // ---- the drawer ----------------------------------------------------------
     let open = false;
     let closeTimer = 0;
+    // Separate from closeTimer, which is the teardown closeDrawer() schedules for the
+    // slide. This one is the grace period BEFORE any of that starts, and the two
+    // overlap whenever a leave actually results in a close.
+    let leaveTimer = 0;
 
     const onKey = (e) => {
         if (e.key === 'Escape') {
@@ -160,8 +175,12 @@ export function mountLostForWords(button) {
     // mouse-out; the open drawer should go the same way rather than sit there.
     const onLeave = (e) => {
         if (e.pointerType && e.pointerType !== 'mouse') return; // touch has no hover to leave
-        closeDrawer(false, true);
+        clearTimeout(leaveTimer);
+        leaveTimer = setTimeout(() => closeDrawer(false, true), LEAVE_GRACE_MS);
     };
+    // Back inside before the clock runs out: the drawer stays, and the next leave
+    // starts a fresh two seconds rather than resuming a spent one.
+    const onEnterAgain = () => clearTimeout(leaveTimer);
 
     // No `force` argument: `nudged` is what lifts the allowance and it is already set
     // by the time this runs (see onNudge). The lift has to reach the CHIPS as well — a
@@ -172,6 +191,7 @@ export function mountLostForWords(button) {
         if (!drawer || open || capped()) return;
         open = true;
         clearTimeout(closeTimer);
+        clearTimeout(leaveTimer);
         field.classList.remove('is-tucking', 'is-resetting');
         drawer.hidden = false;
         // Two frames: the first paints it (display), the second starts the slide.
@@ -184,6 +204,7 @@ export function mountLostForWords(button) {
         document.addEventListener('keydown', onKey);
         document.addEventListener('pointerdown', onOutside, true);
         field.addEventListener('pointerleave', onLeave);
+        field.addEventListener('pointerenter', onEnterAgain);
         // preventScroll, and it is the whole reason the bar stopped moving. Focusing
         // an element makes the browser scroll it into view, and the chips sit in a
         // band ABOVE the field — so on a phone, where that band is near the top of a
@@ -208,6 +229,10 @@ export function mountLostForWords(button) {
         document.removeEventListener('keydown', onKey);
         document.removeEventListener('pointerdown', onOutside, true);
         field.removeEventListener('pointerleave', onLeave);
+        field.removeEventListener('pointerenter', onEnterAgain);
+        // A close that came from somewhere else — Escape, a click outside, a chip
+        // picked — must not leave a leave-clock ticking behind it.
+        clearTimeout(leaveTimer);
         const reset = () => {
             drawer.classList.remove('is-open');
             field.classList.remove('is-open', 'is-tucking');
