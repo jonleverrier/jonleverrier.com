@@ -811,18 +811,30 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     border-radius: $b-radius-200 $b-radius-200 0 0;
     background-color: var(--band-bg);
     clip-path: var(--band-hide);
-    // The 140ms on clip-path is a HIDE delay, and only ever applies on the way out:
+    // The delay on clip-path is a HIDE delay, and only ever applies on the way out:
     // the revealed rule below zeroes it, so opening is still immediate.
     //
-    // It exists because the band is hit-testable only where it is unclipped, and the
-    // clip opens downward over 260ms — the nudge's words are the last part to arrive.
-    // A pointer diving from the bar straight to the words can beat the reveal, land on
-    // a region that isn't there yet, and cancel the very thing it was reaching for.
-    // Holding the open state for a moment after the bar loses the pointer gives that
-    // move somewhere to land. Leaving the field altogether just costs 140ms before the
-    // band starts closing, which reads as the band settling rather than snapping.
+    // It started at 140ms, for a narrower reason: the band is hit-testable only where
+    // it is unclipped, and the clip opens downward over 260ms — the nudge's words are
+    // the last part to arrive. A pointer diving from the bar straight to the words can
+    // beat the reveal, land on a region that is not there yet, and cancel the very
+    // thing it was reaching for. A moment's hold gave that move somewhere to land.
+    //
+    // NOW A SECOND, which is a different intention on top of the same mechanism:
+    // leaving the band should not dismiss it. At 140ms the band was gone before you
+    // could look away and back, or round a corner to reach a chip, and the whole thing
+    // read as something you had to keep hold of. Tried at two seconds first and it
+    // overshot — a band that outstays the pointer that long stops reading as patient
+    // and starts reading as stuck. The hold is the same length as the drawer's own
+    // grace period (LEAVE_GRACE_MS in lost-for-words.js) — the band and the drawer
+    // inside it are one object to a visitor, and they should not expire at different
+    // times, so the two move together.
+    //
+    // Only the clip is delayed. The row and the colour keep their own timings: they
+    // animate INSIDE a band that is still on screen, so holding them back would stall
+    // the drawer's own close rather than the band's.
     transition:
-        clip-path 260ms cubic-bezier(0.16, 1, 0.3, 1) 140ms,
+        clip-path 260ms cubic-bezier(0.16, 1, 0.3, 1) 1000ms,
         grid-template-rows 340ms cubic-bezier(0.16, 1, 0.3, 1),
         background-color 200ms ease;
 
