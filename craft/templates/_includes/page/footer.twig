@@ -69,18 +69,6 @@
                             <li class="c-footer__item">
                                 <a class="c-footer__link" href="{{ siteUrl('contact') }}"><span>Contact</span></a>
                             </li>
-                            {# The `pages` structure — AI Policy, Privacy Statement and
-                               whatever else gets added. In the section's own order, so
-                               dragging them in the CMS reorders them here.
-
-                               `status('live')` as everywhere else: disabled,
-                               future-dated and expired entries stay out. These were
-                               hardcoded with href="#" until the section existed. #}
-                            {% for page in craft.entries().section('pages').status('live').all() %}
-                                <li class="c-footer__item">
-                                    <a class="c-footer__link" href="{{ page.url }}"><span>{{ page.title }}</span></a>
-                                </li>
-                            {% endfor %}
                         </ul>
                     </div>
                     {% if discussCtas %}
@@ -101,6 +89,34 @@
                                                {%- if target %} target="{{ target }}"{% if target == '_blank' %} rel="noopener"{% endif %}{% endif %}><span>{{ cta.title }}</span></a>
                                         </li>
                                     {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    {# LEGAL — the `pages` structure: AI Policy, Privacy Policy, Terms and
+                       whatever else gets added. In the section's own order, so dragging
+                       them in the CMS reorders them here.
+
+                       Its own column rather than the tail of Quick Links, where they used
+                       to sit: those are places to go and read about the work, these are
+                       the small print, and a list that mixes the two makes the reader sort
+                       them. Rendered only when the section has something live in it, so an
+                       empty column never appears.
+
+                       `status('live')` as everywhere else: disabled, future-dated and
+                       expired entries stay out. #}
+                    {% set legalPages = craft.entries().section('pages').status('live').all() %}
+                    {% if legalPages %}
+                        <div class="b-footer__primary-col">
+                            <p class="b-footer__whisper u-font-whisper">
+                                <button type="button" class="b-footer__toggle" data-footer-toggle
+                                        aria-expanded="true" aria-controls="footer-legal">Legal</button>
+                            </p>
+                            <ul class="c-footer__items" id="footer-legal" data-footer-panel>
+                                {% for page in legalPages %}
+                                    <li class="c-footer__item">
+                                        <a class="c-footer__link" href="{{ page.url }}"><span>{{ page.title }}</span></a>
+                                    </li>
                                 {% endfor %}
                             </ul>
                         </div>

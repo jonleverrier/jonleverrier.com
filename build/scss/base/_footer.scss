@@ -212,10 +212,14 @@ $b-footer-strapline: getmap($colour, primary, 430);
         row-gap: getmap($space, rhythm, 800);
     }
 
-    // DESKTOP: all three inline. `auto` columns pushed apart by space-between is what
-    // the flex row did before, so this width is unchanged.
+    // DESKTOP: all four inline. `auto` columns pushed apart by space-between is what
+    // the flex row did before, so the widths still come from the content.
+    //
+    // FOUR since Legal was split out of Quick Links. The count is written out rather
+    // than `repeat(4, auto)` to match the two-column rule above and because the columns
+    // are not interchangeable — the first is a sentence, the rest are lists.
     @include mq(from, lg) {
-        grid-template-columns: auto auto auto;
+        grid-template-columns: auto auto auto auto;
         justify-content: space-between;
         gap: getmap($space, rhythm, 600);
     }
