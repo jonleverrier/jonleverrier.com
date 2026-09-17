@@ -87,20 +87,12 @@
 // 0.5 is 3.07:1, and 0.49 is already under the 3:1 this ring exists to provide. So take
 // weight out of the thickness first and the alpha second, and do not go below 0.5.
 .b-slab--p500 .c-button {
-    // A 1px ring with a 3px bottom, which is the raised edge the button already has
-    // said in cream instead of shadow — the lip reads as the thing it sits on rather
-    // than as an outline drawn round it.
-    //
-    // THE SECOND SHADOW IS HOW THE BOTTOM GETS THICKER. Spread applies evenly on all
-    // four sides, so a thicker bottom cannot come from spread alone: 1px of spread
-    // pushed 2px down puts 1+2=3px below the button and 1-2=-1px above it, where it
-    // is simply not drawn. The first shadow then carries the even 1px the sides and
-    // top need. A border-bottom would do it too, and would add 3px to the height of
-    // every button on this slab and no others.
+    // An EVEN 3px ring. Spread is the same on all four sides by definition, so one
+    // shadow with no offset is the whole of it — the moment the ring needs to be
+    // heavier on one edge it takes a second, offset shadow, and it does not need to be.
     box-shadow:
         inset 0 rem(-3) 0 rgba(#000, 0.3),
-        0 0 0 rem(1) rgba(getmap($colour, light, 700), 0.6),
-        0 rem(2) 0 rem(1) rgba(getmap($colour, light, 700), 0.6);
+        0 0 0 rem(3) rgba(getmap($colour, light, 700), 0.6);
 }
 
 // sizes
