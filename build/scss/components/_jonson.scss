@@ -294,19 +294,37 @@ $c-jonson-line: #383910;
 // panels the server streams in (case study cards, the CTA buttons), which carry their
 // own treatment. This is only ever running text.
 //
-// UNDERLINED AT REST, where the site's accent-link is not. That one signals itself
-// with red on cream and there is no red that reads on the olive slab without
-// shouting — and colour on its own was never the signal to lean on. The underline is
-// what tells someone who cannot separate cream from red that this is pressable.
+// NO UNDERLINE AT REST, underline on hover — the same shape as accent-link, which is
+// how a text link behaves everywhere else on the site. Jon's call, and the consistency
+// argument is a real one.
+//
+// THE HOUSE YELLOW, and it is the right pick on legibility: 4.93:1 on the olive, the
+// only colour in the palette that clears AA for body text there. The reds tried before
+// it managed 1.84 (the button red) and 3.00 (a bespoke #f67161, since removed).
+//
+// WHAT IT STILL DOES NOT SOLVE, recorded so the next person does not re-derive it. With
+// no underline at rest, the only thing separating a link from the prose is colour, and
+// WCAG's technique for that (G183) wants 3:1 between the link and the surrounding text.
+// The yellow is 1.43:1 against the cream body copy — it reads clearly as a different
+// HUE, but hue is exactly what that rule declines to rely on. A touch screen has no
+// hover to reveal the rest.
+//
+// AND NO SWATCH CAN FIX IT. To be readable on the slab a link needs luminance >= 0.322;
+// to sit 3:1 clear of the cream body copy it needs <= 0.242. Those windows do not
+// overlap at any hue — the body copy is already 7.06:1 on the slab and has taken the
+// range. A rest-state indicator is the only thing that can do that job here, so anyone
+// reaching for a different colour to solve it is reaching for something that does not
+// exist.
+//
+// The focus outline below is NOT part of that trade and stays regardless: a keyboard
+// user cannot hover to find out where they are.
 .c-jonson__link {
-    color: getmap($colour, primary, 610); // the link red for the olive slab — see the token
-    text-decoration: underline;
+    color: getmap($colour, primary, 400); // the house yellow — see the token
+    text-decoration: none;
     text-underline-offset: rem(4); // clear of the descenders, as accent-link is
-    text-decoration-thickness: rem(1);
-    transition: text-decoration-thickness 200ms ease;
 
     &:hover {
-        text-decoration-thickness: rem(2);
+        text-decoration: underline;
     }
 
     &:focus-visible {

@@ -72,6 +72,9 @@ $mq-breakpoints: (
 // COLOUR
 $colour: (
 	primary: (
+        // Also Jonson's inline links on the olive slab — 4.93:1 there, which is the only
+        // colour in this palette that clears AA for body text on it (the reds managed
+        // 1.84 and 3.00). See _jonson.scss for what it does and does not solve.
         400: #ffb929,
         // The blues, light to dark: the pale pill fill (method palette f, topics,
         // sector tags), the flat light blue of the Jonson titles and footer strapline,
@@ -81,19 +84,6 @@ $colour: (
         450: #3a6479, // darkened from #4e88a4 (same hue, lightness only) so 12px whisper labels clear AA on the card cream — 4.96:1 on the slab, 4.52:1 on l650
 		500: #4a5030,
         600: #e02e1a,
-        // The link red for TEXT ON THE OLIVE SLAB — Jonson's inline links, where 600 is
-        // unreadable (1.84:1) because it was picked to carry white on a button, not to
-        // be read on dark. Chosen by Jon: #f56858 first, then lifted to this, the same
-        // hue and saturation two points lighter.
-        //
-        // MEASURED AT 3.00:1 on the slab (#4a5030). That is the floor for large text and
-        // for non-text UI, and the answer prose is 18–21px regular, so it does not reach
-        // the 4.5:1 AA asks of body copy — #f56858 was 2.82:1 and this is a deliberate
-        // step toward it rather than all the way. Recorded rather than rounded up: the
-        // links are underlined at rest as well as coloured, so colour is not carrying the
-        // affordance alone, but the ratio is the ratio. Same hue at 80% lightness
-        // (#f9a99f) clears 4.5:1 if it is ever wanted.
-        610: #f67161,
         // The same red, lightness only, for TEXT on the cream surfaces: 600 is the button
         // and chip red (white on it, or it on white — both pass), but as a text link on
         // the eggshell slab it sat at 3.56:1. This clears AA on the slab (4.98) and on

@@ -57,6 +57,33 @@
     }
 }
 
+// ON THE OLIVE SLAB, the button gets a cream ring.
+//
+// The red fill is 1.84:1 against that olive — the two are almost the same luminance,
+// so the button's SHAPE dissolves into the background even though the white label on
+// it is perfectly readable (4.59:1). WCAG 1.4.11 wants 3:1 for the visual information
+// that identifies a control, and the edge is that information.
+//
+// NO SHADE OF THE RED FIXES IT. Lightening it toward the background is the same move
+// as darkening it under the white label: swept across the hue, nothing satisfies both
+// at once. So the fix has to add something rather than adjust something, and a ring is
+// the smallest thing that can be added — the red is untouched, on every surface.
+//
+// A BOX-SHADOW, NOT A BORDER, for the reason the inset edge above is one: a real
+// 2px border makes every button on this slab 4px wider and taller than the same button
+// on a cream page, and they sit in the same rows as each other. The ring follows the
+// radius, costs no layout, and composites on its own.
+//
+// Scoped to .b-slab--p500 rather than a modifier class, because the slab is what
+// decides the background — the header's Contact button rides over whichever slab the
+// page chose (see _layouts/page), and a modifier would have to be remembered at every
+// call site and would be wrong the moment a page changed its slab.
+.b-slab--p500 .c-button {
+    box-shadow:
+        inset 0 rem(-3) 0 rgba(#000, 0.3),
+        0 0 0 rem(2) getmap($colour, light, 700);
+}
+
 // sizes
 .c-button--sm {
     @include typography(p-sm);
