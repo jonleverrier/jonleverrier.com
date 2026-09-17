@@ -1,4 +1,4 @@
-dateModified: 1789559932
+dateModified: 1789660957
 elementSources:
   craft\elements\Entry:
     -
@@ -305,6 +305,7 @@ meta:
     02125299-2fff-497a-b65d-fc5688b73020: Slug # Slug
     3126289e-aa51-4063-8ac8-7a3fa6f80dc6: 'Has breakout?' # Has breakout?
     20283626-153e-4279-aec4-3b29e5285338: 'Loop Animation?' # Loop Animation?
+    46182432-53ca-44ce-969f-259f83ba9c60: 'Jonson CTA Button Text' # Jonson CTA Button Text
     56356920-3742-4704-9bb9-9dda638fcf8d: 'Has line numbers?' # Has line numbers?
     85820103-a9d9-42b3-bda9-219fec934020: 'Curriculum Vitae' # Curriculum Vitae
     94386123-8a64-4a2b-913e-0c19f1ef56a8: Job # Job
@@ -355,6 +356,7 @@ meta:
     e92cf7c2-ce99-4782-b339-eab7b65ea6c1: Memories # Memories
     e2440e70-5602-4656-b121-fc071cbccbba: Note # Note
     e304270d-d9be-4623-8d5f-43901f7a8fa7: Personality # Personality
+    ed25c8d1-95f8-4a66-81a4-9ce40dd56286: 'Custom Contact Title' # Custom Contact Title
     ed50ab74-0966-4b8e-a313-53e039a800f9: Purpose # Purpose
     ed188daf-9990-4545-89c6-becaa4769fd8: Caption # Caption
     edb0c911-caa4-4bb6-a805-e01e1ca27d71: VIP # VIP

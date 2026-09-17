@@ -176,6 +176,29 @@ fieldLayouts:
         name: URLs
         uid: e756691a-2c8c-45e5-88ca-8697557e935f
         userCondition: null
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-09-17T16:02:37+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: ed25c8d1-95f8-4a66-81a4-9ce40dd56286 # Custom Contact Title
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: bc5d7773-3b24-4aaa-b84d-20d246d816ae
+            userCondition: null
+            warning: null
+            width: 100
+        name: UX
+        uid: 669ff554-7b2f-4e63-8255-1da39d638190
+        userCondition: null
     thumbFieldKey: null
 handle: vip
 hasTitleField: false
