@@ -95,6 +95,24 @@ class FrontEnd extends BaseModule
                         "font-src 'self'",
                         "connect-src 'self'",
                         "img-src 'self' data: https://i.scdn.co",
+                        // The contact panel's "request a call back" step frames Calendly
+                        // (see _components/contact-panel). Without this the frame falls
+                        // back to default-src 'self' and the browser refuses it — and it
+                        // refuses it SILENTLY as far as the panel is concerned: the step
+                        // slides in on an empty box, because nothing in our code fails.
+                        //
+                        // frame-src and not child-src: child-src is the deprecated
+                        // spelling and covers workers too, which this has no business
+                        // widening.
+                        //
+                        // The wildcard is for the embed's own redirects — a Calendly
+                        // booking URL moves between calendly.com and its subdomains —
+                        // and a frame-src listing only the apex breaks on the hop.
+                        //
+                        // Nothing else opens: the framed document is its own browsing
+                        // context with its own policy, so connect-src, script-src and the
+                        // rest still describe OUR page only and stay at 'self'.
+                        "frame-src https://calendly.com https://*.calendly.com",
                         "style-src 'self' 'unsafe-inline'",
                         "script-src 'self' 'unsafe-inline'",
                         'upgrade-insecure-requests',
