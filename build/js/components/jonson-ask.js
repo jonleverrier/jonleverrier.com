@@ -38,10 +38,75 @@ function stripMarkers(text) {
         .trim();
 }
 
-// Render the light markdown emphasis Claude naturally emits — **bold** and
-// *italic* — as real <strong>/<em>. HTML is escaped first so the only markup
-// in the result is the emphasis tags we add ourselves (no injection). Bold is
-// matched before italic so `**x**` doesn't get eaten by the single-star rule.
+// The URLs a link in an answer is allowed to point at.
+//
+// AN ALLOWLIST, and it has to be: the text on the other side of this is written by a
+// model, so the question is never "is this URL bad" but "is it one of the few we meant".
+// tel: and mailto: are the point of the exercise — the Call me and Send me an email
+// routes live at those schemes — and a leading "/" is a page on this site. Everything
+// else is refused: http(s) to anywhere (a URL a model wrote is an ungrounded one, and
+// this site's whole contract is that code supplies the facts), javascript: and data:
+// (attacks), and "//host" (protocol-relative, an external link wearing a path's
+// clothes — hence the (?!\/) after the slash).
+//
+// The character class does the rest of the work. Quotes, angle brackets and backticks
+// are excluded so nothing can end the href attribute early and start writing its own
+// — the snapshot in thread-memory.js stores rendered HTML and puts it back with
+// innerHTML, so an injected attribute would outlive the answer that carried it. `*` is
+// excluded so the emphasis pass below cannot rewrite the middle of a URL into <em>.
+const LINK_ALLOWED = /^(?:(?:tel|mailto):[^\s"'`<>*]+|\/(?!\/)[^\s"'`<>*]*)$/i;
+
+// The character rule on its own, applied to a URL allowed by the exact-match list
+// below as well. Being on the list is permission to point somewhere; it is not
+// permission to carry a quote into the href attribute.
+const LINK_SAFE_CHARS = /^https:\/\/[^\s"'`<>*]+$/i;
+
+// The URLs this visitor's own routes live at — the CTAs their VIP door unlocked,
+// put on the section by the server (see _views/single/home). An https: URL can point
+// anywhere, so it is never allowed by shape, only by EXACT MATCH against this set: a
+// link Jonson writes is one the CMS already holds for this visitor, or it is not a
+// link. A plausible URL it invented cannot render.
+//
+// Read once, lazily, because the section is server-rendered and cannot change for the
+// life of the page — the routes belong to the door, and the door belongs to the visit.
+let pageLinks = null;
+function allowedPageLinks() {
+    if (pageLinks) return pageLinks;
+    const el = document.querySelector('[data-jonson-links]');
+    const raw = el ? (el.dataset.jonsonLinks || '') : '';
+    // Escaped, because that is the form a URL reaches linkHref() in: the text has been
+    // through the HTML escape above, so a CMS url carrying "&" arrives as "&amp;".
+    pageLinks = new Set(raw.split(/\s+/).filter(Boolean).map((u) => u.replace(/&/g, '&amp;')));
+    return pageLinks;
+}
+
+// The href to render, or null to leave the model's characters alone. Quotes are
+// escaped on the way out as well as excluded by the patterns above: two answers to one
+// question, because being wrong here costs an injected attribute rather than a broken
+// link. The exact-match set is checked with the same character rules applied, so
+// nothing gets in through the list that the shape rules would have refused.
+function linkHref(url) {
+    const clean = url.trim();
+    const ok = LINK_ALLOWED.test(clean)
+        || (LINK_SAFE_CHARS.test(clean) && allowedPageLinks().has(clean));
+
+    return ok ? clean.replace(/"/g, '&quot;') : null;
+}
+
+// Render the light markdown Claude naturally emits — **bold**, *italic* and
+// [text](url) — as real <strong>/<em>/<a>. HTML is escaped first, so the only markup
+// in the result is the tags added here (no injection). Bold is matched before italic
+// so `**x**` doesn't get eaten by the single-star rule.
+//
+// Links are matched LAST, after the emphasis passes, and the order is deliberate: a
+// URL the emphasis rules had already chewed up would contain a "<" and so fail
+// LINK_ALLOWED, which leaves the model's literal text on screen. The other order lets
+// an <em> open outside an anchor and close inside it. Both are edge cases; this one
+// fails somewhere a reader can still read.
+//
+// A REFUSED LINK IS NOT DROPPED. It renders as the characters the model typed —
+// "[call me](https://elsewhere.example)" — which is ugly and obvious, where silently
+// deleting it would leave a sentence pointing at nothing.
 function inlineMarkdown(text) {
     const escaped = text
         .replace(/&/g, '&amp;')
@@ -49,7 +114,11 @@ function inlineMarkdown(text) {
         .replace(/>/g, '&gt;');
     return escaped
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/(^|[^*])\*(?!\s)([^*]+?)(?<!\s)\*(?!\*)/g, '$1<em>$2</em>');
+        .replace(/(^|[^*])\*(?!\s)([^*]+?)(?<!\s)\*(?!\*)/g, '$1<em>$2</em>')
+        .replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, (whole, label, url) => {
+            const href = linkHref(url);
+            return href ? `<a class="c-jonson__link" href="${href}">${label}</a>` : whole;
+        });
 }
 
 

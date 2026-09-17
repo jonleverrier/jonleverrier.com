@@ -1,9 +1,17 @@
 {#
   Jonson CTA beat — the ways-to-connect moment inside a response ([[contact]]).
-  One button routing to /contact, tuned for the olive slab. Its label is fixed —
-  "Let’s talk more" — for everyone, VIP or not: it follows a reply that has just
-  made the case, so it continues the conversation rather than asking the contact
-  single's question again (that copy stays on the contact page and panel).
+
+  ONE BUTTON, for everyone, VIP or not. Its label is fixed — "Let’s talk more" —
+  because it follows a reply that has just made the case, so it continues the
+  conversation rather than asking the contact single’s question again (that copy
+  stays on the contact page and panel).
+
+  The other routes a VIP’s door opens — call, WhatsApp — are NOT buttons here. They
+  belong in the sentence, written as links by the model and rendered by
+  inlineMarkdown() in jonson-ask.js against the allowlist the page carries
+  (data-jonson-links, set on .c-jonson in _views/single/home). A row of buttons in the
+  middle of a conversation reads as a form; "call me on <number>" reads as a person
+  saying it. The contact page and the footer are where a row of buttons belongs.
 
   Expects: contact — the contact single entry.
 #}

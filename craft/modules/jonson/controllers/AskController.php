@@ -357,6 +357,14 @@ class AskController extends Controller
             $volatile .= "\n\n" . $vipContext;
         }
 
+        // The ways THIS visitor can reach Jon — the CTAs their door unlocked, with the
+        // real URLs, so an offer to call names the right number instead of a plausible
+        // one. Placed after the VIP note because it only ever applies to a VIP.
+        $routes = $this->contactRoutesPrompt();
+        if ($routes !== '') {
+            $volatile .= "\n\n" . $routes;
+        }
+
         // How much of the career history this particular visitor gets (see
         // cvDepthOverride). Out here rather than inside cvPrompt() so the CV itself —
         // a big, stable block — stays in the shared cached prefix for everyone, VIP or
@@ -2711,6 +2719,83 @@ class AskController extends Controller
                     . "note go.\n"
                     . "Your note, in full:\n\n" . $text
                 : "- Don't fawn, and if they say they're someone else, take their word for it.\n");
+    }
+
+    /**
+     * The ways this visitor can reach Jon, as a system block — the CTAs their VIP door
+     * unlocked (craft.frontend.doorCtas()), with the real URLs.
+     *
+     * WHY THE URLS AND NOT JUST "OFFER A CALL": a model asked to give out a phone
+     * number will give out a phone number, and it will be a plausible one. These come
+     * from the globals single, so the sentence names the number the CMS holds or it
+     * names nothing.
+     *
+     * The same list is on the page as data-jonson-links (see _views/single/home), and
+     * that is what makes an https: route like WhatsApp linkable at all: inlineMarkdown()
+     * allows tel:, mailto: and same-site paths by shape, and everything else only by
+     * exact match against that list. So the routes below are precisely the set that can
+     * render — a link this block does not name cannot appear, however plausible.
+     *
+     * IN THE SENTENCE, NOT AS BUTTONS. The [[contact]] beat renders one button, "Let's
+     * talk more", and that is all it renders: a row of buttons mid-conversation reads
+     * as a form, where "call me on <number>" reads as a person saying it.
+     *
+     * Empty for anyone without a door, and for a door whose purpose unlocked nothing.
+     */
+    private function contactRoutesPrompt(): string
+    {
+        $ctas = (new \modules\frontend\variables\FrontEndVariable())->doorCtas();
+
+        $routes = [];
+        foreach ($ctas as $cta) {
+            $label = trim((string) $cta->title);
+            $url = trim((string) ($cta->ctaUrl->url ?? ''));
+            if ($label === '' || $url === '') {
+                continue;
+            }
+            // A PHONE NUMBER IS ITS OWN LABEL. "call me" hides the one piece of
+            // information the visitor needs: someone reading on a desktop cannot tap a
+            // link, and someone who wants to save the number cannot see it. Said firmly
+            // because the model does hide it otherwise — asked for "[+33…](tel:+33…)" it
+            // came back with "[call me](tel:+33…)" until told why the digits matter.
+            //
+            // Every other route is named in words, and the label stays as Jon spelled it
+            // in the CP: strtolower() here turned "Send me a WhatsApp" into "send me a
+            // whatsapp" in a real answer, which is a brand name spelled wrong by us
+            // rather than by the model.
+            if (preg_match('~^tel:~i', $url)) {
+                $number = preg_replace('~^tel:~i', '', $url);
+                // EVERY ILLUSTRATION HERE CARRIES THE LINK SYNTAX, including the one in
+                // running prose. Written once as a bare sentence — call me on <number> —
+                // the model copied that shape instead of the markdown above it and the
+                // digits arrived as plain text three times out of three. It parrots the
+                // nearest example, so the nearest example has to be the finished article.
+                $routes[] = "- {$label}: the link text is THE NUMBER ITSELF — [{$number}]({$url}) — "
+                    . "never hidden behind words like \"call me\", because a number that can be "
+                    . "read is one that can be dialled from a desk or saved. In a sentence: "
+                    . "\"call me on [{$number}]({$url})\".";
+            } else {
+                $routes[] = "- {$label}: [{$label}]({$url}). Reword the label to fit your sentence "
+                    . "if it reads better, but spell every name exactly as it is written here.";
+            }
+        }
+
+        if (!$routes) {
+            return '';
+        }
+
+        return "HOW THIS VISITOR CAN REACH YOU. You made them a door, and these are the routes it "
+            . "opened. They are facts from the CMS: never invent, reword or improve a number, an "
+            . "address or a link, and never offer a route that is not here.\n"
+            . implode("\n", $routes) . "\n"
+            . "\nWrite them INTO THE SENTENCE as links, exactly as shown above — not as a list, not "
+            . "as buttons. Asked how to reach you, lead with the quickest route for what this person "
+            . "is trying to do, offer one alternative if it genuinely suits them better, and leave it "
+            . "there. Two routes in a sentence is an offer; four is a switchboard.\n"
+            . "\nThe [[contact]] marker adds a single \"Let's talk more\" button under your answer, "
+            . "and nothing else — so close on it the way you would in speech (\"otherwise, let's talk "
+            . "more\") rather than announcing a button. A link you write that is not on the list above "
+            . "will not render: it will sit on the screen as raw brackets.";
     }
 
     /**

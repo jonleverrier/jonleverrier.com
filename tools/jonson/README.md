@@ -11,6 +11,7 @@ without a full run before and after.** A single-case fix is not a fix.
 | `suite.json` | The scenarios. One or more turns in one fresh conversation, each naming the surfaces it expects and forbids. Expectations are **product intent**, never a description of current behaviour. |
 | `run.mjs` | The runner. Fresh cookie jar and cid per run, CSRF from `/actions/users/session-info`, reads the SSE stream, reports pass rate per scenario and missed/leaked per surface, writes the full record to `results/`. Exit 1 on any failure. |
 | `results/` | Runs. `baseline-2026-09-07.txt` is the pre-redesign run and `after-redesign-*.txt` the iterations that followed; keep them. Per-run JSON holds every turn's events, the markers the model wrote, photo and chip counts, and the full raw answer. |
+| `inline-markdown.test.mjs` | Unit test for `inlineMarkdown()` in jonson-ask.js — the **link allowlist** above all. It lifts the real function out of the module and asserts that tel:, mailto: and same-site paths become anchors while javascript:, data:, external http(s), protocol-relative `//host` and attribute break-outs stay literal text. No API calls, runs in a second: `node tools/jonson/inline-markdown.test.mjs`. Run it after any edit to that function. |
 | `backup-2026-09-07/` | The four files as they were before the redesign, for rollback — this project has no version control. |
 
 ```sh

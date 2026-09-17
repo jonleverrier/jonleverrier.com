@@ -579,6 +579,41 @@ class FrontEndVariable
         return self::$ctas = $shown;
     }
 
+    /**
+     * The CTAs this visitor's DOOR unlocked — the subset of ctas() whose Purpose names
+     * the purpose on the vip entry they came through. Empty for everyone else.
+     *
+     * Separate from ctas() because the two answer different questions. ctas() is "what
+     * may this visitor be shown", which the footer, contact page and contact panel all
+     * want. This is "what did being recognised at the door earn them", which is the only
+     * thing Jonson's contact beat inside a reply adds to its one button: a general CTA
+     * ticked for the footer has no business widening a beat that sits mid-conversation.
+     *
+     * A CTA ticked 'general' AND for this purpose counts as the door's — it was written
+     * with this visitor in mind, whoever else also sees it.
+     *
+     * Reads through ctas(), so it costs no second query.
+     */
+    public function doorCtas(): array
+    {
+        $vip = Jonson::getInstance()->vip;
+        $door = $vip->current();
+        $purpose = $door ? $vip->purpose($door) : '';
+        if ($purpose === '') {
+            return [];
+        }
+
+        return array_values(array_filter($this->ctas(), static function ($cta) use ($purpose) {
+            foreach ($cta->purposeOptions ?? [] as $option) {
+                if (trim((string) $option->value) === $purpose) {
+                    return true;
+                }
+            }
+
+            return false;
+        }));
+    }
+
     public function notesHiddenByTopic(): array
     {
         if (self::$hiddenNotes !== null) {

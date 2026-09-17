@@ -287,6 +287,34 @@ $c-jonson-line: #383910;
     }
 }
 
+// An inline link inside the model's prose — [text](url) rendered by inlineMarkdown()
+// in jonson-ask.js, which only ever lets a tel:, mailto: or same-site href through.
+//
+// A CLASS, not `.c-jonson__response a`: that would also catch the anchors inside the
+// panels the server streams in (case study cards, the CTA buttons), which carry their
+// own treatment. This is only ever running text.
+//
+// UNDERLINED AT REST, where the site's accent-link is not. That one signals itself
+// with red on cream and there is no red that reads on the olive slab without
+// shouting — and colour on its own was never the signal to lean on. The underline is
+// what tells someone who cannot separate cream from red that this is pressable.
+.c-jonson__link {
+    color: getmap($colour, primary, 610); // the link red for the olive slab — see the token
+    text-decoration: underline;
+    text-underline-offset: rem(4); // clear of the descenders, as accent-link is
+    text-decoration-thickness: rem(1);
+    transition: text-decoration-thickness 200ms ease;
+
+    &:hover {
+        text-decoration-thickness: rem(2);
+    }
+
+    &:focus-visible {
+        outline: rem(2) solid currentColor;
+        outline-offset: rem(3);
+    }
+}
+
 // The answer is composed off-screen, then revealed. The prose stays calm — a
 // single gentle fade — so the rail is unmistakably the hero.
 .c-jonson__response.is-pending > p {
