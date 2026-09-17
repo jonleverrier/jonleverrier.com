@@ -1,0 +1,986 @@
+[
+ {
+  "x": 0,
+  "y": 0,
+  "w": 1440,
+  "h": 1296,
+  "tag": "div",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 17,
+  "y": 17,
+  "w": 1406,
+  "h": 866,
+  "tag": "main",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 17,
+  "y": 17,
+  "w": 1406,
+  "h": 866,
+  "tag": "div",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 17,
+  "y": 51,
+  "w": 1406,
+  "h": 65,
+  "tag": "header",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 17,
+  "y": 51,
+  "w": 1406,
+  "h": 65,
+  "tag": "div",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 63,
+  "y": 51,
+  "w": 1315,
+  "h": 65,
+  "tag": "div",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 63,
+  "y": 51,
+  "w": 1315,
+  "h": 65,
+  "tag": "div",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 63,
+  "y": 51,
+  "w": 276,
+  "h": 65,
+  "tag": "div",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 63,
+  "y": 51,
+  "w": 276,
+  "h": 65,
+  "tag": "div",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 63,
+  "y": 51,
+  "w": 65,
+  "h": 65,
+  "tag": "div",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 63,
+  "y": 51,
+  "w": 65,
+  "h": 65,
+  "tag": "a",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 63,
+  "y": 51,
+  "w": 65,
+  "h": 65,
+  "tag": "svg",
+  "text": "Jon Leverrier Logo\n                \n                    .roundel-back {\n                        fill:#FFFFFF;\n                    }\n                    .roundel-front {\n                        fill:#1"
+ },
+ {
+  "x": 63,
+  "y": 52,
+  "w": 63,
+  "h": 63,
+  "tag": "circle",
+  "text": ""
+ },
+ {
+  "x": 62,
+  "y": 51,
+  "w": 64,
+  "h": 64,
+  "tag": "g",
+  "text": ""
+ },
+ {
+  "x": 62,
+  "y": 51,
+  "w": 64,
+  "h": 64,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 63,
+  "y": 51,
+  "w": 67,
+  "h": 65,
+  "tag": "g",
+  "text": ""
+ },
+ {
+  "x": 63,
+  "y": 51,
+  "w": 65,
+  "h": 65,
+  "tag": "circle",
+  "text": ""
+ },
+ {
+  "x": 63,
+  "y": 54,
+  "w": 67,
+  "h": 62,
+  "tag": "g",
+  "text": ""
+ },
+ {
+  "x": 63,
+  "y": 97,
+  "w": 67,
+  "h": 19,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 83,
+  "y": 96,
+  "w": 24,
+  "h": 16,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 80,
+  "y": 78,
+  "w": 3,
+  "h": 10,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 107,
+  "y": 78,
+  "w": 3,
+  "h": 11,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 107,
+  "y": 78,
+  "w": 4,
+  "h": 11,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 79,
+  "y": 78,
+  "w": 4,
+  "h": 11,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 83,
+  "y": 65,
+  "w": 24,
+  "h": 38,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 88,
+  "y": 81,
+  "w": 2,
+  "h": 2,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 86,
+  "y": 80,
+  "w": 6,
+  "h": 2,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 100,
+  "y": 81,
+  "w": 2,
+  "h": 2,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 98,
+  "y": 80,
+  "w": 6,
+  "h": 2,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 92,
+  "y": 82,
+  "w": 5,
+  "h": 10,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 97,
+  "y": 78,
+  "w": 7,
+  "h": 2,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 85,
+  "y": 78,
+  "w": 7,
+  "h": 2,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 80,
+  "y": 54,
+  "w": 33,
+  "h": 50,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 89,
+  "y": 94,
+  "w": 12,
+  "h": 6,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 92,
+  "y": 96,
+  "w": 7,
+  "h": 1,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 144,
+  "y": 56,
+  "w": 194,
+  "h": 55,
+  "tag": "div",
+  "text": "Jon Leverrier\n                \n                            AI Product Designer\n                            Design Director\n                            Brand Designer\n                            Produc"
+ },
+ {
+  "x": 144,
+  "y": 56,
+  "w": 194,
+  "h": 32,
+  "tag": "p",
+  "text": "Jon Leverrier"
+ },
+ {
+  "x": 144,
+  "y": 88,
+  "w": 194,
+  "h": 23,
+  "tag": "ul",
+  "text": "AI Product Designer\n                            Design Director\n                            Brand Designer\n                            Product Designer\n                            UI/UX Designer\n     "
+ },
+ {
+  "x": 144,
+  "y": 88,
+  "w": 194,
+  "h": 23,
+  "tag": "li",
+  "text": "AI Product Designer"
+ },
+ {
+  "x": 1203,
+  "y": 60,
+  "w": 174,
+  "h": 47,
+  "tag": "div",
+  "text": "Contact"
+ },
+ {
+  "x": 1203,
+  "y": 60,
+  "w": 116,
+  "h": 47,
+  "tag": "a",
+  "text": "Contact"
+ },
+ {
+  "x": 1331,
+  "y": 60,
+  "w": 47,
+  "h": 47,
+  "tag": "button",
+  "text": ""
+ },
+ {
+  "x": 1341,
+  "y": 74,
+  "w": 27,
+  "h": 19,
+  "tag": "svg",
+  "text": ""
+ },
+ {
+  "x": 17,
+  "y": 17,
+  "w": 1406,
+  "h": 866,
+  "tag": "section",
+  "text": "How can I help?\n                \n        \n            \n            \n            \n    \n    \n\n\n    \n    \n\n                \n                    \n                \n            \n        \n                   "
+ },
+ {
+  "x": 350,
+  "y": 288,
+  "w": 740,
+  "h": 324,
+  "tag": "div",
+  "text": "How can I help?\n                \n        \n            \n            \n            \n    \n    \n\n\n    \n    \n\n                \n                    \n                \n            \n        \n                   "
+ },
+ {
+  "x": 440,
+  "y": 288,
+  "w": 560,
+  "h": 192,
+  "tag": "h1",
+  "text": "How can I help?"
+ },
+ {
+  "x": 350,
+  "y": 504,
+  "w": 740,
+  "h": 108,
+  "tag": "div",
+  "text": "Not sure what to ask?\n                \n                \n                \n                                            Tell me about yourself?\n                                            Why should I hi"
+ },
+ {
+  "x": 350,
+  "y": 504,
+  "w": 740,
+  "h": 74,
+  "tag": "form",
+  "text": ""
+ },
+ {
+  "x": 359,
+  "y": 513,
+  "w": 670,
+  "h": 56,
+  "tag": "input",
+  "text": ""
+ },
+ {
+  "x": 1037,
+  "y": 513,
+  "w": 44,
+  "h": 56,
+  "tag": "button",
+  "text": ""
+ },
+ {
+  "x": 1047,
+  "y": 529,
+  "w": 24,
+  "h": 24,
+  "tag": "svg",
+  "text": ""
+ },
+ {
+  "x": 1056,
+  "y": 532,
+  "w": 6,
+  "h": 11,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 1053,
+  "y": 539,
+  "w": 13,
+  "h": 11,
+  "tag": "path",
+  "text": ""
+ },
+ {
+  "x": 350,
+  "y": 566,
+  "w": 740,
+  "h": 46,
+  "tag": "div",
+  "text": "Not sure what to ask?\n                \n                \n                \n                                            Tell me about yourself?\n                                            Why should I hi"
+ },
+ {
+  "x": 350,
+  "y": 578,
+  "w": 740,
+  "h": 34,
+  "tag": "div",
+  "text": "Not sure what to ask?"
+ },
+ {
+  "x": 366,
+  "y": 583,
+  "w": 202,
+  "h": 23,
+  "tag": "button",
+  "text": "Not sure what to ask?"
+ },
+ {
+  "x": 17,
+  "y": 900,
+  "w": 1406,
+  "h": 380,
+  "tag": "footer",
+  "text": "Making complicated products or services clear and human, through product design and development\n                                                                        \n                            Fin"
+ },
+ {
+  "x": 17,
+  "y": 900,
+  "w": 1406,
+  "h": 323,
+  "tag": "div",
+  "text": "Making complicated products or services clear and human, through product design and development\n                                                                        \n                            Fin"
+ },
+ {
+  "x": 17,
+  "y": 900,
+  "w": 1406,
+  "h": 323,
+  "tag": "div",
+  "text": "Making complicated products or services clear and human, through product design and development\n                                                                        \n                            Fin"
+ },
+ {
+  "x": 17,
+  "y": 946,
+  "w": 1406,
+  "h": 231,
+  "tag": "div",
+  "text": "Making complicated products or services clear and human, through product design and development\n                                                                        \n                            Fin"
+ },
+ {
+  "x": 63,
+  "y": 946,
+  "w": 1315,
+  "h": 231,
+  "tag": "div",
+  "text": "Making complicated products or services clear and human, through product design and development\n                                                                        \n                            Fin"
+ },
+ {
+  "x": 63,
+  "y": 946,
+  "w": 560,
+  "h": 231,
+  "tag": "div",
+  "text": "Making complicated products or services clear and human, through product design and development\n                                                                        \n                            Fin"
+ },
+ {
+  "x": 63,
+  "y": 946,
+  "w": 560,
+  "h": 104,
+  "tag": "p",
+  "text": "Making complicated products or services clear and human, through product design and development"
+ },
+ {
+  "x": 63,
+  "y": 1083,
+  "w": 560,
+  "h": 17,
+  "tag": "p",
+  "text": "Find me elsewhere"
+ },
+ {
+  "x": 63,
+  "y": 1083,
+  "w": 560,
+  "h": 17,
+  "tag": "button",
+  "text": "Find me elsewhere"
+ },
+ {
+  "x": 63,
+  "y": 1123,
+  "w": 560,
+  "h": 54,
+  "tag": "div",
+  "text": "LinkedIn\n                \n            \n                    \n                \n                    Instagram\n                \n            \n                    \n                \n                    Flick"
+ },
+ {
+  "x": 63,
+  "y": 1123,
+  "w": 560,
+  "h": 54,
+  "tag": "div",
+  "text": "LinkedIn\n                \n            \n                    \n                \n                    Instagram\n                \n            \n                    \n                \n                    Flick"
+ },
+ {
+  "x": 63,
+  "y": 1123,
+  "w": 560,
+  "h": 54,
+  "tag": "ul",
+  "text": "LinkedIn\n                \n            \n                    \n                \n                    Instagram\n                \n            \n                    \n                \n                    Flick"
+ },
+ {
+  "x": 63,
+  "y": 1123,
+  "w": 46,
+  "h": 54,
+  "tag": "li",
+  "text": "LinkedIn"
+ },
+ {
+  "x": 63,
+  "y": 1123,
+  "w": 46,
+  "h": 46,
+  "tag": "a",
+  "text": "LinkedIn"
+ },
+ {
+  "x": 62,
+  "y": 1146,
+  "w": 1,
+  "h": 1,
+  "tag": "span",
+  "text": "LinkedIn"
+ },
+ {
+  "x": 125,
+  "y": 1123,
+  "w": 46,
+  "h": 54,
+  "tag": "li",
+  "text": "Instagram"
+ },
+ {
+  "x": 125,
+  "y": 1123,
+  "w": 46,
+  "h": 46,
+  "tag": "a",
+  "text": "Instagram"
+ },
+ {
+  "x": 124,
+  "y": 1146,
+  "w": 1,
+  "h": 1,
+  "tag": "span",
+  "text": "Instagram"
+ },
+ {
+  "x": 188,
+  "y": 1123,
+  "w": 46,
+  "h": 54,
+  "tag": "li",
+  "text": "Flickr"
+ },
+ {
+  "x": 188,
+  "y": 1123,
+  "w": 46,
+  "h": 46,
+  "tag": "a",
+  "text": "Flickr"
+ },
+ {
+  "x": 187,
+  "y": 1146,
+  "w": 1,
+  "h": 1,
+  "tag": "span",
+  "text": "Flickr"
+ },
+ {
+  "x": 251,
+  "y": 1123,
+  "w": 46,
+  "h": 54,
+  "tag": "li",
+  "text": "Github"
+ },
+ {
+  "x": 251,
+  "y": 1123,
+  "w": 46,
+  "h": 46,
+  "tag": "a",
+  "text": "Github"
+ },
+ {
+  "x": 250,
+  "y": 1146,
+  "w": 1,
+  "h": 1,
+  "tag": "span",
+  "text": "Github"
+ },
+ {
+  "x": 720,
+  "y": 946,
+  "w": 128,
+  "h": 231,
+  "tag": "div",
+  "text": "Quick Links\n                        \n                        \n                                                                                                                                          "
+ },
+ {
+  "x": 720,
+  "y": 946,
+  "w": 128,
+  "h": 17,
+  "tag": "p",
+  "text": "Quick Links"
+ },
+ {
+  "x": 720,
+  "y": 946,
+  "w": 128,
+  "h": 17,
+  "tag": "button",
+  "text": "Quick Links"
+ },
+ {
+  "x": 720,
+  "y": 986,
+  "w": 128,
+  "h": 136,
+  "tag": "ul",
+  "text": "About\n                                \n                                                        \n                                Case Studies\n                            \n                              "
+ },
+ {
+  "x": 720,
+  "y": 986,
+  "w": 128,
+  "h": 26,
+  "tag": "li",
+  "text": "About"
+ },
+ {
+  "x": 720,
+  "y": 988,
+  "w": 58,
+  "h": 20,
+  "tag": "a",
+  "text": "About"
+ },
+ {
+  "x": 720,
+  "y": 988,
+  "w": 58,
+  "h": 20,
+  "tag": "span",
+  "text": "About"
+ },
+ {
+  "x": 720,
+  "y": 1022,
+  "w": 128,
+  "h": 26,
+  "tag": "li",
+  "text": "Case Studies"
+ },
+ {
+  "x": 720,
+  "y": 1024,
+  "w": 128,
+  "h": 20,
+  "tag": "a",
+  "text": "Case Studies"
+ },
+ {
+  "x": 720,
+  "y": 1024,
+  "w": 128,
+  "h": 20,
+  "tag": "span",
+  "text": "Case Studies"
+ },
+ {
+  "x": 720,
+  "y": 1059,
+  "w": 128,
+  "h": 26,
+  "tag": "li",
+  "text": "Notes"
+ },
+ {
+  "x": 720,
+  "y": 1061,
+  "w": 58,
+  "h": 20,
+  "tag": "a",
+  "text": "Notes"
+ },
+ {
+  "x": 720,
+  "y": 1061,
+  "w": 58,
+  "h": 20,
+  "tag": "span",
+  "text": "Notes"
+ },
+ {
+  "x": 720,
+  "y": 1096,
+  "w": 128,
+  "h": 26,
+  "tag": "li",
+  "text": "Contact"
+ },
+ {
+  "x": 720,
+  "y": 1098,
+  "w": 77,
+  "h": 20,
+  "tag": "a",
+  "text": "Contact"
+ },
+ {
+  "x": 720,
+  "y": 1098,
+  "w": 77,
+  "h": 20,
+  "tag": "span",
+  "text": "Contact"
+ },
+ {
+  "x": 945,
+  "y": 946,
+  "w": 206,
+  "h": 231,
+  "tag": "div",
+  "text": "Discuss a project\n                            \n                            \n                                                                                                                            "
+ },
+ {
+  "x": 945,
+  "y": 946,
+  "w": 206,
+  "h": 17,
+  "tag": "p",
+  "text": "Discuss a project"
+ },
+ {
+  "x": 945,
+  "y": 946,
+  "w": 206,
+  "h": 17,
+  "tag": "button",
+  "text": "Discuss a project"
+ },
+ {
+  "x": 945,
+  "y": 986,
+  "w": 206,
+  "h": 62,
+  "tag": "ul",
+  "text": "Request a call back\n                                        \n                                                                                                                                           "
+ },
+ {
+  "x": 945,
+  "y": 986,
+  "w": 206,
+  "h": 26,
+  "tag": "li",
+  "text": "Request a call back"
+ },
+ {
+  "x": 945,
+  "y": 988,
+  "w": 185,
+  "h": 20,
+  "tag": "a",
+  "text": "Request a call back"
+ },
+ {
+  "x": 945,
+  "y": 988,
+  "w": 185,
+  "h": 20,
+  "tag": "span",
+  "text": "Request a call back"
+ },
+ {
+  "x": 945,
+  "y": 1022,
+  "w": 206,
+  "h": 26,
+  "tag": "li",
+  "text": "Send me an email"
+ },
+ {
+  "x": 945,
+  "y": 1024,
+  "w": 172,
+  "h": 20,
+  "tag": "a",
+  "text": "Send me an email"
+ },
+ {
+  "x": 945,
+  "y": 1024,
+  "w": 172,
+  "h": 20,
+  "tag": "span",
+  "text": "Send me an email"
+ },
+ {
+  "x": 1247,
+  "y": 946,
+  "w": 130,
+  "h": 231,
+  "tag": "div",
+  "text": "Legal\n                            \n                            \n                                                                    \n                                        AI Policy\n                 "
+ },
+ {
+  "x": 1247,
+  "y": 946,
+  "w": 130,
+  "h": 17,
+  "tag": "p",
+  "text": "Legal"
+ },
+ {
+  "x": 1247,
+  "y": 946,
+  "w": 130,
+  "h": 17,
+  "tag": "button",
+  "text": "Legal"
+ },
+ {
+  "x": 1247,
+  "y": 986,
+  "w": 130,
+  "h": 99,
+  "tag": "ul",
+  "text": "AI Policy\n                                    \n                                                                    \n                                        Privacy Policy\n                             "
+ },
+ {
+  "x": 1247,
+  "y": 986,
+  "w": 130,
+  "h": 26,
+  "tag": "li",
+  "text": "AI Policy"
+ },
+ {
+  "x": 1247,
+  "y": 988,
+  "w": 79,
+  "h": 20,
+  "tag": "a",
+  "text": "AI Policy"
+ },
+ {
+  "x": 1247,
+  "y": 988,
+  "w": 79,
+  "h": 20,
+  "tag": "span",
+  "text": "AI Policy"
+ },
+ {
+  "x": 1247,
+  "y": 1022,
+  "w": 130,
+  "h": 26,
+  "tag": "li",
+  "text": "Privacy Policy"
+ },
+ {
+  "x": 1247,
+  "y": 1024,
+  "w": 130,
+  "h": 20,
+  "tag": "a",
+  "text": "Privacy Policy"
+ },
+ {
+  "x": 1247,
+  "y": 1024,
+  "w": 130,
+  "h": 20,
+  "tag": "span",
+  "text": "Privacy Policy"
+ },
+ {
+  "x": 1247,
+  "y": 1059,
+  "w": 130,
+  "h": 26,
+  "tag": "li",
+  "text": "Terms"
+ },
+ {
+  "x": 1247,
+  "y": 1061,
+  "w": 60,
+  "h": 20,
+  "tag": "a",
+  "text": "Terms"
+ },
+ {
+  "x": 1247,
+  "y": 1061,
+  "w": 60,
+  "h": 20,
+  "tag": "span",
+  "text": "Terms"
+ },
+ {
+  "x": 17,
+  "y": 1223,
+  "w": 1406,
+  "h": 57,
+  "tag": "div",
+  "text": "Copyright © 2003 - 2026 Jon Leverrier. All rights reserved."
+ },
+ {
+  "x": 17,
+  "y": 1223,
+  "w": 1406,
+  "h": 57,
+  "tag": "div",
+  "text": "Copyright © 2003 - 2026 Jon Leverrier. All rights reserved."
+ },
+ {
+  "x": 17,
+  "y": 1240,
+  "w": 1406,
+  "h": 23,
+  "tag": "div",
+  "text": "Copyright © 2003 - 2026 Jon Leverrier. All rights reserved."
+ },
+ {
+  "x": 63,
+  "y": 1240,
+  "w": 1315,
+  "h": 23,
+  "tag": "p",
+  "text": "Copyright © 2003 - 2026 Jon Leverrier. All rights reserved."
+ }
+]

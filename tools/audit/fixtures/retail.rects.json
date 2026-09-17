@@ -1,0 +1,3290 @@
+[
+ {
+  "x": 0,
+  "y": 0,
+  "w": 54,
+  "h": 22,
+  "tag": "a",
+  "text": "___"
+ },
+ {
+  "x": 0,
+  "y": 0,
+  "w": 54,
+  "h": 22,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 0,
+  "y": 0,
+  "w": 1440,
+  "h": 3752,
+  "tag": "div",
+  "text": "window.addEventListener('load', function () {\n    const userAgent = window.navigator.userAgent || '';\n    const chromeAgent = userAgent.indexOf('Chrome') > -1 || userAgent.indexOf('Chromium') > -1;\n\n "
+ },
+ {
+  "x": 0,
+  "y": 0,
+  "w": 1440,
+  "h": 3752,
+  "tag": "div",
+  "text": "window.addEventListener('load', function () {\n    const userAgent = window.navigator.userAgent || '';\n    const chromeAgent = userAgent.indexOf('Chrome') > -1 || userAgent.indexOf('Chromium') > -1;\n\n "
+ },
+ {
+  "x": 0,
+  "y": 0,
+  "w": 1440,
+  "h": 153,
+  "tag": "header",
+  "text": "window.addEventListener('load', function () {\n    const userAgent = window.navigator.userAgent || '';\n    const chromeAgent = userAgent.indexOf('Chrome') > -1 || userAgent.indexOf('Chromium') > -1;\n\n "
+ },
+ {
+  "x": 0,
+  "y": 0,
+  "w": 1440,
+  "h": 32,
+  "tag": "div",
+  "text": "Skip to contentSALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswearHelp"
+ },
+ {
+  "x": 8,
+  "y": 16,
+  "w": 186,
+  "h": 46,
+  "tag": "a",
+  "text": "Skip to content"
+ },
+ {
+  "x": 153,
+  "y": 27,
+  "w": 24,
+  "h": 24,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 0,
+  "y": 0,
+  "w": 1440,
+  "h": 32,
+  "tag": "div",
+  "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswearHelp"
+ },
+ {
+  "x": 360,
+  "y": 0,
+  "w": 720,
+  "h": 32,
+  "tag": "div",
+  "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswear"
+ },
+ {
+  "x": 360,
+  "y": 0,
+  "w": 720,
+  "h": 32,
+  "tag": "div",
+  "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswear"
+ },
+ {
+  "x": 360,
+  "y": 0,
+  "w": 720,
+  "h": 32,
+  "tag": "div",
+  "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswear"
+ },
+ {
+  "x": 360,
+  "y": 0,
+  "w": 720,
+  "h": 32,
+  "tag": "div",
+  "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswear"
+ },
+ {
+  "x": 360,
+  "y": 0,
+  "w": 720,
+  "h": 32,
+  "tag": "ul",
+  "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswear"
+ },
+ {
+  "x": 360,
+  "y": 0,
+  "w": 720,
+  "h": 32,
+  "tag": "li",
+  "text": "SALE starts now: up to 50% off"
+ },
+ {
+  "x": 360,
+  "y": 0,
+  "w": 720,
+  "h": 32,
+  "tag": "a",
+  "text": "SALE starts now: up to 50% off"
+ },
+ {
+  "x": 360,
+  "y": 0,
+  "w": 32,
+  "h": 32,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 360,
+  "y": 0,
+  "w": 32,
+  "h": 32,
+  "tag": "button",
+  "text": ""
+ },
+ {
+  "x": 360,
+  "y": 0,
+  "w": 32,
+  "h": 32,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 1048,
+  "y": 0,
+  "w": 32,
+  "h": 32,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 1048,
+  "y": 0,
+  "w": 32,
+  "h": 32,
+  "tag": "button",
+  "text": ""
+ },
+ {
+  "x": 1048,
+  "y": 0,
+  "w": 32,
+  "h": 32,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 1080,
+  "y": 5,
+  "w": 336,
+  "h": 23,
+  "tag": "div",
+  "text": "Help"
+ },
+ {
+  "x": 1367,
+  "y": 5,
+  "w": 49,
+  "h": 23,
+  "tag": "div",
+  "text": "Help"
+ },
+ {
+  "x": 1375,
+  "y": 5,
+  "w": 33,
+  "h": 23,
+  "tag": "a",
+  "text": "Help"
+ },
+ {
+  "x": 0,
+  "y": 32,
+  "w": 1440,
+  "h": 121,
+  "tag": "div",
+  "text": "Search product, code or brandClearSign in0Search product, code or brandClearWomenJust ArrivedAutumn StyleWomen's saleOur Top PicksModern Heritage: ChecksJeans & a Nice TopEditorialClothingBest Sellers"
+ },
+ {
+  "x": 0,
+  "y": 32,
+  "w": 1440,
+  "h": 120,
+  "tag": "div",
+  "text": "Search product, code or brandClearSign in0Search product, code or brandClearWomenJust ArrivedAutumn StyleWomen's saleOur Top PicksModern Heritage: ChecksJeans & a Nice TopEditorialClothingBest Sellers"
+ },
+ {
+  "x": 0,
+  "y": 32,
+  "w": 1440,
+  "h": 80,
+  "tag": "div",
+  "text": "Search product, code or brandClearSign in0"
+ },
+ {
+  "x": 0,
+  "y": 32,
+  "w": 1440,
+  "h": 80,
+  "tag": "div",
+  "text": "Search product, code or brandClearSign in0"
+ },
+ {
+  "x": 24,
+  "y": 52,
+  "w": 384,
+  "h": 40,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 24,
+  "y": 52,
+  "w": 100,
+  "h": 40,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 24,
+  "y": 52,
+  "w": 100,
+  "h": 40,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 408,
+  "y": 48,
+  "w": 624,
+  "h": 48,
+  "tag": "div",
+  "text": "Search product, code or brandClear"
+ },
+ {
+  "x": 408,
+  "y": 48,
+  "w": 608,
+  "h": 48,
+  "tag": "div",
+  "text": "Search product, code or brandClear"
+ },
+ {
+  "x": 408,
+  "y": 48,
+  "w": 608,
+  "h": 48,
+  "tag": "form",
+  "text": "Search product, code or brandClear"
+ },
+ {
+  "x": 408,
+  "y": 48,
+  "w": 608,
+  "h": 48,
+  "tag": "div",
+  "text": "Search product, code or brandClear"
+ },
+ {
+  "x": 408,
+  "y": 48,
+  "w": 608,
+  "h": 48,
+  "tag": "div",
+  "text": "Search product, code or brandClear"
+ },
+ {
+  "x": 408,
+  "y": 48,
+  "w": 608,
+  "h": 48,
+  "tag": "div",
+  "text": "Search product, code or brand"
+ },
+ {
+  "x": -591,
+  "y": 48,
+  "w": 1,
+  "h": 1,
+  "tag": "label",
+  "text": "Search product, code or brand"
+ },
+ {
+  "x": 408,
+  "y": 48,
+  "w": 608,
+  "h": 48,
+  "tag": "input",
+  "text": ""
+ },
+ {
+  "x": 968,
+  "y": 48,
+  "w": 48,
+  "h": 48,
+  "tag": "div",
+  "text": "Clear"
+ },
+ {
+  "x": 968,
+  "y": 48,
+  "w": 48,
+  "h": 48,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 968,
+  "y": 48,
+  "w": 48,
+  "h": 48,
+  "tag": "button",
+  "text": ""
+ },
+ {
+  "x": 978,
+  "y": 58,
+  "w": 28,
+  "h": 28,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 1190,
+  "y": 48,
+  "w": 226,
+  "h": 48,
+  "tag": "div",
+  "text": "Sign in0"
+ },
+ {
+  "x": 1190,
+  "y": 51,
+  "w": 70,
+  "h": 42,
+  "tag": "div",
+  "text": "Sign in"
+ },
+ {
+  "x": 1190,
+  "y": 51,
+  "w": 70,
+  "h": 42,
+  "tag": "a",
+  "text": "Sign in"
+ },
+ {
+  "x": 1198,
+  "y": 59,
+  "w": 54,
+  "h": 26,
+  "tag": "p",
+  "text": "Sign in"
+ },
+ {
+  "x": 1264,
+  "y": 48,
+  "w": 48,
+  "h": 48,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 1264,
+  "y": 48,
+  "w": 48,
+  "h": 48,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 1274,
+  "y": 58,
+  "w": 28,
+  "h": 28,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 1316,
+  "y": 48,
+  "w": 48,
+  "h": 48,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 1326,
+  "y": 58,
+  "w": 28,
+  "h": 28,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 1368,
+  "y": 48,
+  "w": 48,
+  "h": 48,
+  "tag": "div",
+  "text": "0"
+ },
+ {
+  "x": 1372,
+  "y": 52,
+  "w": 40,
+  "h": 40,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 1368,
+  "y": 64,
+  "w": 48,
+  "h": 22,
+  "tag": "span",
+  "text": "0"
+ },
+ {
+  "x": 0,
+  "y": 112,
+  "w": 1440,
+  "h": 40,
+  "tag": "div",
+  "text": "Search product, code or brandClearWomenJust ArrivedAutumn StyleWomen's saleOur Top PicksModern Heritage: ChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & Ja"
+ },
+ {
+  "x": 0,
+  "y": 112,
+  "w": 1440,
+  "h": 40,
+  "tag": "div",
+  "text": "Search product, code or brandClearWomenJust ArrivedAutumn StyleWomen's saleOur Top PicksModern Heritage: ChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & Ja"
+ },
+ {
+  "x": 0,
+  "y": 112,
+  "w": 1440,
+  "h": 40,
+  "tag": "div",
+  "text": "Search product, code or brandClearWomenJust ArrivedAutumn StyleWomen's saleOur Top PicksModern Heritage: ChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & Ja"
+ },
+ {
+  "x": 0,
+  "y": 112,
+  "w": 1440,
+  "h": 40,
+  "tag": "div",
+  "text": "WomenJust ArrivedAutumn StyleWomen's saleOur Top PicksModern Heritage: ChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & JacketsDressesJeansJumpersKnitwearSh"
+ },
+ {
+  "x": 0,
+  "y": 112,
+  "w": 1440,
+  "h": 40,
+  "tag": "nav",
+  "text": "WomenJust ArrivedAutumn StyleWomen's saleOur Top PicksModern Heritage: ChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & JacketsDressesJeansJumpersKnitwearSh"
+ },
+ {
+  "x": 0,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "WomenJust ArrivedAutumn StyleWomen's saleOur Top PicksModern Heritage: ChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & JacketsDressesJeansJumpersKnitwearSh"
+ },
+ {
+  "x": 0,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Women"
+ },
+ {
+  "x": 0,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Women"
+ },
+ {
+  "x": 22,
+  "y": 121,
+  "w": 51,
+  "h": 22,
+  "tag": "a",
+  "text": "Women"
+ },
+ {
+  "x": 22,
+  "y": 121,
+  "w": 51,
+  "h": 22,
+  "tag": "div",
+  "text": "Women"
+ },
+ {
+  "x": 96,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "LingerieJust ArrivedLingerie & Nightwear saleSexy LingerieOur Top PicksLingerie SetsBook your Bra FitEditorialBrasAll BrasBalcony BrasBra AccessoriesCotton BrasDemi Cup BrasFirst BrasF-K BrasFull Cup "
+ },
+ {
+  "x": 96,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Lingerie"
+ },
+ {
+  "x": 96,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Lingerie"
+ },
+ {
+  "x": 116,
+  "y": 121,
+  "w": 56,
+  "h": 22,
+  "tag": "a",
+  "text": "Lingerie"
+ },
+ {
+  "x": 116,
+  "y": 121,
+  "w": 56,
+  "h": 22,
+  "tag": "div",
+  "text": "Lingerie"
+ },
+ {
+  "x": 192,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "MenJust ArrivedAutumn Wardrobe StaplesMen's saleAutographSmart CasualLoungewearEditorialClothingCashmereCasual ShirtsChinosCoats & JacketsHoliday Shop HoodiesJeansJoggersKnitwearPolo ShirtsShirtsShort"
+ },
+ {
+  "x": 192,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Men"
+ },
+ {
+  "x": 192,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Men"
+ },
+ {
+  "x": 225,
+  "y": 121,
+  "w": 29,
+  "h": 22,
+  "tag": "a",
+  "text": "Men"
+ },
+ {
+  "x": 225,
+  "y": 121,
+  "w": 29,
+  "h": 22,
+  "tag": "div",
+  "text": "Men"
+ },
+ {
+  "x": 288,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "KidsJust Arrived Girls'Just Arrived Boys'Just Arrived BabyKids' saleEveryday EssentialsRainy Day EssentialsEditorialGirls (2yrs-16yrs)AccessoriesCoats and JacketsDressesFootwearHoliday ShopJeansJogger"
+ },
+ {
+  "x": 288,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Kids"
+ },
+ {
+  "x": 288,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Kids"
+ },
+ {
+  "x": 321,
+  "y": 121,
+  "w": 30,
+  "h": 22,
+  "tag": "a",
+  "text": "Kids"
+ },
+ {
+  "x": 321,
+  "y": 121,
+  "w": 30,
+  "h": 22,
+  "tag": "div",
+  "text": "Kids"
+ },
+ {
+  "x": 384,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "BeautySkincareFragranceK-BeautyJust ArrivedBeauty saleBeauty OffersShop by BrandSkincareAll SkincareCleansersEye CreamFace MasksMoisturisersSerumSun CreamMakeupAll MakeupBeauty AccessoriesBlushersFoun"
+ },
+ {
+  "x": 384,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Beauty"
+ },
+ {
+  "x": 384,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Beauty"
+ },
+ {
+  "x": 408,
+  "y": 121,
+  "w": 49,
+  "h": 22,
+  "tag": "a",
+  "text": "Beauty"
+ },
+ {
+  "x": 408,
+  "y": 121,
+  "w": 49,
+  "h": 22,
+  "tag": "div",
+  "text": "Beauty"
+ },
+ {
+  "x": 480,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "HomeJust ArrivedHomeware saleBeddingHome FurnishingsTowelsTablewareEditorialBeddingAll BeddingBed SheetsDuvetsDuvet Covers & SetsMattress ProtectorsPillowsPillowcasesCooking & DiningDinner SetsPlatesG"
+ },
+ {
+  "x": 480,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Home"
+ },
+ {
+  "x": 480,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Home"
+ },
+ {
+  "x": 507,
+  "y": 121,
+  "w": 41,
+  "h": 22,
+  "tag": "a",
+  "text": "Home"
+ },
+ {
+  "x": 507,
+  "y": 121,
+  "w": 41,
+  "h": 22,
+  "tag": "div",
+  "text": "Home"
+ },
+ {
+  "x": 576,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "FlowersJust Arrived FlowersLetterbox FlowersNext Day Delivery FlowersAutumn FlowersFlowers with a Little ExtraThe Perfect Gift: 100 RosesEditorialFlowersAll FlowersAutumn FlowersBritish FlowersCelebri"
+ },
+ {
+  "x": 576,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Flowers"
+ },
+ {
+  "x": 576,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Flowers"
+ },
+ {
+  "x": 598,
+  "y": 121,
+  "w": 53,
+  "h": 22,
+  "tag": "a",
+  "text": "Flowers"
+ },
+ {
+  "x": 598,
+  "y": 121,
+  "w": 53,
+  "h": 22,
+  "tag": "div",
+  "text": "Flowers"
+ },
+ {
+  "x": 672,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "GiftsChristmasFood & Drink GiftsGifts for HerGifts for HimFlowersGift CardsEditorialFood & Drink GiftsAll Food and Drink GiftsAfternoon Tea HampersAlcohol GiftsBrowniesChristmas HampersFruit BasketsHa"
+ },
+ {
+  "x": 672,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Gifts"
+ },
+ {
+  "x": 672,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Gifts"
+ },
+ {
+  "x": 704,
+  "y": 121,
+  "w": 33,
+  "h": 22,
+  "tag": "a",
+  "text": "Gifts"
+ },
+ {
+  "x": 704,
+  "y": 121,
+  "w": 33,
+  "h": 22,
+  "tag": "div",
+  "text": "Gifts"
+ },
+ {
+  "x": 768,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "ChristmasChristmas PyjamasTrending: Percy Pig Blind BoxChristmas DecorationsChristmas Food Advent CalendarChristmas BaublesChristmas TreesChristmas HampersChristmas Trees & DecorationsAll Christmas De"
+ },
+ {
+  "x": 768,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Christmas"
+ },
+ {
+  "x": 768,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Christmas"
+ },
+ {
+  "x": 781,
+  "y": 121,
+  "w": 70,
+  "h": 22,
+  "tag": "a",
+  "text": "Christmas"
+ },
+ {
+  "x": 781,
+  "y": 121,
+  "w": 70,
+  "h": 22,
+  "tag": "div",
+  "text": "Christmas"
+ },
+ {
+  "x": 864,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "SportsJust Arrived Women's SportsSportswear saleJust Arrived Men's SportsMen's GoodmoveWomen's GoodmoveEditorialWomen's SportswearAll Women's SportswearAthleisureSports Coats and JacketsHoodies and Sw"
+ },
+ {
+  "x": 864,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Sports"
+ },
+ {
+  "x": 864,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Sports"
+ },
+ {
+  "x": 889,
+  "y": 121,
+  "w": 45,
+  "h": 22,
+  "tag": "a",
+  "text": "Sports"
+ },
+ {
+  "x": 889,
+  "y": 121,
+  "w": 45,
+  "h": 22,
+  "tag": "div",
+  "text": "Sports"
+ },
+ {
+  "x": 960,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "BrandsJust ArrivedBrands saleJust Arrived: WAT The BrandShop by BrandFashion BrandsCalvin KleinChelsea PeersDuneGANTHushLevi'sMonsoonNever Fully DressedPour MoiRo&ZoSkechersSteve MaddenTommy HilfigerW"
+ },
+ {
+  "x": 960,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Brands"
+ },
+ {
+  "x": 960,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Brands"
+ },
+ {
+  "x": 984,
+  "y": 121,
+  "w": 49,
+  "h": 22,
+  "tag": "a",
+  "text": "Brands"
+ },
+ {
+  "x": 984,
+  "y": 121,
+  "w": 49,
+  "h": 22,
+  "tag": "div",
+  "text": "Brands"
+ },
+ {
+  "x": 1056,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "FoodFood InspirationFood in StoreChristmas Food Advent CalendarFood & Drink GiftsCue The Birthday CakeSandwich & Sushi PlattersM&S RecipesFood OnlineCakesBirthday CakesChocolate CupcakesFruity Cupcake"
+ },
+ {
+  "x": 1056,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Food"
+ },
+ {
+  "x": 1056,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Food"
+ },
+ {
+  "x": 1086,
+  "y": 121,
+  "w": 35,
+  "h": 22,
+  "tag": "a",
+  "text": "Food"
+ },
+ {
+  "x": 1086,
+  "y": 121,
+  "w": 35,
+  "h": 22,
+  "tag": "div",
+  "text": "Food"
+ },
+ {
+  "x": 1152,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "SaleWomen's saleMen's saleBrands saleHomeware saleLingerie & Nightwear saleKids' saleBeauty saleWomen's saleAll Women's saleCoats & JacketsDressesJumpers & CardigansShirts & BlousesTopsTrousersShoes &"
+ },
+ {
+  "x": 1152,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Sale"
+ },
+ {
+  "x": 1152,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Sale"
+ },
+ {
+  "x": 1186,
+  "y": 121,
+  "w": 29,
+  "h": 22,
+  "tag": "a",
+  "text": "Sale"
+ },
+ {
+  "x": 1186,
+  "y": 121,
+  "w": 29,
+  "h": 22,
+  "tag": "div",
+  "text": "Sale"
+ },
+ {
+  "x": 1248,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Offers10% off Baby Grows - Join Baby ClubAll Price DropPrice DropAll Price DropWomen's Price DropMen's Price DropShop Women's Offers20% off Whistles20% off Herschel2 for £45 on selected SeasaltShop Me"
+ },
+ {
+  "x": 1248,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Offers"
+ },
+ {
+  "x": 1248,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Offers"
+ },
+ {
+  "x": 1274,
+  "y": 121,
+  "w": 43,
+  "h": 22,
+  "tag": "a",
+  "text": "Offers"
+ },
+ {
+  "x": 1274,
+  "y": 121,
+  "w": 43,
+  "h": 22,
+  "tag": "div",
+  "text": "Offers"
+ },
+ {
+  "x": 1344,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "MoneyCredit CardClub RewardsTravel MoneyInsuranceCredit CardM&S Rewards Credit CardClub RewardsM&S Credit Card Transfer PlusM&S Credit Card Purchase PlusOur Credit CardsDigital RewardsMobile AppInsura"
+ },
+ {
+  "x": 1344,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Money"
+ },
+ {
+  "x": 1344,
+  "y": 112,
+  "w": 96,
+  "h": 40,
+  "tag": "div",
+  "text": "Money"
+ },
+ {
+  "x": 1369,
+  "y": 121,
+  "w": 46,
+  "h": 22,
+  "tag": "a",
+  "text": "Money"
+ },
+ {
+  "x": 1369,
+  "y": 121,
+  "w": 46,
+  "h": 22,
+  "tag": "div",
+  "text": "Money"
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 2493,
+  "tag": "main",
+  "text": "Welcome to Marks & SpencerOur London Fashion Week debutWatch it 18 September, 6pmOur London Fashion Week debutWatch it 18 September, 6pmNew and already trendingShop just-arrived womenswear£80Faux Leat"
+ },
+ {
+  "x": -1,
+  "y": 152,
+  "w": 1,
+  "h": 1,
+  "tag": "h1",
+  "text": "Welcome to Marks & Spencer"
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 2493,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pmOur London Fashion Week debutWatch it 18 September, 6pmNew and already trendingShop just-arrived womenswear£80Faux Leather Croc Effect Longline C"
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 912,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pmOur London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 912,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pmOur London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 698,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 698,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 698,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 698,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 698,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 698,
+  "tag": "video",
+  "text": ""
+ },
+ {
+  "x": 1228,
+  "y": 771,
+  "w": 212,
+  "h": 80,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 1228,
+  "y": 771,
+  "w": 212,
+  "h": 80,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 1256,
+  "y": 787,
+  "w": 48,
+  "h": 48,
+  "tag": "button",
+  "text": ""
+ },
+ {
+  "x": 1266,
+  "y": 797,
+  "w": 28,
+  "h": 28,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 1316,
+  "y": 787,
+  "w": 48,
+  "h": 48,
+  "tag": "button",
+  "text": ""
+ },
+ {
+  "x": 1326,
+  "y": 797,
+  "w": 28,
+  "h": 28,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 1376,
+  "y": 787,
+  "w": 48,
+  "h": 48,
+  "tag": "button",
+  "text": ""
+ },
+ {
+  "x": 1386,
+  "y": 797,
+  "w": 28,
+  "h": 28,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 0,
+  "y": 153,
+  "w": 1440,
+  "h": 698,
+  "tag": "a",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 0,
+  "y": 177,
+  "w": 1440,
+  "h": 24,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 0,
+  "y": 851,
+  "w": 1440,
+  "h": 214,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 32,
+  "y": 915,
+  "w": 1376,
+  "h": 86,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 32,
+  "y": 915,
+  "w": 1376,
+  "h": 86,
+  "tag": "div",
+  "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
+ },
+ {
+  "x": 32,
+  "y": 915,
+  "w": 451,
+  "h": 36,
+  "tag": "h2",
+  "text": "Our London Fashion Week debut"
+ },
+ {
+  "x": 32,
+  "y": 975,
+  "w": 249,
+  "h": 26,
+  "tag": "div",
+  "text": "Watch it 18 September, 6pm"
+ },
+ {
+  "x": 32,
+  "y": 975,
+  "w": 249,
+  "h": 26,
+  "tag": "div",
+  "text": "Watch it 18 September, 6pm"
+ },
+ {
+  "x": 32,
+  "y": 975,
+  "w": 249,
+  "h": 26,
+  "tag": "a",
+  "text": "Watch it 18 September, 6pm"
+ },
+ {
+  "x": 32,
+  "y": 975,
+  "w": 217,
+  "h": 26,
+  "tag": "span",
+  "text": "Watch it 18 September, 6pm"
+ },
+ {
+  "x": 257,
+  "y": 975,
+  "w": 24,
+  "h": 24,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 0,
+  "y": 1153,
+  "w": 1440,
+  "h": 595,
+  "tag": "div",
+  "text": "New and already trendingShop just-arrived womenswear£80Faux Leather Croc Effect Longline Car Coat£40Textured Button Front Slim Cropped Cardigan£28Textured Crew Neck Jumper£36Cotton Rich Midi Column Dr"
+ },
+ {
+  "x": 24,
+  "y": 1153,
+  "w": 1416,
+  "h": 595,
+  "tag": "div",
+  "text": "New and already trendingShop just-arrived womenswear£80Faux Leather Croc Effect Longline Car Coat£40Textured Button Front Slim Cropped Cardigan£28Textured Crew Neck Jumper£36Cotton Rich Midi Column Dr"
+ },
+ {
+  "x": 24,
+  "y": 1153,
+  "w": 1416,
+  "h": 88,
+  "tag": "div",
+  "text": "New and already trendingShop just-arrived womenswear"
+ },
+ {
+  "x": 24,
+  "y": 1153,
+  "w": 1416,
+  "h": 40,
+  "tag": "div",
+  "text": "New and already trending"
+ },
+ {
+  "x": 24,
+  "y": 1153,
+  "w": 1416,
+  "h": 40,
+  "tag": "div",
+  "text": "New and already trending"
+ },
+ {
+  "x": 24,
+  "y": 1153,
+  "w": 404,
+  "h": 40,
+  "tag": "h2",
+  "text": "New and already trending"
+ },
+ {
+  "x": 24,
+  "y": 1201,
+  "w": 1416,
+  "h": 40,
+  "tag": "div",
+  "text": "Shop just-arrived womenswear"
+ },
+ {
+  "x": 24,
+  "y": 1208,
+  "w": 245,
+  "h": 26,
+  "tag": "a",
+  "text": "Shop just-arrived womenswear"
+ },
+ {
+  "x": 1296,
+  "y": 1201,
+  "w": 144,
+  "h": 40,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 1328,
+  "y": 1201,
+  "w": 88,
+  "h": 40,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 1328,
+  "y": 1201,
+  "w": 40,
+  "h": 40,
+  "tag": "button",
+  "text": ""
+ },
+ {
+  "x": 1328,
+  "y": 1201,
+  "w": 40,
+  "h": 40,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 1376,
+  "y": 1201,
+  "w": 40,
+  "h": 40,
+  "tag": "button",
+  "text": ""
+ },
+ {
+  "x": 1376,
+  "y": 1201,
+  "w": 40,
+  "h": 40,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 24,
+  "y": 1257,
+  "w": 1416,
+  "h": 491,
+  "tag": "ul",
+  "text": "£80Faux Leather Croc Effect Longline Car Coat£40Textured Button Front Slim Cropped Cardigan£28Textured Crew Neck Jumper£36Cotton Rich Midi Column Dress£55Lace Midaxi Skater Dress£45Chiffon Spot Print "
+ },
+ {
+  "x": 24,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "li",
+  "text": "£80Faux Leather Croc Effect Longline Car Coat"
+ },
+ {
+  "x": 24,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "div",
+  "text": "£80Faux Leather Croc Effect Longline Car Coat"
+ },
+ {
+  "x": 24,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "div",
+  "text": "£80Faux Leather Croc Effect Longline Car Coat"
+ },
+ {
+  "x": 24,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "a",
+  "text": "£80Faux Leather Croc Effect Longline Car Coat"
+ },
+ {
+  "x": 24,
+  "y": 1257,
+  "w": 311,
+  "h": 409,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 24,
+  "y": 1257,
+  "w": 311,
+  "h": 404,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 32,
+  "y": 1674,
+  "w": 303,
+  "h": 74,
+  "tag": "div",
+  "text": "£80Faux Leather Croc Effect Longline Car Coat"
+ },
+ {
+  "x": 32,
+  "y": 1674,
+  "w": 303,
+  "h": 30,
+  "tag": "div",
+  "text": "£80"
+ },
+ {
+  "x": 32,
+  "y": 1674,
+  "w": 303,
+  "h": 30,
+  "tag": "span",
+  "text": "£80"
+ },
+ {
+  "x": 32,
+  "y": 1674,
+  "w": 27,
+  "h": 26,
+  "tag": "span",
+  "text": "£80"
+ },
+ {
+  "x": 32,
+  "y": 1704,
+  "w": 303,
+  "h": 44,
+  "tag": "div",
+  "text": "Faux Leather Croc Effect Longline Car Coat"
+ },
+ {
+  "x": 32,
+  "y": 1704,
+  "w": 303,
+  "h": 44,
+  "tag": "h2",
+  "text": "Faux Leather Croc Effect Longline Car Coat"
+ },
+ {
+  "x": 339,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "li",
+  "text": "£40Textured Button Front Slim Cropped Cardigan"
+ },
+ {
+  "x": 339,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "div",
+  "text": "£40Textured Button Front Slim Cropped Cardigan"
+ },
+ {
+  "x": 339,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "div",
+  "text": "£40Textured Button Front Slim Cropped Cardigan"
+ },
+ {
+  "x": 339,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "a",
+  "text": "£40Textured Button Front Slim Cropped Cardigan"
+ },
+ {
+  "x": 339,
+  "y": 1257,
+  "w": 311,
+  "h": 409,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 339,
+  "y": 1257,
+  "w": 311,
+  "h": 404,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 347,
+  "y": 1674,
+  "w": 303,
+  "h": 74,
+  "tag": "div",
+  "text": "£40Textured Button Front Slim Cropped Cardigan"
+ },
+ {
+  "x": 347,
+  "y": 1674,
+  "w": 303,
+  "h": 30,
+  "tag": "div",
+  "text": "£40"
+ },
+ {
+  "x": 347,
+  "y": 1674,
+  "w": 303,
+  "h": 30,
+  "tag": "span",
+  "text": "£40"
+ },
+ {
+  "x": 347,
+  "y": 1674,
+  "w": 27,
+  "h": 26,
+  "tag": "span",
+  "text": "£40"
+ },
+ {
+  "x": 347,
+  "y": 1704,
+  "w": 303,
+  "h": 44,
+  "tag": "div",
+  "text": "Textured Button Front Slim Cropped Cardigan"
+ },
+ {
+  "x": 347,
+  "y": 1704,
+  "w": 303,
+  "h": 44,
+  "tag": "h2",
+  "text": "Textured Button Front Slim Cropped Cardigan"
+ },
+ {
+  "x": 654,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "li",
+  "text": "£28Textured Crew Neck Jumper"
+ },
+ {
+  "x": 654,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "div",
+  "text": "£28Textured Crew Neck Jumper"
+ },
+ {
+  "x": 654,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "div",
+  "text": "£28Textured Crew Neck Jumper"
+ },
+ {
+  "x": 654,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "a",
+  "text": "£28Textured Crew Neck Jumper"
+ },
+ {
+  "x": 654,
+  "y": 1257,
+  "w": 311,
+  "h": 409,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 654,
+  "y": 1257,
+  "w": 311,
+  "h": 404,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 662,
+  "y": 1674,
+  "w": 303,
+  "h": 74,
+  "tag": "div",
+  "text": "£28Textured Crew Neck Jumper"
+ },
+ {
+  "x": 662,
+  "y": 1674,
+  "w": 303,
+  "h": 30,
+  "tag": "div",
+  "text": "£28"
+ },
+ {
+  "x": 662,
+  "y": 1674,
+  "w": 303,
+  "h": 30,
+  "tag": "span",
+  "text": "£28"
+ },
+ {
+  "x": 662,
+  "y": 1674,
+  "w": 26,
+  "h": 26,
+  "tag": "span",
+  "text": "£28"
+ },
+ {
+  "x": 662,
+  "y": 1704,
+  "w": 303,
+  "h": 44,
+  "tag": "div",
+  "text": "Textured Crew Neck Jumper"
+ },
+ {
+  "x": 662,
+  "y": 1704,
+  "w": 303,
+  "h": 44,
+  "tag": "h2",
+  "text": "Textured Crew Neck Jumper"
+ },
+ {
+  "x": 969,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "li",
+  "text": "£36Cotton Rich Midi Column Dress"
+ },
+ {
+  "x": 969,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "div",
+  "text": "£36Cotton Rich Midi Column Dress"
+ },
+ {
+  "x": 969,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "div",
+  "text": "£36Cotton Rich Midi Column Dress"
+ },
+ {
+  "x": 969,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "a",
+  "text": "£36Cotton Rich Midi Column Dress"
+ },
+ {
+  "x": 969,
+  "y": 1257,
+  "w": 311,
+  "h": 409,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 969,
+  "y": 1257,
+  "w": 311,
+  "h": 404,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 977,
+  "y": 1674,
+  "w": 303,
+  "h": 74,
+  "tag": "div",
+  "text": "£36Cotton Rich Midi Column Dress"
+ },
+ {
+  "x": 977,
+  "y": 1674,
+  "w": 303,
+  "h": 30,
+  "tag": "div",
+  "text": "£36"
+ },
+ {
+  "x": 977,
+  "y": 1674,
+  "w": 303,
+  "h": 30,
+  "tag": "span",
+  "text": "£36"
+ },
+ {
+  "x": 977,
+  "y": 1674,
+  "w": 25,
+  "h": 26,
+  "tag": "span",
+  "text": "£36"
+ },
+ {
+  "x": 977,
+  "y": 1704,
+  "w": 303,
+  "h": 44,
+  "tag": "div",
+  "text": "Cotton Rich Midi Column Dress"
+ },
+ {
+  "x": 977,
+  "y": 1704,
+  "w": 303,
+  "h": 44,
+  "tag": "h2",
+  "text": "Cotton Rich Midi Column Dress"
+ },
+ {
+  "x": 1284,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "li",
+  "text": "£55Lace Midaxi Skater Dress"
+ },
+ {
+  "x": 1284,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "div",
+  "text": "£55Lace Midaxi Skater Dress"
+ },
+ {
+  "x": 1284,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "div",
+  "text": "£55Lace Midaxi Skater Dress"
+ },
+ {
+  "x": 1284,
+  "y": 1257,
+  "w": 311,
+  "h": 491,
+  "tag": "a",
+  "text": "£55Lace Midaxi Skater Dress"
+ },
+ {
+  "x": 1284,
+  "y": 1257,
+  "w": 311,
+  "h": 409,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 1284,
+  "y": 1257,
+  "w": 311,
+  "h": 404,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 1292,
+  "y": 1674,
+  "w": 303,
+  "h": 74,
+  "tag": "div",
+  "text": "£55Lace Midaxi Skater Dress"
+ },
+ {
+  "x": 1292,
+  "y": 1674,
+  "w": 303,
+  "h": 30,
+  "tag": "div",
+  "text": "£55"
+ },
+ {
+  "x": 1292,
+  "y": 1674,
+  "w": 303,
+  "h": 30,
+  "tag": "span",
+  "text": "£55"
+ },
+ {
+  "x": 1292,
+  "y": 1674,
+  "w": 25,
+  "h": 26,
+  "tag": "span",
+  "text": "£55"
+ },
+ {
+  "x": 1292,
+  "y": 1704,
+  "w": 303,
+  "h": 44,
+  "tag": "div",
+  "text": "Lace Midaxi Skater Dress"
+ },
+ {
+  "x": 1292,
+  "y": 1704,
+  "w": 303,
+  "h": 44,
+  "tag": "h2",
+  "text": "Lace Midaxi Skater Dress"
+ },
+ {
+  "x": 0,
+  "y": 1836,
+  "w": 1440,
+  "h": 570,
+  "tag": "div",
+  "text": "Made-to-layer knitsWomen’s knitwearFor crisp autumn nightsCosy beddingAutumn essentials from £3.50Just-arrived kidswear"
+ },
+ {
+  "x": 64,
+  "y": 1836,
+  "w": 437,
+  "h": 570,
+  "tag": "div",
+  "text": "Made-to-layer knitsWomen’s knitwear"
+ },
+ {
+  "x": 64,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "div",
+  "text": "Made-to-layer knitsWomen’s knitwear"
+ },
+ {
+  "x": 64,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "a",
+  "text": "Made-to-layer knitsWomen’s knitwear"
+ },
+ {
+  "x": 64,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 64,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "picture",
+  "text": ""
+ },
+ {
+  "x": 64,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 64,
+  "y": 2296,
+  "w": 429,
+  "h": 86,
+  "tag": "div",
+  "text": "Made-to-layer knitsWomen’s knitwear"
+ },
+ {
+  "x": 96,
+  "y": 2296,
+  "w": 365,
+  "h": 78,
+  "tag": "div",
+  "text": "Made-to-layer knitsWomen’s knitwear"
+ },
+ {
+  "x": 96,
+  "y": 2296,
+  "w": 365,
+  "h": 52,
+  "tag": "div",
+  "text": "Made-to-layer knits"
+ },
+ {
+  "x": 96,
+  "y": 2296,
+  "w": 365,
+  "h": 36,
+  "tag": "h2",
+  "text": "Made-to-layer knits"
+ },
+ {
+  "x": 96,
+  "y": 2348,
+  "w": 142,
+  "h": 26,
+  "tag": "p",
+  "text": "Women’s knitwear"
+ },
+ {
+  "x": 501,
+  "y": 1836,
+  "w": 437,
+  "h": 570,
+  "tag": "div",
+  "text": "For crisp autumn nightsCosy bedding"
+ },
+ {
+  "x": 501,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "div",
+  "text": "For crisp autumn nightsCosy bedding"
+ },
+ {
+  "x": 501,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "a",
+  "text": "For crisp autumn nightsCosy bedding"
+ },
+ {
+  "x": 501,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 501,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "picture",
+  "text": ""
+ },
+ {
+  "x": 501,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 501,
+  "y": 2296,
+  "w": 429,
+  "h": 86,
+  "tag": "div",
+  "text": "For crisp autumn nightsCosy bedding"
+ },
+ {
+  "x": 533,
+  "y": 2296,
+  "w": 365,
+  "h": 78,
+  "tag": "div",
+  "text": "For crisp autumn nightsCosy bedding"
+ },
+ {
+  "x": 533,
+  "y": 2296,
+  "w": 365,
+  "h": 52,
+  "tag": "div",
+  "text": "For crisp autumn nights"
+ },
+ {
+  "x": 533,
+  "y": 2296,
+  "w": 365,
+  "h": 36,
+  "tag": "h2",
+  "text": "For crisp autumn nights"
+ },
+ {
+  "x": 533,
+  "y": 2348,
+  "w": 109,
+  "h": 26,
+  "tag": "p",
+  "text": "Cosy bedding"
+ },
+ {
+  "x": 939,
+  "y": 1836,
+  "w": 437,
+  "h": 570,
+  "tag": "div",
+  "text": "Autumn essentials from £3.50Just-arrived kidswear"
+ },
+ {
+  "x": 939,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "div",
+  "text": "Autumn essentials from £3.50Just-arrived kidswear"
+ },
+ {
+  "x": 939,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "a",
+  "text": "Autumn essentials from £3.50Just-arrived kidswear"
+ },
+ {
+  "x": 939,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 939,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "picture",
+  "text": ""
+ },
+ {
+  "x": 939,
+  "y": 1836,
+  "w": 429,
+  "h": 570,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 939,
+  "y": 2260,
+  "w": 429,
+  "h": 122,
+  "tag": "div",
+  "text": "Autumn essentials from £3.50Just-arrived kidswear"
+ },
+ {
+  "x": 971,
+  "y": 2260,
+  "w": 365,
+  "h": 114,
+  "tag": "div",
+  "text": "Autumn essentials from £3.50Just-arrived kidswear"
+ },
+ {
+  "x": 971,
+  "y": 2260,
+  "w": 365,
+  "h": 88,
+  "tag": "div",
+  "text": "Autumn essentials from £3.50"
+ },
+ {
+  "x": 971,
+  "y": 2260,
+  "w": 365,
+  "h": 72,
+  "tag": "h2",
+  "text": "Autumn essentials from £3.50"
+ },
+ {
+  "x": 971,
+  "y": 2348,
+  "w": 172,
+  "h": 26,
+  "tag": "p",
+  "text": "Just-arrived kidswear"
+ },
+ {
+  "x": 0,
+  "y": 2494,
+  "w": 1440,
+  "h": 128,
+  "tag": "div",
+  "text": "What began as a single market stall in Leeds in 1884 has grown into one of Britain's most-loved brands. In 1884, Michael Marks opened his stall in Leeds with a simple idea: offer customers exceptional"
+ },
+ {
+  "x": 64,
+  "y": 2494,
+  "w": 1312,
+  "h": 128,
+  "tag": "div",
+  "text": "What began as a single market stall in Leeds in 1884 has grown into one of Britain's most-loved brands. In 1884, Michael Marks opened his stall in Leeds with a simple idea: offer customers exceptional"
+ },
+ {
+  "x": 64,
+  "y": 2494,
+  "w": 1312,
+  "h": 102,
+  "tag": "div",
+  "text": "What began as a single market stall in Leeds in 1884 has grown into one of Britain's most-loved brands. In 1884, Michael Marks opened his stall in Leeds with a simple idea: offer customers exceptional"
+ },
+ {
+  "x": 64,
+  "y": 2494,
+  "w": 1312,
+  "h": 52,
+  "tag": "p",
+  "text": "What began as a single market stall in Leeds in 1884 has grown into one of Britain's most-loved brands. In 1884, Michael Marks opened his stall in Leeds with a simple idea: offer customers exceptional"
+ },
+ {
+  "x": 64,
+  "y": 2570,
+  "w": 1312,
+  "h": 26,
+  "tag": "p",
+  "text": "Over the decades, M&S has grown into a household name, earning a place in wardrobes, kitchens and homes across the UK and beyond. Along the way, we’ve pioneered innovations, challenged conventions and"
+ },
+ {
+  "x": 64,
+  "y": 2596,
+  "w": 53,
+  "h": 26,
+  "tag": "button",
+  "text": "More +"
+ },
+ {
+  "x": 0,
+  "y": 2646,
+  "w": 1440,
+  "h": 1106,
+  "tag": "div",
+  "text": "Free delivery when you spend over £75*Next-day Click & CollectFree returns for online ordersRegister to receive exclusive offers tailored to you, plus rewards and promotions before anyone else. Just s"
+ },
+ {
+  "x": 0,
+  "y": 2646,
+  "w": 1440,
+  "h": 1106,
+  "tag": "footer",
+  "text": "Free delivery when you spend over £75*Next-day Click & CollectFree returns for online ordersRegister to receive exclusive offers tailored to you, plus rewards and promotions before anyone else. Just s"
+ },
+ {
+  "x": 0,
+  "y": 2678,
+  "w": 1440,
+  "h": 109,
+  "tag": "div",
+  "text": "Free delivery when you spend over £75*Next-day Click & CollectFree returns for online orders"
+ },
+ {
+  "x": 24,
+  "y": 2710,
+  "w": 1392,
+  "h": 45,
+  "tag": "ul",
+  "text": "Free delivery when you spend over £75*Next-day Click & CollectFree returns for online orders"
+ },
+ {
+  "x": 24,
+  "y": 2710,
+  "w": 359,
+  "h": 45,
+  "tag": "li",
+  "text": "Free delivery when you spend over £75*"
+ },
+ {
+  "x": 24,
+  "y": 2710,
+  "w": 359,
+  "h": 40,
+  "tag": "a",
+  "text": "Free delivery when you spend over £75*"
+ },
+ {
+  "x": 24,
+  "y": 2710,
+  "w": 40,
+  "h": 40,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 447,
+  "y": 2714,
+  "w": 231,
+  "h": 37,
+  "tag": "li",
+  "text": "Next-day Click & Collect"
+ },
+ {
+  "x": 447,
+  "y": 2714,
+  "w": 231,
+  "h": 32,
+  "tag": "a",
+  "text": "Next-day Click & Collect"
+ },
+ {
+  "x": 447,
+  "y": 2714,
+  "w": 32,
+  "h": 32,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 742,
+  "y": 2714,
+  "w": 270,
+  "h": 37,
+  "tag": "li",
+  "text": "Free returns for online orders"
+ },
+ {
+  "x": 742,
+  "y": 2714,
+  "w": 270,
+  "h": 32,
+  "tag": "a",
+  "text": "Free returns for online orders"
+ },
+ {
+  "x": 742,
+  "y": 2714,
+  "w": 32,
+  "h": 32,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 0,
+  "y": 2787,
+  "w": 1440,
+  "h": 545,
+  "tag": "div",
+  "text": "Register to receive exclusive offers tailored to you, plus rewards and promotions before anyone else. Just select ‘YES’ on the next page and never miss a thing.Enter your email addressSign me upHere t"
+ },
+ {
+  "x": 0,
+  "y": 2787,
+  "w": 1440,
+  "h": 185,
+  "tag": "div",
+  "text": "Register to receive exclusive offers tailored to you, plus rewards and promotions before anyone else. Just select ‘YES’ on the next page and never miss a thing.Enter your email addressSign me up"
+ },
+ {
+  "x": 24,
+  "y": 2819,
+  "w": 1392,
+  "h": 26,
+  "tag": "p",
+  "text": "Register to receive exclusive offers tailored to you, plus rewards and promotions before anyone else. Just select ‘YES’ on the next page and never miss a thing."
+ },
+ {
+  "x": 24,
+  "y": 2861,
+  "w": 444,
+  "h": 79,
+  "tag": "form",
+  "text": "Enter your email addressSign me up"
+ },
+ {
+  "x": 24,
+  "y": 2861,
+  "w": 322,
+  "h": 79,
+  "tag": "div",
+  "text": "Enter your email address"
+ },
+ {
+  "x": 24,
+  "y": 2861,
+  "w": 322,
+  "h": 79,
+  "tag": "div",
+  "text": "Enter your email address"
+ },
+ {
+  "x": 24,
+  "y": 2861,
+  "w": 322,
+  "h": 31,
+  "tag": "div",
+  "text": "Enter your email address"
+ },
+ {
+  "x": 24,
+  "y": 2862,
+  "w": 173,
+  "h": 22,
+  "tag": "label",
+  "text": "Enter your email address"
+ },
+ {
+  "x": 24,
+  "y": 2892,
+  "w": 322,
+  "h": 48,
+  "tag": "input",
+  "text": ""
+ },
+ {
+  "x": 346,
+  "y": 2892,
+  "w": 122,
+  "h": 48,
+  "tag": "div",
+  "text": "Sign me up"
+ },
+ {
+  "x": 346,
+  "y": 2892,
+  "w": 122,
+  "h": 48,
+  "tag": "button",
+  "text": "Sign me up"
+ },
+ {
+  "x": 0,
+  "y": 2972,
+  "w": 1440,
+  "h": 360,
+  "tag": "div",
+  "text": "Here to HelpHelp & contact usFind a storeAccessibility in our storesProduct recallsDelivery & ReturnsWhere's my order?Delivery & collectionGuest order trackingGuest order returnReturns & refundsShoppi"
+ },
+ {
+  "x": 24,
+  "y": 3004,
+  "w": 1392,
+  "h": 296,
+  "tag": "div",
+  "text": "Here to HelpHelp & contact usFind a storeAccessibility in our storesProduct recallsDelivery & ReturnsWhere's my order?Delivery & collectionGuest order trackingGuest order returnReturns & refundsShoppi"
+ },
+ {
+  "x": 24,
+  "y": 3004,
+  "w": 336,
+  "h": 212,
+  "tag": "div",
+  "text": "Here to HelpHelp & contact usFind a storeAccessibility in our storesProduct recalls"
+ },
+ {
+  "x": 24,
+  "y": 3004,
+  "w": 336,
+  "h": 44,
+  "tag": "h2",
+  "text": "Here to Help"
+ },
+ {
+  "x": 24,
+  "y": 3048,
+  "w": 312,
+  "h": 168,
+  "tag": "ul",
+  "text": "Help & contact usFind a storeAccessibility in our storesProduct recalls"
+ },
+ {
+  "x": 24,
+  "y": 3048,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Help & contact us"
+ },
+ {
+  "x": 24,
+  "y": 3050,
+  "w": 138,
+  "h": 21,
+  "tag": "a",
+  "text": "Help & contact us"
+ },
+ {
+  "x": 24,
+  "y": 3090,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Find a store"
+ },
+ {
+  "x": 24,
+  "y": 3092,
+  "w": 92,
+  "h": 21,
+  "tag": "a",
+  "text": "Find a store"
+ },
+ {
+  "x": 24,
+  "y": 3132,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Accessibility in our stores"
+ },
+ {
+  "x": 24,
+  "y": 3134,
+  "w": 200,
+  "h": 21,
+  "tag": "a",
+  "text": "Accessibility in our stores"
+ },
+ {
+  "x": 24,
+  "y": 3174,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Product recalls"
+ },
+ {
+  "x": 24,
+  "y": 3176,
+  "w": 119,
+  "h": 21,
+  "tag": "a",
+  "text": "Product recalls"
+ },
+ {
+  "x": 376,
+  "y": 3004,
+  "w": 336,
+  "h": 254,
+  "tag": "div",
+  "text": "Delivery & ReturnsWhere's my order?Delivery & collectionGuest order trackingGuest order returnReturns & refunds"
+ },
+ {
+  "x": 376,
+  "y": 3004,
+  "w": 336,
+  "h": 44,
+  "tag": "h2",
+  "text": "Delivery & Returns"
+ },
+ {
+  "x": 376,
+  "y": 3048,
+  "w": 312,
+  "h": 210,
+  "tag": "ul",
+  "text": "Where's my order?Delivery & collectionGuest order trackingGuest order returnReturns & refunds"
+ },
+ {
+  "x": 376,
+  "y": 3048,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Where's my order?"
+ },
+ {
+  "x": 376,
+  "y": 3050,
+  "w": 142,
+  "h": 21,
+  "tag": "a",
+  "text": "Where's my order?"
+ },
+ {
+  "x": 376,
+  "y": 3090,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Delivery & collection"
+ },
+ {
+  "x": 376,
+  "y": 3092,
+  "w": 162,
+  "h": 21,
+  "tag": "a",
+  "text": "Delivery & collection"
+ },
+ {
+  "x": 376,
+  "y": 3132,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Guest order tracking"
+ },
+ {
+  "x": 376,
+  "y": 3134,
+  "w": 162,
+  "h": 21,
+  "tag": "a",
+  "text": "Guest order tracking"
+ },
+ {
+  "x": 376,
+  "y": 3174,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Guest order return"
+ },
+ {
+  "x": 376,
+  "y": 3176,
+  "w": 146,
+  "h": 21,
+  "tag": "a",
+  "text": "Guest order return"
+ },
+ {
+  "x": 376,
+  "y": 3216,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Returns & refunds"
+ },
+ {
+  "x": 376,
+  "y": 3218,
+  "w": 141,
+  "h": 21,
+  "tag": "a",
+  "text": "Returns & refunds"
+ },
+ {
+  "x": 728,
+  "y": 3004,
+  "w": 336,
+  "h": 254,
+  "tag": "div",
+  "text": "Shopping with UsSparksSparks FAQsGift card balanceSize guidesSustainability"
+ },
+ {
+  "x": 728,
+  "y": 3004,
+  "w": 336,
+  "h": 44,
+  "tag": "h2",
+  "text": "Shopping with Us"
+ },
+ {
+  "x": 728,
+  "y": 3048,
+  "w": 312,
+  "h": 210,
+  "tag": "ul",
+  "text": "SparksSparks FAQsGift card balanceSize guidesSustainability"
+ },
+ {
+  "x": 728,
+  "y": 3048,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Sparks"
+ },
+ {
+  "x": 728,
+  "y": 3050,
+  "w": 53,
+  "h": 21,
+  "tag": "a",
+  "text": "Sparks"
+ },
+ {
+  "x": 728,
+  "y": 3090,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Sparks FAQs"
+ },
+ {
+  "x": 728,
+  "y": 3092,
+  "w": 98,
+  "h": 21,
+  "tag": "a",
+  "text": "Sparks FAQs"
+ },
+ {
+  "x": 728,
+  "y": 3132,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Gift card balance"
+ },
+ {
+  "x": 728,
+  "y": 3134,
+  "w": 134,
+  "h": 21,
+  "tag": "a",
+  "text": "Gift card balance"
+ },
+ {
+  "x": 728,
+  "y": 3174,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Size guides"
+ },
+ {
+  "x": 728,
+  "y": 3176,
+  "w": 88,
+  "h": 21,
+  "tag": "a",
+  "text": "Size guides"
+ },
+ {
+  "x": 728,
+  "y": 3216,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Sustainability"
+ },
+ {
+  "x": 728,
+  "y": 3218,
+  "w": 108,
+  "h": 21,
+  "tag": "a",
+  "text": "Sustainability"
+ },
+ {
+  "x": 1080,
+  "y": 3004,
+  "w": 336,
+  "h": 296,
+  "tag": "div",
+  "text": "More from M&SOcadoCorporate siteM&S Corporate GiftsM&S MoneyM&S OpticiansCareers"
+ },
+ {
+  "x": 1080,
+  "y": 3004,
+  "w": 336,
+  "h": 44,
+  "tag": "h2",
+  "text": "More from M&S"
+ },
+ {
+  "x": 1080,
+  "y": 3048,
+  "w": 312,
+  "h": 252,
+  "tag": "ul",
+  "text": "OcadoCorporate siteM&S Corporate GiftsM&S MoneyM&S OpticiansCareers"
+ },
+ {
+  "x": 1080,
+  "y": 3048,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Ocado"
+ },
+ {
+  "x": 1080,
+  "y": 3050,
+  "w": 52,
+  "h": 21,
+  "tag": "a",
+  "text": "Ocado"
+ },
+ {
+  "x": 1080,
+  "y": 3090,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Corporate site"
+ },
+ {
+  "x": 1080,
+  "y": 3092,
+  "w": 113,
+  "h": 21,
+  "tag": "a",
+  "text": "Corporate site"
+ },
+ {
+  "x": 1080,
+  "y": 3132,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "M&S Corporate Gifts"
+ },
+ {
+  "x": 1080,
+  "y": 3134,
+  "w": 160,
+  "h": 21,
+  "tag": "a",
+  "text": "M&S Corporate Gifts"
+ },
+ {
+  "x": 1080,
+  "y": 3174,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "M&S Money"
+ },
+ {
+  "x": 1080,
+  "y": 3176,
+  "w": 91,
+  "h": 21,
+  "tag": "a",
+  "text": "M&S Money"
+ },
+ {
+  "x": 1080,
+  "y": 3216,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "M&S Opticians"
+ },
+ {
+  "x": 1080,
+  "y": 3218,
+  "w": 113,
+  "h": 21,
+  "tag": "a",
+  "text": "M&S Opticians"
+ },
+ {
+  "x": 1080,
+  "y": 3258,
+  "w": 312,
+  "h": 42,
+  "tag": "li",
+  "text": "Careers"
+ },
+ {
+  "x": 1080,
+  "y": 3260,
+  "w": 60,
+  "h": 21,
+  "tag": "a",
+  "text": "Careers"
+ },
+ {
+  "x": 0,
+  "y": 3332,
+  "w": 1440,
+  "h": 112,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 0,
+  "y": 3332,
+  "w": 1440,
+  "h": 112,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 24,
+  "y": 3380,
+  "w": 272,
+  "h": 32,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 24,
+  "y": 3380,
+  "w": 32,
+  "h": 32,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 72,
+  "y": 3380,
+  "w": 32,
+  "h": 32,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 120,
+  "y": 3380,
+  "w": 32,
+  "h": 32,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 168,
+  "y": 3380,
+  "w": 32,
+  "h": 32,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 216,
+  "y": 3380,
+  "w": 32,
+  "h": 32,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 264,
+  "y": 3380,
+  "w": 32,
+  "h": 32,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 1004,
+  "y": 3364,
+  "w": 412,
+  "h": 48,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 1004,
+  "y": 3364,
+  "w": 145,
+  "h": 48,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 1021,
+  "y": 3383,
+  "w": 111,
+  "h": 10,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 1157,
+  "y": 3364,
+  "w": 141,
+  "h": 48,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 1174,
+  "y": 3378,
+  "w": 107,
+  "h": 20,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 1306,
+  "y": 3364,
+  "w": 110,
+  "h": 48,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 1323,
+  "y": 3378,
+  "w": 76,
+  "h": 20,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 0,
+  "y": 3444,
+  "w": 1440,
+  "h": 96,
+  "tag": "div",
+  "text": "United Kingdom (£)"
+ },
+ {
+  "x": 24,
+  "y": 3476,
+  "w": 180,
+  "h": 32,
+  "tag": "button",
+  "text": "United Kingdom (£)"
+ },
+ {
+  "x": 24,
+  "y": 3482,
+  "w": 20,
+  "h": 20,
+  "tag": "span",
+  "text": ""
+ },
+ {
+  "x": 52,
+  "y": 3479,
+  "w": 152,
+  "h": 26,
+  "tag": "span",
+  "text": "United Kingdom (£)"
+ },
+ {
+  "x": 0,
+  "y": 3540,
+  "w": 1440,
+  "h": 108,
+  "tag": "div",
+  "text": "© 2026 Marks and Spencer plc (UK)Terms & ConditionsPrivacyCookiesManage cookiesAccessibilityModern Slavery Act"
+ },
+ {
+  "x": 24,
+  "y": 3586,
+  "w": 1392,
+  "h": 38,
+  "tag": "span",
+  "text": "© 2026 Marks and Spencer plc (UK)"
+ },
+ {
+  "x": 24,
+  "y": 3564,
+  "w": 149,
+  "h": 22,
+  "tag": "a",
+  "text": "Terms & Conditions"
+ },
+ {
+  "x": 173,
+  "y": 3564,
+  "w": 66,
+  "h": 22,
+  "tag": "a",
+  "text": "Privacy"
+ },
+ {
+  "x": 239,
+  "y": 3564,
+  "w": 71,
+  "h": 22,
+  "tag": "a",
+  "text": "Cookies"
+ },
+ {
+  "x": 310,
+  "y": 3564,
+  "w": 126,
+  "h": 22,
+  "tag": "button",
+  "text": "Manage cookies"
+ },
+ {
+  "x": 437,
+  "y": 3564,
+  "w": 102,
+  "h": 22,
+  "tag": "a",
+  "text": "Accessibility"
+ },
+ {
+  "x": 539,
+  "y": 3564,
+  "w": 150,
+  "h": 22,
+  "tag": "a",
+  "text": "Modern Slavery Act"
+ },
+ {
+  "x": 0,
+  "y": 3648,
+  "w": 1440,
+  "h": 104,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 0,
+  "y": 3648,
+  "w": 1440,
+  "h": 104,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 24,
+  "y": 3656,
+  "w": 296,
+  "h": 72,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 24,
+  "y": 3656,
+  "w": 296,
+  "h": 72,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 24,
+  "y": 3656,
+  "w": 40,
+  "h": 72,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 24,
+  "y": 3672,
+  "w": 40,
+  "h": 40,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 88,
+  "y": 3656,
+  "w": 40,
+  "h": 72,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 88,
+  "y": 3672,
+  "w": 40,
+  "h": 40,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 152,
+  "y": 3656,
+  "w": 40,
+  "h": 72,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 152,
+  "y": 3672,
+  "w": 40,
+  "h": 40,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 216,
+  "y": 3656,
+  "w": 40,
+  "h": 72,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 216,
+  "y": 3672,
+  "w": 40,
+  "h": 40,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 280,
+  "y": 3656,
+  "w": 40,
+  "h": 72,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 280,
+  "y": 3672,
+  "w": 40,
+  "h": 40,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 1128,
+  "y": 3656,
+  "w": 288,
+  "h": 72,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 1128,
+  "y": 3656,
+  "w": 288,
+  "h": 72,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 1128,
+  "y": 3656,
+  "w": 136,
+  "h": 72,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 1128,
+  "y": 3672,
+  "w": 136,
+  "h": 40,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": 1280,
+  "y": 3656,
+  "w": 136,
+  "h": 72,
+  "tag": "a",
+  "text": ""
+ },
+ {
+  "x": 1280,
+  "y": 3672,
+  "w": 136,
+  "h": 40,
+  "tag": "img",
+  "text": ""
+ },
+ {
+  "x": -1,
+  "y": -1,
+  "w": 1,
+  "h": 1,
+  "tag": "p",
+  "text": ""
+ },
+ {
+  "x": 1413,
+  "y": 326,
+  "w": 32,
+  "h": 96,
+  "tag": "button",
+  "text": "Feedback"
+ },
+ {
+  "x": 1413,
+  "y": 326,
+  "w": 32,
+  "h": 96,
+  "tag": "div",
+  "text": ""
+ },
+ {
+  "x": 1413,
+  "y": 326,
+  "w": 32,
+  "h": 96,
+  "tag": "div",
+  "text": "Feedback"
+ }
+]
