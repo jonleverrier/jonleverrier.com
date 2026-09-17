@@ -79,6 +79,13 @@ class Vip extends Component
         ],
     ];
 
+    /**
+     * A contact question written for this ONE person, on their own vip entry — the
+     * narrowest of the three sources contactLine() reads. Held without a name on the
+     * end; personalise() adds that.
+     */
+    public const CONTACT_TITLE_FIELD = 'customContactTitle';
+
     /** The field holding the door's alternate slug — the short code form of the URL. */
     public const ALT_SLUG_FIELD = 'altSlug';
     public const MAIN_SLUG_FIELD = 'mainSlug';
@@ -424,8 +431,20 @@ class Vip extends Component
         if (!$entry) {
             return trim($default);
         }
-        $line = self::PURPOSES[$this->purpose($entry)]['contact'] ?? null;
 
+        // Three sources, narrowest first. `customContactTitle` is what Jon wrote for THIS
+        // person on their own entry, so it outranks the purpose's line, which is written
+        // for a kind of person, which in turn outranks the contact single's, written for
+        // anyone. Each is only consulted when the one above it is empty.
+        $custom = $this->field($entry, self::CONTACT_TITLE_FIELD);
+        $line = $custom !== ''
+            ? $custom
+            : (self::PURPOSES[$this->purpose($entry)]['contact'] ?? null);
+
+        // personalise() is what puts the name on the end — "Fancy a chat" becomes "Fancy a
+        // chat, Lucie", and tucks it before a closing ? or . when there is one. So the
+        // field holds the line WITHOUT the name, and gets ", ‹name›" for free like the
+        // other two. Unchanged when there is no first name on the entry.
         return $this->personalise($line ?? $default, $entry);
     }
 

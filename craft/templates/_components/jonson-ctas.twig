@@ -1,24 +1,67 @@
 {#
   Jonson CTA beat — the ways-to-connect moment inside a response ([[contact]]).
 
-  ONE BUTTON, for everyone, VIP or not. Its label is fixed — "Let’s talk more" —
-  because it follows a reply that has just made the case, so it continues the
-  conversation rather than asking the contact single’s question again (that copy
-  stays on the contact page and panel).
+  ONE BUTTON, for everyone, VIP or not. Its label is `jonsonCtaButtonText` on the
+  globals single — ONE label for every visitor, deliberately, rather than the contact
+  single's question re-asked per purpose: this button follows a reply that has just
+  made the case, so it continues the conversation instead of opening a new one (that
+  copy stays on the contact page and the panel).
 
-  The other routes a VIP’s door opens — call, WhatsApp — are NOT buttons here. They
-  belong in the sentence, written as links by the model and rendered by
-  inlineMarkdown() in jonson-ask.js against the allowlist the page carries
-  (data-jonson-links, set on .c-jonson in _views/single/home). A row of buttons in the
-  middle of a conversation reads as a form; "call me on <number>" reads as a person
-  saying it. The contact page and the footer are where a row of buttons belongs.
+  `offerRoutes` — set only when the beat was added by CODE rather than marked by the
+  model (the engagement-floor branch in AskController). That difference is the whole
+  reason this block exists. A model-marked [[contact]] arrives under a sentence the
+  model wrote, and for a VIP that sentence already carries the call and WhatsApp links;
+  the floor's beat arrives under an answer written without any contact moment at all,
+  so the routes have nowhere to be. This line is that sentence, written by us because
+  nobody else did.
+
+  IT HAS TO STAND ON ITS OWN. It opened "Or reach me directly", which reads as the
+  back half of a sentence — and the sentence it was continuing is whatever the model
+  happened to end on, which is never the same twice and is often already an invitation
+  to talk. A line appended to an answer cannot lean on the line above it.
+
+  LINKS, NOT MORE BUTTONS. A row of buttons mid-conversation reads as a form; a line
+  saying "call me on <number>" reads as a person saying it. Same reasoning as the
+  prose, and the same [[tel:]] / wa.me URLs, from the same CTAs.
 
   Expects: contact — the contact single entry.
+  Optional: offerRoutes — bool.
 #}
 {% if contact is defined and contact %}
+    {% set routes = (offerRoutes ?? false) ? craft.frontend.doorCtas() : [] %}
+    {# The label is Jon's, from the globals single — same place the footer and contact
+       panel read their copy from, fetched the same way they fetch it. Falls back to the
+       label this button carried before the field existed, so an empty field is a button
+       with sensible words on it rather than an empty pill. #}
+    {% set globals = craft.entries().section('globals').one() %}
+    {% set ctaLabel = (globals ? (globals.jonsonCtaButtonText ?? '')|trim : '') ?: 'Let’s talk more' %}
     <div class="c-ctas c-ctas--jonson">
+        {% if routes|length %}
+            {# A LIST, not a sentence, and that is a deliberate retreat. Written as prose
+               it ran "…directly — +33…, or Send me a WhatsApp", because the label is the
+               CTA's title exactly as Jon typed it in the CP and a title is capitalised.
+               Lowercasing it is not the fix — that is what turned "Send me a WhatsApp"
+               into "send me a whatsapp" in the model's own prose, a brand name spelled
+               wrong by us. A separated list reads correctly WITH the capitals, so the
+               titles can stay exactly as they are written.
+
+               The separator is the CHARACTER, not `&middot;`: Twig autoescapes the
+               output of {{ }}, so the entity would arrive as &amp;middot; and sit on
+               the screen spelled out. #}
+            <p class="c-ctas__routes">Reach me directly —
+                {%- for cta in routes %}
+                    {# safeUrl strips the invisible Unicode a pasted phone number brings
+                       with it; see _components/ctas.twig for the whole story. #}
+                    {% set href = craft.frontend.safeUrl(cta.ctaUrl.url ?? null) %}
+                    {# A phone number is its own label: someone reading on a desktop
+                       cannot tap it, and someone who wants to save it has to see it. #}
+                    {% set face = href starts with 'tel:' ? href|replace({'tel:': ''}) : cta.title %}
+                    {%- if href %} <a class="c-jonson__link" href="{{ href }}">{{ face }}</a>{{ not loop.last ? ' ·' : '' }}{% endif %}
+                {%- endfor %}
+            </p>
+        {% endif %}
         {% include '_components/button.twig' with {
-            label: 'Let’s talk more',
+            label: ctaLabel,
             href:  siteUrl('contact'),
             size:  'md',
         } only %}

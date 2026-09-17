@@ -365,6 +365,13 @@ class AskController extends Controller
             $volatile .= "\n\n" . $routes;
         }
 
+        // Ask the model to write the way in ITSELF on the turn the engagement floor
+        // would otherwise bolt one on. Placed after the routes so it can name them.
+        $beatCue = $this->contactBeatCue($session);
+        if ($beatCue !== '') {
+            $volatile .= "\n\n" . $beatCue;
+        }
+
         // How much of the career history this particular visitor gets (see
         // cvDepthOverride). Out here rather than inside cvPrompt() so the CV itself —
         // a big, stable block — stays in the shared cached prefix for everyone, VIP or
@@ -589,6 +596,13 @@ class AskController extends Controller
                 }
             }
 
+            // GROUND THE LINKS before anything reads the answer. inlineMarkdown() lets a
+            // same-site path through by shape — it cannot know which paths exist — so
+            // without this a model that misremembers a slug ships a link straight to a
+            // 404. Checked against the real URIs and unlinked back to its own words when
+            // it does not resolve, which leaves the sentence intact and merely flat.
+            $answer = $this->groundLinks($answer);
+
             if ($answer === '') {
                 Craft::error('[jonson] empty answer for: ' . $question, __METHOD__);
                 yield from $this->outageReply($session, $question);
@@ -697,7 +711,14 @@ class AskController extends Controller
                         continue;
                     }
                     $present = isset($surface['present']) ? ($surface['present'])($payload, $modifier) : $modifier;
-                    $html = $this->renderComponent($surface['template'], [$surface['var'] => $payload, 'modifier' => $present]);
+                    // The contact panel carries this visitor's routes as links unless the
+                    // answer above it already named them. Harmless on every other surface,
+                    // whose templates do not read it.
+                    $html = $this->renderComponent($surface['template'], [
+                        $surface['var'] => $payload,
+                        'modifier' => $present,
+                        'offerRoutes' => $slot === 'contact' && !$this->answerNamesRoutes($clean),
+                    ]);
                     if ($html === null) {
                         continue;
                     }
@@ -756,7 +777,20 @@ class AskController extends Controller
                             continue;
                         }
                         $payload = ($p['data'])($question . ' ' . $clean);
-                        $html = $payload ? $this->renderComponent($p['template'], [$p['var'] => $payload]) : null;
+                        // offerRoutes, and ONLY on this path. The beat here is added by
+                        // code, so the answer above it was written without one — there is
+                        // no sentence carrying the call and WhatsApp links the way a
+                        // model-marked [[contact]] carries them, and without this the
+                        // visitor gets a bare button where a VIP should be getting the
+                        // quickest way in. The marker-driven renders (see the resolver)
+                        // deliberately do not pass it: their prose already has the links,
+                        // and the panel repeating them would say everything twice.
+                        $html = $payload
+                            ? $this->renderComponent($p['template'], [
+                                $p['var'] => $payload,
+                                'offerRoutes' => !$this->answerNamesRoutes($clean),
+                            ])
+                            : null;
                         if ($html !== null) {
                             $this->markShownOnce($session, 'contact');
                             $panels['contact'] = $html;
@@ -1104,13 +1138,23 @@ class AskController extends Controller
             // these names in prose, so naming a project here by anything a visitor
             // won't see teaches it a name that exists nowhere on the site. The
             // description travels in the summary below, not in the title.
+            // The study's own page, as a path. Taken from the entry's real URL rather
+            // than assembled from the slug and a guessed pattern: the section decides
+            // its URI format, and a path built by hand here would break silently the
+            // day it changes. This is what the model copies when it links the study in
+            // a sentence — and groundLinks() unlinks anything that is not a live page,
+            // so a mistyped one costs a link rather than a 404.
+            $path = !empty($s['url']) ? (parse_url($s['url'], PHP_URL_PATH) ?: '') : '';
             $lines[] = '- ' . $s['title'] . ($meta ? ' ' . implode(' ', $meta) : '')
                 . (!empty($s['slug']) ? ' [study:' . $s['slug'] . ']' : '') // cite as @study:slug in a [[next:]] prompt
+                . ($path !== '' ? ' (' . $path . ')' : '')
                 . ($note !== '' ? ': ' . $note : '');
         }
 
         return "Your case studies — full write-ups of specific projects the visitor can open "
-            . "(PRIVATE background: use it to speak concretely, never read it out verbatim):\n"
+            . "(PRIVATE background: use it to speak concretely, never read it out verbatim). The path "
+            . "in parentheses on each line is THAT STUDY'S OWN PAGE — it is what you link when you "
+            . "point someone at the write-up (see LINKING TO A PAGE below):\n"
             . implode("\n", $lines) . "\n"
             . 'The `[[casestudies]]` marker shows the cards for whichever studies fit — see "What you can '
             . 'show" for when to place it. The cards are filtered to what\'s relevant automatically, so '
@@ -1118,7 +1162,53 @@ class AskController extends Controller
             . 'conversation: if a visitor asks to see a study whose card is already on screen, it is '
             . 'already in front of them — say so plainly ("that\'s the card just above") and answer with '
             . 'something about the work itself, never "the write-up is here" pointing at nothing. And '
-            . 'never offer, in your [[next:]] prompts, to show a study whose card has already appeared.';
+            . 'never offer, in your [[next:]] prompts, to show a study whose card has already appeared.'
+            . "\n\nLINKING TO A PAGE, in your prose. When you draw on a specific piece of work, a note "
+            . "of yours, or one of your standing pages, you can point at it in the sentence rather than "
+            . "describing where it lives: write it as [the words you would say anyway](/the-path), with "
+            . "the path copied EXACTLY from the list above, the notes list, or this one:\n"
+            . "- /about — who you are\n"
+            . "- /case-studies — the work in general\n"
+            . "- /contact — getting in touch\n"
+            // TWO INDEXES ARE DELIBERATELY ABSENT, and both would otherwise look obvious.
+            //
+            // /notes — Jon does not want people sent to the top of a list of hundreds of
+            // notes. A note he names is still linkable: its own url travels with it in the
+            // notes block, and that page is the thing worth opening. The list is not.
+            //
+            // /methodology — it 404s (20 rows carry the uri, no page resolves), and even if
+            // it did not, the `[[method]]` marker puts how-you-work on the page inside the
+            // answer, so a link would send someone away to read what is about to appear
+            // under the sentence they are reading.
+
+            . "Only these and the paths listed with each item: a path you assemble from a slug, or "
+            . "remember rather than copy, will not resolve and the link comes off before the visitor "
+            . "sees it. Link the natural words in the sentence — the project's name, the thing you "
+            . "wrote about it — never a bare URL, and never the words \"click here\".\n"
+            . "NAME IT, LINK IT. If you name a specific project in a sentence, that name carries its "
+            . "path. Naming two or three of them and linking none — or linking only the index while the "
+            . "projects themselves sit there as plain words — is the exact failure these paths exist to "
+            . "prevent: the visitor has just been told which work to look at and given no way to open "
+            . "it. Same for a note of yours you mention by name.\n"
+            . "PREFER THE SPECIFIC PAGE. Naming a particular project means linking that project's own "
+            . "page, not the list of all of them; the index is for when you genuinely mean the work in "
+            . "general. A NOTE is the same: each one in your notes list carries its own path in "
+            . "parentheses, and that single piece is what you link when you mention it. Never send "
+            . "anyone to the top of the notes list — it is hundreds of entries deep and answers "
+            . "nothing; if a note is worth naming, name it and link it, and if none is, don't gesture "
+            . "at the pile.\n"
+            . "THERE IS NO RATION — link each project you actually name. What to avoid is the other "
+            . "thing: linking words that are not the thing itself (\"here\", \"this page\", \"have a "
+            . "look\"), linking the same page twice in one reply, and linking a study whose "
+            . "[[casestudies]] card is already on screen, because the card IS the way in to it.\n\n"
+            . "AN OFFER TO BE CONTACTED IS THE CONTACT BEAT. \"Drop me a line\", \"get in touch\", "
+            . "\"I'm easy to reach\", \"give me a shout\" — these all MEAN the same thing, and saying "
+            . "one of them is not a warm sign-off, it is you offering the way in. So when you write it: "
+            . "put [[contact]] in that paragraph, and give them the actual route in the same breath — "
+            . "the ways listed for this visitor if they have any, otherwise the words themselves "
+            . "carrying /contact. Never gesture at getting in touch and leave them to work out how; "
+            . "that is an invitation with nowhere to go, and it reads as a brush-off rather than an "
+            . "opening.";
     }
 
     private function sectorsPrompt(): string
@@ -1332,8 +1422,13 @@ class AskController extends Controller
             if (!empty($card['posted'])) {
                 $head .= ' (' . $card['posted'] . ')';
             }
+            // THE PATH, not the absolute url it arrives as. This line is what the model
+            // copies when it links a note in a sentence, and inlineMarkdown() only lets a
+            // same-site link through as a path — an "https://…" copied verbatim is refused
+            // by the allowlist and lands on the screen as raw brackets. groundLinks() would
+            // not save it either: it only inspects same-site paths.
             if (!empty($card['url'])) {
-                $head .= ' — ' . $card['url'];
+                $head .= ' (' . (parse_url($card['url'], PHP_URL_PATH) ?: $card['url']) . ')';
             }
             if (!empty($card['slug'])) {
                 $head .= ' [note:' . $card['slug'] . ']'; // cite as @note:slug in a [[next:]] prompt
@@ -2663,7 +2758,11 @@ class AskController extends Controller
                         . "they asked. Warm and brief, never gushing. "
                     : "This is your FIRST reply to them, so greet them: open with their first name "
                         . "({$first}) and one line that shows you know who they are and why they're likely "
-                        . "here — then answer what they asked. Warm and brief, never gushing. ")
+                        . "here — then answer what they asked. Warm and brief, never gushing. THE GREETING "
+                        . "IS THE FIRST THING IN THE REPLY, before the answer — never a line at the end and "
+                        . "never a sign-off. Asked something short and practical, the pull is to answer it "
+                        . "and greet afterwards; that lands the welcome as an afterthought, which is the "
+                        . "opposite of what a door made for someone is for. ")
                 : "You've already greeted them. Use their first name ({$first}) only where you'd "
                     . "naturally say it in conversation — a moment of emphasis, a direct question, a "
                     . "sign-off — not in every reply, and never to open reply after reply. ";
@@ -2722,6 +2821,127 @@ class AskController extends Controller
     }
 
     /**
+     * Ask for the way in, on the turn it is due — so the model writes it rather than
+     * code appending it afterwards.
+     *
+     * THE POINT IS THE SENTENCE. Asked outright, Jonson writes "Easiest is to call me
+     * on +33668430934, or if you'd rather keep it async, send me a WhatsApp — either
+     * reaches me directly." The engagement floor cannot produce that: it runs AFTER the
+     * answer is generated, so it has nothing to weave into and can only bolt a line
+     * underneath. Same information, and it reads like a form rather than like Jon.
+     *
+     * The floor's trigger, though, is knowable in advance — funnelStage() is counted
+     * off the history, so on the turn it will read 'hot' we already know before
+     * generating. Ask then, and the answer arrives with a real closing sentence and its
+     * own [[contact]] marker; the panel resolves through the ordinary marker path, and
+     * answerNamesRoutes() sees the routes in the prose and adds no line of its own.
+     *
+     * THE FLOOR STAYS, as the net under this. A cue is a request and the model may not
+     * take it — it might be mid-sign-off, or read the question as needing something
+     * else — and a visitor who is never offered a way in is the failure both of these
+     * exist to prevent. So this tries for the good version and the floor guarantees the
+     * adequate one, which is the right way round.
+     *
+     * Empty once a way in has been offered: like every contact beat, only ever once.
+     */
+    private function contactBeatCue($session): string
+    {
+        if ($this->hasShownOnce($session, 'contact') || $this->funnelStage($session) !== 'hot') {
+            return '';
+        }
+
+        $routes = (new \modules\frontend\variables\FrontEndVariable())->doorCtas() ? true : false;
+
+        return "THE WAY IN BELONGS IN THIS REPLY. They have asked a few things now and you have "
+            . "not yet offered them a way to reach you. So finish this answer by saying how they "
+            . "can — in your own words, the way you would say it out loud, as one short sentence "
+            . "that follows naturally from what you have just told them. Put the [[contact]] "
+            . "marker in that paragraph.\n"
+            . ($routes
+                ? "- Name the quickest of the routes listed above and one alternative, written as "
+                    . "links exactly as that list shows them. Not all of them, and not as a list.\n"
+                : "")
+            . "- Once, warmly, and without pitching: an open door, not a close. Do not ask whether "
+            . "they would like to book anything, and do not follow it with another question.\n"
+            . "- If they are plainly signing off, or have just said they will be in touch, let it "
+            . "go and do not force it — saying goodbye twice is worse than not offering.";
+    }
+
+    /**
+     * Unlink any same-site link in the answer that does not point at a real page.
+     *
+     * The model is given the paths of the things it is told about, so a correct link is
+     * a copy. A wrong one is a slug it half-remembered — and a portfolio answering a
+     * question with a 404 is worse than one answering it in plain words, so the link
+     * comes off and the words stay. Only the brackets are removed; nothing is deleted.
+     *
+     * Same-site only. tel: and mailto: are checked by the renderer and an external URL
+     * never renders at all, so neither can arrive here needing a page to exist.
+     */
+    private function groundLinks(string $answer): string
+    {
+        if ($answer === '' || !str_contains($answer, '](/')) {
+            return $answer;
+        }
+
+        return preg_replace_callback(
+            '~\[([^\]\n]+)\]\((/[^)\s]*)\)~',
+            fn(array $m) => $this->siteUriExists($m[2]) ? $m[0] : $m[1],
+            $answer,
+        ) ?? $answer;
+    }
+
+    /**
+     * Is there a live page at this path? Memoised per request — an answer that links the
+     * same study twice should cost one lookup, and answers rarely carry more than three.
+     *
+     * STATUS_LIVE, not merely "an element owns this URI": a disabled or expired entry
+     * still has its row, and linking to one sends the visitor to a 404 just the same.
+     */
+    private function siteUriExists(string $path): bool
+    {
+        static $seen = [];
+
+        $uri = trim(parse_url($path, PHP_URL_PATH) ?: '', '/');
+        if ($uri === '') {
+            return true; // "/" — the homepage, which always exists
+        }
+        if (isset($seen[$uri])) {
+            return $seen[$uri];
+        }
+
+        return $seen[$uri] = \craft\elements\Entry::find()
+            ->uri($uri)
+            ->status(\craft\elements\Entry::STATUS_LIVE)
+            ->exists();
+    }
+
+    /**
+     * Does this answer already carry the visitor's own contact routes?
+     *
+     * The contact panel offers them as links ONLY when the prose did not, and this is
+     * the question that decides it. Asked of the text rather than of which code path
+     * produced the beat, because "the model marked it" turned out not to predict it:
+     * a marked [[contact]] sometimes arrives under a sentence with the number in it and
+     * sometimes under one without, and the engagement floor's beat never has one. The
+     * text is the only thing that actually knows.
+     *
+     * Matched on the URL, not on the label or the digits — the URL is what a link has
+     * to contain to be a link, and it is the same string the panel would render.
+     */
+    private function answerNamesRoutes(string $answer): bool
+    {
+        foreach ((new \modules\frontend\variables\FrontEndVariable())->doorCtas() as $cta) {
+            $url = trim((string) ($cta->ctaUrl->url ?? ''));
+            if ($url !== '' && str_contains($answer, $url)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * The ways this visitor can reach Jon, as a system block — the CTAs their VIP door
      * unlocked (craft.frontend.doorCtas()), with the real URLs.
      *
@@ -2775,8 +2995,21 @@ class AskController extends Controller
                     . "read is one that can be dialled from a desk or saved. In a sentence: "
                     . "\"call me on [{$number}]({$url})\".";
             } else {
-                $routes[] = "- {$label}: [{$label}]({$url}). Reword the label to fit your sentence "
-                    . "if it reads better, but spell every name exactly as it is written here.";
+                // SHOW THE FINISHED FORM, don't describe how to make it. The label is the
+                // CTA's title as Jon typed it in the CP, so it is capitalised like a title and
+                // reads wrong mid-sentence ("you can Send me a WhatsApp"). Handing over the
+                // title plus permission to adjust it produced worse answers than either on its
+                // own — one reply dropped the link entirely, another wrote "send me a WhatsApp
+                // on [Send me a WhatsApp](…)". The model follows an example far better than a
+                // rule, so the example is simply the sentence-ready version.
+                //
+                // lcfirst, not strtolower: it lowers only the leading word, so the brand keeps
+                // its capitals — "Send me a WhatsApp" becomes "send me a WhatsApp". (A title
+                // that opened ON a name would come out wrong, and none does; the alternative
+                // lowercased the lot and shipped "whatsapp".)
+                $face = lcfirst($label);
+                $routes[] = "- {$label} — link it on the words that fit your sentence, like this: "
+                    . "[{$face}]({$url}). The URL must be exactly as given.";
             }
         }
 
@@ -2789,13 +3022,17 @@ class AskController extends Controller
             . "address or a link, and never offer a route that is not here.\n"
             . implode("\n", $routes) . "\n"
             . "\nWrite them INTO THE SENTENCE as links, exactly as shown above — not as a list, not "
-            . "as buttons. Asked how to reach you, lead with the quickest route for what this person "
-            . "is trying to do, offer one alternative if it genuinely suits them better, and leave it "
+            . "as buttons. Asked how to reach you, name the quickest route for what this person is "
+            . "trying to do, offer one alternative if it genuinely suits them better, and leave it "
             . "there. Two routes in a sentence is an offer; four is a switchboard.\n"
-            . "\nThe [[contact]] marker adds a single \"Let's talk more\" button under your answer, "
-            . "and nothing else — so close on it the way you would in speech (\"otherwise, let's talk "
-            . "more\") rather than announcing a button. A link you write that is not on the list above "
-            . "will not render: it will sit on the screen as raw brackets.";
+            . "\nTHAT SENTENCE IS THE END OF THE REPLY. Stop on it. Don't add a sign-off, a second "
+            . "invitation, or a line about being around whenever they like: you have just told them "
+            . "how to reach you, and \"whenever you'd like to talk, I'm here\" underneath it says the "
+            . "same thing again and lands the reply on its third ending. The [[contact]] marker puts a "
+            . "single \"Let's talk more\" button below your answer by itself — it needs no sentence "
+            . "introducing it and no words about a button.\n"
+            . "\nA link you write that is not on the list above will not render: it will sit on the "
+            . "screen as raw brackets.";
     }
 
     /**
