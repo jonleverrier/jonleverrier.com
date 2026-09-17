@@ -54,7 +54,11 @@ export function sobel(grey, width, height) {
 
 export function nonMaxSuppress(mag, dir, width, height) {
     const out = new Float32Array(width * height);
-    const neighbours = [[0, -1, 0, 1], [1, -1, -1, 1], [-1, 0, 1, 0], [-1, -1, 1, 1]];
+    // Invariant: neighbours[k] must lie on the line AT BUCKET k'S OWN ANGLE (the
+    // gradient direction, i.e. across the edge), not along the edge itself. Get this
+    // wrong and diagonal edges erode lengthwise into slivers while cardinal edges
+    // (which happen to be the only case an easy test covers) look untouched.
+    const neighbours = [[0, -1, 0, 1], [-1, -1, 1, 1], [-1, 0, 1, 0], [1, -1, -1, 1]];
     for (let y = 1; y < height - 1; y++) {
         for (let x = 1; x < width - 1; x++) {
             const i = y * width + x;
