@@ -70,10 +70,10 @@
             class="c-jonson__input"
             type="text"
             name="question"
-            placeholder="{{ placeholder ?? 'Ask me anything...' }}"
+            placeholder="{{ placeholder ?? 'Ask me any question...' }}"
             {# No ellipsis on the label — it's read aloud, where trailing dots are
                noise rather than an invitation. #}
-            aria-label="{{ placeholder ?? 'Ask me anything' }}"
+            aria-label="{{ placeholder ?? 'Ask me any question' }}"
             {# Matches AskController::MAX_QUESTION_CHARS. A courtesy, not a control —
                the server truncates regardless, since anything can post to the endpoint.
                This just stops an honest paste from being silently cut later. #}

@@ -834,7 +834,7 @@
            else the h1 (which stays as `headline`); Meta Description, else the
            site's strapline. The share image is the Open Graph one at the 1200×630
            the og:image tag already rendered, with the site-wide fallback. #}
-        {% set heading = (schemaEntry.longTitle ?? '')|trim ?: 'Ask me anything' %}
+        {% set heading = (schemaEntry.longTitle ?? '')|trim ?: 'Ask me any question' %}
         {% set seoTitle = (schemaEntry.seoCustomPageTitle ?? '')|trim %}
         {% set shareAsset = craft.frontend.socialImage(schemaEntry) %}
         {% set shareImage = shareAsset ? {

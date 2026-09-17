@@ -396,7 +396,7 @@ class Vip extends Component
             return $line;
         }
         // An ELLIPSIS counts as one mark, not as a full stop with two dots in front of
-        // it. Without this, "Ask me anything..." came back as "Ask me anything..,
+        // it. Without this, "Ask me any question..." came back as "Ask me any question..,
         // Marcus." — the greedy-looking match takes only the final character.
         if (preg_match('/^(.*?)(\.{3}|\x{2026}|[?!.])$/u', $line, $m)) {
             return $m[1] . ', ' . $first . $m[2];
