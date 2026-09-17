@@ -199,6 +199,35 @@ export function mountContactPanel() {
         () => formWrap && formWrap.querySelector('input:not([type="hidden"]):not([tabindex="-1"]), textarea'),
     );
 
+    // Calendly's own embed parameters, added to the plain booking link from the CMS.
+    //
+    // Without them their script does not know it is embedded: it reaches for the parent
+    // window directly and the browser refuses it cross-origin — "Blocked a frame with
+    // origin https://calendly.com from accessing a frame with origin …". embed_domain
+    // tells it which host it is inside, and embed_type=Inline puts it in the mode that
+    // talks to the parent by postMessage instead, which is the one thing that works
+    // across origins.
+    //
+    // Only for Calendly. These are their parameters, not a standard — cal.com and
+    // anything else Jon points the CTA at gets the URL exactly as the CMS holds it,
+    // rather than query junk it never asked for.
+    //
+    // Anything unparseable falls through to the original string: a link that might work
+    // beats one this function decided to drop.
+    const embedUrl = (href) => {
+        let url;
+        try {
+            url = new URL(href, location.href);
+        } catch {
+            return href;
+        }
+        if (!/(^|\.)calendly\.com$/i.test(url.hostname)) return href;
+        url.searchParams.set('embed_domain', location.hostname);
+        url.searchParams.set('embed_type', 'Inline');
+
+        return url.toString();
+    };
+
     // "Request a call back" opens in place rather than leaving the site. The src is set
     // from the LINK's own href — the URL lives in the CMS, so changing it there changes
     // this — and only on the first press: setting it again on a later press would
@@ -207,7 +236,7 @@ export function mountContactPanel() {
         if (!bookingWrap || !bookingFrame) return false;
         const href = a.getAttribute('href');
         if (!href) return false;
-        if (!bookingFrame.getAttribute('src')) bookingFrame.setAttribute('src', href);
+        if (!bookingFrame.getAttribute('src')) bookingFrame.setAttribute('src', embedUrl(href));
         showStep(bookingWrap, bookingFrame);
 
         return true;
