@@ -67,3 +67,9 @@ vsp.html
 
 # DDEV — local database credentials, machine-specific.
 /.ddev/.env.web
+
+# CLAUDE WORKTREES — isolated checkouts created per piece of work, living inside
+# this repository. A linked worktree is a full copy of the tree, so leaving it
+# untracked means the next `git add -A` in the main checkout tries to swallow it.
+# Ignored rather than relocated because the tooling places them here.
+/.claude/worktrees/
