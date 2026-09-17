@@ -204,6 +204,28 @@ $c-contact-panel-exit: 260ms; // the exit — softer, so a dismiss is the panel 
     }
 }
 
+// The booking step's frame — Calendly, opened in place rather than sending the visitor
+// off the site (see contact-panel.js, which sets the src from the CTA's own href on
+// first press).
+//
+// A tall min-height because the embed decides its own layout and a short box makes it
+// scroll inside a panel that is already scrolling. The panel's inner is the scroller,
+// so the frame simply takes the room it needs and the panel handles the overflow.
+.c-contact-panel__booking {
+    display: block;
+    width: 100%;
+    min-height: rem(640);
+    border: 0;
+    border-radius: $b-radius-200;
+    background-color: getmap($colour, light, 100);
+
+    // Shorter viewports: the panel is capped at 92dvh there, so a 640px frame would
+    // push everything else out of reach. Take what the panel can spare instead.
+    @include mq(until, md) {
+        min-height: min(#{rem(640)}, 70dvh);
+    }
+}
+
 .c-contact-panel__step {
     flex: 0 0 100%;
     min-width: 0;

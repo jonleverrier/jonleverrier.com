@@ -35,6 +35,8 @@ export function mountContactPanel() {
     const steps = panel.querySelector('[data-contact-panel-steps]');
     const waysWrap = panel.querySelector('[data-contact-panel-ways]');
     const formWrap = panel.querySelector('[data-contact-panel-form-target]');
+    const bookingWrap = panel.querySelector('[data-contact-panel-booking-target]');
+    const bookingFrame = panel.querySelector('[data-contact-panel-booking-frame]');
     let stepTimer = 0;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -81,9 +83,45 @@ export function mountContactPanel() {
     const onPointerDown = () => { byPointer = true; };
     const onKeyDown = () => { byPointer = false; };
 
+    // Warm the connection to the booking host the moment the panel opens, so the frame
+    // has a live socket waiting if "request a call back" is pressed.
+    //
+    // PRECONNECT, NOT PREFETCH, and the distinction is the whole point: preconnect does
+    // the DNS lookup, the TCP handshake and the TLS negotiation and then stops. It
+    // fetches nothing, so Calendly's page — and its cookies — still arrive only if the
+    // visitor actually asks for them. Prefetching the document would load a third party
+    // on behalf of someone who may never press the button.
+    //
+    // NO `crossorigin` attribute. An iframe navigation is a plain document request, not
+    // a CORS one, and the two use different connection pools — a crossorigin preconnect
+    // would warm the pool this never draws from and the handshake would be paid twice.
+    //
+    // The origin comes from the CTA's own href, so the host lives in the CMS with the
+    // link rather than being written out a second time here. Once per page: `warmed`
+    // is set on the first open and the tag is left in the head after that.
+    let warmed = false;
+    const warmBooking = () => {
+        if (warmed || !bookingFrame) return;
+        const a = panel.querySelector('a[data-cta-kind="callback"][href]');
+        if (!a) return;
+        let origin;
+        try {
+            origin = new URL(a.getAttribute('href'), location.href).origin;
+        } catch {
+            return;
+        }
+        if (!origin || origin === location.origin) return; // nothing to warm for our own host
+        warmed = true;
+        const link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = origin;
+        document.head.appendChild(link);
+    };
+
     const open = (from) => {
         if (panel.open) return;
         clearTimeout(closing);
+        warmBooking();
         trigger = from || null;
         const byKeyboard = !byPointer;
         panel.showModal();
@@ -136,20 +174,43 @@ export function mountContactPanel() {
     // height alone; then focus lands on the first field (and the panel scrolls
     // to it if it's below the fold).
     const FORM_MS = 380; // matches .c-contact-panel__step's transition
-    const onWrite = () => {
-        if (!formWrap || !steps) return;
+
+    // Slide the stage to a second step. Written once and used by both — the message
+    // form and the booking frame are the same move, and the only differences are which
+    // panel comes in and what gets focus when it lands.
+    const showStep = (wrap, focusTarget) => {
+        if (!wrap || !steps) return;
         clearTimeout(stepTimer);
-        formWrap.hidden = false;
+        wrap.hidden = false;
         // Two frames: the first paints it (display), the second starts the slide.
         requestAnimationFrame(() => requestAnimationFrame(() => steps.classList.add('is-form')));
-        const first = formWrap.querySelector('input:not([type="hidden"]):not([tabindex="-1"]), textarea');
         stepTimer = setTimeout(() => {
             steps.classList.add('is-settled');
             if (waysWrap) waysWrap.hidden = true;
             steps.classList.remove('is-form');
             requestAnimationFrame(() => requestAnimationFrame(() => steps.classList.remove('is-settled')));
-            if (first) first.focus({preventScroll: false});
+            const el = typeof focusTarget === 'function' ? focusTarget() : focusTarget;
+            if (el) el.focus({preventScroll: false});
         }, reduced ? 0 : FORM_MS);
+    };
+
+    const onWrite = () => showStep(
+        formWrap,
+        () => formWrap && formWrap.querySelector('input:not([type="hidden"]):not([tabindex="-1"]), textarea'),
+    );
+
+    // "Request a call back" opens in place rather than leaving the site. The src is set
+    // from the LINK's own href — the URL lives in the CMS, so changing it there changes
+    // this — and only on the first press: setting it again on a later press would
+    // reload the embed and throw away a booking half-filled in.
+    const onBooking = (a) => {
+        if (!bookingWrap || !bookingFrame) return false;
+        const href = a.getAttribute('href');
+        if (!href) return false;
+        if (!bookingFrame.getAttribute('src')) bookingFrame.setAttribute('src', href);
+        showStep(bookingWrap, bookingFrame);
+
+        return true;
     };
 
     // A same-tab click on a link to the contact page opens the panel instead.
@@ -175,9 +236,26 @@ export function mountContactPanel() {
         e.preventDefault();
         close();
     };
-    // A click on the backdrop lands on the dialog element itself, not its inner.
+    // Clicks inside the panel. Two jobs, in one listener because they are one event:
+    // the backdrop closes, and the booking CTA opens in place instead of navigating.
+    //
+    // The booking intercept is HERE and not on the document, so it only ever applies
+    // inside the panel — the same CTA in the footer and on the contact page stays an
+    // ordinary link, because there is no stage to slide there.
     const onPanelClick = (e) => {
-        if (e.target === panel) close();
+        // A click on the backdrop lands on the dialog element itself, not its inner.
+        if (e.target === panel) {
+            close();
+
+            return;
+        }
+        // Modified clicks are the visitor asking for a new tab or window; let them.
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const a = e.target.closest && e.target.closest('a[data-cta-kind="callback"][href]');
+        if (a && onBooking(a)) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
     };
 
     document.addEventListener('contact:success', onSent);

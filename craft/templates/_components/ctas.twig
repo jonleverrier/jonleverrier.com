@@ -26,9 +26,14 @@
                SVG, because the sprite is how every other icon on the site arrives and a
                mask takes currentColor with the label. aria-hidden: the label already
                says what this is, so a screen reader announcing it twice helps nobody. #}
-            <a class="c-ctas__item"{% if href %} href="{{ href }}"{% endif %}
+            {# The kind, on the link itself as well as on the icon's class: the contact
+               panel intercepts the booking one to open it in place rather than send the
+               visitor away, and matching on a modifier class would be matching on
+               styling. Everywhere else it is inert. #}
+            {% set kind = craft.frontend.ctaIcon(cta) %}
+            <a class="c-ctas__item" data-cta-kind="{{ kind }}"{% if href %} href="{{ href }}"{% endif %}
                {%- if target %} target="{{ target }}"{% if target == '_blank' %} rel="noopener"{% endif %}{% endif %}>
-                <span class="c-ctas__icon c-ctas__icon--{{ craft.frontend.ctaIcon(cta) }}" aria-hidden="true"></span>
+                <span class="c-ctas__icon c-ctas__icon--{{ kind }}" aria-hidden="true"></span>
                 <span class="c-ctas__label">{{ cta.title }}</span>
             </a>
         {% endfor %}

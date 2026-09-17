@@ -75,6 +75,27 @@
                     {% include '_components/form' %}
                 </div>
             {% endif %}
+            {# THE BOOKING STEP — the "request a call back" CTA opened in place instead of
+               sending the visitor off to calendly.com and losing the panel, the
+               conversation and the page behind it.
+
+               The iframe has NO src until the CTA is pressed (contact-panel.js sets it
+               from the link's own href, so the URL lives in the CMS and nowhere else).
+               That is deliberate: an src here would load Calendly — and its cookies — on
+               every page of the site for every visitor, including the ones who never
+               open the panel.
+
+               Rendered only when there is a CTA to open it. #}
+            {% set hasBooking = false %}
+            {% for cta in ctas %}
+                {% if craft.frontend.ctaIcon(cta) == 'callback' %}{% set hasBooking = true %}{% endif %}
+            {% endfor %}
+            {% if hasBooking %}
+                <div class="c-contact-panel__step c-contact-panel__step--booking" hidden data-contact-panel-booking-target>
+                    <iframe class="c-contact-panel__booking" title="Book a call back" loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade" data-contact-panel-booking-frame></iframe>
+                </div>
+            {% endif %}
         </div>
 
         {% if clients %}
