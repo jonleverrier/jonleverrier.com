@@ -594,6 +594,42 @@ class FrontEndVariable
      *
      * Reads through ctas(), so it costs no second query.
      */
+    /**
+     * Which icon a CTA shows — 'phone', 'email', 'whatsapp', 'callback' or 'generic'.
+     *
+     * Read off the LINK, not off a field Jon has to remember to set: the Link field
+     * already knows a tel: from a mailto:, and those two carry the two icons that are
+     * never ambiguous. The remaining two are host matches, because "a WhatsApp" and "a
+     * booking page" are things a URL says rather than things a type does.
+     *
+     * Everything unrecognised gets 'generic' rather than nothing, so a CTA Jon adds
+     * tomorrow arrives with a mark beside it instead of a gap where the others have one.
+     */
+    public function ctaIcon($cta): string
+    {
+        $link = $cta->ctaUrl ?? null;
+        $type = strtolower(trim((string) ($link->type ?? '')));
+        if ($type === 'tel') {
+            return 'phone';
+        }
+        if ($type === 'email') {
+            return 'email';
+        }
+
+        $host = strtolower((string) parse_url((string) ($link->value ?? ''), PHP_URL_HOST));
+        if ($host === '') {
+            return 'generic';
+        }
+        if (str_contains($host, 'wa.me') || str_contains($host, 'whatsapp')) {
+            return 'whatsapp';
+        }
+        if (str_contains($host, 'calendly') || str_contains($host, 'cal.com')) {
+            return 'callback';
+        }
+
+        return 'generic';
+    }
+
     public function doorCtas(): array
     {
         $vip = Jonson::getInstance()->vip;

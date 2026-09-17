@@ -53,7 +53,12 @@
         {% set sent = craft.app.session.get('crmSubmitted') %}
         <div class="c-contact-panel__steps" data-contact-panel-steps>
             <div class="c-contact-panel__step c-contact-panel__step--ways" data-contact-panel-ways>
-                {% include '_components/ctas' with { ctas: ctas, heading: 'Drop me a line' } only %}
+                {# No heading here, unlike the contact page: the panel already says what it is —
+                   its own whisper and title sit directly above this — so a second label in
+                   between repeats the introduction rather than adding one. ctas.twig only
+                   renders the whisper when it is given a heading, so omitting it is the whole
+                   of the change. #}
+                {% include '_components/ctas' with { ctas: ctas } only %}
                 {% if not sent %}
                     <div class="c-contact-panel__write">
                         {% include '_components/button.twig' with {

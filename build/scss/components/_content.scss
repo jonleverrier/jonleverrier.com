@@ -461,8 +461,28 @@ $c-content-subheading: getmap($colour, light, 880); // the sub-heading grey — 
         > :first-child {
             border-radius: $b-radius-200 0 0 $b-radius-200; // round left, square right
         }
+
         > :last-child {
             border-radius: 0 $b-radius-200 $b-radius-200 0; // square left, round right
+        }
+
+        // THE WAYS IN FOLLOW THE FORM DOWN — but the white column itself does NOT move.
+        //
+        // The obvious version of this was to stick the column and give it `align-self:
+        // start`. That works, and it throws away the thing the two columns are for: the
+        // box stops matching the form's height, the shared seam has nothing to meet, and
+        // the joined block becomes two cards of different sizes. So the BOX stays
+        // stretched and its CONTENTS travel inside it (see .c-ctas__inner in _ctas.scss),
+        // which is why that inner wrapper exists at all.
+        //
+        // Only at lg and up. Stacked, the CTAs already sit directly above the form, and
+        // pinning them there would hold a box over the fields being filled in.
+        //
+        // Not the contact panel: that renders _components/ctas on its own, never inside
+        // .c-content__form-cols, so this cannot reach it.
+        > :last-child > .c-ctas__inner {
+            position: sticky;
+            top: getmap($space, rhythm, 700);
         }
     }
 }

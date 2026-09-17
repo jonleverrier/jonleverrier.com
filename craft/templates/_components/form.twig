@@ -114,7 +114,7 @@
         <span class="c-form__label">
             <span class="c-form__label-text">Message <span class="c-form__optional">(optional)</span></span>
         </span>
-        <textarea class="c-form__input c-form__input--area" name="message" rows="5">{{ old.message ?? '' }}</textarea>
+        <textarea class="c-form__input c-form__input--area" name="message" rows="4">{{ old.message ?? '' }}</textarea>
     </label>
 
     {% include '_components/button.twig' with { label: 'Send', type: 'submit', size: 'sm' } only %}

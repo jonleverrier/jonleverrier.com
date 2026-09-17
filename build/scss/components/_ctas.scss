@@ -15,14 +15,23 @@
 
 $c-ctas-border: getmap($colour, light, 750); // matches the content-page spine
 
+// The BOX: padding, panel and corners, and on the contact page it stretches to the
+// form's height so the two read as one block.
 .c-ctas {
+    padding: getmap($space, rhythm, 600);
+    border-radius: $b-radius-200; // matches the form panel
+    background-color: getmap($colour, light, 100); // white column
+}
+
+// The CONTENTS: the stack the chips actually make. Split from the box above so the
+// contact page can hold the panel still at the form's full height while letting the
+// whisper and chips travel down it (see .c-content__form-cols). Everywhere else this
+// wrapper is simply the flex column .c-ctas used to be, and costs nothing.
+.c-ctas__inner {
     display: flex;
     flex-direction: column;
     align-items: flex-start; // each chip hugs its text, one per row
     gap: rem(14);
-    padding: getmap($space, rhythm, 600);
-    border-radius: $b-radius-200; // matches the form panel
-    background-color: getmap($colour, light, 100); // white column
 }
 
 // Jonson variant — the CTA beat inside a response, on the olive slab: one
@@ -137,4 +146,74 @@ $c-ctas-border: getmap($colour, light, 750); // matches the content-page spine
         animation: none; // no spin — a static navy stroke instead
         border-color: getmap($colour, primary, 700);
     }
+}
+
+// The routes line above the Jonson beat's button — "Or reach me directly — <number>,
+// or send me a WhatsApp." Only rendered when the beat was added by code rather than
+// marked by the model, because only then is there no sentence already carrying it
+// (see _components/jonson-ctas.twig).
+.c-ctas__routes {
+    margin: 0 0 rem(18);
+    // THE ANSWER'S OWN TYPE, restated rather than inherited. This line is the sentence
+    // the model would have written if it had written one, so it has to read as part of
+    // the answer and not as furniture attached to the button. prose-body styles
+    // `.c-jonson__response > p` — a direct child — and this <p> is inside the CTA block,
+    // so it never matched and fell back to the sans while everything around it was mono.
+    // Same three declarations as _prose.scss; change them together.
+    @include typography(p);
+    font-family: $g-font-secondary; // JonSonMono, as the prose is
+    line-height: 1.6;
+    color: getmap($colour, light, 700);
+}
+
+// The mark before a CTA's words. Painted as a MASK, not a background image — the sprite's
+// own fill is irrelevant under a mask, only the shape's alpha is read, which is what lets
+// the colour be set here at all. Same technique as the case TOC's mode icons.
+//
+// THE WHISPER BLUE, not currentColor. These glyphs are filled shapes sitting beside a thin
+// mono label, so at the label's own navy they carry more weight than the words and the eye
+// lands on the mark before the name — backwards for a list you scan by name. This is the
+// colour of the "Get in touch" whisper directly above them, so the block reads as one
+// thing and the label still leads.
+//
+// Not opacity, which would have done much the same here: a percentage of currentColor
+// composites differently against the eggshell page and the olive panel, and this has to
+// hold on both. Nothing needs restating for hover — the pill changes its border, its
+// background and its arrow there, never its text colour.
+//
+// `flex: none` because .c-ctas__item is an inline-flex and a 20px square has no business
+// being squeezed when a label wraps.
+.c-ctas__icon {
+    flex: none;
+    width: rem(20);
+    height: rem(20);
+    margin-right: rem(10);
+    background-color: getmap($colour, primary, 450);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+.c-ctas__icon--phone {
+    @include icon($name: icon_cta_phone, $include-size: false, $type: $sprite-type, $mode: -webkit-mask);
+    @include icon($name: icon_cta_phone, $include-size: false, $type: $sprite-type, $mode: mask);
+}
+
+.c-ctas__icon--email {
+    @include icon($name: icon_cta_email, $include-size: false, $type: $sprite-type, $mode: -webkit-mask);
+    @include icon($name: icon_cta_email, $include-size: false, $type: $sprite-type, $mode: mask);
+}
+
+.c-ctas__icon--whatsapp {
+    @include icon($name: icon_cta_whatsapp, $include-size: false, $type: $sprite-type, $mode: -webkit-mask);
+    @include icon($name: icon_cta_whatsapp, $include-size: false, $type: $sprite-type, $mode: mask);
+}
+
+.c-ctas__icon--callback {
+    @include icon($name: icon_cta_callback, $include-size: false, $type: $sprite-type, $mode: -webkit-mask);
+    @include icon($name: icon_cta_callback, $include-size: false, $type: $sprite-type, $mode: mask);
+}
+
+.c-ctas__icon--generic {
+    @include icon($name: icon_cta_generic, $include-size: false, $type: $sprite-type, $mode: -webkit-mask);
+    @include icon($name: icon_cta_generic, $include-size: false, $type: $sprite-type, $mode: mask);
 }

@@ -158,7 +158,9 @@ $c-contact-panel-exit: 260ms; // the exit — softer, so a dismiss is the panel 
 .c-contact-panel__title {
     @include typography(h3);
     margin: rem(-8) 0 0; // sits close under its whisper, as on the page
-    padding-right: rem(56); // clear of the close button
+    // No right padding: the title takes the panel's full width. Jon's call, made with
+    // the overlap in front of him — the close button sits over the rightmost 61px, so a
+    // long title's first line can run under it. Short titles never reach that far.
     font-weight: 600;
     text-wrap: balance;
     color: getmap($colour, primary, 700);
@@ -229,6 +231,14 @@ $c-contact-panel-exit: 260ms; // the exit — softer, so a dismiss is the panel 
 // own static dress (.c-clients--static) fades its ends into the eggshell it sits
 // on; its cards run 30% smaller here than on the contact page.
 .c-contact-panel__clients {
+    // NOT ON A PHONE. The panel is capped at 92dvh there and the strip sits at the
+    // bottom of it behind everything that has a job — the question, the ways in, the
+    // form — so it was costing a scroll to reach a row of logos nobody opened the panel
+    // for. It stays from md up, where the panel is full height and the space is free.
+    @include mq(until, md) {
+        display: none;
+    }
+
     margin-top: auto;
     // Through the inner's bottom padding, then back out by its side padding: the
     // strip sits off the bottom edge by the same amount it sits in from the left.

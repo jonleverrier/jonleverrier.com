@@ -5,6 +5,10 @@
 #}
 {% if ctas ?? false %}
     <div class="c-ctas">
+      {# The inner wrapper carries the stack; the outer one carries the panel. On the
+         contact page that split is what lets the white column stay stretched to the
+         form's height while the chips inside it stick — see _ctas.scss. #}
+      <div class="c-ctas__inner">
         {% if heading ?? false %}
             <p class="c-ctas__whisper u-font-whisper">{{ heading }}</p>
         {% endif %}
@@ -17,10 +21,17 @@
                without it the opened page can reach back through window.opener and
                retarget the tab it came from. #}
             {% set target = cta.ctaUrl.target ?? null %}
+            {# The mark before the words — which one is decided from the link itself (see
+               craft.frontend.ctaIcon). An empty span painted by CSS rather than inline
+               SVG, because the sprite is how every other icon on the site arrives and a
+               mask takes currentColor with the label. aria-hidden: the label already
+               says what this is, so a screen reader announcing it twice helps nobody. #}
             <a class="c-ctas__item"{% if href %} href="{{ href }}"{% endif %}
                {%- if target %} target="{{ target }}"{% if target == '_blank' %} rel="noopener"{% endif %}{% endif %}>
+                <span class="c-ctas__icon c-ctas__icon--{{ craft.frontend.ctaIcon(cta) }}" aria-hidden="true"></span>
                 <span class="c-ctas__label">{{ cta.title }}</span>
             </a>
         {% endfor %}
+      </div>
     </div>
 {% endif %}
