@@ -79,20 +79,28 @@
 // page chose (see _layouts/page), and a modifier would have to be remembered at every
 // call site and would be wrong the moment a page changed its slab.
 //
-// ONE PIXEL AT 60%, because the ring only has to be findable, not loud. The two levers
-// are not equal and it is worth knowing which is which before touching this again:
-// THINNING IT IS FREE — a 1px ring is the same colour against the same background, so
-// it holds the full 7.06:1 and only loses visual weight. DIMMING IT IS NOT — the alpha
-// blends the cream toward the olive, and the contrast goes with it: 0.6 leaves 3.68:1,
-// 0.5 is 3.07:1, and 0.49 is already under the 3:1 this ring exists to provide. So take
-// weight out of the thickness first and the alpha second, and do not go below 0.5.
+// AS LITTLE RING AS STILL PASSES — 1px at 50%, which is the quietest this can be while
+// the button's shape keeps the 3:1 that WCAG 1.4.11 asks for. Both numbers are at their
+// limit, and they are at their limits for different reasons:
+//
+// THE ALPHA IS THE HARD FLOOR. It blends the cream toward the olive and drags the
+// contrast with it — 0.6 is 3.68:1, 0.5 is 3.07:1, and 0.49 is 2.99:1 and already
+// failing. There is nothing below 0.5.
+//
+// THE THICKNESS IS FREE, and that is why it went first. A 1px ring is the same colour
+// against the same background as a 3px one, so it holds the identical ratio and loses
+// only weight. 1px is simply the thinnest a line gets.
+//
+// So this is the floor of the whole thing: quieter means failing, and the only way to
+// make it subtler AND keep it passing would be to change what is behind it. Anyone
+// reaching for a smaller number here should know there isn't one.
 .b-slab--p500 .c-button {
-    // An EVEN 3px ring. Spread is the same on all four sides by definition, so one
-    // shadow with no offset is the whole of it — the moment the ring needs to be
-    // heavier on one edge it takes a second, offset shadow, and it does not need to be.
+    // Spread is the same on all four sides by definition, so one shadow with no offset
+    // is the whole ring — an edge heavier than the others would need a second, offset
+    // shadow, and it does not.
     box-shadow:
         inset 0 rem(-3) 0 rgba(#000, 0.3),
-        0 0 0 rem(3) rgba(getmap($colour, light, 700), 0.6);
+        0 0 0 rem(3) rgba(getmap($colour, light, 700), 0.5);
 }
 
 // sizes
