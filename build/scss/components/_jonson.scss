@@ -997,7 +997,18 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
 
 // Deeper under the pointer on the words (the light bar; the front door's band
 // sets --band-bg-deep to its own colour, so this is a no-op there).
-:is(.c-jonson__field, .c-frontdoor__field):has(:is(.c-jonson__prompt, .c-frontdoor__prompt):is(:hover, :focus-visible)) .c-jonson__band {
+//
+// AND WHILE THE DRAWER IS OPEN. Opening it slides the label out to the left and the
+// chips in from the right — so the pointer that was on .c-jonson__prompt is now on a
+// chip, the :has() above stops matching, and the deep colour dropped back to the base
+// exactly as the chips arrived. It read as the band going flat at the moment it should
+// have felt most active. The open state is the same intent as the hover that caused it,
+// so it holds the same colour: `.is-open` is set on the field by lost-for-words.js
+// alongside the drawer's own class.
+:is(.c-jonson__field, .c-frontdoor__field):is(
+    :has(:is(.c-jonson__prompt, .c-frontdoor__prompt):is(:hover, :focus-visible)),
+    .is-open
+) .c-jonson__band {
     background-color: var(--band-bg-deep);
 }
 
