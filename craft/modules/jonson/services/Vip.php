@@ -212,26 +212,20 @@ class Vip extends Component
     public const HITS_FIELD = 'urlHits';
 
     /**
-     * One more visit to the door. Every arrival counts, note or no note, and both
-     * URL forms count alike — the number Jon reads in the CP is "how many times
-     * has this link been opened". Saved without validation, propagation or a search
-     * re-index: it's a counter, not an edit. A failure to count is logged and
-     * swallowed — the visitor must still get through the door.
+     * One more visit to the door. Every HUMAN arrival counts, note or no note, and
+     * both URL forms count alike — the number Jon reads in the CP is "how many times
+     * has a person opened this link". Who counts as a person is isHumanArrival()
+     * below, and it is the whole of the difference between this number and a tally of
+     * requests. Saved without validation, propagation or a search re-index: it's a
+     * counter, not an edit. A failure to count is logged and swallowed — the visitor
+     * must still get through the door.
      */
     private function countHit(Entry $entry): void
     {
         if (!$entry->getFieldLayout()?->getFieldByHandle(self::HITS_FIELD)) {
             return;
         }
-
-        // NOT JON. There is one kind of logged-in user here and it is whoever reads
-        // this number in the CP, so opening a door to check it works was adding to the
-        // count of times the recipient had opened it — the one thing the number is for.
-        //
-        // Guarded HERE rather than in enter(), deliberately: the cookie is still set and
-        // the visit is still primed, so testing a door shows exactly what the VIP will
-        // see. Only the counter looks away.
-        if (Craft::$app->getUser()->getIdentity() !== null) {
+        if (!$this->isHumanArrival()) {
             return;
         }
         try {
@@ -242,6 +236,77 @@ class Vip extends Component
         } catch (\Throwable $e) {
             Craft::warning('[jonson] VIP hit not counted: ' . $e->getMessage(), __METHOD__);
         }
+    }
+
+    /**
+     * Is this a person opening the link, or a machine looking at it?
+     *
+     * PASTE A DOOR INTO A CHAT AND THE CHAT OPENS IT. Slack, WhatsApp, iMessage,
+     * LinkedIn, Teams — every one of them fetches a pasted URL to draw its preview
+     * card, and each of those fetches was landing here as an arrival. A door read 1
+     * or 2 before the person it was made for had so much as seen it, and $returning
+     * in AskController (urlHits > 1) then met them as somebody coming back on their
+     * very first visit.
+     *
+     * Answered from the FETCH METADATA headers, which the browser attaches itself and
+     * no script can set: a top-level page a browser is navigating to carries
+     * Sec-Fetch-Mode: navigate and Sec-Fetch-Dest: document. An unfurler is an HTTP
+     * library rather than a browser and sends neither. That makes this positive proof
+     * of a browser instead of a list of bots to recognise — the difference between a
+     * rule that holds and one that goes stale the next time a chat app ships.
+     *
+     * NOT Sec-Fetch-User: ?1 ("a click, specifically"), tempting as that reads. It is
+     * absent from plenty of genuine arrivals — a pasted address bar, a restored tab, a
+     * link handed to the browser by another app — and every one of those is still a
+     * person at the door. Mode + Dest already excludes everything that isn't a
+     * browser; asking for the click on top of it only loses real visitors.
+     *
+     * Dest earns its place separately: a door opened INSIDE something else is
+     * Sec-Fetch-Dest: iframe, not document, so an embedded preview stays out.
+     *
+     * Prefetch is excluded by name because the headers above can't see it — a
+     * prefetch is a browser navigation in every respect they describe (Chrome
+     * guessing at the address bar, a page prefetching its links), and it is nobody
+     * arriving.
+     *
+     * THE COST, stated plainly: these headers exist only on a secure connection, and
+     * only from Chrome 76 / Firefox 90 / Safari 16.4. An arrival over plain http, or
+     * from a browser older than that, goes uncounted. The other way round counts
+     * every preview card, and a counter that inflates itself is worth less than one
+     * that occasionally misses.
+     */
+    private function isHumanArrival(): bool
+    {
+        $request = Craft::$app->getRequest();
+
+        if ($request->getIsConsoleRequest() || !$request->getIsGet()) {
+            return false;
+        }
+
+        // NOT JON. There is one kind of logged-in user here and it is whoever reads
+        // this number in the CP, so opening a door to check it works was adding to the
+        // count of times the recipient had opened it — the one thing the number is for.
+        //
+        // Guarded HERE rather than in enter(), deliberately: the cookie is still set and
+        // the visit is still primed, so testing a door shows exactly what the VIP will
+        // see. Only the counter looks away.
+        if (Craft::$app->getUser()->getIdentity() !== null) {
+            return false;
+        }
+
+        $headers = $request->getHeaders();
+
+        // Three spellings, because Chrome and Firefox never agreed on one and Chrome
+        // changed its own mind (Purpose → Sec-Purpose) on the way.
+        $purpose = strtolower((string) ($headers->get('Sec-Purpose')
+            ?: $headers->get('Purpose')
+            ?: $headers->get('X-Moz')));
+        if (str_contains($purpose, 'prefetch') || str_contains($purpose, 'prerender')) {
+            return false;
+        }
+
+        return strtolower((string) $headers->get('Sec-Fetch-Mode')) === 'navigate'
+            && strtolower((string) $headers->get('Sec-Fetch-Dest')) === 'document';
     }
 
     /**
