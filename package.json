@@ -21,6 +21,7 @@
     "rollup-plugin-critical": "^1.0.18",
     "sass": "^1.93.2",
     "sharp": "^0.35.4",
+    "svgo": "^4.0.2",
     "tm-grammars": "^1.32.11",
     "vite": "^7.1.11",
     "vite-plugin-compression": "^0.5.1",
