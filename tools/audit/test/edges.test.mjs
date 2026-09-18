@@ -149,19 +149,20 @@ test('a dense page with a faint foot comes out the same, so the stack is big eno
     assert.ok(identical(hysteresis(mag, w, h), before));
 });
 
-test('hysteresis is unchanged on a real page', async () => {
-    // The synthetic maps above are noise; this is the shape of an actual page, where
-    // edges are long connected runs and the propagation loop does most of the work.
-    const {data, info} = await sharp('tools/audit/fixtures/jonleverrier.png')
-        .removeAlpha().raw().toBuffer({resolveWithObject: true});
-    const {width, height} = info;
-    const {mag, dir} = sobel(toGrey(data, width, height), width, height);
-    const thin = nonMaxSuppress(mag, dir, width, height);
-    const before = referenceHysteresis(thin, width, height);
-    const after = hysteresis(thin, width, height);
-    assert.ok(identical(after, before), 'the fixture edge map must be identical');
-    assert.ok(before.some((v) => v === 1), 'and must not be empty, or this proves nothing');
-});
+for (const fixture of ['tools/audit/fixtures/jonleverrier.png', 'tools/audit/fixtures/retail.png']) {
+    test(`hysteresis is unchanged on ${fixture}`, async () => {
+        // The synthetic maps above are noise; these are the shape of actual pages, where
+        // edges are long connected runs and the propagation loop does most of the work.
+        const {data, info} = await sharp(fixture).removeAlpha().raw().toBuffer({resolveWithObject: true});
+        const {width, height} = info;
+        const {mag, dir} = sobel(toGrey(data, width, height), width, height);
+        const thin = nonMaxSuppress(mag, dir, width, height);
+        const before = referenceHysteresis(thin, width, height);
+        const after = hysteresis(thin, width, height);
+        assert.ok(identical(after, before), 'the fixture edge map must be identical');
+        assert.ok(before.some((v) => v === 1), 'and must not be empty, or this proves nothing');
+    });
+}
 
 /** A PNG of a given size, on disk. Four pixels wide, so a tall one is still cheap. */
 const pngOfHeight = async (height) => {

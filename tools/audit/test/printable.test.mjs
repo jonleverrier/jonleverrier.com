@@ -25,7 +25,7 @@ const CR = String.fromCharCode(13);
 const RLO = String.fromCharCode(0x202e); // right-to-left override
 
 /** Nothing left that can act on a terminal, whatever it was to begin with. */
-export const inert = (s) => ![...s].some((c) => {
+const inert = (s) => ![...s].some((c) => {
     const n = c.charCodeAt(0);
 
     return n < 0x20 || (n >= 0x7f && n <= 0x9f) || n === 0x2028 || n === 0x2029
