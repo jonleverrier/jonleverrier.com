@@ -7,6 +7,11 @@
  * Reads fullpage.png from outDir — and rects.json beside it when phase 1 left one —
  * then writes blocks.json and debug.png into the same directory.
  *
+ * ARTEFACTS ARE WRITTEN ONLY BY A RUN THAT PASSED. The tree is checked against the
+ * partition invariant (lib/blocks.mjs) before anything is written, a failure exits 1,
+ * and any previous run's blocks.json and debug.png are removed at the start — so what
+ * is in the directory afterwards is always this run's, or nothing.
+ *
  * OPEN debug.png. The invariants in the test suite prove the tree is a valid
  * partition; they cannot prove it is a sensible one. That judgement is yours, and it
  * is the gate before phase 3 is written.
@@ -17,13 +22,13 @@
  * this will not reproduce a prior run's numbers; only re-segmenting the same PNG will.
  */
 import {join} from 'node:path';
-import {existsSync, readFileSync, writeFileSync} from 'node:fs';
+import {existsSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {edgeMapFromPng} from './lib/edges.mjs';
 import {segmentTall} from './lib/xycut.mjs';
 import {renderDebug} from './lib/debug.mjs';
-import {leaves, totalArea} from './lib/blocks.mjs';
+import {assertPartition, leaves, totalArea} from './lib/blocks.mjs';
 import {webglWarning} from './lib/webgl.mjs';
-import {unrenderedWarning} from './lib/unrendered.mjs';
+import {shotTruncationWarning, unrenderedWarning} from './lib/unrendered.mjs';
 
 const outDir = process.argv[2];
 const depthArg = process.argv.find((a) => a.startsWith('--depth='));
@@ -48,8 +53,18 @@ if (depthValue !== null && !/^\d+$/.test(depthValue)) {
 const maxDepth = depthValue === null ? 4 : Number(depthValue);
 
 const png = join(outDir, 'fullpage.png');
+const blocksPath = join(outDir, 'blocks.json');
+const debugPath = join(outDir, 'debug.png');
 process.stderr.write(`segmenting ${png} at depth ${maxDepth}\n`);
 try {
+    // CLEAR BEFORE, WRITE AFTER. A run that fails must not leave the PREVIOUS run's
+    // blocks.json sitting in the directory: a caller that shells out and reads the file
+    // without checking the exit code then gets last week's answer for this week's page,
+    // with nothing on disk saying so. Removing them first also means a failure part way
+    // through cannot leave a half-matched pair.
+    rmSync(blocksPath, {force: true});
+    rmSync(debugPath, {force: true});
+
     // Rects snap each cut onto a real element edge instead of the middle of the
     // whitespace. They are an IMPROVEMENT, NOT A REQUIREMENT: a caller may legitimately
     // have nothing but a PNG — a screenshot from somewhere else, an older capture — and
@@ -67,16 +82,33 @@ try {
     const {edges, width, height} = await edgeMapFromPng(png);
     const root = segmentTall(edges, width, height, {maxDepth, rects});
     const ls = leaves(root);
-    writeFileSync(join(outDir, 'blocks.json'), JSON.stringify(root, null, 1));
-    await renderDebug(png, root, join(outDir, 'debug.png'));
+
+    // THE INVARIANT IS THE PRODUCT, so it is checked here and not only in the tests.
+    // assertPartition is the strong check — containment, pairwise overlap and exact area
+    // equality at every node — and it runs because the leaf-area total on its own cannot
+    // catch an overlap that a gap elsewhere pays for. A tree that fails either is not a
+    // measurement of anything, and printing a percentage from it would be the confident
+    // wrong number this tool exists to avoid. Throwing lands in the catch: exit 1, and
+    // nothing is written.
+    assertPartition(root);
+    if (totalArea(ls) !== width * height) {
+        throw new Error(`area check BROKEN: leaves total ${totalArea(ls)} against an image of ${width * height}`);
+    }
+
+    // Only now, with a tree that passed. debug.png first: if rendering throws there is
+    // then no blocks.json beside it claiming the run succeeded.
+    await renderDebug(png, root, debugPath);
+    writeFileSync(blocksPath, JSON.stringify(root, null, 1));
 
     const mean = Math.round(totalArea(ls) / ls.length);
     console.log(`image        ${width}x${height}`);
     console.log(`depth        ${maxDepth}`);
     console.log(`blocks       ${ls.length}`);
     console.log(`mean area    ${mean}px²`);
-    console.log(`area check   ${totalArea(ls) === width * height ? 'conserved' : 'BROKEN'}`);
-    console.log(`debug image  ${join(outDir, 'debug.png')}`);
+    // A statement of what the gate above established, not a recomputation of it: this
+    // line is only ever reached by a tree that passed both checks.
+    console.log('area check   conserved');
+    console.log(`debug image  ${debugPath}`);
 
     // Carried through from phase 1 rather than re-probed: by the time anyone reads a
     // percentage, the browser that failed to draw the page is long gone. A blank region
@@ -85,7 +117,17 @@ try {
     const metaPath = join(outDir, 'meta.json');
     if (existsSync(metaPath)) {
         const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
-        const warnings = [webglWarning(meta.webgl), unrenderedWarning(meta)].filter(Boolean);
+        // WHICH PAGE THIS IS A MEASUREMENT OF comes first: a percentage attributed to the
+        // wrong domain is wrong in a way no other warning here can make up for.
+        const wrongPage = meta.capturedUrl && meta.url && meta.capturedUrl !== meta.url
+            ? `these blocks are of ${meta.capturedUrl}, not the ${meta.url} that was requested`
+            : null;
+        const warnings = [
+            wrongPage,
+            shotTruncationWarning(meta),
+            webglWarning(meta.webgl),
+            unrenderedWarning(meta),
+        ].filter(Boolean);
         if (warnings.length) {
             console.log('unmeasured   YES — see warnings');
             for (const w of warnings) {
