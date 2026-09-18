@@ -97,6 +97,20 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   containers on switch.je. Two rects sharing one box cancel out, because each contains
   the other — M&S wraps its `<nav>` in a `<div>` of identical size and neither is
   protected.
+- **The rule that draws a boundary is what hid it.** A divider under a header is one row
+  of content, so it splits the whitespace into two gutters and stands between them along
+  with the edge everyone can see: hsbc.co.uk's `<nav>` ends at y=118 with gutters at
+  98–117 and 121–139, and the header, nav and hero came back as one 767px block.
+  natwest.com is the same a pixel tighter, and kohde.agency stacks two full-bleed
+  1440×900 videos whose seam is a colour step rather than a border. So a cut may reach up
+  to `MODULE_BRIDGE` (2px) outside its gutter — but only to a **seam**, where one
+  protected module ends, the next begins, and the gutter is the whitespace of one of
+  them. Both halves are load-bearing: reaching for any module edge near any gutter turned
+  the page margins beside jonleverrier's header into blocks (12 leaves to 17), and
+  dropping the "two modules meet" half took two more strips off the retail fixture. Nine
+  pages segment identically at 1, 2, 3, 4 and 6px, so nothing is balanced on the number.
+  **Only a seam BELOW or ABOVE a gutter is reached, never a lone outer edge** — a module
+  edge with nothing on the other side of it is a page margin.
 - **The stitch is a second place a cut is decided.** `segmentTall` rebuilds a tall page
   from full-width bands, so a cut that was legal inside one column becomes a line across
   the whole page. EVERY protection rule is applied to the harvested line as well as inside

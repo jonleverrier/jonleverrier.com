@@ -179,6 +179,50 @@ export function edgeCandidates(rects, horizontal) {
 }
 
 /**
+ * How far outside a gutter a MODULE BOUNDARY may sit and still be reachable, in pixels.
+ *
+ * THE VISUAL LINE THAT MAKES A HEADER READ AS A SEPARATE BLOCK IS WHAT STOPPED IT BEING
+ * CUT AS ONE. A divider rule under a header is content — one row of it, at a density no
+ * threshold will call quiet — so it splits the whitespace around it into two gutters and
+ * sits between them along with the boundary everyone can see. On hsbc.co.uk the `<nav>`
+ * ends at y=118, the gutters are 98-117 and 121-139, and 118 is in neither of them:
+ *
+ *   y=116  0.0000  quiet
+ *   y=117  0.4139  the divider rule
+ *   y=118  0.0000  the header's true bottom edge
+ *   y=119  0.5833  the hero starting
+ *
+ * natwest.com is the same shape one pixel tighter: gutter 100-110, rule at 110, the
+ * header's bottom edge at 111. Both headers came out merged into the hero. kohde.agency
+ * stacks two full-bleed 1440x900 videos and is the same defect again with no border at
+ * all — row 899 is the colour step from the dark hero to the light panel, and the seam
+ * at y=900 is the only cut that band legally has.
+ *
+ * WHAT MAY BE BRIDGED TO IS A SEAM: one module ends there, the next begins there, and
+ * this gutter is the whitespace of one of the two. Both halves were measured into
+ * existence. Reaching for any module edge near any gutter moved both fixtures at once
+ * (jonleverrier 12 leaves to 17, retail 23 to 33), because a page margin sits one pixel
+ * from the header's side edges and every margin became a cuttable sliver; requiring only
+ * that the gutter be inside the module still took two strips off retail, at edges where
+ * nothing else begins. A seam is the one shape where the pixels, the DOM and the eye all
+ * agree there is a boundary.
+ *
+ * THE TOLERANCE IS MEASURED AND THE MEASUREMENT IS FLAT. Every instance found is exactly
+ * 1px — the seam is the row after the gutter's last, with one rule or one colour step in
+ * between — and nine pages (both fixtures, hsbc, natwest, kohde, switch.je, boondmanager,
+ * klark, clearleft, lloydsbank) segment IDENTICALLY at 1, 2, 3, 4 and 6. So the evidence
+ * does not choose within that range and no page is balanced on it. 2 is taken because a
+ * 2px rule is real — retail draws one at y=3443-3444 — and because the further this
+ * reaches the more of an unseen page it can reach into.
+ *
+ * SCOPED DELIBERATELY NARROWLY. Promoting every container edge to a cut line was tried
+ * and reverted: switch.je went from 43 leaves to 116 and jonleverrier from 12 to 56. This
+ * reaches one coordinate per gutter, only where two modules meet, and switch.je is
+ * unchanged at every tolerance above.
+ */
+export const MODULE_BRIDGE = 2;
+
+/**
  * Where to cut inside gutter `g`, returned in `g`'s own index space (offsets from the
  * region's origin, which is what `segment` builds children from).
  *
@@ -187,14 +231,49 @@ export function edgeCandidates(rects, horizontal) {
  * NEAREST THE MIDPOINT, not the first in the run: nearest-to-midpoint is unbiased,
  * deterministic, and by construction cannot leave the gutter. With no candidate in
  * range the midpoint stands.
+ *
+ * BRIDGING IS OFF UNLESS THE CALLER SUPPLIES BOTH `opts.extent` AND `opts.spans`, and
+ * each is a different half of the safety:
+ *
+ *   - `extent` is the region's size on this axis. A bridged cut is the one kind that
+ *     lands outside the gutter, so it is the one kind that could reach the region's own
+ *     frame and hand `segment` a child of zero height.
+ *   - `spans` maps a coordinate to the modules it is an edge of, as [start, end] pairs
+ *     on this axis (see edgeSpans), and is what enforces the rule above MODULE_BRIDGE.
+ *
+ * A caller that supplies neither gets exactly the behaviour this had before bridging.
  */
-export function snapToEdge(g, candidates, origin, preferred = null) {
+export function snapToEdge(g, candidates, origin, preferred = null, opts = {}) {
     const mid = (g.start + g.end) >> 1;
-    if (!candidates || candidates.length === 0) return mid;
+    const {bridge = MODULE_BRIDGE, extent = null, spans = null} = opts;
+    const bridging = extent !== null && spans !== null && bridge > 0;
+    // NOT "no candidates, so the midpoint": the bridged population is a different list,
+    // and a page whose only protected modules are taller than CONTENT_RECT allows has no
+    // ordinary candidates at all. Two stacked full-bleed videos are exactly that page.
+    if ((!candidates || candidates.length === 0) && !bridging) return mid;
 
     const lo = origin + g.start;
     const hi = origin + g.end;
     const absMid = origin + mid;
+
+    /**
+     * May a cut bridge out of this gutter to land on `c`?
+     *
+     * ONE MODULE ENDS THERE, THE NEXT BEGINS THERE, AND THIS GUTTER IS THE WHITESPACE OF
+     * ONE OF THEM — the rule stated above MODULE_BRIDGE, and each half of it is carrying
+     * a page. Without "the gutter belongs to one of them", a module's padding reaches
+     * out past its own edge and the page margin beside it becomes a block: that moved
+     * jonleverrier from 12 leaves to 17. Without "two modules meet here", a lone edge
+     * across a rule becomes a cut, which took two more strips off the retail fixture.
+     * Together they describe one thing only: the seam between two stacked modules, with
+     * the rule that draws it in the way.
+     */
+    const isASeam = (c) => {
+        const here = spans.get(c) ?? [];
+        const ours = here.some(([s, e]) => (s === c || e === c) && s <= lo && hi <= e);
+
+        return ours && here.some(([, e]) => e === c) && here.some(([s]) => s === c);
+    };
 
     // A MODULE'S OWN BOUNDARY BEATS A NEARER ELEMENT EDGE. Both are real edges, but one
     // of them ends a module and the other merely ends some element inside the next one,
@@ -202,14 +281,13 @@ export function snapToEdge(g, candidates, origin, preferred = null) {
     // the block. On jonleverrier the gutter below the header runs 115-307: its midpoint
     // is 211, the header's bottom edge is at 116 and the headline's top at 288, so
     // nearest-to-midpoint chose 288 by 18px and handed the header 170px of empty olive.
-    //
-    // Only ever picks between candidates ALREADY INSIDE this gutter, so no cut moves
-    // outside the whitespace the pixels chose and the partition is untouched.
     let best = null;
     let bestDistance = Infinity;
     let bestPreferred = null;
     let bestPreferredDistance = Infinity;
-    for (const c of candidates) {
+    // AN ORDINARY ELEMENT EDGE IS ONLY EVER TAKEN FROM INSIDE THIS GUTTER, so no such cut
+    // moves outside the whitespace the pixels chose.
+    for (const c of candidates ?? []) {
         if (c < lo) continue;
         if (c > hi) break;
         const d = Math.abs(c - absMid);
@@ -220,6 +298,27 @@ export function snapToEdge(g, candidates, origin, preferred = null) {
         if (preferred !== null && preferred.has(c) && d < bestPreferredDistance) {
             bestPreferredDistance = d;
             bestPreferred = c;
+        }
+    }
+    // A SEAM JUST OUTSIDE THE GUTTER IS ITS OWN CANDIDATE POPULATION, taken from the
+    // protected modules themselves rather than from `candidates`, because the edge that
+    // matters is regularly not in `candidates` at all: kohde.agency stacks two 1440x900
+    // videos, and CONTENT_RECT excludes anything 700px or taller, so the seam at y=900 —
+    // the only cut that band legally has — was never offered. The sort keeps the choice
+    // independent of the order rects.json happened to list its elements in.
+    if (bridging) {
+        for (const c of [...spans.keys()].sort((p, q) => p - q)) {
+            if (c < lo - bridge || c > hi + bridge) continue;
+            if (c >= lo && c <= hi) continue;
+            // The region's own frame is no longer out of reach, and a cut there would
+            // hand `segment` a child of zero height.
+            if (c - origin <= 0 || c - origin >= extent) continue;
+            if (!isASeam(c)) continue;
+            const d = Math.abs(c - absMid);
+            if (d < bestPreferredDistance) {
+                bestPreferredDistance = d;
+                bestPreferred = c;
+            }
         }
     }
     const chosen = bestPreferred !== null ? bestPreferred : best;
@@ -437,6 +536,33 @@ export function protectedRects(rects, width, pageHeight) {
 }
 
 /**
+ * Each protected element's two edges on one axis, mapped to the [start, end] span the
+ * edge belongs to. One coordinate can bound several modules, so the value is a list.
+ *
+ * A bare set of edge coordinates cannot answer the question bridging has to ask — is
+ * this gutter INSIDE the module I am reaching for, or merely beside it — because the
+ * coordinate on its own has lost the module it came from. See MODULE_BRIDGE.
+ */
+export function edgeSpans(keepWhole, horizontal) {
+    const spans = new Map();
+    const add = (at, span) => {
+        const held = spans.get(at);
+        if (held) {
+            held.push(span);
+        } else {
+            spans.set(at, [span]);
+        }
+    };
+    for (const m of keepWhole) {
+        const span = horizontal ? [m.y, m.y + m.h] : [m.x, m.x + m.w];
+        add(span[0], span);
+        add(span[1], span);
+    }
+
+    return spans;
+}
+
+/**
  * Would a cut at `at` — an ABSOLUTE coordinate in the segmented image's space, the same
  * space `keepWhole` is in — run through the interior of a protected element?
  *
@@ -461,7 +587,7 @@ export function cutsInsideProtected(keepWhole, rect, at, horizontal) {
     return false;
 }
 
-export const SEGMENT_DEFAULTS = {maxDepth: 4, minAreaFraction: 0.02, minSide: 120};
+export const SEGMENT_DEFAULTS = {maxDepth: 4, minAreaFraction: 0.02, minSide: 120, moduleBridge: MODULE_BRIDGE};
 
 /**
  * Recursive XY-cut. Considers every gutter on both axes, widest first, and splits on
@@ -488,7 +614,7 @@ export const SEGMENT_DEFAULTS = {maxDepth: 4, minAreaFraction: 0.02, minSide: 12
  * partition, depth changes which labels get applied and never the arithmetic.
  */
 export function segment(edges, width, height, opts = {}) {
-    const {maxDepth, minAreaFraction, minSide, rects, pageHeight} = {...SEGMENT_DEFAULTS, ...opts};
+    const {maxDepth, minAreaFraction, minSide, moduleBridge, rects, pageHeight} = {...SEGMENT_DEFAULTS, ...opts};
     const minArea = width * height * minAreaFraction;
     const yCandidates = edgeCandidates(rects, true);
     const xCandidates = edgeCandidates(rects, false);
@@ -503,6 +629,11 @@ export function segment(edges, width, height, opts = {}) {
     // The coordinates a snap should reach for when the gutter offers a choice.
     const moduleEdgeY = new Set(keepWhole.flatMap((m) => [m.y, m.y + m.h]));
     const moduleEdgeX = new Set(keepWhole.flatMap((m) => [m.x, m.x + m.w]));
+    // The same edges, each keeping the module it belongs to, so a snap can ask whether
+    // the gutter it is bridging out of is that module's own whitespace. See
+    // MODULE_BRIDGE: the edge alone is not enough to tell a hairline from a margin.
+    const moduleSpanY = edgeSpans(keepWhole, true);
+    const moduleSpanX = edgeSpans(keepWhole, false);
     const tooSmall = (r) => r.w * r.h < minArea || Math.min(r.w, r.h) < minSide;
 
     const cut = (rect) => {
@@ -530,11 +661,19 @@ export function segment(edges, width, height, opts = {}) {
         });
 
         for (const {g, horizontal} of ranked) {
+            // `extent` is what lets a snap bridge a hairline to a module boundary just
+            // outside this gutter, and it is also what keeps such a cut off the region's
+            // own frame. See MODULE_BRIDGE.
             const at = snapToEdge(
                 g,
                 horizontal ? yCandidates : xCandidates,
                 horizontal ? rect.y : rect.x,
                 horizontal ? moduleEdgeY : moduleEdgeX,
+                {
+                    bridge: moduleBridge,
+                    extent: horizontal ? rect.h : rect.w,
+                    spans: horizontal ? moduleSpanY : moduleSpanX,
+                },
             );
             // REJECT, NEVER RELOCATE. Tested after the snap, because the snap is what
             // decides where the cut actually lands; a gutter straddling a protected
@@ -557,6 +696,14 @@ export function segment(edges, width, height, opts = {}) {
             // logo and primary nav into its headline. A container has already passed the
             // 0.5% area gate, so cutting on its edge cannot produce the slivers minSide
             // was defending against.
+            //
+            // A BRIDGED CUT LANDS ON A MODULE EDGE TOO and is waived by the same rule. It
+            // cannot widen this hole: bridging only reaches the seam between two stacked
+            // modules, so a child ending there is a module rather than a leftover. The
+            // narrower reading — waive only the child that holds the module — was
+            // measured and is not needed: with the seam rule in place both fixtures,
+            // kohde and HSBC are identical either way, and the narrower reading on its own
+            // moved jonleverrier to 11 leaves and retail to 24 with a cut 4px out.
             const absolute = (horizontal ? rect.y : rect.x) + at;
             const onModuleEdge = keepWhole.some((m) => (horizontal
                 ? absolute === m.y || absolute === m.y + m.h
