@@ -41,6 +41,12 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   gutter. It is optional — with only a PNG the cut falls back to the gutter midpoint,
   which is tens of pixels out wherever the whitespace is generous. Phase 2 says which
   it did on stderr; a run that quietly lost its rects looks like a worse segmenter.
+- **A full-bleed `<video>`, `<img>` or `<canvas>` is one module, and rects are the only
+  way to know it.** A photograph or a blurred video has no gutters, only noise, so the
+  pixels alone will happily slice a hero into arbitrary pieces — and phase 3 can then
+  give one module four different labels. With `rects.json`, a cut may not land strictly
+  inside media at least 90% of the page width and 200px tall; its own edges stay valid.
+  Narrower or shorter media is ordinary content and is left alone.
 - **A page can decline to draw its own hero, and nothing will look wrong.** WebGL itself
   works here — headless Chromium renders it through SwiftShader, verified, and
   pola.co.jp draws a full WebGL scene in 1089 calls with no GPU at all. But a site with a

@@ -15,8 +15,11 @@
  * A gutter says a boundary is somewhere in this run; it does not say where. The
  * boundary is at the EDGE of the whitespace, where an element actually stops, so
  * `opts.rects` (phase 1's DOM rects) snaps each cut onto a real element edge inside
- * the run. Rects are OPTIONAL throughout — without them every cut falls back to the
- * gutter midpoint and the pure-pixel path still works.
+ * the run. The same rects also say where NOT to cut: a full-bleed `<video>`, `<img>` or
+ * `<canvas>` is one visual module whose interior is only noise, so a cut may not land
+ * strictly inside one (see FULL_BLEED and cutsThroughMedia). Rects are OPTIONAL
+ * throughout — without them every cut falls back to the gutter midpoint, nothing is
+ * protected, and the pure-pixel path still works exactly as it did.
  *
  * `segment` is the reason this file exists: the block tree it produces is a TRUE
  * PARTITION at every level. See segment's own doc comment for why that is the
@@ -213,6 +216,60 @@ export function snapToEdge(g, candidates, origin) {
     return best === null ? mid : best - origin;
 }
 
+/**
+ * A full-bleed media element is ONE visual module and must not be cut open.
+ *
+ * A photograph or a blurred video has no gutters, only noise: rows and columns whose
+ * density happens to dip. On the retail fixture a 1440x698 hero `<video>` was sliced
+ * into four leaves at y=201, 335, 472 and 771, and two of those boundaries were the
+ * page's worst cut-accuracy outliers (134px and 271px from the nearest real element
+ * edge). Nothing on the page is there.
+ *
+ * It matters past tidiness: one module arriving as four blocks can collect four
+ * different labels from the vision model downstream, so the same hero would be counted
+ * as brand AND navigation AND content in one report.
+ *
+ * The gates are deliberately narrow. NARROWER OR SHORTER MEDIA IS ORDINARY CONTENT: a
+ * 400px product photo sits inside a grid that must still be cuttable, and a full-width
+ * 120px banner is a strip, not a module. Only something spanning nearly the whole width
+ * AND tall enough to be a section earns the protection.
+ */
+export const MEDIA_TAGS = new Set(['video', 'img', 'canvas', 'picture', 'svg']);
+export const FULL_BLEED = {widthFraction: 0.9, minH: 200};
+
+/** The rects a cut may not pass through. Empty without rects — they are never required. */
+export function fullBleedMedia(rects, width, opts = FULL_BLEED) {
+    if (!rects || rects.length === 0) return [];
+    const {widthFraction, minH} = {...FULL_BLEED, ...opts};
+
+    return rects.filter((r) => MEDIA_TAGS.has(r.tag) && r.w >= widthFraction * width && r.h >= minH);
+}
+
+/**
+ * Would a cut at `at` — an ABSOLUTE coordinate in the segmented image's space, the same
+ * space `media` is in — run through the interior of a protected element?
+ *
+ * The element's OWN EDGES ARE FINE, and are in fact exactly where we want the cut: the
+ * test is strict inequality on both sides. Only the interior is protected.
+ *
+ * The cut is a line segment across `rect`, not a point, so the other axis matters too: a
+ * horizontal cut only touches the media if the region it crosses actually overlaps the
+ * media's columns. Touching at a single edge is not overlapping, hence `<` on the span.
+ */
+export function cutsThroughMedia(media, rect, at, horizontal) {
+    for (const m of media) {
+        if (horizontal) {
+            if (at <= m.y || at >= m.y + m.h) continue;
+            if (Math.max(rect.x, m.x) < Math.min(rect.x + rect.w, m.x + m.w)) return true;
+        } else {
+            if (at <= m.x || at >= m.x + m.w) continue;
+            if (Math.max(rect.y, m.y) < Math.min(rect.y + rect.h, m.y + m.h)) return true;
+        }
+    }
+
+    return false;
+}
+
 export const SEGMENT_DEFAULTS = {maxDepth: 4, minAreaFraction: 0.02, minSide: 120};
 
 /**
@@ -244,6 +301,7 @@ export function segment(edges, width, height, opts = {}) {
     const minArea = width * height * minAreaFraction;
     const yCandidates = edgeCandidates(rects, true);
     const xCandidates = edgeCandidates(rects, false);
+    const media = fullBleedMedia(rects, width);
     const tooSmall = (r) => r.w * r.h < minArea || Math.min(r.w, r.h) < minSide;
 
     const cut = (rect) => {
@@ -272,6 +330,13 @@ export function segment(edges, width, height, opts = {}) {
 
         for (const {g, horizontal} of ranked) {
             const at = snapToEdge(g, horizontal ? yCandidates : xCandidates, horizontal ? rect.y : rect.x);
+            // REJECT, NEVER RELOCATE. Tested after the snap, because the snap is what
+            // decides where the cut actually lands; a gutter straddling the media's own
+            // edge is kept precisely when the snap put the cut on that edge. Rejection
+            // only shortens `ranked`, so no cut ever moves and the partition is
+            // untouched. If every candidate goes, the region is a leaf — which is the
+            // right answer for a region that is entirely hero.
+            if (cutsThroughMedia(media, rect, (horizontal ? rect.y : rect.x) + at, horizontal)) continue;
             const a = horizontal
                 ? {x: rect.x, y: rect.y, w: rect.w, h: at, depth: rect.depth + 1, children: []}
                 : {x: rect.x, y: rect.y, w: at, h: rect.h, depth: rect.depth + 1, children: []};

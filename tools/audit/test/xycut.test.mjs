@@ -331,3 +331,173 @@ test('a genuinely busy band is still not a gutter', () => {
     ]);
     assert.deepEqual(findGutters(d, {minRun: 8}), []);
 });
+
+// ---------------------------------------------------------------------------
+// Task 9: a full-bleed media element is ONE module.
+//
+// A blurred video or a photograph has no gutters, only noise — rows whose density
+// happens to dip. The segmenter used to slice retail.png's 1440x698 hero <video> into
+// four leaves at y=201, 335, 472 and 771, and two of those were the page's worst
+// cut-accuracy outliers (134px and 271px from the nearest real element edge). Beyond
+// tidiness: one module arriving as four blocks can collect four different labels from
+// the vision model downstream.
+//
+// The ruling: a cut may NOT land strictly inside such an element. Its own edges stay
+// valid — those are exactly where the cut belongs. Only candidates are removed, never
+// moved, so the partition is untouched.
+// ---------------------------------------------------------------------------
+
+test('a cut cannot land strictly inside a full-bleed media element', () => {
+    // Rows 150..249 are the only quiet run, so the gutter is {start: 150, end: 250} and
+    // the cut would land on its midpoint, 200. A 200x250 <video> spans 100..350, so 200
+    // is deep inside the picture and means nothing.
+    const width = 200, height = 400;
+    const edges = denseExcept(width, height, [[150, 250]]);
+    const opts = {maxDepth: 1, minSide: 20, minAreaFraction: 0.001};
+    const rects = [{x: 0, y: 100, w: 200, h: 250, tag: 'video', text: ''}];
+
+    // FIRST prove the map contains the structure under test: without the video rect the
+    // pixels really do cut here. A synthetic map that never had a gutter would make the
+    // assertion below pass against any implementation at all.
+    assert.deepEqual(interiorCuts(segment(edges, width, height, opts), height), [200]);
+
+    const root = segment(edges, width, height, {...opts, rects});
+    assert.deepEqual(interiorCuts(root, height), [], 'a region that is all hero has nothing to cut');
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test("a full-bleed element's own edge is still a valid cut", () => {
+    // The gutter 330..370 straddles the <video>'s bottom edge at 350, which is where a
+    // boundary genuinely is. Rejecting the whole gutter because it overlaps the video
+    // would throw away the one cut worth making.
+    const width = 200, height = 500;
+    const edges = denseExcept(width, height, [[330, 370]]);
+    const rects = [{x: 0, y: 100, w: 200, h: 250, tag: 'video', text: ''}];
+    const root = segment(edges, width, height, {maxDepth: 1, minSide: 20, minAreaFraction: 0.001, rects});
+
+    assert.deepEqual(interiorCuts(root, height), [350], 'the media boundary is exactly where we want the cut');
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('a narrow media element is ordinary content and does not protect a gutter', () => {
+    // A 400x300 <img> on a 500px-wide page: tall enough, but 400 is under 90% of the
+    // width. It is a product photo inside a grid, and that grid must still be cuttable.
+    const width = 500, height = 400;
+    const edges = denseExcept(width, height, [[150, 250]]);
+    const rects = [{x: 50, y: 50, w: 400, h: 300, tag: 'img', text: ''}];
+    const root = segment(edges, width, height, {maxDepth: 1, minSide: 20, minAreaFraction: 0.001, rects});
+
+    assert.deepEqual(interiorCuts(root, height), [200], 'ordinary content must still be cuttable');
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('a short full-width media element is a strip, not a module, and does not protect a gutter', () => {
+    // Full width, but 180px tall — a banner. Its edges sit outside the gutter, so the
+    // cut is the midpoint 200, strictly inside the image, and must still happen.
+    const width = 500, height = 400;
+    const edges = denseExcept(width, height, [[150, 250]]);
+    const rects = [{x: 0, y: 120, w: 500, h: 180, tag: 'img', text: ''}];
+    const root = segment(edges, width, height, {maxDepth: 1, minSide: 20, minAreaFraction: 0.001, rects});
+
+    assert.deepEqual(interiorCuts(root, height), [200]);
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('with no rects nothing is protected and the tree is exactly what it was', async () => {
+    // Rects are an improvement, never a requirement: a caller may have nothing but a
+    // PNG. Same map as the protection test, no rects -> the cut still lands at 200.
+    const width = 200, height = 400;
+    const edges = denseExcept(width, height, [[150, 250]]);
+    const opts = {maxDepth: 1, minSide: 20, minAreaFraction: 0.001};
+    const bare = JSON.stringify(segment(edges, width, height, opts));
+
+    assert.deepEqual(interiorCuts(JSON.parse(bare), height), [200]);
+    assert.equal(JSON.stringify(segment(edges, width, height, {...opts, rects: undefined})), bare);
+    assert.equal(JSON.stringify(segment(edges, width, height, {...opts, rects: []})), bare);
+
+    // And on the real fixture: the pixel-only path still cuts straight through the hero,
+    // because without the DOM there is nothing to tell it the hero is one element. 40
+    // leaves is what this fixture produced before full-bleed protection existed.
+    const {edges: e, width: w, height: h} = await edgeMapFromPng('tools/audit/fixtures/retail.png');
+    const ls = leaves(segmentTall(e, w, h, {maxDepth: 4}));
+    assert.equal(ls.length, 40, 'the pixel-only tree must be unchanged');
+    assert.ok(
+        ls.some((l) => l.y > 153 && l.y + l.h < 851),
+        'without rects the hero is not protected — that is the documented behaviour',
+    );
+});
+
+test('full-bleed rects reach a TILE in the right coordinate space', () => {
+    // THE OFFSET FAILS SILENTLY. A media rect left in page coordinates while the tile is
+    // segmented in its own still yields a valid partition — it just protects the wrong
+    // stripe of the page. The only gutter (1000..1100, midpoint 1050) sits inside a
+    // <video> spanning 960..1180, and the tile at top=750 is the one that sees it: get
+    // the shift wrong and the video lands at tile-space 960..1180 (page 1710..1930),
+    // nowhere near the cut, which then happens.
+    const width = 200, height = 3000;
+    const edges = denseExcept(width, height, [[1000, 1100]]);
+    const rects = [{x: 0, y: 960, w: 200, h: 220, tag: 'video', text: ''}];
+    const opts = {maxDepth: 1, minSide: 20, minAreaFraction: 0.001};
+
+    assert.deepEqual(interiorCuts(segmentTall(edges, width, height, opts), height), [1050], 'the gutter is real');
+
+    const root = segmentTall(edges, width, height, {...opts, rects});
+    assert.deepEqual(interiorCuts(root, height), []);
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('full-bleed rects reach a BAND in the right coordinate space', () => {
+    // Gutter A (1000..1100) is wide, unprotected, and splits the page at 1050. Gutter B
+    // (1500..1540, midpoint 1520) is narrower, so no tile reaches it at maxDepth 1; it is
+    // found later by the BAND starting at y=1050, in band space, where the <video>
+    // spanning page 1400..1650 must appear at 350..600. Leave the band's rects unshifted
+    // and the video lands at page 2450..2700 and B is cut.
+    const width = 200, height = 3000;
+    const edges = denseExcept(width, height, [[1000, 1100], [1500, 1540]]);
+    const rects = [{x: 0, y: 1400, w: 200, h: 250, tag: 'video', text: ''}];
+    const opts = {maxDepth: 1, minSide: 20, minAreaFraction: 0.001};
+
+    assert.deepEqual(interiorCuts(segmentTall(edges, width, height, opts), height), [1050, 1520], 'both gutters are real');
+
+    const root = segmentTall(edges, width, height, {...opts, rects});
+    assert.deepEqual(interiorCuts(root, height), [1050], 'A survives, B is inside the video');
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('tools/audit/fixtures/retail.png: the full-bleed hero video comes out as one block', async () => {
+    const {edges, width, height} = await edgeMapFromPng('tools/audit/fixtures/retail.png');
+    const rects = JSON.parse(readFileSync('tools/audit/fixtures/retail.rects.json', 'utf8'));
+    const hero = rects.find((r) => r.tag === 'video' && r.w >= 0.9 * width && r.h >= 200);
+    // The fixture is the evidence; assert it still holds the thing this test is about.
+    assert.deepEqual(
+        hero && {x: hero.x, y: hero.y, w: hero.w, h: hero.h},
+        {x: 0, y: 153, w: 1440, h: 698},
+        'retail.rects.json must still contain the 1440x698 hero video',
+    );
+
+    const ls = leaves(segmentTall(edges, width, height, {maxDepth: 4, rects}));
+    const contains = (o, i) => i.x >= o.x && i.y >= o.y && i.x + i.w <= o.x + o.w && i.y + i.h <= o.y + o.h;
+    const sameBox = (a, b) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+    const intersects = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+    // The headline: four leaves used to sit entirely inside the video. None may.
+    assert.deepEqual(
+        ls.filter((l) => contains(hero, l) && !sameBox(l, hero)).map((l) => `${l.x},${l.y} ${l.w}x${l.h}`),
+        [],
+        'no leaf may sit strictly inside the hero video',
+    );
+    // …and the hero is ONE block, not several that merely avoid being strictly inside.
+    const touching = ls.filter((l) => intersects(l, hero));
+    assert.equal(touching.length, 1, `the hero should be covered by one block, got ${touching.length}`);
+    assert.ok(contains(touching[0], hero), 'that block must contain the whole hero');
+
+    // The rest of the page is untouched: 23 leaves lie entirely below the hero, before
+    // and after. The protection removes cut candidates; it does not reshape the page.
+    assert.equal(ls.filter((l) => l.y >= hero.y + hero.h).length, 23);
+});
