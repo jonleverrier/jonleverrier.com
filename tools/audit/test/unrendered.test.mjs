@@ -14,7 +14,9 @@
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {contentBottom, heightGap, unrenderedWarning, GAP_MIN_PX} from '../lib/unrendered.mjs';
+import {
+    contentBottom, heightGap, unrenderedWarning, shotTruncationWarning, GAP_MIN_PX,
+} from '../lib/unrendered.mjs';
 
 const rect = (y, h, tag = 'div') => ({x: 0, y, w: 1440, h, tag, text: ''});
 
@@ -90,5 +92,36 @@ test('contentBottom handles an empty or missing rect list', () => {
 test('a missing heightGap never throws', () => {
     for (const meta of [undefined, null, {}, {heightGap: null}]) {
         assert.equal(unrenderedWarning(meta), null);
+    }
+});
+
+// The page height and the image height were never compared, so a screenshot that stopped
+// early was undetectable once the browser had closed — and phase 2 divides by the image,
+// so every percentage would have been of a prefix of the page with nothing saying so.
+test('a screenshot shorter than the page is flagged, with both numbers', () => {
+    const w = shotTruncationWarning({fullHeight: 20000, image: {width: 1440, height: 16384}});
+    assert.match(w, /16384/);
+    assert.match(w, /20000/);
+    assert.match(w, /3616px was never captured/);
+});
+
+test('an image that matches the page is not flagged', () => {
+    assert.equal(shotTruncationWarning({fullHeight: 4831, image: {width: 1440, height: 4831}}), null);
+});
+
+// scrollHeight is an integer rounding of a fractional layout height, so one pixel either
+// way is arithmetic, not truncation.
+test('a one-pixel shortfall is rounding, not truncation', () => {
+    assert.equal(shotTruncationWarning({fullHeight: 4831, image: {width: 1440, height: 4830}}), null);
+    assert.ok(shotTruncationWarning({fullHeight: 4831, image: {width: 1440, height: 4829}}));
+});
+
+test('an image taller than the page is not a truncation', () => {
+    assert.equal(shotTruncationWarning({fullHeight: 96, image: {width: 1440, height: 900}}), null);
+});
+
+test('a meta with no image or no height never throws', () => {
+    for (const meta of [undefined, null, {}, {fullHeight: 0, image: {height: 0}}, {fullHeight: 900}, {image: {height: 900}}]) {
+        assert.equal(shotTruncationWarning(meta), null);
     }
 });

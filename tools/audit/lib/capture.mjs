@@ -33,6 +33,42 @@ import {COLLECT_FIXED, heightGap} from './unrendered.mjs';
 
 export const VIEWPORT = {width: 1440, height: 900};
 
+/**
+ * How tall the page is, measured the way the screenshot measures it. Runs IN the page.
+ *
+ * `document.body.scrollHeight` is NOT the page height and was used here for all three of
+ * "how far is there left to scroll", "how tall is the page" and the denominator of the
+ * unmeasured-region check. On example.com it says 96 while the full-page screenshot is
+ * 900 tall; on the standard app-shell homepage — `html, body { height: 100% }` with an
+ * inner scrolling div — it says one viewport whatever the content, so the scroll loop
+ * concluded it was already at the bottom on its first pass and no lazy content ever
+ * loaded. No warning, exit 0: the silent kind of wrong.
+ *
+ * The larger of the two is what Chromium's fullPage screenshot uses, so this is the
+ * number the image phase 2 divides by actually has.
+ */
+export const PAGE_HEIGHT = () => Math.max(
+    document.documentElement ? document.documentElement.scrollHeight : 0,
+    document.body ? document.body.scrollHeight : 0,
+);
+
+/**
+ * A PNG's own pixel dimensions, straight out of its IHDR header.
+ *
+ * Read so that meta can carry the image's height beside the page's. They should agree;
+ * when they do not, the screenshot was truncated (Chromium has a limit, and a page can
+ * grow between the measure and the shot) and every percentage phase 2 produces is of a
+ * prefix of the page. That was previously undetectable after the browser had closed.
+ */
+export function pngSize(buffer) {
+    // 8-byte signature, then the IHDR chunk: 4-byte length, the type, width, height.
+    if (buffer.length < 24 || buffer.readUInt32BE(12) !== 0x49484452) {
+        throw new Error('not a PNG: no IHDR where one must be');
+    }
+
+    return {width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20)};
+}
+
 /** Collect rects for every visible element. Runs IN the page. */
 const COLLECT_RECTS = () => {
     const out = [];
@@ -116,9 +152,10 @@ export async function capturePage(url, outDir, opts = {}) {
         let scrolls = 0;
         let previousHeight = -1;
         for (; scrolls < maxScrolls; scrolls++) {
-            const height = await page.evaluate(() => document.body.scrollHeight);
+            const height = await page.evaluate(PAGE_HEIGHT);
             const atBottom = await page.evaluate(
-                () => window.scrollY + window.innerHeight >= document.body.scrollHeight - 2,
+                (h) => window.scrollY + window.innerHeight >= h - 2,
+                height,
             );
             if (atBottom && height === previousHeight) break;
             previousHeight = height;
@@ -135,19 +172,27 @@ export async function capturePage(url, outDir, opts = {}) {
         await page.waitForTimeout(400);
 
         await page.screenshot({path: join(outDir, 'viewport.png')});
-        await page.screenshot({path: join(outDir, 'fullpage.png'), fullPage: true});
+        const shot = await page.screenshot({path: join(outDir, 'fullpage.png'), fullPage: true});
 
         const rects = await page.evaluate(COLLECT_RECTS);
-        const fullHeight = await page.evaluate(() => document.body.scrollHeight);
+        const fullHeight = await page.evaluate(PAGE_HEIGHT);
+        const image = pngSize(shot);
         const webgl = await probeWebgl(page);
 
         const meta = {
             url,
+            // THE PAGE WE ACTUALLY MEASURED, which is not always the one we asked for: a
+            // site can redirect, and a click during consent dismissal used to be able to
+            // walk the capture onto another page entirely with nothing recording it.
+            // Kept separate from `url` so the two can be compared rather than conflated.
+            capturedUrl: page.url(),
             capturedAt: new Date().toISOString(),
             viewport: VIEWPORT,
             fullHeight,
+            image,
             consentDismissed: consent.dismissed,
             consentVia: consent.via,
+            consentNavigatedAway: consent.navigatedAway === true,
             scrollCapHit,
             webgl,
             fixed,

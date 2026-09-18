@@ -10,7 +10,13 @@
  */
 import {capturePage} from './lib/capture.mjs';
 import {webglWarning} from './lib/webgl.mjs';
-import {unrenderedWarning} from './lib/unrendered.mjs';
+import {shotTruncationWarning, unrenderedWarning} from './lib/unrendered.mjs';
+
+/** The page we ended on is not the page we asked for. Never a footnote. */
+const wrongPageWarning = (meta) => (meta.capturedUrl && meta.capturedUrl !== meta.url
+    ? `the capture ended on ${meta.capturedUrl}, not ${meta.url}. Every artefact in this`
+        + ' directory is of that page, so any percentage from it belongs to that page too'
+    : null);
 
 const url = process.argv[2];
 const outDir = process.argv[3] || '/tmp/audit';
@@ -23,8 +29,10 @@ process.stderr.write(`capturing ${url}\n`);
 try {
     const meta = await capturePage(url, outDir);
     console.log(`url          ${meta.url}`);
+    console.log(`captured     ${meta.capturedUrl}${meta.capturedUrl === meta.url ? '' : '   <-- NOT THE URL REQUESTED'}`);
     console.log(`full height  ${meta.fullHeight}px`);
-    console.log(`consent      ${meta.consentDismissed ? `dismissed via ${meta.consentVia}` : 'not dismissed (counts as surface area)'}`);
+    console.log(`image        ${meta.image.width}x${meta.image.height}`);
+    console.log(`consent      ${meta.consentDismissed ? `dismissed via ${meta.consentVia}` : 'not dismissed (counts as surface area)'}${meta.consentNavigatedAway ? ' — a consent click navigated away and was undone' : ''}`);
     console.log(`scroll cap   ${meta.scrollCapHit ? 'HIT — page may be infinite-scroll' : 'not hit'}`);
     console.log(`webgl        ${meta.webgl.renderer || 'none'}${meta.webgl.software === true ? ' (software)' : ''}`);
     console.log(`webgl asked  ${meta.webgl.requested.length ? meta.webgl.requested.join(", ") : "no"}`);
@@ -34,7 +42,12 @@ try {
 
     // Loud, and on stderr, because the capture SUCCEEDED — the page is simply missing a
     // region, and nothing else about this run looks wrong.
-    for (const warning of [webglWarning(meta.webgl), unrenderedWarning(meta)]) {
+    for (const warning of [
+        wrongPageWarning(meta),
+        shotTruncationWarning(meta),
+        webglWarning(meta.webgl),
+        unrenderedWarning(meta),
+    ]) {
         if (warning) {
             process.stderr.write(`\nWARNING: ${warning}\n`);
         }

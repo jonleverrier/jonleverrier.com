@@ -31,6 +31,9 @@
  * The limitation worth knowing: a page with a genuine run of empty space at its foot —
  * a deliberate one — trips this too. It is a flag for a human, not a verdict, and it
  * says "unmeasured", never "wrong".
+ *
+ * A second, cheaper check lives here for the same reason: the screenshot's own height
+ * against the page's. See shotTruncationWarning.
  */
 
 /** Ignore slivers: a gap this small is a rounding artefact, not a missing region. */
@@ -103,6 +106,40 @@ export function heightGap(fullHeight, rects, fixed = []) {
         significant,
         likelyCause: suspects.length ? suspects[0] : null,
     };
+}
+
+/**
+ * The page height and the screenshot's height disagree by more than rounding.
+ *
+ * `scrollHeight` is an integer rounding of a fractional layout height, so the shot may
+ * legitimately be a pixel short; more than that means the screenshot stopped early —
+ * Chromium has a limit, and a page can also grow between the measure and the shot.
+ */
+export const SHOT_SLACK_PX = 1;
+
+/**
+ * One line for a human when the image is not the whole page, or null.
+ *
+ * This matters because PHASE 2 MEASURES THE IMAGE. Every percentage it produces is over
+ * the PNG's area, so a truncated screenshot yields confident percentages of a prefix of
+ * the page with nothing declaring it — and once the browser has closed there is no way
+ * to notice. Comparing the two numbers is the whole check.
+ */
+export function shotTruncationWarning(meta) {
+    const pageHeight = meta?.fullHeight;
+    const imageHeight = meta?.image?.height;
+    if (!(pageHeight > 0) || !(imageHeight > 0)) {
+        return null;
+    }
+    if (imageHeight + SHOT_SLACK_PX >= pageHeight) {
+        return null;
+    }
+
+    const missing = pageHeight - imageHeight;
+
+    return `the screenshot is ${imageHeight}px tall but the page measures ${pageHeight}px, so `
+        + `${missing}px was never captured. Percentages from this run are of the top `
+        + `${imageHeight}px only, not of the page`;
 }
 
 /** One line for a human, or null when there is nothing worth saying. */
