@@ -85,7 +85,22 @@ export function runNotes(meta, reason = 'missing') {
         return {metaRead: false, conditions};
     }
 
-    // WHICH PAGE THIS IS A MEASUREMENT OF comes first: a percentage attributed to the
+    // WHETHER THIS IS A PAGE AT ALL comes before which page it is. webreality.co.uk
+    // answers a headless browser with a CloudFront 403, and the capture recorded that as
+    // an ordinary success: two blocks, area conserved, exit 0. Percentages of an error
+    // page are not a weaker measurement, they are a measurement of something else.
+    if (typeof meta.httpStatus === 'number' && (meta.httpStatus < 200 || meta.httpStatus >= 300)) {
+        add(
+            'httpError',
+            'attribution',
+            `the server answered ${meta.httpStatus}, so this is an error page rather than the site — `
+                + 'a CDN or firewall blocking the crawler looks exactly like this. Nothing measured here '
+                + 'describes the page that was asked for',
+            {status: meta.httpStatus},
+        );
+    }
+
+    // WHICH PAGE THIS IS A MEASUREMENT OF comes next: a percentage attributed to the
     // wrong domain is wrong in a way no other note here can make up for.
     if (meta.capturedUrl && meta.url && !sameUrl(meta.capturedUrl, meta.url)) {
         add(

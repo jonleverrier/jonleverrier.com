@@ -139,6 +139,15 @@ try {
     }
     const notes = runNotes(meta, metaReason);
 
+    // AN ERROR PAGE IS NOT A WEAKER MEASUREMENT, IT IS A MEASUREMENT OF SOMETHING ELSE.
+    // Every other condition here describes a page we can still honestly report on, with
+    // a region declared unmeasured. This one says the bytes belong to a CDN's block page,
+    // so there is no percentage worth writing and no debug image worth opening. Refusing
+    // is the only honest answer, and it happens before anything is written.
+    if ('httpError' in notes.conditions) {
+        throw new Error(notes.conditions.httpError.message);
+    }
+
     // Only now, with a tree that passed. debug.png first: if rendering throws there is
     // then no blocks.json beside it claiming the run succeeded.
     //

@@ -143,7 +143,17 @@ export async function capturePage(url, outDir, opts = {}) {
         // Before the page's own scripts, so a hero that asks for a context on first
         // evaluation is still recorded.
         await page.addInitScript(WEBGL_PROBE_INIT);
-        await page.goto(url, {waitUntil: 'load', timeout: 45000});
+        // THE STATUS WAS THROWN AWAY, and a blocked request looks exactly like a page.
+        // webreality.co.uk answers a headless browser with a CloudFront 403: the capture
+        // succeeded, wrote its artefacts, segmented into two blocks with area conserved
+        // and exited 0. A prospect whose CDN blocks the crawler would have been emailed
+        // confident percentages of an error page, which is the worst shape this tool has
+        // — every other blind spot at least declares itself.
+        //
+        // `goto` returns null for a same-document navigation, where there is no response
+        // to read. That is not a failure and must not be reported as one.
+        const response = await page.goto(url, {waitUntil: 'load', timeout: 45000});
+        const httpStatus = response ? response.status() : null;
         await page.waitForLoadState('networkidle', {timeout: 20000}).catch(() => {});
 
         const consent = await dismissConsent(page);
@@ -190,6 +200,7 @@ export async function capturePage(url, outDir, opts = {}) {
             viewport: VIEWPORT,
             fullHeight,
             image,
+            httpStatus,
             consentDismissed: consent.dismissed,
             consentBannerSeen: consent.bannerSeen === true,
             consentVia: consent.via,

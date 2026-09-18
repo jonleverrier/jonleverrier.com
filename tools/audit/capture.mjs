@@ -42,6 +42,8 @@ try {
     // lib/printable.mjs: an ESC here is an ANSI sequence and a newline forges a line.
     console.log(`url          ${printable(meta.url)}`);
     console.log(`captured     ${printable(meta.capturedUrl)}${sameUrl(meta.capturedUrl, meta.url) ? '' : '   <-- NOT THE URL REQUESTED'}`);
+    const ok = meta.httpStatus === null || (meta.httpStatus >= 200 && meta.httpStatus < 300);
+    console.log(`http         ${meta.httpStatus ?? 'no response (same-document)'}${ok ? '' : '   <-- NOT A PAGE'}`);
     console.log(`full height  ${meta.fullHeight}px`);
     console.log(`image        ${meta.image.width}x${meta.image.height}`);
     // "no banner found" and "a banner we could not dismiss" are different outcomes, and

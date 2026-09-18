@@ -172,3 +172,34 @@ test('a capture predating the field raises no consent note', () => {
     const notes = runNotes(clean({consentDismissed: false}));
     assert.equal('consentNotDismissed' in notes.conditions, false);
 });
+
+// webreality.co.uk answers a headless browser with a CloudFront 403. The capture recorded
+// that as an ordinary success — two blocks, area conserved, exit 0 — because the HTTP
+// status was read and thrown away. Percentages of a block page are not a weaker
+// measurement of the site; they are a measurement of something else entirely.
+test("a non-2xx response is an attribution problem, not a weaker measurement", () => {
+    const notes = runNotes(clean({httpStatus: 403}));
+    assert.equal(notes.conditions.httpError.effect, "attribution");
+    assert.equal(notes.conditions.httpError.facts.status, 403);
+    assert.match(notes.conditions.httpError.message, /403/);
+});
+
+test("every non-2xx status is caught, not just the ones we happened to meet", () => {
+    for (const status of [301, 302, 400, 403, 404, 429, 500, 503]) {
+        assert.ok("httpError" in runNotes(clean({httpStatus: status})).conditions, String(status));
+    }
+});
+
+test("a 2xx response raises nothing", () => {
+    for (const status of [200, 201, 204]) {
+        assert.equal("httpError" in runNotes(clean({httpStatus: status})).conditions, false, String(status));
+    }
+});
+
+// A same-document navigation has no response to read, and a capture predating the field
+// never recorded one. Neither is an error, and inventing one would be the same mistake
+// the consent note just made.
+test("no status recorded is not an error", () => {
+    assert.equal("httpError" in runNotes(clean({httpStatus: null})).conditions, false);
+    assert.equal("httpError" in runNotes(clean({})).conditions, false);
+});
