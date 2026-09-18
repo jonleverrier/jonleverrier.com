@@ -16,6 +16,7 @@ reporting are not built yet.
 | `lib/xycut.mjs` | Density profiles, gutter finding, the recursive partition, and tall-page tiling. |
 | `lib/blocks.mjs` | The `Block` shape and `assertPartition()` — the invariant everything rests on. |
 | `lib/notes.mjs` | Every condition that applies to a run, in the shape `blocks.json` carries. |
+| `lib/errorpage.mjs` | Whether the page says it failed, on a page with nothing on it. |
 | `lib/rects.mjs` | Loads and repairs `rects.json`. The only place a rects file is judged. |
 | `lib/printable.mjs` | Page text on its way to a terminal. Everything printed about a page goes through it. |
 | `lib/debug.mjs` | The screenshot with every block outlined. The review gate. |
@@ -153,6 +154,19 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   distinguishes "nothing was wrong" from "we could not tell":** a missing `meta.json` used
   to be a clean-looking exit 0. A `message` has been through `printable()` and is safe on
   a terminal; `facts` is the record and keeps the page's bytes exactly.
+- **An error page can arrive with a 200.** The status check catches the hard block (a
+  CloudFront 403) and refuses to measure it. Bot mitigation usually presents as a soft
+  error page instead: lloydsbank.com answers a headless browser with 200, an `<h1>` of
+  "We are sorry an error has occurred, please try again later." and 65 elements, and that
+  segmented into 12 blocks with area conserved and no notes at all. `errorPageLikely`
+  needs **both** halves — error wording in the `<h1>`, and fewer than 100 elements on the
+  page — because wording alone flags a site that sells error monitoring and sparseness
+  alone flags a homepage that is minimal on purpose (the jonleverrier fixture, 123
+  elements, is exactly that page). It is a **note, not a refusal**, unlike `httpError`: a
+  200 makes the evidence circumstantial, and a false refusal produces nothing at all
+  while a false note can be read and dismissed. A bot wall that says "checking your
+  browser" rather than apologising is not caught, and neither is a well-populated error
+  page.
 - **"Unmeasured" and "empty" are different answers.** Deliberate whitespace is a design
   choice and should be reported as a number like any other. A region we could not capture
   is a hole in our data. Never let the second masquerade as the first.

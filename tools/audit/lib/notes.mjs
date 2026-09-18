@@ -45,6 +45,7 @@ import {webglWarning} from './webgl.mjs';
 import {shotTruncationWarning, unrenderedWarning, paintLimitWarning, PAINT_LIMIT_PX} from './unrendered.mjs';
 import {printable} from './printable.mjs';
 import {sameUrl} from './sameurl.mjs';
+import {errorPageEvidence, errorPageWarning} from './errorpage.mjs';
 
 /**
  * What a condition does to the number, and therefore what a report must do about it.
@@ -63,8 +64,13 @@ export const EFFECTS = ['unmeasured', 'attribution', 'included', 'unknown'];
  * `meta` is the parsed record, or null when there is none — `reason` then says whether
  * it was missing or unreadable, because "you never captured this" and "your capture
  * record is corrupt" are different problems with the same shape.
+ *
+ * `rects` is the same list phase 2 segments with, and it is OPTIONAL for the same reason
+ * it is optional there: a caller may have nothing but a PNG. The conditions that need it
+ * simply do not fire without it, which is the honest answer — not a claim that nothing
+ * was wrong.
  */
-export function runNotes(meta, reason = 'missing') {
+export function runNotes(meta, reason = 'missing', rects = null) {
     const conditions = {};
     const add = (code, effect, message, facts = {}) => {
         conditions[code] = {effect, message, facts};
@@ -98,6 +104,16 @@ export function runNotes(meta, reason = 'missing') {
                 + 'describes the page that was asked for',
             {status: meta.httpStatus},
         );
+    }
+
+    // THE SAME QUESTION AS httpError, ASKED OF A PAGE THAT ANSWERED 200. Bot mitigation
+    // usually presents as a soft error page: lloydsbank.com serves one with a status of
+    // 200, and it segmented into 12 blocks with area conserved and no notes at all. A
+    // NOTE AND NOT A REFUSAL, because the evidence is circumstantial where a 4xx is not —
+    // see errorpage.mjs for what this is willing to claim and what it gives up.
+    const softError = errorPageWarning(rects);
+    if (softError) {
+        add('errorPageLikely', 'attribution', softError, errorPageEvidence(rects));
     }
 
     // WHICH PAGE THIS IS A MEASUREMENT OF comes next: a percentage attributed to the

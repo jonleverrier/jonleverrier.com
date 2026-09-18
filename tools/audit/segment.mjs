@@ -137,7 +137,11 @@ try {
             metaReason = 'unreadable';
         }
     }
-    const notes = runNotes(meta, metaReason);
+    // The rects go in too: some conditions are about what the page CONTAINS rather than
+    // how it was captured — an error page served as a success, and DOM content that
+    // never made it into the pixels. Both are in lib/, because the Craft job imports
+    // lib/ and not this CLI.
+    const notes = runNotes(meta, metaReason, rects ?? null);
 
     // AN ERROR PAGE IS NOT A WEAKER MEASUREMENT, IT IS A MEASUREMENT OF SOMETHING ELSE.
     // Every other condition here describes a page we can still honestly report on, with
