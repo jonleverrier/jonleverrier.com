@@ -757,3 +757,33 @@ test('tools/audit/fixtures/retail.png: no cut lands inside any module container'
     assert.doesNotThrow(() => assertPartition(root));
     assert.equal(totalArea(leaves(root)), width * height);
 });
+
+// A component wrapped in a div of exactly its own size is ordinary markup, and under a
+// plain innermost test the pair cancels out because each contains the other. M&S does
+// this to its primary <nav>, which therefore went unprotected and got cut — the precise
+// thing the user asked to stop ("no cuts over the header, navigation, logo").
+test('coincident boxes collapse to one instead of cancelling each other out', () => {
+    const wrapper = {x: 0, y: 112, w: 1440, h: 40, tag: 'div', boxed: true, text: ''};
+    const nav = {x: 0, y: 112, w: 1440, h: 40, tag: 'nav', boxed: false, text: ''};
+
+    const got = moduleContainers([wrapper, nav], 1440, 3752);
+    assert.equal(got.length, 1, 'the pair must not cancel out');
+    assert.equal(got[0].tag, 'nav', 'the semantic element should be the survivor, not its wrapper');
+});
+
+test('coincident boxes with no semantic tag keep the earlier rect', () => {
+    const first = {x: 0, y: 112, w: 1440, h: 40, tag: 'div', boxed: true, text: 'first'};
+    const second = {x: 0, y: 112, w: 1440, h: 40, tag: 'span', boxed: true, text: 'second'};
+
+    const got = moduleContainers([first, second], 1440, 3752);
+    assert.equal(got.length, 1);
+    assert.equal(got[0].text, 'first', 'order must come from rects.json, not from chance');
+});
+
+test("the retail fixture's wrapped primary nav is protected", () => {
+    const rects = JSON.parse(readFileSync('tools/audit/fixtures/retail.rects.json', 'utf8'));
+    const mods = moduleContainers(rects, 1440, 3752);
+    const nav = mods.find((m) => m.tag === 'nav' && m.y === 112);
+
+    assert.ok(nav, 'M&S wraps its <nav> in a same-size <div>; both must not be discarded');
+});

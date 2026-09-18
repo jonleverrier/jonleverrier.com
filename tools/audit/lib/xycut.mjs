@@ -314,10 +314,27 @@ export function moduleContainers(rects, width, pageHeight, opts = MODULE_AREA) {
         return a >= min * pageArea && a <= max * pageArea;
     });
 
+    // COINCIDENT BOXES ARE ONE BOX. A component wrapped in a div of exactly its own size
+    // is ordinary markup — M&S does it to its primary <nav> — and under a plain
+    // innermost test the pair cancels out, because each contains the other, so the nav
+    // ends up unprotected and gets cut. Collapse identical geometry to a single
+    // candidate first, preferring the semantic tag so the survivor is the <nav> rather
+    // than its wrapper, and falling back to the earlier rect so the choice never depends
+    // on anything but rects.json's own order.
+    const byGeometry = new Map();
+    for (const r of candidates) {
+        const key = `${r.x},${r.y},${r.w},${r.h}`;
+        const held = byGeometry.get(key);
+        if (!held || (!MODULE_TAGS.has(held.tag) && MODULE_TAGS.has(r.tag))) {
+            byGeometry.set(key, r);
+        }
+    }
+    const distinct = [...byGeometry.values()];
+
     // Compared by POSITION, not object identity: the list is a plain array whose order
     // is rects.json's, so this is deterministic, and it survives shiftRects handing us
     // fresh objects for every tile.
-    return candidates.filter((outer, i) => !candidates.some((inner, j) => j !== i && containsRect(outer, inner)));
+    return distinct.filter((outer, i) => !distinct.some((inner, j) => j !== i && containsRect(outer, inner)));
 }
 
 /**
