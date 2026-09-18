@@ -17,6 +17,7 @@ reporting are not built yet.
 | `lib/blocks.mjs` | The `Block` shape and `assertPartition()` — the invariant everything rests on. |
 | `lib/notes.mjs` | Every condition that applies to a run, in the shape `blocks.json` carries. |
 | `lib/errorpage.mjs` | Whether the page says it failed, on a page with nothing on it. |
+| `lib/painted.mjs` | DOM content against painted pixels, per block. Finds what never rendered. |
 | `lib/rects.mjs` | Loads and repairs `rects.json`. The only place a rects file is judged. |
 | `lib/printable.mjs` | Page text on its way to a terminal. Everything printed about a page goes through it. |
 | `lib/debug.mjs` | The screenshot with every block outlined. The review gate. |
@@ -143,14 +144,26 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   overlays too without special-casing any of them. **Nothing invents the missing pixels:**
   writing a rect for something the screenshot lacks would snap cuts onto invisible
   boundaries and hand phase 3 a blank rectangle to classify.
-- **Content behind `prefers-reduced-motion` is absent too.** It is forced, because
-  determinism requires it. That is a third way the captured page differs from the one a
-  visitor sees, and unlike the other two nothing detects it.
+- **Content behind `prefers-reduced-motion` is absent too — and phase 2 can now see
+  that.** Reduced motion is forced, because determinism requires it, so a scroll-reveal
+  that never fires leaves its elements in `rects.json` and nothing in the pixels. That
+  used to be recorded here as the one blind spot nothing detects. It is detectable as a
+  CONTRADICTION: on boondmanager.com a 1440×1199 block holds 102 elements carrying text
+  or media and **100 of them have no painted pixel inside them**. `lib/painted.mjs`
+  measures each block's ink against the background each ROW sits on — not a page-wide
+  colour, or a dark section reads as solid ink — and raises `contentNotPainted` when at
+  least 6 content elements are in a block and at least half of them are blank. **Ink alone
+  would be wrong**: klark.ai's logo strip is 4.3% ink and entirely correct, and none of
+  its 22 elements is blank. Measured over eleven pages, correctly rendered blocks run
+  0–16% blank and regions that did not render run 77–100%. It cannot say WHY the pixels
+  are missing — a lazy image, a failed script and a reveal that never fired look the same
+  — so the effect is `unmeasured` rather than a diagnosis.
 - **`blocks.json` is `{notes, tree}`, and the notes come first.** Every warning used to
   reach stdout and stderr and stop there — and the Craft job imports `lib/`, not the CLIs,
   so the entire honesty layer was invisible to everything downstream of a terminal.
-  `notes.conditions` is keyed by a stable code (`wrongPage`, `shotTruncated`,
-  `scrollCapHit`, `consentNotDismissed`, `webglBlind`, `unrenderedGap`, `metaMissing`),
+  `notes.conditions` is keyed by a stable code (`httpError`, `errorPageLikely`,
+  `wrongPage`, `shotTruncated`, `paintLimit`, `scrollCapHit`, `consentNotDismissed`,
+  `webglBlind`, `contentNotPainted`, `unrenderedGap`, `metaMissing`),
   each carrying an `effect` — `unmeasured`, `attribution`, `included` or `unknown`, which
   is the axis a report branches on — a `message`, and raw `facts`. **`notes.metaRead`
   distinguishes "nothing was wrong" from "we could not tell":** a missing `meta.json` used

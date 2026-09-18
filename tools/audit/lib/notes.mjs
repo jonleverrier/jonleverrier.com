@@ -37,15 +37,18 @@
  *     with `metaRead: true` means NOTHING WAS WRONG, and with `metaRead: false` it means
  *     WE COULD NOT TELL. A missing meta.json used to be a clean-looking exit 0.
  *
- * The limitation worth knowing: this reports only what phase 1 recorded. Content behind
- * `prefers-reduced-motion` is absent from every capture and nothing detects it, so its
- * absence is not in here — a silence this file cannot break.
+ * The limitation worth knowing: most of this reports only what phase 1 recorded, so a
+ * condition phase 1 did not see is not in here. The exception is the one that used to be
+ * the example — content behind `prefers-reduced-motion`, absent from every capture —
+ * which `contentNotPainted` now finds by comparing the DOM against the pixels rather
+ * than by asking the capture. See lib/painted.mjs.
  */
 import {webglWarning} from './webgl.mjs';
 import {shotTruncationWarning, unrenderedWarning, paintLimitWarning, PAINT_LIMIT_PX} from './unrendered.mjs';
 import {printable} from './printable.mjs';
 import {sameUrl} from './sameurl.mjs';
 import {errorPageEvidence, errorPageWarning} from './errorpage.mjs';
+import {unpaintedWarning} from './painted.mjs';
 
 /**
  * What a condition does to the number, and therefore what a report must do about it.
@@ -65,12 +68,13 @@ export const EFFECTS = ['unmeasured', 'attribution', 'included', 'unknown'];
  * it was missing or unreadable, because "you never captured this" and "your capture
  * record is corrupt" are different problems with the same shape.
  *
- * `rects` is the same list phase 2 segments with, and it is OPTIONAL for the same reason
- * it is optional there: a caller may have nothing but a PNG. The conditions that need it
- * simply do not fire without it, which is the honest answer — not a claim that nothing
- * was wrong.
+ * `rects` is the same list phase 2 segments with, and `unpainted` is the result of
+ * lib/painted.mjs over the finished tree. Both are OPTIONAL for the same reason rects
+ * are optional in the segmenter: a caller may have nothing but a PNG. The conditions
+ * that need them simply do not fire, which is the honest answer — not a claim that
+ * nothing was wrong.
  */
-export function runNotes(meta, reason = 'missing', rects = null) {
+export function runNotes(meta, reason = 'missing', rects = null, unpainted = null) {
     const conditions = {};
     const add = (code, effect, message, facts = {}) => {
         conditions[code] = {effect, message, facts};
@@ -187,6 +191,15 @@ export function runNotes(meta, reason = 'missing', rects = null) {
             draws: meta.webgl?.draws ?? 0,
             renderer: meta.webgl?.renderer ?? null,
         });
+    }
+
+    // THE SILENCE THE HEADER OF THIS FILE USED TO DECLARE UNBREAKABLE. Content behind
+    // `prefers-reduced-motion` is absent from every capture, and the claim was that
+    // nothing could detect it. The DOM and the pixels contradict each other where it
+    // happens, and lib/painted.mjs measures the contradiction per block.
+    const unpaintedRegions = unpaintedWarning(unpainted);
+    if (unpaintedRegions) {
+        add('contentNotPainted', 'unmeasured', unpaintedRegions, {blocks: unpainted});
     }
 
     const unrendered = unrenderedWarning(meta);

@@ -35,6 +35,7 @@ import {assertPartition, leaves, totalArea} from './lib/blocks.mjs';
 import {anyUnmeasured, noteCodes, runNotes} from './lib/notes.mjs';
 import {printable} from './lib/printable.mjs';
 import {loadRects} from './lib/rects.mjs';
+import {inkPrefix, pixelsFromPng, unpaintedBlocks} from './lib/painted.mjs';
 
 const outDir = process.argv[2];
 const depthArg = process.argv.find((a) => a.startsWith('--depth='));
@@ -137,11 +138,21 @@ try {
             metaReason = 'unreadable';
         }
     }
+    // WHAT THE DOM SAYS IS HERE AGAINST WHAT WAS PAINTED, per block. Needs the tree, so
+    // it cannot be done before the segmentation, and needs the rects, so it does not
+    // happen at all without them. It is the one condition phase 1 could never have
+    // recorded: the pixels and the DOM have to be compared against each other, and only
+    // phase 2 holds both. See lib/painted.mjs.
+    let unpainted = null;
+    if (rects) {
+        const raw = await pixelsFromPng(png);
+        unpainted = unpaintedBlocks(inkPrefix(raw.pixels, raw.width, raw.height), ls, rects);
+    }
     // The rects go in too: some conditions are about what the page CONTAINS rather than
     // how it was captured — an error page served as a success, and DOM content that
     // never made it into the pixels. Both are in lib/, because the Craft job imports
     // lib/ and not this CLI.
-    const notes = runNotes(meta, metaReason, rects ?? null);
+    const notes = runNotes(meta, metaReason, rects ?? null, unpainted);
 
     // AN ERROR PAGE IS NOT A WEAKER MEASUREMENT, IT IS A MEASUREMENT OF SOMETHING ELSE.
     // Every other condition here describes a page we can still honestly report on, with
