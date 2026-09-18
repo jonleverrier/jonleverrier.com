@@ -77,6 +77,27 @@ test('small fixed furniture is never blamed', () => {
     assert.equal(g.likelyCause, null, 'a 48x48 chip does not explain a 1000px gap');
 });
 
+// THE REAL switch.je SHAPE, both of its pinned elements. The fullscreen-menu overlay is
+// LARGER than the footer and covers exactly as much of the unexplained band, so ranking by
+// raw area names a mobile menu as the reason a footer is missing.
+test('the element that begins where the content stopped is named, not merely the biggest', () => {
+    const g = heightGap(4831, [rect(0, 4088)], [
+        {x: 0, y: 3931, w: 1440, h: 900, tag: 'div', via: 'both'},
+        {x: 0, y: 4086, w: 1440, h: 745, tag: 'footer', via: 'both'},
+    ]);
+    assert.equal(g.significant, true);
+    assert.equal(g.likelyCause.tag, 'footer');
+    assert.match(unrenderedWarning({heightGap: g}), /<footer>/);
+});
+
+test('an element covering more of the unexplained band outranks one that barely reaches it', () => {
+    const g = heightGap(4000, [rect(0, 3000)], [
+        {x: 0, y: 2000, w: 1440, h: 1100, tag: 'section'},
+        {x: 0, y: 3000, w: 1000, h: 1000, tag: 'footer'},
+    ]);
+    assert.equal(g.likelyCause.tag, 'footer', 'the section reaches 100px into a 1000px band');
+});
+
 test('a fixed element above the content bottom is not a suspect', () => {
     // A sticky header is fixed and visible, but it explains nothing about the foot.
     const g = heightGap(4000, [rect(0, 3000)], [{x: 0, y: 0, w: 1440, h: 80, tag: 'header'}]);

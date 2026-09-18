@@ -198,43 +198,89 @@ test('a capture with no record of how it was taken is assumed to be one shot', (
 /* ------------------------------------------------- a real page, both ways */
 
 /**
- * A page with every shape the slice pass exists for, and nothing else. 5400px, six slices.
+ * A page with every shape the slice pass exists for, and nothing else. Six slices.
  *
  *   - a FIXED header and a FIXED bar, which a slice pass repeats once per slice unless it
  *     hides them;
- *   - a PINNED sticky panel across two viewports, which must NOT be hidden — the visitor
- *     spends two viewports on it and the page spends 1800px of scroll height on it;
+ *   - a STICKY NAV pinned down the whole page showing the same thing at every offset,
+ *     which is the jerseyfinance / hsbc / klark regression: `position` cannot tell it from
+ *     the panel below, and it must be hidden after the first slice all the same;
+ *   - a PINNED sticky panel across two viewports THAT SWAPS ITS CONTENT per viewport,
+ *     which must NOT be hidden — the visitor spends two viewports on it and the page
+ *     spends 1800px of scroll height on it;
+ *   - a CARD HELD IN THE VIEWPORT BY SCRIPT while computing `position: relative`, which is
+ *     boondmanager.com's consent card: no CSS rule can find it, it repeated twelve times,
+ *     and `consentBannerSeen` was false on a page carrying it;
  *   - a REVERSIBLE reveal: a section whose opacity is 0 unless it is on screen, which is
  *     the tpagency.com mechanism and is invisible to a shot taken from the top;
  *   - a panel behind an `opacity: 0` ancestor at every scroll position, which no capture
  *     can reach and which must therefore be RECORDED AND FLAGGED rather than dropped.
+ *
+ * WHY THE PINNED PANEL SWAPS ITS CHIPS. Task 14 built this panel as a flat magenta block
+ * and hid it on the strength of `position: sticky` alone; Task 15 replaced that test with
+ * a measurement of whether the element draws the SAME PIXELS at every offset, which a flat
+ * block does. The real panel this one stands for — tpagency.com's — swaps a line of text
+ * per viewport, and that is precisely why it is content and a nav bar is not. The chips
+ * are narrow (120px of a 1440px row) so that the rows they sit in are still 91% magenta
+ * and the row count below measures the same thing it always did.
  */
 const PAGE = `<!doctype html><html><head><title>Slice me</title><style>
  body{margin:0;font:16px sans-serif}
  header{position:fixed;top:0;left:0;width:100%;height:60px;background:rgb(255,0,0);color:#fff}
  .bar{position:fixed;bottom:0;left:0;width:100%;height:40px;background:rgb(0,0,255);color:#fff}
+ #page{padding-top:60px}
+ .nav{position:sticky;top:60px;height:40px;background:rgb(255,140,0);color:#fff;z-index:5}
  section{height:900px}
  #reveal{background:rgb(20,20,20);opacity:0}
  #reveal.on{opacity:1}
  .card{height:100px;background:rgb(0,128,0);color:#fff}
  #pin{height:1800px}
  #pin .panel{position:sticky;top:0;height:900px;background:rgb(200,0,200);color:#fff}
+ #pin .chip{width:120px;height:40px;margin:0 0 0 20px;background:rgb(0,255,80)}
  #ghost{opacity:0}
+ #held{position:relative;width:240px;height:120px;background:rgb(0,200,200);color:#003}
+ /* A DESCENDANT THAT KEEPS ITSELF VISIBLE, which is the ordinary way a widget or a
+    scroll-reveal is written — and which ignores a hide applied only to its ancestor. */
+ #held p{visibility:visible;margin:0;width:240px;height:120px;background:rgb(0,200,200)}
 </style></head><body>
  <header>FIXED HEADER</header>
- <section style="background:#fff">one</section>
- <section style="background:#eee">two</section>
- <section id="reveal">${Array.from({length: 8}, (_, i) => `<div class="card">card ${i}</div>`).join('')}</section>
- <div id="pin"><div class="panel">PINNED PANEL</div></div>
- <section style="background:#ddd">four
-   <div id="ghost">${Array.from({length: 8}, (_, i) => `<p>ghost ${i}</p>`).join('')}</div>
- </section>
+ <div id="page">
+  <div class="nav">STICKY NAV</div>
+  <section style="background:#fff">one</section>
+  <section style="background:#eee">two</section>
+  <section id="reveal">${Array.from({length: 8}, (_, i) => `<div class="card">card ${i}</div>`).join('')}</section>
+  <div id="pin"><div class="panel">PINNED PANEL${
+    Array.from({length: 8}, () => '<div class="chip"></div>').join('')
+}</div></div>
+  <section style="background:#ddd">four
+    <div id="ghost">${Array.from({length: 8}, (_, i) => `<p>ghost ${i}</p>`).join('')}</div>
+  </section>
+ </div>
  <div class="bar">FIXED BAR</div>
+ <div id="held"><p>We use cookies.</p></div>
  <script>
   const target = document.querySelector('#reveal');
   new IntersectionObserver((entries) => {
     for (const e of entries) target.classList.toggle('on', e.isIntersecting);
   }).observe(target);
+
+  // The boondmanager.com mechanism: an ordinary in-flow element kept in the viewport by
+  // a scroll handler. Its computed position is 'relative' at every offset.
+  const held = document.querySelector('#held');
+  const flow = held.offsetTop;
+  const hold = () => { held.style.top = (window.scrollY + 500 - flow) + 'px'; };
+  addEventListener('scroll', hold, {passive: true});
+  hold();
+
+  // The tpagency.com mechanism: the pinned panel shows something different in each
+  // viewport it is pinned across.
+  const chips = [...document.querySelectorAll('#pin .chip')];
+  const swap = () => {
+    const colour = Math.floor(window.scrollY / 900) % 2 ? 'rgb(0,80,255)' : 'rgb(0,255,80)';
+    for (const chip of chips) chip.style.background = colour;
+  };
+  addEventListener('scroll', swap, {passive: true});
+  swap();
  </script>
 </body></html>`;
 
@@ -288,6 +334,8 @@ const RED = [255, 0, 0];
 const BLUE = [0, 0, 255];
 const GREEN = [0, 128, 0];
 const MAGENTA = [200, 0, 200];
+const ORANGE = [255, 140, 0];
+const CYAN = [0, 200, 200];
 
 test('the premise: a single shot from the top misses a reveal that is only in place on screen', async () => {
     const {control} = await captures();
@@ -336,6 +384,65 @@ test('a PINNED panel is kept in every band it is pinned across', async () => {
     const {stitched} = await captures();
     const pinned = await rowsOfColour(join(stitched.dir, 'fullpage.png'), MAGENTA, 0.9);
     assert.ok(pinned.length > 1700, `the panel is pinned across two viewports: ${pinned.length} rows`);
+});
+
+test('a sticky nav showing the same thing at every offset appears once', async () => {
+    // THE TASK 15 REGRESSION, in miniature. This bar and the panel above it are both
+    // `position: sticky` and both hold the viewport; nothing in the stylesheet separates
+    // them. What does is that this one draws the same pixels wherever it is pinned, and
+    // the panel does not. Left alone it paints over the middle of whatever the page has
+    // at each slice boundary — on jerseyfinance.com, across a paragraph.
+    const {stitched} = await captures();
+    const nav = await rowsOfColour(join(stitched.dir, 'fullpage.png'), ORANGE, 0.9);
+    assert.ok(nav.length > 0, 'the nav is in the image');
+    assert.ok(nav.length <= 50, `one 40px nav, not one per slice: ${nav.length} rows`);
+    assert.ok(nav[0] < VIEWPORT.height, `and in the first viewport, where it belongs: ${nav[0]}`);
+});
+
+test('an element held in the viewport BY SCRIPT appears once, though no CSS says so', async () => {
+    // boondmanager.com's consent card: a direct child of <body> computing
+    // `position: relative`, kept on screen by a scroll handler. Every rule this capture
+    // had asked the stylesheet, so it painted twelve times down a 10,000px page.
+    const {stitched} = await captures();
+    const card = await rowsOfColour(join(stitched.dir, 'fullpage.png'), CYAN, 0.1);
+    assert.ok(card.length > 0, 'the card is in the image');
+    assert.ok(card.length <= 130, `one 120px card, not one per slice: ${card.length} rows`);
+});
+
+test('a banner held in the viewport by script is SEEN, though no CSS says it is a banner', async () => {
+    // The other half of the same defect, and the more damaging one: a candidate had to sit
+    // under a fixed or sticky ancestor to be considered, so `consentBannerSeen` was false
+    // on a page with a consent card in plain sight — the audit then reported nothing about
+    // a wall the visitor has to get past.
+    const {stitched} = await captures();
+    assert.equal(stitched.meta.consentBannerSeen, true);
+    assert.equal(stitched.meta.consentDismissed, false, 'this card has no accept control, and is left alone');
+});
+
+test('meta.fixed records an element no stylesheet calls fixed', async () => {
+    // What `heightGap` reads to name the cause of a region nothing accounts for. It used to
+    // be a list of `position: fixed` elements and nothing else, so a card held in the
+    // viewport by script was in no record this capture produced.
+    const {stitched} = await captures();
+    const held = stitched.meta.fixed.filter((f) => f.via === 'pinned');
+    assert.ok(held.length > 0, `something here is pinned without being fixed: ${JSON.stringify(stitched.meta.fixed)}`);
+    assert.ok(
+        stitched.meta.fixed.some((f) => f.via === 'both' || f.via === 'fixed'),
+        'and position:fixed is still collected beside it',
+    );
+});
+
+test('meta records what was measured as pinned and what was decided about it', async () => {
+    const {stitched} = await captures();
+    const pinned = stitched.meta.capture.pinned;
+    assert.ok(pinned.pinned > 0, 'something on this page holds the viewport');
+    assert.ok(pinned.chrome >= 4, `the header, bar, nav and card all repeat: ${pinned.chrome}`);
+    const verdicts = pinned.elements.map((e) => e.verdict);
+    assert.ok(verdicts.includes('content'), 'and the panel that swaps its content does not');
+    // The decision is made on pixels, so every element carries the number it was made on.
+    for (const element of pinned.elements) {
+        assert.ok(element.compared > 0 || element.verdict === 'undecided', JSON.stringify(element));
+    }
 });
 
 test('the census finds the revealed content the shot from the top cannot', async () => {

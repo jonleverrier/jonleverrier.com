@@ -30,9 +30,17 @@
  * those rows. A single census at scroll 0 against a stitched image would compare a
  * correct picture with an incomplete list and conclude that the picture was wrong.
  *
+ * ANYTHING THAT HOLDS THE VIEWPORT WHILE THE PAGE SCROLLS UNDER IT is photographed once per
+ * slice and would land in the image ten or twenty times, so it is hidden after the first
+ * one. WHICH elements those are is MEASURED rather than read off `position` — see
+ * lib/pinned.mjs, which is where that whole decision and the reasons for it live. The
+ * census rides along on the scroll pass below; the decision costs one or two extra pairs of
+ * screenshots before the slicing starts.
+ *
  * `meta.capture` records which path ran, how many slices it took, how many rects the
- * banded census found against what a single one at the top would have, and the reason if
- * it fell back to a single shot.
+ * banded census found against what a single one at the top would have, what the pinned
+ * census decided about each element it found, and the reason if it fell back to a single
+ * shot.
  *
  * WHAT THIS STILL DOES NOT SEE, and must not be read as solving: the slice pass reaches
  * what SCROLLING reveals. Content behind a hover, a click, a tab, a carousel step or a
@@ -57,7 +65,20 @@ import {mkdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {dismissConsent} from './consent.mjs';
 import {WEBGL_PROBE_INIT, probeWebgl} from './webgl.mjs';
-import {COLLECT_FIXED, heightGap} from './unrendered.mjs';
+import {COLLECT_PINNED, heightGap} from './unrendered.mjs';
+import {
+    BEGIN_PIN, HIDE_PINNED, MARK_PINNED, MEASURE_BOXES, RESTORE_HIDDEN,
+    decideChrome, markEarlyPinned, newCensus, recordStep,
+} from './pinned.mjs';
+
+/**
+ * How long the one scroll taken BEFORE the consent banner is dismissed gets to settle.
+ *
+ * Shorter than a slice's settle on purpose. Its only job is to widen the set of controls
+ * lib/consent.mjs will consider — see markEarlyPinned — so anything it misses costs the
+ * capture nothing that it was not already missing, and it is paid on every page.
+ */
+export const EARLY_SETTLE_MS = 200;
 
 export const VIEWPORT = {width: 1440, height: 900};
 
@@ -342,71 +363,6 @@ export function unionRects(perSlice) {
 }
 
 /**
- * Hide every `position: fixed` element. Runs IN the page, once per slice after the first,
- * after the scroll has settled and before the shot.
- *
- * WITHOUT THIS A FIXED HEADER APPEARS ONCE PER SLICE, twenty times down the stitched
- * image. A fixed element is carried by the scroll by definition, so the only slice in
- * which it is where the page meant it to be is the first one, and every other sighting of
- * it is the same element again. This is exactly the population `COLLECT_FIXED` gathers —
- * see lib/unrendered.mjs — and `meta.fixed` is the record of it.
- *
- * `position: sticky` IS DELIBERATELY NOT IN THIS LIST, and the mistake is worth keeping
- * written down because it was made and measured. Hiding sticky elements too took 4,000px
- * of tpagency.com — 45% of that page — to pure black in every band: the section is a
- * pinned scrollytelling panel that swaps one line of text per viewport, and hiding it
- * reproduced the exact defect the slice pass exists to fix. A pinned panel therefore
- * appears once per viewport it is pinned across, AND THAT IS THE RIGHT ANSWER: the
- * visitor really does spend five viewports on it and the page really does spend 4,000px
- * of scroll height on it, so a measurement that collapsed it into one 900px band would
- * under-report the space the site gives it.
- *
- * `visibility: hidden` and not `display: none`: visibility takes an element out of the
- * paint without taking it out of the layout, so nothing on the page moves. It also takes
- * it out of the census, which is right — a fixed element is censused in the first band,
- * at the viewport box every consumer of rects.json expects it to have.
- *
- * Idempotent, and additive: run again it hides anything that has become fixed since, and
- * what is already hidden stays hidden and keeps the inline style it arrived with.
- */
-export const HIDE_FIXED = () => {
-    const state = window.__auditStitch;
-    if (!state) return 0;
-
-    for (const el of document.querySelectorAll('body *')) {
-        if (state.hidden.has(el)) continue;
-        if (getComputedStyle(el).position !== 'fixed') continue;
-        const value = el.style.getPropertyValue('visibility');
-        state.hidden.set(el, value === '' ? null : {value, priority: el.style.getPropertyPriority('visibility')});
-        el.style.setProperty('visibility', 'hidden', 'important');
-    }
-
-    return state.hidden.size;
-};
-
-/** Start the record of what the slice pass has hidden. Runs IN the page, before the first slice. */
-export const BEGIN_HIDING = () => {
-    window.__auditStitch = {hidden: new Map()};
-
-    return 0;
-};
-
-/** Put back every element the slice pass hid, and forget it ever happened. Runs IN the page. */
-export const RESTORE_HIDDEN = () => {
-    const state = window.__auditStitch;
-    if (!state) return 0;
-    let restored = 0;
-    for (const [el, previous] of state.hidden) {
-        if (previous === null) el.style.removeProperty('visibility');
-        else el.style.setProperty('visibility', previous.value, previous.priority);
-        restored++;
-    }
-    delete window.__auditStitch;
-
-    return restored;
-};
-
-/**
  * Where a shot taken at scroll offset `at` belongs in the stitched image, or null when it
  * adds nothing to it.
  *
@@ -486,13 +442,19 @@ export async function stitchSlices(parts, width, height) {
  * and the pass stops on a condition rather than a timer.
  */
 export async function slicedScreenshot(page, opts) {
-    const {width, height, viewportHeight, maxSlices, settleMs, step} = opts;
-
-    await step('opening the record of what the slice pass hides', () => page.evaluate(BEGIN_HIDING));
+    const {width, height, viewportHeight, maxSlices, settleMs, step, chrome = [], decided = new Set()} = opts;
 
     const parts = [];
     const census = [];
+    // WHAT ARRIVED AFTER THE DECISION WAS MADE. The pinned census runs once, before the
+    // slicing, so an element that appears later — boondmanager.com's consent card is loaded
+    // by a tag manager partway down the page — is in no population and is judged by nothing.
+    // It is counted here rather than left silent: a repeat this pass could not judge is a
+    // fact about the image, and the alternative is a capture that quietly contains one.
+    const late = newCensus();
+    const lateArrivals = new Set();
     let written = 0;
+    let hidden = 0;
     let stoppedEarly = null;
     try {
         for (let i = 0; i < maxSlices && written < height; i++) {
@@ -510,10 +472,22 @@ export async function slicedScreenshot(page, opts) {
                 break;
             }
             await page.waitForTimeout(settleMs);
-            // Never in the first slice: at scroll 0 a fixed element is where the page
+            for (const id of recordStep(late, await step(
+                `looking for anything new that holds its place at slice ${i}`,
+                () => page.evaluate(MEASURE_BOXES),
+            ))) {
+                if (!decided.has(id)) lateArrivals.add(id);
+            }
+            // Never in the first slice: at scroll 0 a pinned element is where the page
             // meant it to be, and that is the one sighting of it the image should keep.
-            if (i > 0) {
-                await step(`hiding fixed elements for slice ${i}`, () => page.evaluate(HIDE_FIXED));
+            if (i > 0 && chrome.length) {
+                // The COUNT IS KEPT, not thrown away: "we asked for six elements to be
+                // hidden and six were" is the only thing that separates a page with no
+                // repeating chrome from one whose chrome the pass failed to reach.
+                hidden = await step(
+                    `hiding repeating chrome for slice ${i}`,
+                    () => page.evaluate(HIDE_PINNED, chrome),
+                );
             }
             const place = slicePlacement(at, written, height, viewportHeight);
             if (!place) {
@@ -521,6 +495,16 @@ export async function slicedScreenshot(page, opts) {
                 break;
             }
             const buffer = await step(`photographing slice ${i}`, () => page.screenshot());
+            // ASSERTED AGAIN BEFORE THE CENSUS, because the two records have to describe
+            // the same page. A site's own script can put an inline style back between the
+            // shot and the walk — switch.je does — and the census would then list a footer
+            // the image does not contain.
+            if (i > 0 && chrome.length) {
+                await step(
+                    `holding chrome hidden for the census of slice ${i}`,
+                    () => page.evaluate(HIDE_PINNED, chrome),
+                );
+            }
             const band = {top: place.top, bottom: place.top + place.height};
             census.push(await step(`censusing slice ${i}`, () => page.evaluate(COLLECT_RECTS, band)));
             parts.push({buffer, ...place});
@@ -540,6 +524,8 @@ export async function slicedScreenshot(page, opts) {
         rects: unionRects(census),
         slices: parts.length,
         height: written,
+        hidden,
+        lateArrivals: lateArrivals.size,
         stoppedEarly,
     };
 }
@@ -585,18 +571,42 @@ export async function capturePage(url, outDir, opts = {}) {
             timeout: Math.min(20000, clock.check('the network to go quiet')),
         }).catch(() => {});
 
-        const consent = await step('dismissing a consent banner', () => dismissConsent(page));
-
         // SMOOTH SCROLLING IS A SOURCE OF VARIANCE, and this pass scrolls a great deal. A
         // page with `scroll-behavior: smooth` animates every scrollTo below, so a shot can
         // land part way through one. Not fatal if the page refuses the style — a CSP can —
         // but worth having wherever it is allowed.
         await page.addStyleTag({content: 'html,body{scroll-behavior:auto !important}'}).catch(() => {});
 
-        // Step down a viewport at a time so lazy images and in-view animations fire.
+        await step('opening the pinned census', () => page.evaluate(BEGIN_PIN));
+        // BEFORE THE BANNER IS DISMISSED, because afterwards the banner is gone and the
+        // question of whether it held the viewport cannot be asked at all. See
+        // markEarlyPinned — this only ever widens what lib/consent.mjs will consider.
+        //
+        // EVERY PART OF THE PINNED WORK IS TIMED, because it is paid on every capture and a
+        // cost nobody can see is a cost nobody can argue with.
+        const startedEarly = Date.now();
+        const earlyPinned = await markEarlyPinned(page, {step, settleMs: EARLY_SETTLE_MS});
+        const earlyMs = Date.now() - startedEarly;
+
+        const consent = await step('dismissing a consent banner', () => dismissConsent(page));
+
+        // Step down a viewport at a time so lazy images and in-view animations fire — AND
+        // MEASURE EVERY ELEMENT'S VIEWPORT BOX AT EACH STEP. The pass already stops and
+        // settles at every viewport, so the pinned census rides along on it for the cost of
+        // one bounding-box walk per step (74–463ms for a whole page, measured across six
+        // sites) rather than a second traverse of its own.
+        const census = newCensus();
+        let censusMs = 0;
         let scrolls = 0;
         let previousHeight = -1;
         for (; scrolls < maxScrolls; scrolls++) {
+            const startedCensus = Date.now();
+            const measured = await step('measuring what holds its place', () => page.evaluate(MEASURE_BOXES));
+            const pinned = recordStep(census, measured);
+            if (pinned.length) {
+                census.marked += await step('marking what held its place', () => page.evaluate(MARK_PINNED, pinned));
+            }
+            censusMs += Date.now() - startedCensus;
             const height = await step('measuring the page height', () => page.evaluate(PAGE_HEIGHT));
             const atBottom = await step('checking for the bottom of the page', () => page.evaluate(
                 (h) => window.scrollY + window.innerHeight >= h - 2,
@@ -611,7 +621,18 @@ export async function capturePage(url, outDir, opts = {}) {
 
         // AT THE BOTTOM, before scrolling back: a reveal footer is only in its resting
         // place once the content has travelled over it.
-        const fixed = await step('collecting fixed elements', () => page.evaluate(COLLECT_FIXED));
+        const fixed = await step('collecting pinned elements', () => page.evaluate(COLLECT_PINNED));
+
+        // WHICH OF THEM REPEAT, decided on their own pixels rather than on `position`.
+        const startedDecision = Date.now();
+        const decided = await decideChrome(page, census, {
+            step,
+            settleMs,
+            viewport: VIEWPORT,
+            shoot: () => page.screenshot(),
+            raw: async (buffer) => (await sharp(buffer).removeAlpha().raw().toBuffer({resolveWithObject: true})).data,
+        });
+        const decideMs = Date.now() - startedDecision;
 
         await step('scrolling back to the top', () => page.evaluate(() => window.scrollTo(0, 0)));
         await page.waitForTimeout(400);
@@ -640,6 +661,7 @@ export async function capturePage(url, outDir, opts = {}) {
             rectsAtTop: 0,
             stoppedEarly: null,
             fallbackReason: null,
+            pinned: {earlyPinned, ...decided.record, hidden: 0, lateArrivals: 0, earlyMs, censusMs, decideMs},
         };
         try {
             const sliced = await slicedScreenshot(page, {
@@ -649,10 +671,14 @@ export async function capturePage(url, outDir, opts = {}) {
                 maxSlices,
                 settleMs,
                 step,
+                chrome: decided.chrome,
+                decided: new Set(census.pinnedAt.keys()),
             });
             shot = sliced.png;
             rects = sliced.rects;
             capture.slices = sliced.slices;
+            capture.pinned.hidden = sliced.hidden;
+            capture.pinned.lateArrivals = sliced.lateArrivals;
             capture.stoppedEarly = sliced.stoppedEarly;
         } catch (e) {
             // THE OLD BEHAVIOUR IS STILL AVAILABLE, and it is a reasonable image; it is

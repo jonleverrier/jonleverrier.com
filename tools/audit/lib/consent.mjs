@@ -182,16 +182,27 @@ export const CLICKABLE = 'button, [role="button"], input[type="button"], input[t
 /**
  * Is this control inside something shaped like a banner? Runs IN the page.
  *
- * The two ways a consent banner is actually built: taken out of the flow so it can sit
- * over the page (fixed, or sticky), or announced as a dialog. Either is enough. Nothing
- * here looks at wording — that is isAcceptLabel's job — and nothing here looks at size or
- * position, because banners are top bars, bottom bars, corner cards and full-screen walls.
+ * The ways a consent banner is actually built: taken out of the flow so it can sit over
+ * the page (fixed, or sticky), announced as a dialog — or simply HELD in the viewport by
+ * script while computing `position: relative`, which is what boondmanager.com's consent
+ * card does and which no reading of the stylesheet can see. `__auditPinned` is the mark
+ * lib/pinned.mjs leaves on an element it MEASURED holding its viewport box while the page
+ * scrolled under it; see markEarlyPinned, which is run before this module so that the
+ * answer exists while the banner is still up.
+ *
+ * THE PINNED TEST WIDENS THIS SET, IT DOES NOT REPLACE THE CSS ONE. A banner that locks
+ * scrolling — the full-screen wall — cannot be measured as pinned, because nothing
+ * scrolls under it; dropping the CSS test would lose exactly the banners that are hardest
+ * to get past. Nothing here looks at wording — that is isAcceptLabel's job — and nothing
+ * here looks at size or position, because banners are top bars, bottom bars, corner cards
+ * and full-screen walls.
  *
  * The walk goes up from the control itself, because the accept button is usually several
  * static divs deep inside the positioned element that is the banner.
  */
 export const IS_BANNER_SHAPED = (el) => {
     for (let a = el; a; a = a.parentElement) {
+        if (a.__auditPinned === true) return true;
         const role = a.getAttribute ? a.getAttribute('role') : null;
         if (role === 'dialog' || role === 'alertdialog') return true;
         if (a.getAttribute && a.getAttribute('aria-modal') === 'true') return true;
@@ -483,12 +494,16 @@ const SUBJECT_SAMPLE = 400;
  * Banner-shaped AND about consent. Shape alone is far too common — sticky headers, chat
  * bubbles, back-to-top chips are all fixed — and wording alone matches any page with a
  * privacy link in its footer.
+ *
+ * `__auditPinned` is here for the same reason it is in IS_BANNER_SHAPED: a card held in
+ * the viewport by script computes `position: relative`, and `consentBannerSeen` was
+ * therefore FALSE on a page with a consent card in plain sight.
  */
 export const FIND_BANNER = (subjectSource) => {
     const subject = new RegExp(subjectSource, 'i');
     for (const el of document.querySelectorAll('div, section, aside, dialog, form')) {
         const cs = getComputedStyle(el);
-        const positioned = cs.position === 'fixed' || cs.position === 'sticky';
+        const positioned = cs.position === 'fixed' || cs.position === 'sticky' || el.__auditPinned === true;
         const role = el.getAttribute('role');
         if (!positioned && role !== 'dialog' && role !== 'alertdialog' && el.ariaModal !== 'true') continue;
         if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;

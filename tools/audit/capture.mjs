@@ -61,6 +61,15 @@ try {
     if (c.stoppedEarly) {
         console.log(`slicing      STOPPED EARLY — ${printable(c.stoppedEarly, 200)}`);
     }
+    // WHAT HELD THE VIEWPORT AND WHAT WAS DONE ABOUT IT, because "this page has no
+    // repeating chrome" and "this pass failed to find any" look identical in the image.
+    const pin = c.pinned;
+    if (pin) {
+        console.log(`pinned       ${pin.pinned} elements, ${pin.maximal} outermost — `
+            + `${pin.chrome} hidden as repeating, ${pin.maximal - pin.chrome - pin.undecided} kept as content`
+            + `${pin.undecided ? `, ${pin.undecided} undecided` : ''}`
+            + `${pin.lateArrivals ? `   <-- ${pin.lateArrivals} MORE ARRIVED AFTER THE DECISION AND MAY REPEAT` : ''}`);
+    }
     // "no banner found" and "a banner we could not dismiss" are different outcomes, and
     // saying the same thing for both is what made this line noise on most of the web.
     const consentState = meta.consentDismissed

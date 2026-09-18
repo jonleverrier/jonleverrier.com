@@ -9,6 +9,7 @@ reporting are not built yet.
 | `capture.mjs` | Phase 1 CLI. Loads a URL at 1440×900 and writes the screenshots, DOM rects and meta. |
 | `segment.mjs` | Phase 2 CLI. Turns a screenshot (plus `rects.json`, if present) into `{notes, tree}` and a debug image. |
 | `lib/capture.mjs` | `capturePage()` — the Playwright run. The Craft job will import this, not the CLI. |
+| `lib/pinned.mjs` | Which elements hold the viewport, and which of those draw the same thing every time. |
 | `lib/unrendered.mjs` | Regions that exist for a visitor and are missing from the capture. |
 | `lib/webgl.mjs` | Whether this browser could render a WebGL hero, and whether the page wanted one. |
 | `lib/consent.mjs` | The cookie-banner selectors, and one attempt at dismissing them. |
@@ -47,7 +48,8 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   reported `dismissed via text "OK"` with every artefact taken from the other page. A
   stranger submitting a URL could steer the audit at will. So: a bare `a` is not a
   candidate (a link built as a button carries `role="button"`), bare `ok`/`okay` are not
-  accept wording, a candidate must sit under a `fixed`/`sticky` ancestor or a dialog role,
+  accept wording, a candidate must sit under an ancestor that is `fixed`, `sticky`, a
+  dialog role, or MEASURED holding the viewport while the page scrolled under it,
   and the URL is compared across the click — if it moved, the page is put back and the
   capture continues with the banner still standing. The cost is a banner in normal
   document flow, or one whose only button says "OK", is left alone; it is then measured,
@@ -157,7 +159,7 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   stops painting a full-page screenshot at 16,384px, so visionarygrid.studio's 24,746px
   PNG was the right height with content stopping dead at y=16,382. A viewport shot taken
   while scrolled to the offset has none of those problems. The pass is deterministic on
-  purpose: offsets are multiples of the viewport, the settle is a fixed 200ms, and the
+  purpose: offsets are multiples of the viewport, the settle is a fixed 400ms, and the
   last slice's overlap is CROPPED rather than painted over the band before it. Measured on
   jonleverrier.com, whose page has nothing to reveal, the stitched image is byte-for-byte
   what `fullPage` produced.
@@ -173,34 +175,47 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   position belongs to the rows it was photographed with. The cost is one `body *` walk per
   slice; the cheap test (a bounding box the browser has already laid out) comes first, so
   only elements inside the band pay for `getComputedStyle` and the ancestor walks.
-- **`position: fixed` is hidden after the first slice. `position: sticky` is NOT.** A fixed
-  header is carried by the scroll, so every sighting after the first is the same element
-  again, and left alone it lands in the image once per slice down the whole page. Widening
-  that to sticky was tried and MEASURED WRONG: it took 4,000px of tpagency.com — 45% of the
-  page — to pure black, because the section is a pinned scrollytelling panel that swaps one
-  line of text per viewport. **A pinned panel therefore appears once per viewport it is
-  pinned across, and that is the right answer**: the visitor really does spend five
-  viewports on it and the page really does spend 4,000px of scroll height on it, so
-  collapsing it into one 900px band would under-report the space the site gives it.
-  **What that ruling costs, measured: a sticky NAV BAR repeats too.** Over the 29-site
-  sweep three pages do it — jerseyfinance.com ×3, hsbc.co.uk ×3, klark.ai ×6 — and on
-  jerseyfinance the second copy is painted across the middle of a paragraph, which both
-  occludes that text and hands the segmenter a protected `<header>` module at a place the
-  page has no boundary. Its leaf count went from 24 to 8. That is a phase-2 consequence of
-  a phase-1 ruling and it has not been resolved here: the position value does not separate
-  the two cases, and the distinction that would (does this element show DIFFERENT content
-  in each viewport it is pinned across) is a pixel comparison nobody has built. Left as it
-  is, on purpose, rather than guessed at.
-- **A viewport-anchored element that is neither `fixed` nor `sticky` defeats all of it.**
-  boondmanager.com carries an Axeptio consent card that holds the same viewport position in
-  every slice and so is painted twelve times down the stitched image — about 1.6% of that
-  page. Its computed position is `relative` (the card inside it is `static`); it is held in
-  place by script, not by CSS. Three separate rules miss it for the same reason: `HIDE_FIXED`
-  does not hide it, `COLLECT_FIXED` does not record it, and `lib/consent.mjs` never offered
-  it as a banner candidate — a candidate must sit under a `fixed`/`sticky` ancestor — which
-  is why `meta.consentBannerSeen` is false on a page with a consent card in plain sight. It
-  is also censused in NO band: twelve paintings, zero rects, the exact inverse of the
-  contradiction `contentNotPainted` looks for, and nothing detects that direction.
+- **WHAT REPEATS IS DECIDED BY MEASUREMENT, NOT BY `position`.** Anything that holds its
+  place while the page scrolls is photographed once per slice and lands in the image ten or
+  twenty times. This used to ask `position: fixed` and hide those, and that question fails
+  in both directions, on real pages: `sticky` is a nav bar on jerseyfinance.com, hsbc.co.uk
+  and klark.ai and a 4,000px scrollytelling panel on tpagency.com, and hiding both took 45%
+  of tpagency to pure black; `relative` is boondmanager.com's consent card, held in the
+  viewport by script, painted twelve times and recorded nowhere. No threshold on height or
+  area separates them and none is guessed. `lib/pinned.mjs` asks two measured questions
+  instead:
+
+    1. **PINNED** — between two scroll offsets, did this element move less than half as far
+       as the page did? Carried elements move by the full delta (868–900px measured), pinned
+       ones by 0–52px, and nothing on any page measured sits between.
+    2. **SAME PIXELS** — photographed IN ISOLATION at two offsets it was pinned across, does
+       it draw the same thing? Same → repeating chrome, hidden after the first slice.
+       Changing → a panel doing its job, kept, because the visitor really does spend those
+       viewports on it. Measured: chrome comes out at 0.000%, tpagency's panel at 4%.
+
+  **Isolation is what makes the answer about the element.** Cropping its box out of the
+  ordinary screenshot measures the page scrolling behind it: jerseyfinance.com's round
+  accessibility widget differs in 2.5–23% of its own box, all of it in the transparent
+  corners, and its header in 24%. With the rest of the page hidden, both are identical.
+  **Hiding means the subtree, element by element, with transitions cancelled** — a
+  descendant carrying its own `visibility: visible` ignores an inherited hide, and a
+  transition in flight beats `!important`; that pair is why the widget painted twice even
+  after it had been correctly identified and correctly asked to go.
+  The cost, both halves measured: a bounding-box walk at each step of the scroll pass
+  (74–463ms for a whole page), and a decision pass of 1–3 offset pairs at about a second
+  each. The census population also feeds `COLLECT_PINNED` and `lib/consent.mjs`, so
+  `meta.fixed` records a script-held card and `consentBannerSeen` stops lying about one.
+  `meta.capture.pinned` carries every decision with the number it was made on.
+- **THE PINNED CENSUS RUNS ONCE, SO SOMETHING THAT ARRIVES LATER IS JUDGED BY NOTHING.**
+  boondmanager.com loads its Axeptio consent card through a tag manager partway down the
+  page: it is absent for the first 30 seconds of a still page, appears during the scroll,
+  and its mount is a `1440x0` div whose card was not there at any point the census looked.
+  It therefore repeats down the image exactly as it did before. The slice pass keeps
+  measuring, and anything it finds holding the viewport that the census never saw is
+  counted in `meta.capture.pinned.lateArrivals` and printed by the CLI as "MORE ARRIVED
+  AFTER THE DECISION AND MAY REPEAT" — **declared, not fixed**. Deciding one of these would
+  need an isolated pair of photographs taken mid-pass, which is a second screenshot at
+  every slice for a case that has turned up once.
 - **The stitched image is exactly the viewport width; a full-page screenshot was not.**
   lloydsbank.com's page is 1469px wide, so the old capture produced a 1469px PNG and phase 2
   measured 29px of horizontal overflow that a 1440px visitor has to scroll sideways to
@@ -216,10 +231,10 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   real content, unreadable, and correctly flagged `contentNotPainted` at a 200ms settle. It
   is a far better answer than the black void that was there before, and it is still not a
   clean render. See SLICE_SETTLE_MS for what the wait was measured against.
-- **A `position: fixed` reveal footer still does not get captured.** Fixed elements appear
-  in the first slice only, at the viewport box they have at scroll 0, and DOM rects for
-  them are censused in that band for the same reason. switch.je's reveal footer is visible,
-  745px tall, and is in neither record — the pixels there measure a flat fill with a
+- **A pinned reveal footer still does not get captured.** Chrome appears in the first slice
+  only, at the viewport box it has at scroll 0, and DOM rects for it are censused in that
+  band for the same reason. switch.je's reveal footer is visible, 745px tall, and is in
+  neither record — the pixels there measure a flat fill with a
   standard deviation of 0.0. `meta.heightGap` catches it by asking whether the page claims
   more height than its captured content explains, which covers reveal panels and sticky
   overlays too without special-casing any of them. **Nothing invents the missing pixels:**

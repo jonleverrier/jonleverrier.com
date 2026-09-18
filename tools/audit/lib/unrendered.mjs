@@ -48,25 +48,51 @@ export const GAP_MIN_FRACTION = 0.02;
 export const FIXED_MIN_AREA = 40000;
 
 /**
- * Collect `position: fixed` elements, in page coordinates. Runs IN the page.
+ * Collect the elements that hold the viewport, in page coordinates. Runs IN the page.
  *
  * Call this AT THE BOTTOM OF THE SCROLL, not at the top: a reveal footer is only in its
  * resting place once the content has travelled over it.
+ *
+ * THIS USED TO ASK `position: fixed` AND ONLY THAT, and it missed the case it most needed
+ * to catch. boondmanager.com's consent card computes `position: relative` and is held in
+ * the viewport by script, so it painted twelve times down the capture and appeared in no
+ * record of anything. What is collected now is the BEHAVIOURAL population — whatever
+ * lib/pinned.mjs measured as holding its viewport box while the page scrolled under it —
+ * with `position: fixed` kept beside it rather than instead of it, because a capture that
+ * never ran the census (the single-shot fallback path) would otherwise report nothing at
+ * all here and `heightGap` would lose the ability to name switch.je's reveal footer.
+ * `via` says which of the two found it.
+ *
+ * OUTERMOST ONLY. A pinned nav has a hundred pinned descendants and listing them all would
+ * bury the one element a reader of meta.json wants to see; hiding the outermost takes the
+ * rest with it anyway.
  */
-export const COLLECT_FIXED = () => {
+export const COLLECT_PINNED = () => {
+    const held = (el) => el.__auditPinned === true || getComputedStyle(el).position === 'fixed';
     const out = [];
     for (const el of document.querySelectorAll('body *')) {
         const cs = getComputedStyle(el);
-        if (cs.position !== 'fixed') continue;
+        const pinned = el.__auditPinned === true;
+        const fixed = cs.position === 'fixed';
+        if (!pinned && !fixed) continue;
         if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
         const r = el.getBoundingClientRect();
         if (r.width < 1 || r.height < 1) continue;
+        let outermost = true;
+        for (let a = el.parentElement; a && a !== document.documentElement; a = a.parentElement) {
+            if (held(a)) {
+                outermost = false;
+                break;
+            }
+        }
+        if (!outermost) continue;
         out.push({
             x: Math.round(r.x + window.scrollX),
             y: Math.round(r.y + window.scrollY),
             w: Math.round(r.width),
             h: Math.round(r.height),
             tag: el.tagName.toLowerCase(),
+            via: pinned && fixed ? 'both' : (pinned ? 'pinned' : 'fixed'),
         });
     }
 
@@ -94,12 +120,20 @@ export function heightGap(fullHeight, rects, fixed = []) {
     const fraction = fullHeight > 0 ? gap / fullHeight : 0;
     const significant = gap >= GAP_MIN_PX && fraction >= GAP_MIN_FRACTION;
 
-    // Which fixed element, if any, sits in the unexplained band. Largest first so the
-    // warning names the footer rather than a scroll-to-top button that happens to be
-    // down there too.
+    // Which pinned element, if any, sits in the unexplained band — ranked by how much of
+    // THAT BAND it covers, not by how big it is. Raw size names a scroll-to-top button
+    // never, which is right, but it also names the wrong large thing: switch.je carries a
+    // full-viewport fullscreen-menu overlay of 1440x900 pinned at the top of the viewport
+    // AND the 1440x745 reveal footer this file was written for, and by area alone the menu
+    // wins. Both cover the whole gap, so the tie goes to the one that begins where the
+    // content stopped — which is the footer, 2px below `contentBottom` against the menu's
+    // 157px above it.
+    const covered = (f) => f.w * Math.max(0, Math.min(f.y + f.h, fullHeight) - Math.max(f.y, bottom));
     const suspects = (fixed ?? [])
         .filter((f) => f.w * f.h >= FIXED_MIN_AREA && f.y + f.h > bottom)
-        .sort((a, b) => b.w * b.h - a.w * a.h);
+        .sort((a, b) => covered(b) - covered(a)
+            || Math.abs(a.y - bottom) - Math.abs(b.y - bottom)
+            || b.w * b.h - a.w * a.h);
 
     return {
         contentBottom: bottom,
@@ -199,8 +233,9 @@ export function unrenderedWarning(meta) {
     const pct = (g.fraction * 100).toFixed(1);
     // The tag is the page's, by way of rects.json, and this line goes to a terminal.
     const cause = g.likelyCause
-        ? ` — a fixed <${printable(g.likelyCause.tag, 40)}> of ${g.likelyCause.w}x${g.likelyCause.h} sits there and a`
-            + ' full-page screenshot does not paint fixed elements down the page'
+        ? ` — a pinned <${printable(g.likelyCause.tag, 40)}> of ${g.likelyCause.w}x${g.likelyCause.h} sits there,`
+            + ' and an element that holds the viewport is kept at its first sighting rather than'
+            + ' painted again at every scroll offset'
         : '';
 
     return `${g.gap}px (${pct}% of the page) is below the deepest element captured${cause}`

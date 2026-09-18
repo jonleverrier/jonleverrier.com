@@ -105,6 +105,14 @@ const URLS = {
         'ansi-banner.html',
         HOME + BANNER(`<button onclick="${REMOVE}">Accept all cookies${ANSI}</button>`),
     ),
+    // boondmanager.com's shape: an ordinary in-flow element with a computed position of
+    // `relative`, held in the viewport by script. No reading of the stylesheet can tell it
+    // from page furniture; only having WATCHED it hold its place can.
+    heldBanner: page$(
+        'held-banner.html',
+        `${HOME}<div id="banner" style="position:relative;background:#eee;padding:20px">`
+            + `<p>We use cookies.</p><button onclick="${REMOVE}">Accept all cookies</button></div>`,
+    ),
 };
 
 /**
@@ -159,9 +167,17 @@ after(async () => {
  * CMP selector, so the default 2s per frame is spent waiting for something that is not
  * there. The text pass, which is the subject, keeps its own timings.
  */
-const attempt = async (url) => {
+const attempt = async (url, {pinned = false} = {}) => {
     const page = await context.newPage();
     await page.goto(url, {waitUntil: 'load'});
+    // The mark lib/pinned.mjs leaves on an element it MEASURED holding its viewport box.
+    // Set by hand here so this file stays a test of the consent rules rather than of the
+    // census that feeds them; the census's own half is in test/slices.test.mjs.
+    if (pinned) {
+        await page.evaluate(() => {
+            document.getElementById('banner').__auditPinned = true;
+        });
+    }
     const consent = await dismissConsent(page, 250);
     const state = {
         url: page.url(),
@@ -206,6 +222,25 @@ test('a banner label made of escape characters is dismissed and reported harmles
     assert.equal(state.bannerStillThere, false);
     assert.ok(inert(consent.via), `via must be printable, got ${JSON.stringify(consent.via)}`);
     assert.match(consent.via, /Accept all cookies/, 'and must still say which label worked');
+});
+
+// THE BOONDMANAGER DEFECT, both directions. A candidate had to sit under a fixed or sticky
+// ancestor, so a card held in the viewport by script was never offered — and the run
+// reported no banner on a page carrying one.
+test('a banner held in the viewport by script is dismissed once it has been measured', async () => {
+    const {consent, state} = await attempt(URLS.heldBanner, {pinned: true});
+    assert.equal(consent.bannerSeen, true);
+    assert.equal(consent.dismissed, true);
+    assert.equal(state.bannerStillThere, false);
+});
+
+test('…and the same page with nothing measured is left alone, because nothing says it is a banner', async () => {
+    // The control. `position: relative` in the document flow is page furniture until
+    // something has watched it hold the viewport, and clicking page furniture is the defect
+    // this module was narrowed to prevent.
+    const {consent, state} = await attempt(URLS.heldBanner);
+    assert.equal(consent.dismissed, false);
+    assert.equal(state.bannerStillThere, true);
 });
 
 test('a dialog role is banner-shaped on its own, without any positioning', async () => {
