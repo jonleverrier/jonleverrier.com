@@ -47,6 +47,23 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   give one module four different labels. With `rects.json`, a cut may not land strictly
   inside media at least 90% of the page width and 200px tall; its own edges stay valid.
   Narrower or shorter media is ordinary content and is left alone.
+- **A card is one block, and so is a header.** The gap between a quote and its
+  attribution looks exactly like the gap between two modules, so switch.je's testimonial
+  card came out with its quote split across two blocks. A rect is a **module container**
+  when it draws its own box (`boxed` in `rects.json`) or is a `header`/`nav`/`article`/
+  `figure`, is between 0.5% and 12% of the page, and contains no other such rect — the
+  innermost box is the module, not the section holding two of them. A cut may not land
+  strictly inside one; its own edges stay valid. Whitespace inside a module is that
+  module's padding, and counting it as space between modules is what makes the number
+  wrong. The band is wide on purpose: 0.5–15%, 0.5–10% and 1–12% pick the same seven
+  containers on switch.je. Two rects sharing one box cancel out, because each contains
+  the other — M&S wraps its `<nav>` in a `<div>` of identical size and neither is
+  protected.
+- **The stitch is a second place a cut is decided.** `segmentTall` rebuilds a tall page
+  from full-width bands, so a cut that was legal inside one column becomes a line across
+  the whole page. Protection is applied to the harvested line as well as inside
+  `segment`, or a stat card's top edge in the right-hand column saws through the
+  testimonial beside it — which is exactly what it did.
 - **A page can decline to draw its own hero, and nothing will look wrong.** WebGL itself
   works here — headless Chromium renders it through SwiftShader, verified, and
   pola.co.jp draws a full WebGL scene in 1089 calls with no GPU at all. But a site with a

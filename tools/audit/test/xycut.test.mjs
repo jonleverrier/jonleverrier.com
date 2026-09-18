@@ -1,7 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {findGutters, widestGutter, rowDensity, segment, segmentTall, adaptiveMaxDensity, GUTTER} from '../lib/xycut.mjs';
+import {
+    findGutters, widestGutter, rowDensity, segment, segmentTall, adaptiveMaxDensity, GUTTER,
+    moduleContainers,
+} from '../lib/xycut.mjs';
 import {edgeMapFromPng} from '../lib/edges.mjs';
 import {leaves, totalArea, area, assertPartition, overlaps} from '../lib/blocks.mjs';
 
@@ -507,7 +510,250 @@ test('tools/audit/fixtures/retail.png: the full-bleed hero video comes out as on
     assert.equal(touching.length, 1, `the hero should be covered by one block, got ${touching.length}`);
     assert.ok(contains(touching[0], hero), 'that block must contain the whole hero');
 
-    // The rest of the page is untouched: 23 leaves lie entirely below the hero, before
-    // and after. The protection removes cut candidates; it does not reshape the page.
-    assert.equal(ls.filter((l) => l.y >= hero.y + hero.h).length, 23);
+    // The rest of the page is still segmented, and protection only ever MERGES.
+    //
+    // This was `=== 23`, a frozen count of one run's output — the same golden-value
+    // mistake the no-rects test above already had to correct (`ls.length === 40`), and it
+    // broke for the same reason: Task 10 protects module containers, M&S's footer rows
+    // are module containers, and the number below the hero legitimately fell to 18.
+    // Stated as a relationship it survives that and still catches what it was for —
+    // over-protection collapsing the page, or protection somehow inventing blocks.
+    const below = (blocks) => blocks.filter((l) => l.y >= hero.y + hero.h).length;
+    const bare = leaves(segmentTall(edges, width, height, {maxDepth: 4}));
+    assert.ok(below(ls) > 1, `the page below the hero must still be segmented, got ${below(ls)}`);
+    assert.ok(
+        below(ls) <= below(bare),
+        `protection may only merge: ${below(ls)} leaves below the hero with rects, ${below(bare)} without`,
+    );
+});
+
+// ---------------------------------------------------------------------------
+// Task 10: a card is one block, and the header is one block.
+//
+// The tool cuts on whitespace, so it finds the gaps INSIDE a module — between a quote
+// and its attribution, between a logo and the nav beside it — because they look exactly
+// like the gaps between modules. switch.je's Jersey Finance testimonial came out with
+// its quote split across two blocks and its header cut through. Whitespace inside a
+// module is that module's padding, and counting it separately is what makes the space
+// number wrong.
+//
+// The ruling: a rect that draws its own box (or is a header/nav/article/figure), is
+// between 0.5% and 12% of the page, and contains no other such rect, is a module
+// container — and a cut may not land strictly inside one. Same rejection as Task 9's
+// full-bleed media; a different population feeding it.
+// ---------------------------------------------------------------------------
+
+/** Every cut line the tree draws through `box`'s INTERIOR, on either axis. */
+const cutsInsideBox = (root, box) => {
+    const hit = new Set();
+    for (const l of leaves(root)) {
+        if (!overlaps(l, box)) continue;
+        for (const y of [l.y, l.y + l.h]) if (y > box.y && y < box.y + box.h) hit.add(`y=${y}`);
+        for (const x of [l.x, l.x + l.w]) if (x > box.x && x < box.x + box.w) hit.add(`x=${x}`);
+    }
+
+    return [...hit].sort();
+};
+
+const boxOf = (r) => `${r.x},${r.y} ${r.w}x${r.h}`;
+
+test('moduleContainers picks the innermost candidate, not the section holding it', () => {
+    // A 1000x1000 page. The section is 9% of it and the two cards inside it are 1.44%
+    // each, so all three pass the tag and size gates — the containment gate is the only
+    // thing that can tell them apart. Get it backwards and a whole two-card section is
+    // protected as one module, which suppresses the cut BETWEEN the cards.
+    const section = {x: 100, y: 100, w: 300, h: 300, tag: 'section', boxed: true, text: ''};
+    const cards = [
+        {x: 120, y: 120, w: 120, h: 120, tag: 'article', boxed: true, text: ''},
+        {x: 260, y: 120, w: 120, h: 120, tag: 'article', boxed: true, text: ''},
+    ];
+
+    assert.deepEqual(
+        moduleContainers([section, ...cards], 1000, 1000).map(boxOf),
+        cards.map(boxOf),
+        'the innermost boxes are the modules',
+    );
+    // …and on its own the section IS one, so the exclusion is containment and not its tag.
+    assert.deepEqual(moduleContainers([section], 1000, 1000).map(boxOf), [boxOf(section)]);
+});
+
+test('the module size band excludes both ends', () => {
+    // 1000x1000 -> 1,000,000px². A chip at 0.36% is a button, a strip at 15% is a page
+    // section. Only the 2% card in between is a module.
+    const chip = {x: 10, y: 10, w: 60, h: 60, tag: 'div', boxed: true, text: ''};        // 0.36%
+    const card = {x: 10, y: 200, w: 200, h: 100, tag: 'div', boxed: true, text: ''};     // 2.00%
+    const band = {x: 0, y: 400, w: 1000, h: 150, tag: 'section', boxed: true, text: ''}; // 15.00%
+
+    assert.deepEqual(moduleContainers([chip, card, band], 1000, 1000).map(boxOf), [boxOf(card)]);
+    // Neither end is excluded by containment: nothing here contains anything else.
+    assert.deepEqual(moduleContainers([chip], 1000, 1000), []);
+    assert.deepEqual(moduleContainers([band], 1000, 1000), []);
+});
+
+test('a semantic tag is a module without drawing its own box; a plain div is not', () => {
+    // switch.je's header strip has no background of its own — `boxed` is false on it —
+    // and it is exactly the thing the user asked not to be cut through. The tag is the
+    // evidence. A <div> of the identical geometry, equally unboxed, is not a module.
+    const header = {x: 0, y: 0, w: 1440, h: 76, tag: 'header', boxed: false, text: ''};
+    const plain = {x: 0, y: 0, w: 1440, h: 76, tag: 'div', boxed: false, text: ''};
+
+    assert.deepEqual(moduleContainers([header], 1440, 4831).map(boxOf), [boxOf(header)]);
+    assert.deepEqual(moduleContainers([plain], 1440, 4831), []);
+});
+
+test('a cut cannot land strictly inside a module container', () => {
+    // Rows 150..249 are the only quiet run, so the gutter is {start: 150, end: 250} and
+    // its midpoint 200 sits inside a 160x250 card spanning y=100..350 — the card's own
+    // padding, which is not a boundary between anything.
+    const width = 200, height = 4000; // card = 40,000px² of 800,000 = 5% of the page
+    const edges = denseExcept(width, height, [[150, 250]]);
+    const card = {x: 20, y: 100, w: 160, h: 250, tag: 'div', boxed: true, text: ''};
+    const opts = {maxDepth: 1, minSide: 20, minAreaFraction: 0.001};
+
+    // FIRST prove the map contains the structure under test: without the card the pixels
+    // really do cut here, so the assertion below cannot pass against any implementation.
+    assert.deepEqual(interiorCuts(segment(edges, width, height, opts), height), [200]);
+
+    const root = segment(edges, width, height, {...opts, rects: [card]});
+    assert.deepEqual(cutsInsideBox(root, card), [], 'the card is one block');
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test("a module container's own edges are still valid cuts", () => {
+    // The gutter 330..370 straddles the card's bottom edge at 350, which is where a
+    // boundary genuinely is. Rejecting the whole gutter because it meets the card would
+    // throw away the one cut worth making and merge the card into whatever follows it.
+    const width = 200, height = 4000;
+    const edges = denseExcept(width, height, [[330, 370]]);
+    const card = {x: 20, y: 100, w: 160, h: 250, tag: 'div', boxed: true, text: ''};
+    const root = segment(edges, width, height, {maxDepth: 1, minSide: 20, minAreaFraction: 0.001, rects: [card]});
+
+    assert.deepEqual(interiorCuts(root, height), [350], 'the card boundary is exactly where the cut belongs');
+    assert.deepEqual(cutsInsideBox(root, card), []);
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('the size band is measured against the PAGE, not the slice being segmented', () => {
+    // THIS ONE FAILS SILENTLY. A tile is 900px tall, so a 160x250 card is 22% of the
+    // TILE and only 6.7% of the 3000px page. Measure against the tile and the card reads
+    // as "a page section", the protection never applies, and the tree is still a valid
+    // partition — just cut through the card.
+    //
+    // Asserted on `segment` against the tile slice directly, because end to end the
+    // stitch's own page-scale check hides the mistake: the band boundary would be
+    // rejected anyway and the defect would never reach the output. The tile at top=750
+    // covers 750..1650, so the gutter 1000..1100 sits at 250..350 in tile space and the
+    // card at 210..460.
+    const width = 200, height = 3000, top = 750, tileH = 900;
+    const edges = denseExcept(width, height, [[1000, 1100]]);
+    const card = {x: 20, y: 960, w: 160, h: 250, tag: 'div', boxed: true, text: ''};
+    const inTile = {...card, y: card.y - top};
+    const slice = edges.subarray(top * width, (top + tileH) * width);
+    const opts = {maxDepth: 1, minSide: 20, minAreaFraction: 0.001, rects: [inTile]};
+
+    // The control: measured against the tile's own 900px the card is too big to be a
+    // module, so the cut happens — which is exactly the silent wrong answer.
+    assert.deepEqual(
+        interiorCuts(segment(slice, width, tileH, opts), tileH),
+        [300],
+        'against the tile alone the card is not a module and the cut lands inside it',
+    );
+    assert.deepEqual(
+        cutsInsideBox(segment(slice, width, tileH, {...opts, pageHeight: height}), inTile),
+        [],
+        'told the page height, the tile protects the card',
+    );
+
+    // And end to end, where the stitch agrees.
+    assert.deepEqual(interiorCuts(segmentTall(edges, width, height, {...opts, rects: undefined}), height), [1050], 'the gutter is real');
+    const root = segmentTall(edges, width, height, {...opts, rects: [card]});
+    assert.deepEqual(cutsInsideBox(root, card), []);
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('a band boundary is a full-width cut and must clear every module container', () => {
+    // THE STITCH IS A SECOND PLACE A CUT IS DECIDED, and it was the one that kept
+    // switch.je's testimonial split after the card's interior was already protected.
+    //
+    // Columns 90..110 are quiet everywhere, so a tile splits the page into two columns.
+    // Rows 1300..1340 are quiet in the RIGHT column only, which is a perfectly legal cut
+    // inside that column — nothing there is protected. segmentTall then harvests that
+    // leaf edge and rebuilds the page from full-width bands, so y=1320 becomes a line
+    // across the whole page, straight through the card in the left column.
+    const width = 200, height = 3000;
+    const edges = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            if (x >= 90 && x < 110) continue;                // the column gutter
+            if (y >= 1300 && y < 1340 && x >= 110) continue; // quiet in the right column only
+            edges[y * width + x] = 1;
+        }
+    }
+    const card = {x: 10, y: 1200, w: 70, h: 250, tag: 'div', boxed: true, text: ''};
+    const opts = {maxDepth: 2, minSide: 20, minAreaFraction: 0.001};
+
+    // The control: the leak is real, and it is full-width. Without the card, the band
+    // boundary at 1320 runs the whole way across.
+    const bare = segmentTall(edges, width, height, opts);
+    assert.ok(
+        cutsInsideBox(bare, card).includes('y=1320'),
+        `the stitch must promote the right column's cut to a full-width line: ${cutsInsideBox(bare, card)}`,
+    );
+
+    const root = segmentTall(edges, width, height, {...opts, rects: [card]});
+    assert.deepEqual(cutsInsideBox(root, card), [], 'no full-width band line may cross the card');
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('an absent boxed field is exactly a false one, and is never required', () => {
+    // An older capture has no `boxed` at all. It must not crash, must not be treated as
+    // boxed, and must leave the semantic-tag path working — the field is evidence, never
+    // a requirement.
+    const strip = (r) => {
+        const {boxed, ...rest} = r;
+
+        return rest;
+    };
+    const card = {x: 20, y: 100, w: 160, h: 250, tag: 'div', boxed: true, text: ''};
+    assert.deepEqual(moduleContainers([card], 200, 4000).map(boxOf), [boxOf(card)]);
+    assert.deepEqual(moduleContainers([strip(card)], 200, 4000), [], 'no field means no box');
+    assert.deepEqual(
+        moduleContainers([{...strip(card), tag: 'article'}], 200, 4000).map(boxOf),
+        [boxOf(card)],
+        'the tag still qualifies it',
+    );
+
+    // On the map from the protection test: strip the field and the cut comes back.
+    const width = 200, height = 4000;
+    const edges = denseExcept(width, height, [[150, 250]]);
+    const opts = {maxDepth: 1, minSide: 20, minAreaFraction: 0.001};
+    assert.deepEqual(interiorCuts(segment(edges, width, height, {...opts, rects: [strip(card)]}), height), [200]);
+    // …and with no rects at all, byte-identical to the pixel-only path.
+    const bare = JSON.stringify(segment(edges, width, height, opts));
+    assert.equal(JSON.stringify(segment(edges, width, height, {...opts, rects: undefined})), bare);
+    assert.equal(JSON.stringify(segment(edges, width, height, {...opts, rects: []})), bare);
+});
+
+test('tools/audit/fixtures/retail.png: no cut lands inside any module container', async () => {
+    const {edges, width, height} = await edgeMapFromPng('tools/audit/fixtures/retail.png');
+    const rects = JSON.parse(readFileSync('tools/audit/fixtures/retail.rects.json', 'utf8'));
+    const containers = moduleContainers(rects, width, height);
+
+    // The fixture is the evidence; assert it still holds the thing this test is about.
+    assert.ok(containers.length > 0, 'retail.rects.json must still contain module containers');
+    assert.ok(
+        containers.every((c) => c.w * c.h >= 0.005 * width * height && c.w * c.h <= 0.12 * width * height),
+        'every container must sit inside the size band',
+    );
+
+    const root = segmentTall(edges, width, height, {maxDepth: 4, rects});
+    for (const c of containers) {
+        assert.deepEqual(cutsInsideBox(root, c), [], `cut inside <${c.tag}> ${boxOf(c)}`);
+    }
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
 });

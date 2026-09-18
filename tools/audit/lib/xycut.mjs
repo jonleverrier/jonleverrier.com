@@ -15,11 +15,14 @@
  * A gutter says a boundary is somewhere in this run; it does not say where. The
  * boundary is at the EDGE of the whitespace, where an element actually stops, so
  * `opts.rects` (phase 1's DOM rects) snaps each cut onto a real element edge inside
- * the run. The same rects also say where NOT to cut: a full-bleed `<video>`, `<img>` or
- * `<canvas>` is one visual module whose interior is only noise, so a cut may not land
- * strictly inside one (see FULL_BLEED and cutsThroughMedia). Rects are OPTIONAL
- * throughout — without them every cut falls back to the gutter midpoint, nothing is
- * protected, and the pure-pixel path still works exactly as it did.
+ * the run. The same rects also say where NOT to cut: some things are ONE visual module
+ * however the pixels look, and a cut may not land strictly inside one. Two populations
+ * earn that, chosen by different rules and rejected by the same one — a full-bleed
+ * `<video>`, `<img>` or `<canvas>` whose interior is only noise (FULL_BLEED), and a
+ * module container: a card, a header, a testimonial box, whose interior gaps are its
+ * own padding (MODULE_AREA). See protectedRects and cutsInsideProtected. Rects are
+ * OPTIONAL throughout — without them every cut falls back to the gutter midpoint,
+ * nothing is protected, and the pure-pixel path still works exactly as it did.
  *
  * `segment` is the reason this file exists: the block tree it produces is a TRUE
  * PARTITION at every level. See segment's own doc comment for why that is the
@@ -246,18 +249,102 @@ export function fullBleedMedia(rects, width, opts = FULL_BLEED) {
 }
 
 /**
+ * A MODULE CONTAINER IS ONE BLOCK, and the gaps inside it are its own padding.
+ *
+ * The segmenter cuts on whitespace, and the gap between a quote and its attribution
+ * looks exactly like the gap between two modules — so a testimonial card came out as
+ * several blocks with the quote split across two of them, and a vertical gutter between
+ * a logo and the nav beside it cut the header in half. Counting a card's padding as
+ * space between modules is what makes the surface-area number wrong, and it is also
+ * what hands phase 3 half a paragraph to label.
+ *
+ * Three gates, all of which must hold:
+ *
+ *   1. It draws its own box (`boxed`, from phase 1: a background differing from its
+ *      parent's, a border, or a radius) OR its tag says it is a module outright.
+ *   2. Its area is a real fraction of the page. Below MODULE_AREA.min it is a chip or a
+ *      button, not a module. Above MODULE_AREA.max it is a page section or the page:
+ *      switch.je has a `<header>` of 1440x1700 wrapping its whole hero, and protecting
+ *      that would suppress nearly every cut on the page.
+ *   3. It contains no other candidate. The INNERMOST box is the module — a section
+ *      holding two testimonial cards is not itself a card.
+ *
+ * The band is wide on purpose: 0.5-15%, 0.5-10% and 1-12% all pick exactly the same
+ * seven containers on switch.je, so nothing here is balanced on a threshold.
+ *
+ * Containment is geometric, computed from the rect list. Phase 1 deliberately does not
+ * report the DOM tree, and reconstructing one from rects would be guesswork.
+ *
+ * The limitation worth knowing: TWO CANDIDATES SHARING ONE BOX CANCEL EACH OTHER OUT,
+ * because each contains the other. M&S wraps its primary nav in a `<div>` of exactly the
+ * `<nav>`'s size, so neither is protected and a cut at y=143 does still land inside that
+ * 40px strip. That is the literal reading of gate 3 and it is the reading the rule was
+ * measured against — retail has seven containers under it, eight if coincident boxes are
+ * folded into one. Folding them is the obvious alternative and is stated here rather
+ * than taken, because it was not what the thresholds were verified with.
+ */
+export const MODULE_TAGS = new Set(['header', 'nav', 'article', 'figure']);
+export const MODULE_AREA = {min: 0.005, max: 0.12};
+
+/** Does `outer` cover every pixel of `inner`? Equal boxes contain each other. */
+function containsRect(outer, inner) {
+    return inner.x >= outer.x && inner.y >= outer.y
+        && inner.x + inner.w <= outer.x + outer.w
+        && inner.y + inner.h <= outer.y + outer.h;
+}
+
+/**
+ * The module containers in `rects`, in the order phase 1 listed them.
+ *
+ * `pageHeight` is the WHOLE PAGE's height, not the height of whatever slice is being
+ * segmented: gate 2 is a fraction of the page, and a tile that measured against its own
+ * 900px would call a 640x546 card 27% of "the page" and refuse to protect it. Empty
+ * without rects, and empty for an older capture whose rects carry no `boxed` field
+ * unless a semantic tag qualifies them — the field is never required.
+ */
+export function moduleContainers(rects, width, pageHeight, opts = MODULE_AREA) {
+    if (!rects || rects.length === 0) return [];
+    const {min, max} = {...MODULE_AREA, ...opts};
+    const pageArea = width * pageHeight;
+
+    const candidates = rects.filter((r) => {
+        if (r.boxed !== true && !MODULE_TAGS.has(r.tag)) return false;
+        const a = r.w * r.h;
+
+        return a >= min * pageArea && a <= max * pageArea;
+    });
+
+    // Compared by POSITION, not object identity: the list is a plain array whose order
+    // is rects.json's, so this is deterministic, and it survives shiftRects handing us
+    // fresh objects for every tile.
+    return candidates.filter((outer, i) => !candidates.some((inner, j) => j !== i && containsRect(outer, inner)));
+}
+
+/**
+ * Everything a cut may not pass through, in one list.
+ *
+ * TWO POPULATIONS, ONE REJECTION. Full-bleed media and module containers are selected by
+ * completely different evidence — a tag and a size for one, a drawn box and a containment
+ * test for the other — but what happens to a cut landing inside either is identical, so
+ * the rejection is written once and both feed it.
+ */
+export function protectedRects(rects, width, pageHeight) {
+    return [...fullBleedMedia(rects, width), ...moduleContainers(rects, width, pageHeight)];
+}
+
+/**
  * Would a cut at `at` — an ABSOLUTE coordinate in the segmented image's space, the same
- * space `media` is in — run through the interior of a protected element?
+ * space `keepWhole` is in — run through the interior of a protected element?
  *
  * The element's OWN EDGES ARE FINE, and are in fact exactly where we want the cut: the
  * test is strict inequality on both sides. Only the interior is protected.
  *
  * The cut is a line segment across `rect`, not a point, so the other axis matters too: a
- * horizontal cut only touches the media if the region it crosses actually overlaps the
- * media's columns. Touching at a single edge is not overlapping, hence `<` on the span.
+ * horizontal cut only touches the element if the region it crosses actually overlaps the
+ * element's columns. Touching at a single edge is not overlapping, hence `<` on the span.
  */
-export function cutsThroughMedia(media, rect, at, horizontal) {
-    for (const m of media) {
+export function cutsInsideProtected(keepWhole, rect, at, horizontal) {
+    for (const m of keepWhole) {
         if (horizontal) {
             if (at <= m.y || at >= m.y + m.h) continue;
             if (Math.max(rect.x, m.x) < Math.min(rect.x + rect.w, m.x + m.w)) return true;
@@ -297,11 +384,13 @@ export const SEGMENT_DEFAULTS = {maxDepth: 4, minAreaFraction: 0.02, minSide: 12
  * partition, depth changes which labels get applied and never the arithmetic.
  */
 export function segment(edges, width, height, opts = {}) {
-    const {maxDepth, minAreaFraction, minSide, rects} = {...SEGMENT_DEFAULTS, ...opts};
+    const {maxDepth, minAreaFraction, minSide, rects, pageHeight} = {...SEGMENT_DEFAULTS, ...opts};
     const minArea = width * height * minAreaFraction;
     const yCandidates = edgeCandidates(rects, true);
     const xCandidates = edgeCandidates(rects, false);
-    const media = fullBleedMedia(rects, width);
+    // `height` is this slice's height; the whole page's is only different when segmentTall
+    // called us for a tile or a band, and it says so.
+    const keepWhole = protectedRects(rects, width, pageHeight ?? height);
     const tooSmall = (r) => r.w * r.h < minArea || Math.min(r.w, r.h) < minSide;
 
     const cut = (rect) => {
@@ -331,12 +420,12 @@ export function segment(edges, width, height, opts = {}) {
         for (const {g, horizontal} of ranked) {
             const at = snapToEdge(g, horizontal ? yCandidates : xCandidates, horizontal ? rect.y : rect.x);
             // REJECT, NEVER RELOCATE. Tested after the snap, because the snap is what
-            // decides where the cut actually lands; a gutter straddling the media's own
-            // edge is kept precisely when the snap put the cut on that edge. Rejection
-            // only shortens `ranked`, so no cut ever moves and the partition is
-            // untouched. If every candidate goes, the region is a leaf — which is the
-            // right answer for a region that is entirely hero.
-            if (cutsThroughMedia(media, rect, (horizontal ? rect.y : rect.x) + at, horizontal)) continue;
+            // decides where the cut actually lands; a gutter straddling a protected
+            // element's own edge is kept precisely when the snap put the cut on that
+            // edge. Rejection only shortens `ranked`, so no cut ever moves and the
+            // partition is untouched. If every candidate goes, the region is a leaf —
+            // which is the right answer for a region that is entirely one module.
+            if (cutsInsideProtected(keepWhole, rect, (horizontal ? rect.y : rect.x) + at, horizontal)) continue;
             const a = horizontal
                 ? {x: rect.x, y: rect.y, w: rect.w, h: at, depth: rect.depth + 1, children: []}
                 : {x: rect.x, y: rect.y, w: at, h: rect.h, depth: rect.depth + 1, children: []};
@@ -414,6 +503,10 @@ function shiftRects(rects, dy) {
  * genuine gutter next to a seam is unaffected, because the overlapping neighbour sees
  * it in its interior and contributes it from there — that is what TILE_OVERLAP is for.
  *
+ * A harvested line is discarded for a second reason too: the stitch turns it into a
+ * cut ACROSS THE WHOLE PAGE, so a line that is fine inside the column that produced it
+ * can still run through a protected module in the column beside it. See the loop.
+ *
  * THE HORIZONTAL BANDS ARE NOT THE ANSWER, THEY ARE THE SCAFFOLD. Harvesting only
  * the y-cut lines that tiles agree on and returning those bands as bare full-width
  * leaves would silently throw away every vertical cut the tiles found — a two-column
@@ -487,16 +580,30 @@ export function segmentTall(edges, width, height, opts = {}) {
 
     const step = TILE_HEIGHT - TILE_OVERLAP;
     const cuts = new Set([0, height]);
+    // Page coordinates, unshifted: a harvested line is a page coordinate too.
+    const keepWhole = protectedRects(opts.rects, width, height);
+    const page = {x: 0, y: 0, w: width, h: height};
     for (let top = 0; top < height; top += step) {
         const h = Math.min(TILE_HEIGHT, height - top);
         if (h <= 0) break;
         // Segment the tile in its own coordinate space, rects and all, then translate up.
         const slice = edges.subarray(top * width, (top + h) * width);
-        const sub = segment(slice, width, h, {...opts, rects: shiftRects(opts.rects, -top)});
+        const sub = segment(slice, width, h, {...opts, pageHeight: height, rects: shiftRects(opts.rects, -top)});
         for (const l of leaves(sub)) {
             for (const line of [l.y + top, l.y + l.h + top]) {
                 // This tile's own frame is not evidence of a boundary.
                 if ((line === top || line === top + h) && line !== 0 && line !== height) continue;
+                // A BAND BOUNDARY IS A FULL-WIDTH CUT, whatever produced it. `segment`
+                // only ever rejected cuts that crossed a protected element WITHIN THE
+                // REGION BEING SPLIT, which is right there and wrong here: a cut at the
+                // top of a stat card in the right-hand column is perfectly legal inside
+                // that column, and the stitch then promotes it to a line across the whole
+                // page — straight through the testimonial card beside it. That is how
+                // switch.je's Jersey Finance quote stayed split after the interior of the
+                // card was protected. So test the harvested line as what it will become.
+                // Full-bleed media never exposed this, because a full-bleed element spans
+                // the page and no region could produce such a cut in the first place.
+                if (cutsInsideProtected(keepWhole, page, line, true)) continue;
                 cuts.add(line);
             }
         }
@@ -521,7 +628,7 @@ export function segmentTall(edges, width, height, opts = {}) {
         // so vertical structure inside the band survives the stitch. The band slice
         // spans the full width, so translating by (0, y) is enough to place it.
         const bandSlice = edges.subarray(y * width, (y + h) * width);
-        const bandRoot = segment(bandSlice, width, h, {...opts, rects: shiftRects(opts.rects, -y)});
+        const bandRoot = segment(bandSlice, width, h, {...opts, pageHeight: height, rects: shiftRects(opts.rects, -y)});
         children.push(translate(bandRoot, 0, y, 1));
     }
 
