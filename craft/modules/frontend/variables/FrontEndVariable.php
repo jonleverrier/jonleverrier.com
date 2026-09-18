@@ -623,7 +623,7 @@ class FrontEndVariable
         if (str_contains($host, 'wa.me') || str_contains($host, 'whatsapp')) {
             return 'whatsapp';
         }
-        if (str_contains($host, 'calendly') || str_contains($host, 'cal.com')) {
+        if ($host === 'cal.com' || str_ends_with($host, '.cal.com')) {
             return 'callback';
         }
 

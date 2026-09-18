@@ -204,25 +204,41 @@ $c-contact-panel-exit: 260ms; // the exit — softer, so a dismiss is the panel 
     }
 }
 
-// The booking step's frame — Calendly, opened in place rather than sending the visitor
-// off the site (see contact-panel.js, which sets the src from the CTA's own href on
-// first press).
+// The booking step's box — Cal's inline embed, opened in place rather than sending the
+// visitor off the site (see contact-panel.js, which mounts it here on first press). The
+// iframe inside is Cal's: their script creates it and sizes its height to the booker as
+// the visitor moves through it, so nothing here fixes a height, only a floor.
 //
-// A tall min-height because the embed decides its own layout and a short box makes it
-// scroll inside a panel that is already scrolling. The panel's inner is the scroller,
-// so the frame simply takes the room it needs and the panel handles the overflow.
+// That floor is tall because the embed decides its own layout and a short box makes it
+// scroll inside a panel that is already scrolling. The panel's inner is the scroller, so
+// the embed simply takes the room it needs and the panel handles the overflow.
+//
+// overflow hidden: the rounded corners are ours, and the embed's own frame is square.
 .c-contact-panel__booking {
     display: block;
     width: 100%;
     min-height: rem(640);
-    border: 0;
     border-radius: $b-radius-200;
+    overflow: hidden;
     background-color: getmap($colour, light, 100);
 
     // Shorter viewports: the panel is capped at 92dvh there, so a 640px frame would
     // push everything else out of reach. Take what the panel can spare instead.
     @include mq(until, md) {
         min-height: min(#{rem(640)}, 70dvh);
+    }
+
+    // No ring on the box itself. It takes focus when the step slides in (tabindex -1 in
+    // the template) purely so a screen reader lands on the region; the visitor tabbing
+    // is going to Cal's frame, which draws its own.
+    &:focus {
+        outline: none;
+    }
+
+    iframe {
+        display: block;
+        width: 100%;
+        border: 0;
     }
 }
 

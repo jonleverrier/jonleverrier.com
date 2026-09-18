@@ -95,7 +95,7 @@ class FrontEnd extends BaseModule
                         "font-src 'self'",
                         "connect-src 'self'",
                         "img-src 'self' data: https://i.scdn.co",
-                        // The contact panel's "request a call back" step frames Calendly
+                        // The contact panel's "request a call back" step embeds Cal.com
                         // (see _components/contact-panel). Without this the frame falls
                         // back to default-src 'self' and the browser refuses it — and it
                         // refuses it SILENTLY as far as the panel is concerned: the step
@@ -105,16 +105,23 @@ class FrontEnd extends BaseModule
                         // spelling and covers workers too, which this has no business
                         // widening.
                         //
-                        // The wildcard is for the embed's own redirects — a Calendly
-                        // booking URL moves between calendly.com and its subdomains —
-                        // and a frame-src listing only the apex breaks on the hop.
+                        // Both hosts, because the link and the embed are not the same
+                        // one: cal.com/<user>/<event> is what the CMS holds and what the
+                        // CTA points at elsewhere on the site, while the frame Cal opens
+                        // is on app.cal.com. No wildcard — these two are the whole of it.
                         //
-                        // Nothing else opens: the framed document is its own browsing
-                        // context with its own policy, so connect-src, script-src and the
-                        // rest still describe OUR page only and stay at 'self'.
-                        "frame-src https://calendly.com https://*.calendly.com",
+                        // The framed document is its own browsing context with its own
+                        // policy, so connect-src, img-src and the rest still describe OUR
+                        // page only and stay as they are. script-src is the exception,
+                        // and it is below: Cal's embed.js runs in our page, not theirs.
+                        "frame-src https://cal.com https://app.cal.com",
                         "style-src 'self' 'unsafe-inline'",
-                        "script-src 'self' 'unsafe-inline'",
+                        // app.cal.com: the contact panel's booking step loads Cal's
+                        // embed.js into THIS page (contact-panel.js appends it on the
+                        // first press of the CTA — never before, so a visitor who does
+                        // not book never fetches it). It is the one third-party script
+                        // the site runs, and the only reason script-src names a host.
+                        "script-src 'self' 'unsafe-inline' https://app.cal.com",
                         'upgrade-insecure-requests',
                     ]);
 
