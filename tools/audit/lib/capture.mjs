@@ -88,7 +88,7 @@ export async function capturePage(url, outDir, opts = {}) {
         await page.goto(url, {waitUntil: 'load', timeout: 45000});
         await page.waitForLoadState('networkidle', {timeout: 20000}).catch(() => {});
 
-        const consentDismissed = await dismissConsent(page);
+        const consent = await dismissConsent(page);
 
         // Step down a viewport at a time so lazy images and in-view animations fire.
         let scrolls = 0;
@@ -120,7 +120,8 @@ export async function capturePage(url, outDir, opts = {}) {
             capturedAt: new Date().toISOString(),
             viewport: VIEWPORT,
             fullHeight,
-            consentDismissed,
+            consentDismissed: consent.dismissed,
+            consentVia: consent.via,
             scrollCapHit,
             webgl,
         };

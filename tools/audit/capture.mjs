@@ -23,7 +23,7 @@ try {
     const meta = await capturePage(url, outDir);
     console.log(`url          ${meta.url}`);
     console.log(`full height  ${meta.fullHeight}px`);
-    console.log(`consent      ${meta.consentDismissed ? 'dismissed' : 'not dismissed (counts as surface area)'}`);
+    console.log(`consent      ${meta.consentDismissed ? `dismissed via ${meta.consentVia}` : 'not dismissed (counts as surface area)'}`);
     console.log(`scroll cap   ${meta.scrollCapHit ? 'HIT — page may be infinite-scroll' : 'not hit'}`);
     console.log(`webgl        ${meta.webgl.renderer || 'none'}${meta.webgl.software === true ? ' (software)' : ''}`);
     console.log(`webgl asked  ${meta.webgl.requested.length ? meta.webgl.requested.join(", ") : "no"}`);
