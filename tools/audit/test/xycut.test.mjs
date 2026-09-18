@@ -1,5 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {findGutters, widestGutter, rowDensity, segment, segmentTall} from '../lib/xycut.mjs';
 import {edgeMapFromPng} from '../lib/edges.mjs';
 import {leaves, totalArea, area, assertPartition, overlaps} from '../lib/blocks.mjs';
@@ -140,5 +141,144 @@ test('segmentTall keeps vertical structure inside a band instead of flattening i
     assert.ok(
         leaves(root).some((l) => l.w < width),
         'expected at least one leaf narrower than the full image width',
+    );
+});
+
+// ---------------------------------------------------------------------------
+// Task 8: the cuts must land on real layout boundaries.
+//
+// A gutter says "a boundary is somewhere in this run". Everything below is about
+// the three ways the original algorithm answered "where" badly: it cut in the
+// middle of the whitespace, it invented cuts out of tile arithmetic, and it gave
+// up on a region forever the first time one candidate produced a runt child.
+// ---------------------------------------------------------------------------
+
+/** A w x h edge map, every pixel on except the rows listed as quiet. */
+const denseExcept = (width, height, quiet) => {
+    const edges = new Uint8Array(width * height);
+    const isQuiet = (y) => quiet.some(([a, b]) => y >= a && y < b);
+    for (let y = 0; y < height; y++) {
+        if (isQuiet(y)) continue;
+        edges.fill(1, y * width, (y + 1) * width);
+    }
+
+    return edges;
+};
+
+/** Every distinct horizontal cut line in the tree, page extremes excluded. */
+const interiorCuts = (root, height) => {
+    const ys = new Set();
+    for (const l of leaves(root)) {
+        ys.add(l.y);
+        ys.add(l.y + l.h);
+    }
+    ys.delete(0);
+    ys.delete(height);
+
+    return [...ys].sort((a, b) => a - b);
+};
+
+test('a cut snaps to a real element edge inside the gutter, not the gutter midpoint', () => {
+    // Rows 150..249 are the only quiet run, so the gutter is {start: 150, end: 250}
+    // and its midpoint is 200. A content element ENDS at y=170, 30px off that
+    // midpoint: 170 is where the layout actually stops and 200 is 30px of element
+    // handed to the wrong block.
+    const width = 200, height = 400;
+    const edges = denseExcept(width, height, [[150, 250]]);
+    const rects = [{x: 0, y: 20, w: 200, h: 150, tag: 'section', text: ''}];
+    const opts = {maxDepth: 1, minSide: 20, minAreaFraction: 0.001};
+
+    const snapped = segment(edges, width, height, {...opts, rects});
+    assert.deepEqual(interiorCuts(snapped, height), [170], 'should cut at the element edge');
+    assert.doesNotThrow(() => assertPartition(snapped));
+    assert.equal(totalArea(leaves(snapped)), width * height);
+});
+
+test('no rects means the midpoint, no crash and no change', () => {
+    // The pure-pixel path has to keep working: a caller may have a PNG and no DOM
+    // at all. Same map as above, no rects -> the old midpoint answer, unchanged.
+    const width = 200, height = 400;
+    const edges = denseExcept(width, height, [[150, 250]]);
+    const opts = {maxDepth: 1, minSide: 20, minAreaFraction: 0.001};
+
+    assert.deepEqual(interiorCuts(segment(edges, width, height, opts), height), [200]);
+    assert.deepEqual(
+        JSON.stringify(segment(edges, width, height, {...opts, rects: undefined})),
+        JSON.stringify(segment(edges, width, height, opts)),
+        'an explicit undefined must behave exactly like an absent key',
+    );
+    assert.deepEqual(
+        JSON.stringify(segment(edges, width, height, {...opts, rects: []})),
+        JSON.stringify(segment(edges, width, height, opts)),
+        'an empty rects list must behave exactly like no rects',
+    );
+});
+
+test('a tile frame is not a cut: a uniformly dense tall page has no interior cut at all', () => {
+    // No gutter anywhere, so nothing on this page justifies a single horizontal
+    // boundary. segment() always returns leaves touching their region's frame, so
+    // before this was fixed the tile loop alone chopped the page at 750, 900, 1500,
+    // 1650, 2250 and 2400 -- pure arithmetic, zero evidence.
+    const width = 200, height = 3000;
+    const edges = denseExcept(width, height, []);
+    const root = segmentTall(edges, width, height, {maxDepth: 4, minSide: 20, minAreaFraction: 0.001});
+
+    assert.deepEqual(interiorCuts(root, height), [], 'tile geometry must not invent a boundary');
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('a failed widest split falls back to the next-widest gutter instead of giving up', () => {
+    // The widest gutter (rows 10..40, 30 wide) sits near the top: cutting it leaves a
+    // 25px child, under minSide. The next-widest (rows 190..210, 20 wide) halves the
+    // region cleanly. Collapsing each axis to one candidate before the size check
+    // abandoned the whole region here -- which is why whole pages came out as 5 leaves.
+    const width = 200, height = 400;
+    const edges = denseExcept(width, height, [[10, 40], [190, 210]]);
+    const root = segment(edges, width, height, {maxDepth: 1, minSide: 50, minAreaFraction: 0.001});
+
+    assert.deepEqual(interiorCuts(root, height), [200], 'should split on the narrower gutter');
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('rects reach a tile and a band in the right coordinate space', () => {
+    // THE OFFSET IS THE EASY THING TO GET WRONG, and it fails silently: a rect list
+    // shifted by the wrong origin still yields a valid partition, just with cuts
+    // snapped confidently to the wrong places. So assert the exact page coordinates.
+    //
+    // Gutter A (1000..1100) is found by the TILE at top=750, in tile space; gutter B
+    // (1200..1240) is narrower, so with maxDepth 1 the tile never reaches it and it is
+    // found later by the BAND starting at y=1020, in band space. Two different origins,
+    // two different non-midpoint answers: A's midpoint is 1050 and the element edge is
+    // 1020; B's midpoint is 1220 and the element edge is 1215.
+    const width = 200, height = 3000;
+    const edges = denseExcept(width, height, [[1000, 1100], [1200, 1240]]);
+    const rects = [
+        {x: 0, y: 900, w: 200, h: 120, tag: 'section', text: ''},  // ends at 1020, inside A
+        {x: 0, y: 1100, w: 200, h: 115, tag: 'section', text: ''}, // ends at 1215, inside B
+    ];
+    const root = segmentTall(edges, width, height, {maxDepth: 1, minSide: 20, minAreaFraction: 0.001, rects});
+
+    assert.deepEqual(interiorCuts(root, height), [1020, 1215]);
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('supplying rects changes the tree, and both runs are byte-identical', async () => {
+    // Two halves. Byte-identical repeats are the determinism the CLI promises; the
+    // inequality is what stops this test passing vacuously, because a build that
+    // ignored opts.rects entirely would satisfy determinism on its own.
+    const {edges, width, height} = await edgeMapFromPng('tools/audit/fixtures/retail.png');
+    const rects = JSON.parse(readFileSync('tools/audit/fixtures/retail.rects.json', 'utf8'));
+    const opts = {maxDepth: 4, rects};
+
+    const a = JSON.stringify(segmentTall(edges, width, height, opts));
+    const b = JSON.stringify(segmentTall(edges, width, height, opts));
+    assert.equal(a, b, 'two runs with rects must be byte-identical');
+    assert.notEqual(
+        a,
+        JSON.stringify(segmentTall(edges, width, height, {maxDepth: 4})),
+        'rects must actually reach the algorithm',
     );
 });

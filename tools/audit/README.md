@@ -7,7 +7,7 @@ reporting are not built yet.
 | file | what |
 |---|---|
 | `capture.mjs` | Phase 1 CLI. Loads a URL at 1440×900 and writes the screenshots, DOM rects and meta. |
-| `segment.mjs` | Phase 2 CLI. Turns a screenshot into a block tree and a debug image. |
+| `segment.mjs` | Phase 2 CLI. Turns a screenshot (plus `rects.json`, if present) into a block tree and a debug image. |
 | `lib/capture.mjs` | `capturePage()` — the Playwright run. The Craft job will import this, not the CLI. |
 | `lib/consent.mjs` | The cookie-banner selectors, and one attempt at dismissing them. |
 | `lib/edges.mjs` | Greyscale → Sobel → non-max suppression → hysteresis. A Canny edge map. |
@@ -34,14 +34,20 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   defaults to `/tmp/audit`. The fixtures are the deliberate exception.
 - **A consent banner we fail to dismiss is not a failure.** It is part of that page's
   surface area and should be measured as such. `meta.json` records which happened.
+- **`rects.json` makes the cuts land on the layout.** Phase 2 reads it from `outDir`
+  when phase 1 left one and snaps each cut onto a real element edge inside the chosen
+  gutter. It is optional — with only a PNG the cut falls back to the gutter midpoint,
+  which is tens of pixels out wherever the whitespace is generous. Phase 2 says which
+  it did on stderr; a run that quietly lost its rects looks like a worse segmenter.
 - **Open `debug.png`.** The tests prove the tree is a valid partition. They cannot
   prove it is a sensible one.
 
 ## The rule this tool defends
 
-**A block's children exactly tile it.** Splits land at the gutter midpoint and every
-pixel goes to one child or the other, so total leaf area equals image area at every
-depth.
+**A block's children exactly tile it.** A split lands on one coordinate inside the
+gutter — a real element edge from `rects.json` when there is one, the gutter midpoint
+otherwise — and every pixel goes to one child or the other, so total leaf area equals
+image area at every depth.
 
 That is the measurement, not tidiness. Trim blocks to their content instead and the
 gutters fall out of every leaf, so cutting a nine-card grid into nine blocks quietly
