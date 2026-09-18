@@ -16,7 +16,7 @@
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {isAcceptLabel, CONSENT_SELECTORS} from '../lib/consent.mjs';
+import {isAcceptLabel, CONSENT_SELECTORS, CLICKABLE} from '../lib/consent.mjs';
 
 test('the real pola.co.jp banner: 了解 accepts, Cookie設定 does not', () => {
     assert.equal(isAcceptLabel('了解'), true);
@@ -24,9 +24,36 @@ test('the real pola.co.jp banner: 了解 accepts, Cookie設定 does not', () => 
 });
 
 test('English accept wording', () => {
-    for (const label of ['Accept', 'Accept all', 'Accept all cookies', 'Allow all', 'I agree', 'Got it', 'OK']) {
+    for (const label of ['Accept', 'Accept all', 'Accept all cookies', 'Allow all', 'I agree', 'Got it']) {
         assert.equal(isAcceptLabel(label), true, label);
     }
+});
+
+// "OK" USED TO BE ASSERTED TRUE HERE, deliberately, and it was half of a real defect: on
+// a page with no banner at all, an ordinary `<a>OK</a>` was clicked, the capture followed
+// it to another page, and the run reported a successful dismissal. A two-letter word that
+// appears on dialogs, forms, toasts and plain links is not evidence of a consent banner.
+// The cost is real and accepted: a banner whose only accept control says exactly "OK" is
+// now left standing and measured as part of the page.
+test('bare OK and Okay are not evidence of a banner', () => {
+    for (const label of ['OK', 'Ok', 'okay', 'Okay']) {
+        assert.equal(isAcceptLabel(label), false, label);
+    }
+});
+
+// The CJK accept that means much the same thing stays, because it IS a real banner's real
+// button and does not appear on ordinary page furniture the way "OK" does.
+test('了解 survives the narrowing that removed OK', () => {
+    assert.equal(isAcceptLabel('了解'), true);
+});
+
+// The other half of the same defect. A link built as a button says so with a role; a link
+// that does not say so is page furniture, and it is the one control that can take the
+// capture to a different page entirely.
+test('an ordinary anchor is not in the clickable set, but a role="button" is', () => {
+    assert.doesNotMatch(CLICKABLE, /(^|,)\s*a\s*(,|$)/, 'a bare `a` selector is back');
+    assert.match(CLICKABLE, /\[role="button"\]/);
+    assert.match(CLICKABLE, /button/);
 });
 
 test('non-Latin accept wording', () => {

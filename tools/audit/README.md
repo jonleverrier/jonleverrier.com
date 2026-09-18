@@ -36,6 +36,30 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   defaults to `/tmp/audit`. The fixtures are the deliberate exception.
 - **A consent banner we fail to dismiss is not a failure.** It is part of that page's
   surface area and should be measured as such. `meta.json` records which happened.
+- **The text pass only looks inside something banner-shaped, and a navigation is never a
+  dismissal.** It used to consider every control in the document, so on a page with no
+  banner at all an ordinary `<a>OK</a>` was clicked, the capture followed it, and the run
+  reported `dismissed via text "OK"` with every artefact taken from the other page. A
+  stranger submitting a URL could steer the audit at will. So: a bare `a` is not a
+  candidate (a link built as a button carries `role="button"`), bare `ok`/`okay` are not
+  accept wording, a candidate must sit under a `fixed`/`sticky` ancestor or a dialog role,
+  and the URL is compared across the click — if it moved, the page is put back and the
+  capture continues with the banner still standing. The cost is a banner in normal
+  document flow, or one whose only button says "OK", is left alone; it is then measured,
+  which is the right answer anyway. `meta.url` is what was requested, `meta.capturedUrl`
+  is what was measured, and both CLIs say so loudly when they differ.
+- **The page's height is `max(documentElement.scrollHeight, body.scrollHeight)`, and the
+  PNG's own height is recorded beside it.** `body.scrollHeight` alone is not the page
+  height: on example.com it says 96 against a 900px screenshot, and on any page whose
+  height lives on `<html>` it made the scroll loop stop on its first pass so lazy content
+  never loaded — silently, exit 0. The two numbers in `meta` are there to be compared:
+  phase 2 divides by the image, so a screenshot that stopped early means every percentage
+  is of a prefix of the page, and both CLIs warn when they disagree by more than rounding.
+- **Phase 2 writes nothing unless the tree passed.** `assertPartition` runs in the CLI —
+  containment, pairwise overlap and exact area equality at every node, not just the
+  leaf-area total — and a failure exits 1. Previous artefacts are removed at the start of
+  every run, so `blocks.json` is always this run's or absent. It used to print
+  `area check BROKEN` and exit 0 with the file already written.
 - **`rects.json` makes the cuts land on the layout.** Phase 2 reads it from `outDir`
   when phase 1 left one and snaps each cut onto a real element edge inside the chosen
   gutter. It is optional — with only a PNG the cut falls back to the gutter midpoint,
@@ -61,9 +85,12 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   protected.
 - **The stitch is a second place a cut is decided.** `segmentTall` rebuilds a tall page
   from full-width bands, so a cut that was legal inside one column becomes a line across
-  the whole page. Protection is applied to the harvested line as well as inside
+  the whole page. EVERY protection rule is applied to the harvested line as well as inside
   `segment`, or a stat card's top edge in the right-hand column saws through the
-  testimonial beside it — which is exactly what it did.
+  testimonial beside it — which is exactly what it did. The lesson has had to be learned
+  twice: module containers reached the stitch when the rule arrived, headings did not, and
+  a band boundary taken from a right-hand column's whitespace went on slicing left-hand
+  headlines. A new population of protected rects is not finished until it is in both.
 - **A page can decline to draw its own hero, and nothing will look wrong.** WebGL itself
   works here — headless Chromium renders it through SwiftShader, verified, and
   pola.co.jp draws a full WebGL scene in 1089 calls with no GPU at all. But a site with a
