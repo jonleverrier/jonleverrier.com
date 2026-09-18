@@ -6,15 +6,29 @@
  *
  *   node tools/audit/capture.mjs <url> [outDir]
  *
- * The limitation worth knowing: prefers-reduced-motion is forced, because a carousel
- * or an entrance animation makes the capture non-deterministic and phase 2 is
- * required to be deterministic. A site whose hero only exists mid-animation will
- * therefore capture as its resting state, which is the state most visitors see.
+ * The limitation worth knowing: THIS BROWSER CANNOT DRAW EVERYTHING A VISITOR SEES, and
+ * it does not always fail loudly.
+ *
+ * Two separate causes, both of which produce a page that loads perfectly and is missing
+ * a region:
+ *
+ *   - prefers-reduced-motion is forced, because a carousel or an entrance animation
+ *     makes the capture non-deterministic and phase 2 has to be deterministic. Content
+ *     gated behind that query is therefore absent — and it is NOT true, as this comment
+ *     used to claim, that the resting state is "what most visitors see": most visitors
+ *     do not have reduced motion set, so they get the thing we skipped.
+ *   - There is no GPU, so WebGL falls back to SwiftShader, and sites that check for
+ *     that decline to render rather than push a heavy scene through a software
+ *     rasteriser. See lib/webgl.mjs — `meta.webgl` records it so the report can decline
+ *     to answer for that region instead of measuring a hole as empty space.
+ *
+ * Neither is a bug to fix here. Both are conditions to declare.
  */
 import {chromium} from 'playwright';
 import {mkdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {dismissConsent} from './consent.mjs';
+import {WEBGL_PROBE_INIT, probeWebgl} from './webgl.mjs';
 
 export const VIEWPORT = {width: 1440, height: 900};
 
@@ -68,6 +82,9 @@ export async function capturePage(url, outDir, opts = {}) {
             reducedMotion: 'reduce',
         });
         const page = await context.newPage();
+        // Before the page's own scripts, so a hero that asks for a context on first
+        // evaluation is still recorded.
+        await page.addInitScript(WEBGL_PROBE_INIT);
         await page.goto(url, {waitUntil: 'load', timeout: 45000});
         await page.waitForLoadState('networkidle', {timeout: 20000}).catch(() => {});
 
@@ -96,6 +113,7 @@ export async function capturePage(url, outDir, opts = {}) {
 
         const rects = await page.evaluate(COLLECT_RECTS);
         const fullHeight = await page.evaluate(() => document.body.scrollHeight);
+        const webgl = await probeWebgl(page);
 
         const meta = {
             url,
@@ -104,6 +122,7 @@ export async function capturePage(url, outDir, opts = {}) {
             fullHeight,
             consentDismissed,
             scrollCapHit,
+            webgl,
         };
         writeFileSync(join(outDir, 'rects.json'), JSON.stringify(rects, null, 1));
         writeFileSync(join(outDir, 'meta.json'), JSON.stringify(meta, null, 1));

@@ -22,6 +22,7 @@ import {edgeMapFromPng} from './lib/edges.mjs';
 import {segmentTall} from './lib/xycut.mjs';
 import {renderDebug} from './lib/debug.mjs';
 import {leaves, totalArea} from './lib/blocks.mjs';
+import {webglWarning} from './lib/webgl.mjs';
 
 const outDir = process.argv[2];
 const depthArg = process.argv.find((a) => a.startsWith('--depth='));
@@ -75,6 +76,19 @@ try {
     console.log(`mean area    ${mean}px²`);
     console.log(`area check   ${totalArea(ls) === width * height ? 'conserved' : 'BROKEN'}`);
     console.log(`debug image  ${join(outDir, 'debug.png')}`);
+
+    // Carried through from phase 1 rather than re-probed: by the time anyone reads a
+    // percentage, the browser that failed to draw the page is long gone. A blank region
+    // segments perfectly and conserves area, so nothing downstream would otherwise
+    // notice that part of the page never rendered.
+    const metaPath = join(outDir, 'meta.json');
+    if (existsSync(metaPath)) {
+        const warning = webglWarning(JSON.parse(readFileSync(metaPath, 'utf8')).webgl);
+        if (warning) {
+            console.log('unmeasured   YES — see warning');
+            process.stderr.write(`\nWARNING: ${warning}\n`);
+        }
+    }
 } catch (e) {
     console.error(`segmentation failed: ${e.message}`);
     process.exit(1);

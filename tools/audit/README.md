@@ -9,6 +9,7 @@ reporting are not built yet.
 | `capture.mjs` | Phase 1 CLI. Loads a URL at 1440×900 and writes the screenshots, DOM rects and meta. |
 | `segment.mjs` | Phase 2 CLI. Turns a screenshot (plus `rects.json`, if present) into a block tree and a debug image. |
 | `lib/capture.mjs` | `capturePage()` — the Playwright run. The Craft job will import this, not the CLI. |
+| `lib/webgl.mjs` | Whether this browser could render a WebGL hero, and whether the page wanted one. |
 | `lib/consent.mjs` | The cookie-banner selectors, and one attempt at dismissing them. |
 | `lib/edges.mjs` | Greyscale → Sobel → non-max suppression → hysteresis. A Canny edge map. |
 | `lib/xycut.mjs` | Density profiles, gutter finding, the recursive partition, and tall-page tiling. |
@@ -39,6 +40,19 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   gutter. It is optional — with only a PNG the cut falls back to the gutter midpoint,
   which is tens of pixels out wherever the whitespace is generous. Phase 2 says which
   it did on stderr; a run that quietly lost its rects looks like a worse segmenter.
+- **This browser cannot draw a WebGL hero, and the page will not complain.** There is no
+  GPU, so WebGL falls back to SwiftShader, and sites that check for that deliberately
+  decline to render rather than push a heavy scene through a software rasteriser — the
+  page loads clean and simply has a hole where its hero belongs. PageSpeed Insights and
+  Lighthouse see the same hole, so this is a property of headless rendering, not a bug in
+  either tool. `meta.webgl` records the renderer and whether the page asked for a
+  context; both CLIs print a WARNING when it did and could not get a real one. **Do not
+  report a percentage for a region flagged this way** — it is unmeasured, not empty, and
+  a site whose hero is its homepage would otherwise be told a quarter of its page is
+  nothing.
+- **Content behind `prefers-reduced-motion` is absent too.** It is forced, because
+  determinism requires it. That is a second way the captured page differs from the one a
+  visitor sees, and unlike the WebGL case nothing detects it.
 - **Open `debug.png`.** The tests prove the tree is a valid partition. They cannot
   prove it is a sensible one.
 
