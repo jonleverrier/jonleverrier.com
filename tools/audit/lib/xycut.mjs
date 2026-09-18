@@ -666,6 +666,9 @@ export function segmentTall(edges, width, height, opts = {}) {
     const cuts = new Set([0, height]);
     // Page coordinates, unshifted: a harvested line is a page coordinate too.
     const keepWhole = protectedRects(opts.rects, width, height);
+    // BOTH of `segment`'s rejection populations, because a harvested line is judged
+    // against the whole page and a heading is no more cuttable here than there.
+    const keepIntact = textRects(opts.rects);
     const page = {x: 0, y: 0, w: width, h: height};
     for (let top = 0; top < height; top += step) {
         const h = Math.min(TILE_HEIGHT, height - top);
@@ -687,7 +690,14 @@ export function segmentTall(edges, width, height, opts = {}) {
                 // card was protected. So test the harvested line as what it will become.
                 // Full-bleed media never exposed this, because a full-bleed element spans
                 // the page and no region could produce such a cut in the first place.
+                //
+                // BOTH POPULATIONS, and the second one is here because it was once
+                // missing: heading protection was added to `segment` alone, so a band
+                // boundary taken from the right column's whitespace went on slicing a
+                // left-column headline. Every rule `segment` applies to a cut applies
+                // here too — this is the same line, promoted.
                 if (cutsInsideProtected(keepWhole, page, line, true)) continue;
+                if (cutsInsideProtected(keepIntact, page, line, true)) continue;
                 cuts.add(line);
             }
         }

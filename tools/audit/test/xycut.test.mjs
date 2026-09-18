@@ -709,6 +709,41 @@ test('a band boundary is a full-width cut and must clear every module container'
     assert.equal(totalArea(leaves(root)), width * height);
 });
 
+test('a band boundary is a full-width cut and must clear every heading too', () => {
+    // THE SAME LESSON, THE SECOND POPULATION. The stitch learned to test a harvested
+    // line against module containers and was never told about headings, so a band
+    // boundary derived from the RIGHT column's whitespace still sliced a left-column
+    // headline — the exact defect the module rule was added to stop, one population
+    // later. Two-column editorial pages are full of this shape; neither committed
+    // fixture has one, which is why the suite stayed green.
+    //
+    // Identical map to the module test above, with an <h1> where the card was.
+    const width = 200, height = 3000;
+    const edges = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            if (x >= 90 && x < 110) continue;                // the column gutter
+            if (y >= 1300 && y < 1340 && x >= 110) continue; // quiet in the right column only
+            edges[y * width + x] = 1;
+        }
+    }
+    const h1 = {x: 10, y: 1200, w: 70, h: 250, tag: 'h1', boxed: false, text: 'How can we help'};
+    const opts = {maxDepth: 2, minSide: 20, minAreaFraction: 0.001};
+
+    // The control: without the heading supplied, the band boundary at 1320 runs the
+    // whole way across and lands inside the headline's box.
+    const bare = segmentTall(edges, width, height, opts);
+    assert.ok(
+        cutsInsideBox(bare, h1).includes('y=1320'),
+        `the stitch must promote the right column's cut to a full-width line: ${cutsInsideBox(bare, h1)}`,
+    );
+
+    const root = segmentTall(edges, width, height, {...opts, rects: [h1]});
+    assert.deepEqual(cutsInsideBox(root, h1), [], 'no full-width band line may cross the headline');
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
 test('an absent boxed field is exactly a false one, and is never required', () => {
     // An older capture has no `boxed` at all. It must not crash, must not be treated as
     // boxed, and must leave the semantic-tag path working — the field is evidence, never
