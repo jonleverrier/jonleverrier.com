@@ -29,6 +29,7 @@ import {renderDebug} from './lib/debug.mjs';
 import {assertPartition, leaves, totalArea} from './lib/blocks.mjs';
 import {webglWarning} from './lib/webgl.mjs';
 import {shotTruncationWarning, unrenderedWarning} from './lib/unrendered.mjs';
+import {printable} from './lib/printable.mjs';
 
 const outDir = process.argv[2];
 const depthArg = process.argv.find((a) => a.startsWith('--depth='));
@@ -47,7 +48,7 @@ if (!outDir) {
 // Number('') and Number(' ') are 0 (a typo becomes a deliberate "do not cut"), and
 // Number('0x4') is 4 (hex, silently). A plain decimal test refuses all of them.
 if (depthValue !== null && !/^\d+$/.test(depthValue)) {
-    console.error(`--depth must be a non-negative whole number, got "${depthValue}"`);
+    console.error(`--depth must be a non-negative whole number, got "${printable(depthValue, 40)}"`);
     process.exit(1);
 }
 const maxDepth = depthValue === null ? 4 : Number(depthValue);
@@ -55,7 +56,11 @@ const maxDepth = depthValue === null ? 4 : Number(depthValue);
 const png = join(outDir, 'fullpage.png');
 const blocksPath = join(outDir, 'blocks.json');
 const debugPath = join(outDir, 'debug.png');
-process.stderr.write(`segmenting ${png} at depth ${maxDepth}\n`);
+// NOTHING REACHES THIS TERMINAL RAW. The paths are argv, the URLs below came off the
+// page, and a JSON error message quotes the file's own bytes back — printable() strips
+// the escapes that would otherwise rewrite the line an operator is reading, and caps the
+// length so a label cannot fill the screen. See lib/printable.mjs.
+process.stderr.write(`segmenting ${printable(png)} at depth ${maxDepth}\n`);
 try {
     // CLEAR BEFORE, WRITE AFTER. A run that fails must not leave the PREVIOUS run's
     // blocks.json sitting in the directory: a caller that shells out and reads the file
@@ -74,9 +79,9 @@ try {
     const rectsPath = join(outDir, 'rects.json');
     const rects = existsSync(rectsPath) ? JSON.parse(readFileSync(rectsPath, 'utf8')) : undefined;
     if (rects) {
-        process.stderr.write(`snapping cuts to ${rects.length} DOM rects from ${rectsPath}\n`);
+        process.stderr.write(`snapping cuts to ${rects.length} DOM rects from ${printable(rectsPath)}\n`);
     } else {
-        process.stderr.write(`no rects.json in ${outDir} — cutting on pixels alone, boundaries will be approximate\n`);
+        process.stderr.write(`no rects.json in ${printable(outDir)} — cutting on pixels alone, boundaries will be approximate\n`);
     }
 
     const {edges, width, height} = await edgeMapFromPng(png);
@@ -108,7 +113,7 @@ try {
     // A statement of what the gate above established, not a recomputation of it: this
     // line is only ever reached by a tree that passed both checks.
     console.log('area check   conserved');
-    console.log(`debug image  ${debugPath}`);
+    console.log(`debug image  ${printable(debugPath)}`);
 
     // Carried through from phase 1 rather than re-probed: by the time anyone reads a
     // percentage, the browser that failed to draw the page is long gone. A blank region
@@ -120,7 +125,7 @@ try {
         // WHICH PAGE THIS IS A MEASUREMENT OF comes first: a percentage attributed to the
         // wrong domain is wrong in a way no other warning here can make up for.
         const wrongPage = meta.capturedUrl && meta.url && meta.capturedUrl !== meta.url
-            ? `these blocks are of ${meta.capturedUrl}, not the ${meta.url} that was requested`
+            ? `these blocks are of ${printable(meta.capturedUrl)}, not the ${printable(meta.url)} that was requested`
             : null;
         const warnings = [
             wrongPage,
@@ -136,6 +141,6 @@ try {
         }
     }
 } catch (e) {
-    console.error(`segmentation failed: ${e.message}`);
+    console.error(`segmentation failed: ${printable(e.message, 500)}`);
     process.exit(1);
 }

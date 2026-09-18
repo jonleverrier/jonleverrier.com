@@ -46,6 +46,21 @@ const BANNER = (inner, style = '') => '<div id="banner" style="position:fixed;le
     + `<p>We use cookies.</p>${inner}</div>`;
 const REMOVE = 'document.getElementById(\'banner\').remove()';
 
+/** ESC, then an 8-bit CSI: an ANSI sequence and an ANSI introducer, in a button label. */
+const ANSI = `${String.fromCharCode(0x1b)}[2K${String.fromCharCode(0x9b)}31m`;
+
+/**
+ * Nothing left that can act on a terminal. Spelled out here rather than imported from
+ * lib/printable.mjs on purpose: a test that asks the fix for its own definition of
+ * "safe" proves only that the fix agrees with itself.
+ */
+const inert = (s) => ![...s].some((c) => {
+    const n = c.charCodeAt(0);
+
+    return n < 0x20 || (n >= 0x7f && n <= 0x9f) || n === 0x2028 || n === 0x2029
+        || (n >= 0x202a && n <= 0x202e) || (n >= 0x2066 && n <= 0x2069);
+});
+
 const ELSEWHERE = page$('other.html', '<h1>THIS IS NOT THE HOMEPAGE</h1>');
 const HOME = '<h1>THIS IS THE HOMEPAGE</h1>';
 
@@ -80,6 +95,15 @@ const URLS = {
     navigatingBanner: page$(
         'navigating-banner.html',
         HOME + BANNER('<a role="button" href="./other.html">Accept all cookies</a>'),
+    ),
+    // A banner whose accept button is labelled with terminal control codes. isAcceptLabel
+    // runs regexes only, so this label is accepted, clicked, and then printed — which is
+    // the whole of the defect. Built with fromCharCode so the bytes are unambiguous, and
+    // deliberately NOT using CR or LF: the HTML parser normalises those away before the
+    // label is ever read, and ESC and the 8-bit CSI are what actually survive a page.
+    ansiBanner: page$(
+        'ansi-banner.html',
+        HOME + BANNER(`<button onclick="${REMOVE}">Accept all cookies${ANSI}</button>`),
     ),
 };
 
@@ -172,6 +196,16 @@ test('a fixed banner is still dismissed', async () => {
     assert.match(consent.via, /Accept all cookies/);
     assert.equal(state.bannerStillThere, false);
     assert.equal(state.url, URLS.fixedBanner, 'dismissing must not move the page');
+});
+
+// FINDING 11. The label is the page's text and `via` is printed by capture.mjs, so a
+// crafted button label used to reach the operator's terminal with its escapes intact.
+test('a banner label made of escape characters is dismissed and reported harmlessly', async () => {
+    const {consent, state} = await attempt(URLS.ansiBanner);
+    assert.equal(consent.dismissed, true, 'the banner is still a banner and still goes');
+    assert.equal(state.bannerStillThere, false);
+    assert.ok(inert(consent.via), `via must be printable, got ${JSON.stringify(consent.via)}`);
+    assert.match(consent.via, /Accept all cookies/, 'and must still say which label worked');
 });
 
 test('a dialog role is banner-shaped on its own, without any positioning', async () => {

@@ -48,6 +48,8 @@
  * "Manage preferences" opens a SECOND dialog and leaves the page worse than untouched.
  */
 
+import {printable} from './printable.mjs';
+
 /** The strategy this module clicks for. See the header before changing it. */
 export const DISMISS_STRATEGY = 'accept';
 
@@ -490,7 +492,8 @@ export async function dismissConsent(page, timeoutMs = 2000) {
             return await undo();
         }
         if (outcome === 'dismissed') {
-            return {dismissed: true, via: `text "${label}"`, navigatedAway: false};
+            // printable: this label is the page's text, and it ends up on a terminal.
+            return {dismissed: true, via: `text "${printable(label, 60)}"`, navigatedAway: false};
         }
     }
 

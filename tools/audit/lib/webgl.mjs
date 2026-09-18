@@ -40,6 +40,8 @@
  *   - A page that draws one frame and then abandons the scene counts as having drawn.
  */
 
+import {printable} from './printable.mjs';
+
 /**
  * Renderer strings that mean "no GPU behind this".
  *
@@ -165,11 +167,15 @@ export function webglWarning(webgl) {
         return null;
     }
 
+    // BOTH OF THESE ARE THE PAGE'S OWN STRINGS. The renderer looks like a driver fact
+    // and is not: a page can replace WebGLRenderingContext.prototype.getParameter and
+    // return whatever it likes, and the requested types are the arguments it passed to
+    // getContext. This line is printed on a terminal, so neither reaches it raw.
     const because = webgl.software === true
-        ? ` (likely because the renderer is ${webgl.renderer})`
+        ? ` (likely because the renderer is ${printable(webgl.renderer, 80)})`
         : '';
 
-    return `this page asked for ${webgl.requested.join('/')} but never drew with it${because}`
+    return `this page asked for ${printable(webgl.requested.join('/'), 80)} but never drew with it${because}`
         + ' — whatever it would have rendered is missing, so any region it occupies is'
         + ' unmeasured, not empty';
 }

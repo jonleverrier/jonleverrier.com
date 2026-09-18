@@ -36,6 +36,8 @@
  * against the page's. See shotTruncationWarning.
  */
 
+import {printable} from './printable.mjs';
+
 /** Ignore slivers: a gap this small is a rounding artefact, not a missing region. */
 export const GAP_MIN_PX = 100;
 
@@ -150,8 +152,9 @@ export function unrenderedWarning(meta) {
     }
 
     const pct = (g.fraction * 100).toFixed(1);
+    // The tag is the page's, by way of rects.json, and this line goes to a terminal.
     const cause = g.likelyCause
-        ? ` — a fixed <${g.likelyCause.tag}> of ${g.likelyCause.w}x${g.likelyCause.h} sits there and a`
+        ? ` — a fixed <${printable(g.likelyCause.tag, 40)}> of ${g.likelyCause.w}x${g.likelyCause.h} sits there and a`
             + ' full-page screenshot does not paint fixed elements down the page'
         : '';
 
