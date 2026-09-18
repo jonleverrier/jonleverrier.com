@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {findGutters, widestGutter, rowDensity, segment} from '../lib/xycut.mjs';
+import {findGutters, widestGutter, rowDensity, segment, segmentTall} from '../lib/xycut.mjs';
 import {edgeMapFromPng} from '../lib/edges.mjs';
 import {leaves, totalArea, area, assertPartition, overlaps} from '../lib/blocks.mjs';
 
@@ -90,3 +90,55 @@ for (const fixture of FIXTURES) {
         }
     });
 }
+
+test('segmentTall conserves area on a tall synthetic edge map', () => {
+    // 200 wide, 3000 tall — taller than one 900px tile, with quiet bands every 300px
+    const width = 200, height = 3000;
+    const edges = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++) {
+        const quiet = y % 300 < 30;
+        if (quiet) continue;
+        for (let x = 0; x < width; x += 3) edges[y * width + x] = 1;
+    }
+    const root = segmentTall(edges, width, height, {maxDepth: 4, minSide: 20, minAreaFraction: 0.001});
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+});
+
+test('segmentTall and segment agree when the page fits in one tile', () => {
+    const width = 200, height = 800;
+    const edges = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++) {
+        if (y % 300 < 30) continue;
+        for (let x = 0; x < width; x += 3) edges[y * width + x] = 1;
+    }
+    const opts = {maxDepth: 3, minSide: 20, minAreaFraction: 0.001};
+    assert.equal(
+        JSON.stringify(segmentTall(edges, width, height, opts)),
+        JSON.stringify(segment(edges, width, height, opts)),
+    );
+});
+
+test('segmentTall keeps vertical structure inside a band instead of flattening it to a full-width leaf', () => {
+    // Same tall/quiet-band shape as above, but with a genuine vertical gutter
+    // (columns 90..110 carry no edges anywhere) running through every content
+    // band. A bare-full-width-band stitch can never produce a leaf narrower
+    // than the page, no matter what the input looks like — this is the test
+    // that would have caught that defect.
+    const width = 200, height = 3000;
+    const edges = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++) {
+        if (y % 300 < 30) continue; // quiet horizontal band -> tile seams land here
+        for (let x = 0; x < width; x += 3) {
+            if (x >= 90 && x < 110) continue; // quiet vertical gutter -> column split
+            edges[y * width + x] = 1;
+        }
+    }
+    const root = segmentTall(edges, width, height, {maxDepth: 6, minSide: 20, minAreaFraction: 0.001});
+    assert.doesNotThrow(() => assertPartition(root));
+    assert.equal(totalArea(leaves(root)), width * height);
+    assert.ok(
+        leaves(root).some((l) => l.w < width),
+        'expected at least one leaf narrower than the full image width',
+    );
+});
