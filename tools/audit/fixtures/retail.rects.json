@@ -5,6 +5,7 @@
   "w": 54,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "___"
  },
  {
@@ -13,6 +14,7 @@
   "w": 54,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -21,6 +23,7 @@
   "w": 1440,
   "h": 3752,
   "tag": "div",
+  "boxed": false,
   "text": "window.addEventListener('load', function () {\n    const userAgent = window.navigator.userAgent || '';\n    const chromeAgent = userAgent.indexOf('Chrome') > -1 || userAgent.indexOf('Chromium') > -1;\n\n "
  },
  {
@@ -29,6 +32,7 @@
   "w": 1440,
   "h": 3752,
   "tag": "div",
+  "boxed": false,
   "text": "window.addEventListener('load', function () {\n    const userAgent = window.navigator.userAgent || '';\n    const chromeAgent = userAgent.indexOf('Chrome') > -1 || userAgent.indexOf('Chromium') > -1;\n\n "
  },
  {
@@ -37,6 +41,7 @@
   "w": 1440,
   "h": 153,
   "tag": "header",
+  "boxed": true,
   "text": "window.addEventListener('load', function () {\n    const userAgent = window.navigator.userAgent || '';\n    const chromeAgent = userAgent.indexOf('Chrome') > -1 || userAgent.indexOf('Chromium') > -1;\n\n "
  },
  {
@@ -45,6 +50,7 @@
   "w": 1440,
   "h": 32,
   "tag": "div",
+  "boxed": true,
   "text": "Skip to contentSALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswearHelp"
  },
  {
@@ -53,6 +59,7 @@
   "w": 186,
   "h": 46,
   "tag": "a",
+  "boxed": true,
   "text": "Skip to content"
  },
  {
@@ -61,6 +68,7 @@
   "w": 24,
   "h": 24,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -69,6 +77,7 @@
   "w": 1440,
   "h": 32,
   "tag": "div",
+  "boxed": false,
   "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswearHelp"
  },
  {
@@ -77,6 +86,7 @@
   "w": 720,
   "h": 32,
   "tag": "div",
+  "boxed": false,
   "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswear"
  },
  {
@@ -85,6 +95,7 @@
   "w": 720,
   "h": 32,
   "tag": "div",
+  "boxed": true,
   "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswear"
  },
  {
@@ -93,6 +104,7 @@
   "w": 720,
   "h": 32,
   "tag": "div",
+  "boxed": false,
   "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswear"
  },
  {
@@ -101,6 +113,7 @@
   "w": 720,
   "h": 32,
   "tag": "div",
+  "boxed": false,
   "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswear"
  },
  {
@@ -109,6 +122,7 @@
   "w": 720,
   "h": 32,
   "tag": "ul",
+  "boxed": false,
   "text": "SALE starts now: up to 50% offSparks exclusive: 20% off M&S fashionNew and in demand womenswear"
  },
  {
@@ -117,6 +131,7 @@
   "w": 720,
   "h": 32,
   "tag": "li",
+  "boxed": false,
   "text": "SALE starts now: up to 50% off"
  },
  {
@@ -125,6 +140,7 @@
   "w": 720,
   "h": 32,
   "tag": "a",
+  "boxed": false,
   "text": "SALE starts now: up to 50% off"
  },
  {
@@ -133,6 +149,7 @@
   "w": 32,
   "h": 32,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -141,6 +158,7 @@
   "w": 32,
   "h": 32,
   "tag": "button",
+  "boxed": false,
   "text": ""
  },
  {
@@ -149,6 +167,7 @@
   "w": 32,
   "h": 32,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -157,6 +176,7 @@
   "w": 32,
   "h": 32,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -165,6 +185,7 @@
   "w": 32,
   "h": 32,
   "tag": "button",
+  "boxed": false,
   "text": ""
  },
  {
@@ -173,6 +194,7 @@
   "w": 32,
   "h": 32,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -181,6 +203,7 @@
   "w": 336,
   "h": 23,
   "tag": "div",
+  "boxed": false,
   "text": "Help"
  },
  {
@@ -189,6 +212,7 @@
   "w": 49,
   "h": 23,
   "tag": "div",
+  "boxed": false,
   "text": "Help"
  },
  {
@@ -197,6 +221,7 @@
   "w": 33,
   "h": 23,
   "tag": "a",
+  "boxed": false,
   "text": "Help"
  },
  {
@@ -205,6 +230,7 @@
   "w": 1440,
   "h": 121,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brandClearSign in0Search product, code or brandClearWomenJust ArrivedAutumn StyleWomen's saleOur Top PicksChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCa"
  },
  {
@@ -213,6 +239,7 @@
   "w": 1440,
   "h": 120,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brandClearSign in0Search product, code or brandClearWomenJust ArrivedAutumn StyleWomen's saleOur Top PicksChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCa"
  },
  {
@@ -221,6 +248,7 @@
   "w": 1440,
   "h": 80,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brandClearSign in0"
  },
  {
@@ -229,6 +257,7 @@
   "w": 1440,
   "h": 80,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brandClearSign in0"
  },
  {
@@ -237,6 +266,7 @@
   "w": 384,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -245,6 +275,7 @@
   "w": 100,
   "h": 40,
   "tag": "a",
+  "boxed": false,
   "text": ""
  },
  {
@@ -253,6 +284,7 @@
   "w": 100,
   "h": 40,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -261,6 +293,7 @@
   "w": 624,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brandClear"
  },
  {
@@ -269,6 +302,7 @@
   "w": 608,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brandClear"
  },
  {
@@ -277,6 +311,7 @@
   "w": 608,
   "h": 48,
   "tag": "form",
+  "boxed": false,
   "text": "Search product, code or brandClear"
  },
  {
@@ -285,6 +320,7 @@
   "w": 608,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brandClear"
  },
  {
@@ -293,6 +329,7 @@
   "w": 608,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brandClear"
  },
  {
@@ -301,6 +338,7 @@
   "w": 608,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brand"
  },
  {
@@ -309,6 +347,7 @@
   "w": 1,
   "h": 1,
   "tag": "label",
+  "boxed": false,
   "text": "Search product, code or brand"
  },
  {
@@ -317,6 +356,7 @@
   "w": 608,
   "h": 48,
   "tag": "input",
+  "boxed": true,
   "text": ""
  },
  {
@@ -325,6 +365,7 @@
   "w": 48,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": "Clear"
  },
  {
@@ -333,6 +374,7 @@
   "w": 48,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -341,6 +383,7 @@
   "w": 48,
   "h": 48,
   "tag": "button",
+  "boxed": true,
   "text": ""
  },
  {
@@ -349,6 +392,7 @@
   "w": 28,
   "h": 28,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -357,6 +401,7 @@
   "w": 226,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": "Sign in0"
  },
  {
@@ -365,6 +410,7 @@
   "w": 70,
   "h": 42,
   "tag": "div",
+  "boxed": false,
   "text": "Sign in"
  },
  {
@@ -373,6 +419,7 @@
   "w": 70,
   "h": 42,
   "tag": "a",
+  "boxed": false,
   "text": "Sign in"
  },
  {
@@ -381,6 +428,7 @@
   "w": 54,
   "h": 26,
   "tag": "p",
+  "boxed": false,
   "text": "Sign in"
  },
  {
@@ -389,6 +437,7 @@
   "w": 48,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -397,6 +446,7 @@
   "w": 48,
   "h": 48,
   "tag": "a",
+  "boxed": true,
   "text": ""
  },
  {
@@ -405,6 +455,7 @@
   "w": 28,
   "h": 28,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -413,6 +464,7 @@
   "w": 48,
   "h": 48,
   "tag": "a",
+  "boxed": false,
   "text": ""
  },
  {
@@ -421,6 +473,7 @@
   "w": 28,
   "h": 28,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -429,6 +482,7 @@
   "w": 48,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": "0"
  },
  {
@@ -437,6 +491,7 @@
   "w": 40,
   "h": 40,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -445,6 +500,7 @@
   "w": 48,
   "h": 22,
   "tag": "span",
+  "boxed": false,
   "text": "0"
  },
  {
@@ -453,6 +509,7 @@
   "w": 1440,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brandClearWomenJust ArrivedAutumn StyleWomen's saleOur Top PicksChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & JacketsDressesJeans"
  },
  {
@@ -461,6 +518,7 @@
   "w": 1440,
   "h": 40,
   "tag": "div",
+  "boxed": true,
   "text": "Search product, code or brandClearWomenJust ArrivedAutumn StyleWomen's saleOur Top PicksChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & JacketsDressesJeans"
  },
  {
@@ -469,6 +527,7 @@
   "w": 1440,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Search product, code or brandClearWomenJust ArrivedAutumn StyleWomen's saleOur Top PicksChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & JacketsDressesJeans"
  },
  {
@@ -477,6 +536,7 @@
   "w": 1440,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "WomenJust ArrivedAutumn StyleWomen's saleOur Top PicksChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & JacketsDressesJeansJumpersKnitwearShirts and BlousesS"
  },
  {
@@ -485,6 +545,7 @@
   "w": 1440,
   "h": 40,
   "tag": "nav",
+  "boxed": false,
   "text": "WomenJust ArrivedAutumn StyleWomen's saleOur Top PicksChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & JacketsDressesJeansJumpersKnitwearShirts and BlousesS"
  },
  {
@@ -493,6 +554,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "WomenJust ArrivedAutumn StyleWomen's saleOur Top PicksChecksJeans & a Nice TopEditorialClothingBest SellersEveryday BasicsCardigansCashmereCoats & JacketsDressesJeansJumpersKnitwearShirts and BlousesS"
  },
  {
@@ -501,6 +563,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Women"
  },
  {
@@ -509,6 +572,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Women"
  },
  {
@@ -517,6 +581,7 @@
   "w": 51,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Women"
  },
  {
@@ -525,6 +590,7 @@
   "w": 51,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Women"
  },
  {
@@ -533,6 +599,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "LingerieJust ArrivedLingerie & Nightwear saleSexy LingerieOur Top PicksLingerie SetsBook your Bra FitEditorialBrasAll BrasBalcony BrasBra AccessoriesCotton BrasDemi Cup BrasFirst BrasF-K BrasFull Cup "
  },
  {
@@ -541,6 +608,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Lingerie"
  },
  {
@@ -549,6 +617,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Lingerie"
  },
  {
@@ -557,6 +626,7 @@
   "w": 56,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Lingerie"
  },
  {
@@ -565,6 +635,7 @@
   "w": 56,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Lingerie"
  },
  {
@@ -573,6 +644,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "MenJust ArrivedAutumn Wardrobe StaplesMen's saleAutographSmart CasualLoungewearEditorialClothingCashmereCasual ShirtsChinosCoats & JacketsHoliday Shop HoodiesJeansJoggersKnitwearPolo ShirtsShirtsShort"
  },
  {
@@ -581,6 +653,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Men"
  },
  {
@@ -589,6 +662,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Men"
  },
  {
@@ -597,6 +671,7 @@
   "w": 29,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Men"
  },
  {
@@ -605,6 +680,7 @@
   "w": 29,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Men"
  },
  {
@@ -613,6 +689,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "KidsJust Arrived Girls'Just Arrived Boys'Just Arrived BabyKids' saleEveryday EssentialsRainy Day EssentialsEditorialGirls (2yrs-16yrs)AccessoriesCoats and JacketsDressesFootwearHoliday ShopJeansJogger"
  },
  {
@@ -621,6 +698,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Kids"
  },
  {
@@ -629,6 +707,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Kids"
  },
  {
@@ -637,6 +716,7 @@
   "w": 30,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Kids"
  },
  {
@@ -645,6 +725,7 @@
   "w": 30,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Kids"
  },
  {
@@ -653,6 +734,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "BeautySkincareFragranceK-BeautyJust ArrivedBeauty saleBeauty OffersShop by BrandSkincareAll SkincareCleansersEye CreamFace MasksMoisturisersSerumSun CreamMakeupAll MakeupBeauty AccessoriesBlushersFoun"
  },
  {
@@ -661,6 +743,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Beauty"
  },
  {
@@ -669,6 +752,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Beauty"
  },
  {
@@ -677,6 +761,7 @@
   "w": 49,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Beauty"
  },
  {
@@ -685,6 +770,7 @@
   "w": 49,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Beauty"
  },
  {
@@ -693,6 +779,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "HomeJust ArrivedHomeware saleBeddingHome FurnishingsTowelsTablewareEditorialBeddingAll BeddingBed SheetsDuvetsDuvet Covers & SetsMattress ProtectorsPillowsPillowcasesCooking & DiningDinner SetsPlatesG"
  },
  {
@@ -701,6 +788,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Home"
  },
  {
@@ -709,6 +797,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Home"
  },
  {
@@ -717,6 +806,7 @@
   "w": 41,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Home"
  },
  {
@@ -725,6 +815,7 @@
   "w": 41,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Home"
  },
  {
@@ -733,6 +824,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "FlowersJust Arrived FlowersLetterbox FlowersNext Day Delivery FlowersAutumn FlowersFlowers with a Little ExtraThe Perfect Gift: 100 RosesEditorialFlowersAll FlowersAutumn FlowersBritish FlowersCelebri"
  },
  {
@@ -741,6 +833,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Flowers"
  },
  {
@@ -749,6 +842,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Flowers"
  },
  {
@@ -757,6 +851,7 @@
   "w": 53,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Flowers"
  },
  {
@@ -765,6 +860,7 @@
   "w": 53,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Flowers"
  },
  {
@@ -773,6 +869,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "GiftsChristmasFood & Drink GiftsGifts for HerGifts for HimFlowersGift CardsEditorialFood & Drink GiftsAll Food and Drink GiftsAfternoon Tea HampersAlcohol GiftsBrowniesChristmas HampersFruit BasketsHa"
  },
  {
@@ -781,6 +878,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Gifts"
  },
  {
@@ -789,6 +887,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Gifts"
  },
  {
@@ -797,6 +896,7 @@
   "w": 33,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Gifts"
  },
  {
@@ -805,6 +905,7 @@
   "w": 33,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Gifts"
  },
  {
@@ -813,6 +914,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "ChristmasChristmas PyjamasTrending: Percy Pig Blind BoxChristmas DecorationsChristmas Food Advent CalendarChristmas BaublesChristmas TreesChristmas HampersChristmas Trees & DecorationsAll Christmas De"
  },
  {
@@ -821,6 +923,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Christmas"
  },
  {
@@ -829,6 +932,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Christmas"
  },
  {
@@ -837,6 +941,7 @@
   "w": 70,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Christmas"
  },
  {
@@ -845,6 +950,7 @@
   "w": 70,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Christmas"
  },
  {
@@ -853,6 +959,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "SportsJust Arrived Women's SportsSportswear saleJust Arrived Men's SportsMen's GoodmoveWomen's GoodmoveEditorialWomen's SportswearAll Women's SportswearAthleisureSports Coats and JacketsHoodies and Sw"
  },
  {
@@ -861,6 +968,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Sports"
  },
  {
@@ -869,6 +977,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Sports"
  },
  {
@@ -877,6 +986,7 @@
   "w": 45,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Sports"
  },
  {
@@ -885,6 +995,7 @@
   "w": 45,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Sports"
  },
  {
@@ -893,6 +1004,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "BrandsJust ArrivedBrands saleJust Arrived: WAT The BrandShop by BrandFashion BrandsCalvin KleinChelsea PeersDuneGANTHushLevi'sMonsoonNever Fully DressedPour MoiRo&ZoSkechersSteve MaddenTommy HilfigerW"
  },
  {
@@ -901,6 +1013,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Brands"
  },
  {
@@ -909,6 +1022,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Brands"
  },
  {
@@ -917,6 +1031,7 @@
   "w": 49,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Brands"
  },
  {
@@ -925,6 +1040,7 @@
   "w": 49,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Brands"
  },
  {
@@ -933,6 +1049,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "FoodFood InspirationFood in StoreChristmas Food Advent CalendarFood & Drink GiftsCue The Birthday CakeSandwich & Sushi PlattersM&S RecipesFood OnlineCakesBirthday CakesChocolate CupcakesFruity Cupcake"
  },
  {
@@ -941,6 +1058,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Food"
  },
  {
@@ -949,6 +1067,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Food"
  },
  {
@@ -957,6 +1076,7 @@
   "w": 35,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Food"
  },
  {
@@ -965,6 +1085,7 @@
   "w": 35,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Food"
  },
  {
@@ -973,6 +1094,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "SaleWomen's saleMen's saleBrands saleHomeware saleLingerie & Nightwear saleKids' saleBeauty saleWomen's saleAll Women's saleCoats & JacketsDressesJumpers & CardigansShirts & BlousesTopsTrousersShoes &"
  },
  {
@@ -981,6 +1103,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Sale"
  },
  {
@@ -989,6 +1112,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Sale"
  },
  {
@@ -997,6 +1121,7 @@
   "w": 29,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Sale"
  },
  {
@@ -1005,6 +1130,7 @@
   "w": 29,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Sale"
  },
  {
@@ -1013,6 +1139,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Offers10% off Baby Grows - Join Baby ClubAll Price DropPrice DropAll Price DropWomen's Price DropMen's Price DropShop Women's Offers20% off Whistles20% off Herschel2 for £45 on selected SeasaltShop Me"
  },
  {
@@ -1021,6 +1148,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Offers"
  },
  {
@@ -1029,6 +1157,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Offers"
  },
  {
@@ -1037,6 +1166,7 @@
   "w": 43,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Offers"
  },
  {
@@ -1045,6 +1175,7 @@
   "w": 43,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Offers"
  },
  {
@@ -1053,6 +1184,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "MoneyCredit CardClub RewardsTravel MoneyInsuranceCredit CardM&S Rewards Credit CardClub RewardsM&S Credit Card Transfer PlusM&S Credit Card Purchase PlusOur Credit CardsDigital RewardsMobile AppInsura"
  },
  {
@@ -1061,6 +1193,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Money"
  },
  {
@@ -1069,6 +1202,7 @@
   "w": 96,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Money"
  },
  {
@@ -1077,6 +1211,7 @@
   "w": 46,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Money"
  },
  {
@@ -1085,6 +1220,7 @@
   "w": 46,
   "h": 22,
   "tag": "div",
+  "boxed": false,
   "text": "Money"
  },
  {
@@ -1093,6 +1229,7 @@
   "w": 1440,
   "h": 2493,
   "tag": "main",
+  "boxed": true,
   "text": "Welcome to Marks & SpencerOur London Fashion Week debutWatch it 18 September, 6pmOur London Fashion Week debutWatch it 18 September, 6pmNew and already trendingShop just-arrived womenswear£80Faux Leat"
  },
  {
@@ -1101,6 +1238,7 @@
   "w": 1,
   "h": 1,
   "tag": "h1",
+  "boxed": false,
   "text": "Welcome to Marks & Spencer"
  },
  {
@@ -1109,6 +1247,7 @@
   "w": 1440,
   "h": 2493,
   "tag": "div",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pmOur London Fashion Week debutWatch it 18 September, 6pmNew and already trendingShop just-arrived womenswear£80Faux Leather Croc Effect Longline C"
  },
  {
@@ -1117,6 +1256,7 @@
   "w": 1440,
   "h": 912,
   "tag": "div",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pmOur London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1125,6 +1265,7 @@
   "w": 1440,
   "h": 912,
   "tag": "div",
+  "boxed": true,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pmOur London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1133,6 +1274,7 @@
   "w": 1440,
   "h": 698,
   "tag": "div",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1141,6 +1283,7 @@
   "w": 1440,
   "h": 698,
   "tag": "div",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1149,6 +1292,7 @@
   "w": 1440,
   "h": 698,
   "tag": "div",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1157,6 +1301,7 @@
   "w": 1440,
   "h": 698,
   "tag": "div",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1165,6 +1310,7 @@
   "w": 1440,
   "h": 698,
   "tag": "div",
+  "boxed": true,
   "text": ""
  },
  {
@@ -1173,6 +1319,7 @@
   "w": 1440,
   "h": 698,
   "tag": "video",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1181,6 +1328,7 @@
   "w": 212,
   "h": 80,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1189,6 +1337,7 @@
   "w": 212,
   "h": 80,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1197,6 +1346,7 @@
   "w": 48,
   "h": 48,
   "tag": "button",
+  "boxed": true,
   "text": ""
  },
  {
@@ -1205,6 +1355,7 @@
   "w": 28,
   "h": 28,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -1213,6 +1364,7 @@
   "w": 48,
   "h": 48,
   "tag": "button",
+  "boxed": true,
   "text": ""
  },
  {
@@ -1221,6 +1373,7 @@
   "w": 28,
   "h": 28,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -1229,6 +1382,7 @@
   "w": 48,
   "h": 48,
   "tag": "button",
+  "boxed": true,
   "text": ""
  },
  {
@@ -1237,6 +1391,7 @@
   "w": 28,
   "h": 28,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -1245,6 +1400,7 @@
   "w": 1440,
   "h": 698,
   "tag": "a",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1253,6 +1409,7 @@
   "w": 1440,
   "h": 24,
   "tag": "div",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1261,6 +1418,7 @@
   "w": 1440,
   "h": 214,
   "tag": "div",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1269,6 +1427,7 @@
   "w": 1376,
   "h": 86,
   "tag": "div",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1277,6 +1436,7 @@
   "w": 1376,
   "h": 86,
   "tag": "div",
+  "boxed": false,
   "text": "Our London Fashion Week debutWatch it 18 September, 6pm"
  },
  {
@@ -1285,6 +1445,7 @@
   "w": 451,
   "h": 36,
   "tag": "h2",
+  "boxed": false,
   "text": "Our London Fashion Week debut"
  },
  {
@@ -1293,6 +1454,7 @@
   "w": 249,
   "h": 26,
   "tag": "div",
+  "boxed": false,
   "text": "Watch it 18 September, 6pm"
  },
  {
@@ -1301,6 +1463,7 @@
   "w": 249,
   "h": 26,
   "tag": "div",
+  "boxed": false,
   "text": "Watch it 18 September, 6pm"
  },
  {
@@ -1309,6 +1472,7 @@
   "w": 249,
   "h": 26,
   "tag": "a",
+  "boxed": false,
   "text": "Watch it 18 September, 6pm"
  },
  {
@@ -1317,6 +1481,7 @@
   "w": 217,
   "h": 26,
   "tag": "span",
+  "boxed": false,
   "text": "Watch it 18 September, 6pm"
  },
  {
@@ -1325,6 +1490,7 @@
   "w": 24,
   "h": 24,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -1333,6 +1499,7 @@
   "w": 1440,
   "h": 595,
   "tag": "div",
+  "boxed": false,
   "text": "New and already trendingShop just-arrived womenswear£80Faux Leather Croc Effect Longline Car Coat£40Textured Button Front Slim Cropped Cardigan£28Textured Crew Neck Jumper£36Cotton Rich Midi Column Dr"
  },
  {
@@ -1341,6 +1508,7 @@
   "w": 1416,
   "h": 595,
   "tag": "div",
+  "boxed": false,
   "text": "New and already trendingShop just-arrived womenswear£80Faux Leather Croc Effect Longline Car Coat£40Textured Button Front Slim Cropped Cardigan£28Textured Crew Neck Jumper£36Cotton Rich Midi Column Dr"
  },
  {
@@ -1349,6 +1517,7 @@
   "w": 1416,
   "h": 88,
   "tag": "div",
+  "boxed": false,
   "text": "New and already trendingShop just-arrived womenswear"
  },
  {
@@ -1357,6 +1526,7 @@
   "w": 1416,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "New and already trending"
  },
  {
@@ -1365,6 +1535,7 @@
   "w": 1416,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "New and already trending"
  },
  {
@@ -1373,6 +1544,7 @@
   "w": 404,
   "h": 40,
   "tag": "h2",
+  "boxed": false,
   "text": "New and already trending"
  },
  {
@@ -1381,6 +1553,7 @@
   "w": 1416,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": "Shop just-arrived womenswear"
  },
  {
@@ -1389,6 +1562,7 @@
   "w": 245,
   "h": 26,
   "tag": "a",
+  "boxed": false,
   "text": "Shop just-arrived womenswear"
  },
  {
@@ -1397,6 +1571,7 @@
   "w": 144,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1405,6 +1580,7 @@
   "w": 88,
   "h": 40,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1413,6 +1589,7 @@
   "w": 40,
   "h": 40,
   "tag": "button",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1421,6 +1598,7 @@
   "w": 40,
   "h": 40,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -1429,6 +1607,7 @@
   "w": 40,
   "h": 40,
   "tag": "button",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1437,6 +1616,7 @@
   "w": 40,
   "h": 40,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -1445,6 +1625,7 @@
   "w": 1416,
   "h": 491,
   "tag": "ul",
+  "boxed": false,
   "text": "£80Faux Leather Croc Effect Longline Car Coat£40Textured Button Front Slim Cropped Cardigan£28Textured Crew Neck Jumper£36Cotton Rich Midi Column Dress£55Lace Midaxi Skater Dress£45Chiffon Spot Print "
  },
  {
@@ -1453,6 +1634,7 @@
   "w": 311,
   "h": 491,
   "tag": "li",
+  "boxed": false,
   "text": "£80Faux Leather Croc Effect Longline Car Coat"
  },
  {
@@ -1461,6 +1643,7 @@
   "w": 311,
   "h": 491,
   "tag": "div",
+  "boxed": false,
   "text": "£80Faux Leather Croc Effect Longline Car Coat"
  },
  {
@@ -1469,6 +1652,7 @@
   "w": 311,
   "h": 491,
   "tag": "div",
+  "boxed": false,
   "text": "£80Faux Leather Croc Effect Longline Car Coat"
  },
  {
@@ -1477,6 +1661,7 @@
   "w": 311,
   "h": 491,
   "tag": "a",
+  "boxed": false,
   "text": "£80Faux Leather Croc Effect Longline Car Coat"
  },
  {
@@ -1485,6 +1670,7 @@
   "w": 311,
   "h": 409,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1493,6 +1679,7 @@
   "w": 311,
   "h": 404,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1501,6 +1688,7 @@
   "w": 303,
   "h": 74,
   "tag": "div",
+  "boxed": false,
   "text": "£80Faux Leather Croc Effect Longline Car Coat"
  },
  {
@@ -1509,6 +1697,7 @@
   "w": 303,
   "h": 30,
   "tag": "div",
+  "boxed": false,
   "text": "£80"
  },
  {
@@ -1517,6 +1706,7 @@
   "w": 303,
   "h": 30,
   "tag": "span",
+  "boxed": false,
   "text": "£80"
  },
  {
@@ -1525,6 +1715,7 @@
   "w": 27,
   "h": 26,
   "tag": "span",
+  "boxed": false,
   "text": "£80"
  },
  {
@@ -1533,6 +1724,7 @@
   "w": 303,
   "h": 44,
   "tag": "div",
+  "boxed": false,
   "text": "Faux Leather Croc Effect Longline Car Coat"
  },
  {
@@ -1541,6 +1733,7 @@
   "w": 303,
   "h": 44,
   "tag": "h2",
+  "boxed": false,
   "text": "Faux Leather Croc Effect Longline Car Coat"
  },
  {
@@ -1549,6 +1742,7 @@
   "w": 311,
   "h": 491,
   "tag": "li",
+  "boxed": false,
   "text": "£40Textured Button Front Slim Cropped Cardigan"
  },
  {
@@ -1557,6 +1751,7 @@
   "w": 311,
   "h": 491,
   "tag": "div",
+  "boxed": false,
   "text": "£40Textured Button Front Slim Cropped Cardigan"
  },
  {
@@ -1565,6 +1760,7 @@
   "w": 311,
   "h": 491,
   "tag": "div",
+  "boxed": false,
   "text": "£40Textured Button Front Slim Cropped Cardigan"
  },
  {
@@ -1573,6 +1769,7 @@
   "w": 311,
   "h": 491,
   "tag": "a",
+  "boxed": false,
   "text": "£40Textured Button Front Slim Cropped Cardigan"
  },
  {
@@ -1581,6 +1778,7 @@
   "w": 311,
   "h": 409,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1589,6 +1787,7 @@
   "w": 311,
   "h": 404,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1597,6 +1796,7 @@
   "w": 303,
   "h": 74,
   "tag": "div",
+  "boxed": false,
   "text": "£40Textured Button Front Slim Cropped Cardigan"
  },
  {
@@ -1605,6 +1805,7 @@
   "w": 303,
   "h": 30,
   "tag": "div",
+  "boxed": false,
   "text": "£40"
  },
  {
@@ -1613,6 +1814,7 @@
   "w": 303,
   "h": 30,
   "tag": "span",
+  "boxed": false,
   "text": "£40"
  },
  {
@@ -1621,6 +1823,7 @@
   "w": 27,
   "h": 26,
   "tag": "span",
+  "boxed": false,
   "text": "£40"
  },
  {
@@ -1629,6 +1832,7 @@
   "w": 303,
   "h": 44,
   "tag": "div",
+  "boxed": false,
   "text": "Textured Button Front Slim Cropped Cardigan"
  },
  {
@@ -1637,6 +1841,7 @@
   "w": 303,
   "h": 44,
   "tag": "h2",
+  "boxed": false,
   "text": "Textured Button Front Slim Cropped Cardigan"
  },
  {
@@ -1645,6 +1850,7 @@
   "w": 311,
   "h": 491,
   "tag": "li",
+  "boxed": false,
   "text": "£28Textured Crew Neck Jumper"
  },
  {
@@ -1653,6 +1859,7 @@
   "w": 311,
   "h": 491,
   "tag": "div",
+  "boxed": false,
   "text": "£28Textured Crew Neck Jumper"
  },
  {
@@ -1661,6 +1868,7 @@
   "w": 311,
   "h": 491,
   "tag": "div",
+  "boxed": false,
   "text": "£28Textured Crew Neck Jumper"
  },
  {
@@ -1669,6 +1877,7 @@
   "w": 311,
   "h": 491,
   "tag": "a",
+  "boxed": false,
   "text": "£28Textured Crew Neck Jumper"
  },
  {
@@ -1677,6 +1886,7 @@
   "w": 311,
   "h": 409,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1685,6 +1895,7 @@
   "w": 311,
   "h": 404,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1693,6 +1904,7 @@
   "w": 303,
   "h": 74,
   "tag": "div",
+  "boxed": false,
   "text": "£28Textured Crew Neck Jumper"
  },
  {
@@ -1701,6 +1913,7 @@
   "w": 303,
   "h": 30,
   "tag": "div",
+  "boxed": false,
   "text": "£28"
  },
  {
@@ -1709,6 +1922,7 @@
   "w": 303,
   "h": 30,
   "tag": "span",
+  "boxed": false,
   "text": "£28"
  },
  {
@@ -1717,6 +1931,7 @@
   "w": 26,
   "h": 26,
   "tag": "span",
+  "boxed": false,
   "text": "£28"
  },
  {
@@ -1725,6 +1940,7 @@
   "w": 303,
   "h": 44,
   "tag": "div",
+  "boxed": false,
   "text": "Textured Crew Neck Jumper"
  },
  {
@@ -1733,6 +1949,7 @@
   "w": 303,
   "h": 44,
   "tag": "h2",
+  "boxed": false,
   "text": "Textured Crew Neck Jumper"
  },
  {
@@ -1741,6 +1958,7 @@
   "w": 311,
   "h": 491,
   "tag": "li",
+  "boxed": false,
   "text": "£36Cotton Rich Midi Column Dress"
  },
  {
@@ -1749,6 +1967,7 @@
   "w": 311,
   "h": 491,
   "tag": "div",
+  "boxed": false,
   "text": "£36Cotton Rich Midi Column Dress"
  },
  {
@@ -1757,6 +1976,7 @@
   "w": 311,
   "h": 491,
   "tag": "div",
+  "boxed": false,
   "text": "£36Cotton Rich Midi Column Dress"
  },
  {
@@ -1765,6 +1985,7 @@
   "w": 311,
   "h": 491,
   "tag": "a",
+  "boxed": false,
   "text": "£36Cotton Rich Midi Column Dress"
  },
  {
@@ -1773,6 +1994,7 @@
   "w": 311,
   "h": 409,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1781,6 +2003,7 @@
   "w": 311,
   "h": 404,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1789,6 +2012,7 @@
   "w": 303,
   "h": 74,
   "tag": "div",
+  "boxed": false,
   "text": "£36Cotton Rich Midi Column Dress"
  },
  {
@@ -1797,6 +2021,7 @@
   "w": 303,
   "h": 30,
   "tag": "div",
+  "boxed": false,
   "text": "£36"
  },
  {
@@ -1805,6 +2030,7 @@
   "w": 303,
   "h": 30,
   "tag": "span",
+  "boxed": false,
   "text": "£36"
  },
  {
@@ -1813,6 +2039,7 @@
   "w": 25,
   "h": 26,
   "tag": "span",
+  "boxed": false,
   "text": "£36"
  },
  {
@@ -1821,6 +2048,7 @@
   "w": 303,
   "h": 44,
   "tag": "div",
+  "boxed": false,
   "text": "Cotton Rich Midi Column Dress"
  },
  {
@@ -1829,6 +2057,7 @@
   "w": 303,
   "h": 44,
   "tag": "h2",
+  "boxed": false,
   "text": "Cotton Rich Midi Column Dress"
  },
  {
@@ -1837,6 +2066,7 @@
   "w": 311,
   "h": 491,
   "tag": "li",
+  "boxed": false,
   "text": "£55Lace Midaxi Skater Dress"
  },
  {
@@ -1845,6 +2075,7 @@
   "w": 311,
   "h": 491,
   "tag": "div",
+  "boxed": false,
   "text": "£55Lace Midaxi Skater Dress"
  },
  {
@@ -1853,6 +2084,7 @@
   "w": 311,
   "h": 491,
   "tag": "div",
+  "boxed": false,
   "text": "£55Lace Midaxi Skater Dress"
  },
  {
@@ -1861,6 +2093,7 @@
   "w": 311,
   "h": 491,
   "tag": "a",
+  "boxed": false,
   "text": "£55Lace Midaxi Skater Dress"
  },
  {
@@ -1869,6 +2102,7 @@
   "w": 311,
   "h": 409,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1877,6 +2111,7 @@
   "w": 311,
   "h": 404,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1885,6 +2120,7 @@
   "w": 303,
   "h": 74,
   "tag": "div",
+  "boxed": false,
   "text": "£55Lace Midaxi Skater Dress"
  },
  {
@@ -1893,6 +2129,7 @@
   "w": 303,
   "h": 30,
   "tag": "div",
+  "boxed": false,
   "text": "£55"
  },
  {
@@ -1901,6 +2138,7 @@
   "w": 303,
   "h": 30,
   "tag": "span",
+  "boxed": false,
   "text": "£55"
  },
  {
@@ -1909,6 +2147,7 @@
   "w": 25,
   "h": 26,
   "tag": "span",
+  "boxed": false,
   "text": "£55"
  },
  {
@@ -1917,6 +2156,7 @@
   "w": 303,
   "h": 44,
   "tag": "div",
+  "boxed": false,
   "text": "Lace Midaxi Skater Dress"
  },
  {
@@ -1925,6 +2165,7 @@
   "w": 303,
   "h": 44,
   "tag": "h2",
+  "boxed": false,
   "text": "Lace Midaxi Skater Dress"
  },
  {
@@ -1933,6 +2174,7 @@
   "w": 1440,
   "h": 570,
   "tag": "div",
+  "boxed": false,
   "text": "Made-to-layer knitsWomen’s knitwearFor crisp autumn nightsCosy beddingAutumn essentials from £3.50Just-arrived kidswear"
  },
  {
@@ -1941,6 +2183,7 @@
   "w": 437,
   "h": 570,
   "tag": "div",
+  "boxed": false,
   "text": "Made-to-layer knitsWomen’s knitwear"
  },
  {
@@ -1949,6 +2192,7 @@
   "w": 429,
   "h": 570,
   "tag": "div",
+  "boxed": false,
   "text": "Made-to-layer knitsWomen’s knitwear"
  },
  {
@@ -1957,6 +2201,7 @@
   "w": 429,
   "h": 570,
   "tag": "a",
+  "boxed": false,
   "text": "Made-to-layer knitsWomen’s knitwear"
  },
  {
@@ -1965,6 +2210,7 @@
   "w": 429,
   "h": 570,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1973,6 +2219,7 @@
   "w": 429,
   "h": 570,
   "tag": "picture",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1981,6 +2228,7 @@
   "w": 429,
   "h": 570,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -1989,6 +2237,7 @@
   "w": 429,
   "h": 86,
   "tag": "div",
+  "boxed": false,
   "text": "Made-to-layer knitsWomen’s knitwear"
  },
  {
@@ -1997,6 +2246,7 @@
   "w": 365,
   "h": 78,
   "tag": "div",
+  "boxed": false,
   "text": "Made-to-layer knitsWomen’s knitwear"
  },
  {
@@ -2005,6 +2255,7 @@
   "w": 365,
   "h": 52,
   "tag": "div",
+  "boxed": false,
   "text": "Made-to-layer knits"
  },
  {
@@ -2013,6 +2264,7 @@
   "w": 365,
   "h": 36,
   "tag": "h2",
+  "boxed": false,
   "text": "Made-to-layer knits"
  },
  {
@@ -2021,6 +2273,7 @@
   "w": 142,
   "h": 26,
   "tag": "p",
+  "boxed": false,
   "text": "Women’s knitwear"
  },
  {
@@ -2029,6 +2282,7 @@
   "w": 437,
   "h": 570,
   "tag": "div",
+  "boxed": false,
   "text": "For crisp autumn nightsCosy bedding"
  },
  {
@@ -2037,6 +2291,7 @@
   "w": 429,
   "h": 570,
   "tag": "div",
+  "boxed": false,
   "text": "For crisp autumn nightsCosy bedding"
  },
  {
@@ -2045,6 +2300,7 @@
   "w": 429,
   "h": 570,
   "tag": "a",
+  "boxed": false,
   "text": "For crisp autumn nightsCosy bedding"
  },
  {
@@ -2053,6 +2309,7 @@
   "w": 429,
   "h": 570,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2061,6 +2318,7 @@
   "w": 429,
   "h": 570,
   "tag": "picture",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2069,6 +2327,7 @@
   "w": 429,
   "h": 570,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2077,6 +2336,7 @@
   "w": 429,
   "h": 86,
   "tag": "div",
+  "boxed": false,
   "text": "For crisp autumn nightsCosy bedding"
  },
  {
@@ -2085,6 +2345,7 @@
   "w": 365,
   "h": 78,
   "tag": "div",
+  "boxed": false,
   "text": "For crisp autumn nightsCosy bedding"
  },
  {
@@ -2093,6 +2354,7 @@
   "w": 365,
   "h": 52,
   "tag": "div",
+  "boxed": false,
   "text": "For crisp autumn nights"
  },
  {
@@ -2101,6 +2363,7 @@
   "w": 365,
   "h": 36,
   "tag": "h2",
+  "boxed": false,
   "text": "For crisp autumn nights"
  },
  {
@@ -2109,6 +2372,7 @@
   "w": 109,
   "h": 26,
   "tag": "p",
+  "boxed": false,
   "text": "Cosy bedding"
  },
  {
@@ -2117,6 +2381,7 @@
   "w": 437,
   "h": 570,
   "tag": "div",
+  "boxed": false,
   "text": "Autumn essentials from £3.50Just-arrived kidswear"
  },
  {
@@ -2125,6 +2390,7 @@
   "w": 429,
   "h": 570,
   "tag": "div",
+  "boxed": false,
   "text": "Autumn essentials from £3.50Just-arrived kidswear"
  },
  {
@@ -2133,6 +2399,7 @@
   "w": 429,
   "h": 570,
   "tag": "a",
+  "boxed": false,
   "text": "Autumn essentials from £3.50Just-arrived kidswear"
  },
  {
@@ -2141,6 +2408,7 @@
   "w": 429,
   "h": 570,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2149,6 +2417,7 @@
   "w": 429,
   "h": 570,
   "tag": "picture",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2157,6 +2426,7 @@
   "w": 429,
   "h": 570,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2165,6 +2435,7 @@
   "w": 429,
   "h": 122,
   "tag": "div",
+  "boxed": false,
   "text": "Autumn essentials from £3.50Just-arrived kidswear"
  },
  {
@@ -2173,6 +2444,7 @@
   "w": 365,
   "h": 114,
   "tag": "div",
+  "boxed": false,
   "text": "Autumn essentials from £3.50Just-arrived kidswear"
  },
  {
@@ -2181,6 +2453,7 @@
   "w": 365,
   "h": 88,
   "tag": "div",
+  "boxed": false,
   "text": "Autumn essentials from £3.50"
  },
  {
@@ -2189,6 +2462,7 @@
   "w": 365,
   "h": 72,
   "tag": "h2",
+  "boxed": false,
   "text": "Autumn essentials from £3.50"
  },
  {
@@ -2197,6 +2471,7 @@
   "w": 172,
   "h": 26,
   "tag": "p",
+  "boxed": false,
   "text": "Just-arrived kidswear"
  },
  {
@@ -2205,6 +2480,7 @@
   "w": 1440,
   "h": 128,
   "tag": "div",
+  "boxed": false,
   "text": "What began as a single market stall in Leeds in 1884 has grown into one of Britain's most-loved brands. In 1884, Michael Marks opened his stall in Leeds with a simple idea: offer customers exceptional"
  },
  {
@@ -2213,6 +2489,7 @@
   "w": 1312,
   "h": 128,
   "tag": "div",
+  "boxed": false,
   "text": "What began as a single market stall in Leeds in 1884 has grown into one of Britain's most-loved brands. In 1884, Michael Marks opened his stall in Leeds with a simple idea: offer customers exceptional"
  },
  {
@@ -2221,6 +2498,7 @@
   "w": 1312,
   "h": 102,
   "tag": "div",
+  "boxed": false,
   "text": "What began as a single market stall in Leeds in 1884 has grown into one of Britain's most-loved brands. In 1884, Michael Marks opened his stall in Leeds with a simple idea: offer customers exceptional"
  },
  {
@@ -2229,6 +2507,7 @@
   "w": 1312,
   "h": 52,
   "tag": "p",
+  "boxed": false,
   "text": "What began as a single market stall in Leeds in 1884 has grown into one of Britain's most-loved brands. In 1884, Michael Marks opened his stall in Leeds with a simple idea: offer customers exceptional"
  },
  {
@@ -2237,6 +2516,7 @@
   "w": 1312,
   "h": 26,
   "tag": "p",
+  "boxed": false,
   "text": "Over the decades, M&S has grown into a household name, earning a place in wardrobes, kitchens and homes across the UK and beyond. Along the way, we’ve pioneered innovations, challenged conventions and"
  },
  {
@@ -2245,6 +2525,7 @@
   "w": 53,
   "h": 26,
   "tag": "button",
+  "boxed": false,
   "text": "More +"
  },
  {
@@ -2253,6 +2534,7 @@
   "w": 1440,
   "h": 1106,
   "tag": "div",
+  "boxed": false,
   "text": "Free delivery when you spend over £75*Next-day Click & CollectFree returns for online ordersRegister to receive exclusive offers tailored to you, plus rewards and promotions before anyone else. Just s"
  },
  {
@@ -2261,6 +2543,7 @@
   "w": 1440,
   "h": 1106,
   "tag": "footer",
+  "boxed": false,
   "text": "Free delivery when you spend over £75*Next-day Click & CollectFree returns for online ordersRegister to receive exclusive offers tailored to you, plus rewards and promotions before anyone else. Just s"
  },
  {
@@ -2269,6 +2552,7 @@
   "w": 1440,
   "h": 109,
   "tag": "div",
+  "boxed": true,
   "text": "Free delivery when you spend over £75*Next-day Click & CollectFree returns for online orders"
  },
  {
@@ -2277,6 +2561,7 @@
   "w": 1392,
   "h": 45,
   "tag": "ul",
+  "boxed": false,
   "text": "Free delivery when you spend over £75*Next-day Click & CollectFree returns for online orders"
  },
  {
@@ -2285,6 +2570,7 @@
   "w": 359,
   "h": 45,
   "tag": "li",
+  "boxed": false,
   "text": "Free delivery when you spend over £75*"
  },
  {
@@ -2293,6 +2579,7 @@
   "w": 359,
   "h": 40,
   "tag": "a",
+  "boxed": false,
   "text": "Free delivery when you spend over £75*"
  },
  {
@@ -2301,6 +2588,7 @@
   "w": 40,
   "h": 40,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -2309,6 +2597,7 @@
   "w": 231,
   "h": 37,
   "tag": "li",
+  "boxed": false,
   "text": "Next-day Click & Collect"
  },
  {
@@ -2317,6 +2606,7 @@
   "w": 231,
   "h": 32,
   "tag": "a",
+  "boxed": false,
   "text": "Next-day Click & Collect"
  },
  {
@@ -2325,6 +2615,7 @@
   "w": 32,
   "h": 32,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -2333,6 +2624,7 @@
   "w": 270,
   "h": 37,
   "tag": "li",
+  "boxed": false,
   "text": "Free returns for online orders"
  },
  {
@@ -2341,6 +2633,7 @@
   "w": 270,
   "h": 32,
   "tag": "a",
+  "boxed": false,
   "text": "Free returns for online orders"
  },
  {
@@ -2349,6 +2642,7 @@
   "w": 32,
   "h": 32,
   "tag": "span",
+  "boxed": true,
   "text": ""
  },
  {
@@ -2357,6 +2651,7 @@
   "w": 1440,
   "h": 545,
   "tag": "div",
+  "boxed": true,
   "text": "Register to receive exclusive offers tailored to you, plus rewards and promotions before anyone else. Just select ‘YES’ on the next page and never miss a thing.Enter your email addressSign me upHere t"
  },
  {
@@ -2365,6 +2660,7 @@
   "w": 1440,
   "h": 185,
   "tag": "div",
+  "boxed": false,
   "text": "Register to receive exclusive offers tailored to you, plus rewards and promotions before anyone else. Just select ‘YES’ on the next page and never miss a thing.Enter your email addressSign me up"
  },
  {
@@ -2373,6 +2669,7 @@
   "w": 1392,
   "h": 26,
   "tag": "p",
+  "boxed": false,
   "text": "Register to receive exclusive offers tailored to you, plus rewards and promotions before anyone else. Just select ‘YES’ on the next page and never miss a thing."
  },
  {
@@ -2381,6 +2678,7 @@
   "w": 444,
   "h": 79,
   "tag": "form",
+  "boxed": false,
   "text": "Enter your email addressSign me up"
  },
  {
@@ -2389,6 +2687,7 @@
   "w": 322,
   "h": 79,
   "tag": "div",
+  "boxed": false,
   "text": "Enter your email address"
  },
  {
@@ -2397,6 +2696,7 @@
   "w": 322,
   "h": 79,
   "tag": "div",
+  "boxed": false,
   "text": "Enter your email address"
  },
  {
@@ -2405,6 +2705,7 @@
   "w": 322,
   "h": 31,
   "tag": "div",
+  "boxed": false,
   "text": "Enter your email address"
  },
  {
@@ -2413,6 +2714,7 @@
   "w": 173,
   "h": 22,
   "tag": "label",
+  "boxed": false,
   "text": "Enter your email address"
  },
  {
@@ -2421,6 +2723,7 @@
   "w": 322,
   "h": 48,
   "tag": "input",
+  "boxed": true,
   "text": ""
  },
  {
@@ -2429,6 +2732,7 @@
   "w": 122,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": "Sign me up"
  },
  {
@@ -2437,6 +2741,7 @@
   "w": 122,
   "h": 48,
   "tag": "button",
+  "boxed": true,
   "text": "Sign me up"
  },
  {
@@ -2445,6 +2750,7 @@
   "w": 1440,
   "h": 360,
   "tag": "div",
+  "boxed": false,
   "text": "Here to HelpHelp & contact usFind a storeAccessibility in our storesProduct recallsDelivery & ReturnsWhere's my order?Delivery & collectionGuest order trackingGuest order returnReturns & refundsShoppi"
  },
  {
@@ -2453,6 +2759,7 @@
   "w": 1392,
   "h": 296,
   "tag": "div",
+  "boxed": false,
   "text": "Here to HelpHelp & contact usFind a storeAccessibility in our storesProduct recallsDelivery & ReturnsWhere's my order?Delivery & collectionGuest order trackingGuest order returnReturns & refundsShoppi"
  },
  {
@@ -2461,6 +2768,7 @@
   "w": 336,
   "h": 212,
   "tag": "div",
+  "boxed": false,
   "text": "Here to HelpHelp & contact usFind a storeAccessibility in our storesProduct recalls"
  },
  {
@@ -2469,6 +2777,7 @@
   "w": 336,
   "h": 44,
   "tag": "h2",
+  "boxed": false,
   "text": "Here to Help"
  },
  {
@@ -2477,6 +2786,7 @@
   "w": 312,
   "h": 168,
   "tag": "ul",
+  "boxed": false,
   "text": "Help & contact usFind a storeAccessibility in our storesProduct recalls"
  },
  {
@@ -2485,6 +2795,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Help & contact us"
  },
  {
@@ -2493,6 +2804,7 @@
   "w": 138,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Help & contact us"
  },
  {
@@ -2501,6 +2813,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Find a store"
  },
  {
@@ -2509,6 +2822,7 @@
   "w": 92,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Find a store"
  },
  {
@@ -2517,6 +2831,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Accessibility in our stores"
  },
  {
@@ -2525,6 +2840,7 @@
   "w": 200,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Accessibility in our stores"
  },
  {
@@ -2533,6 +2849,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Product recalls"
  },
  {
@@ -2541,6 +2858,7 @@
   "w": 119,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Product recalls"
  },
  {
@@ -2549,6 +2867,7 @@
   "w": 336,
   "h": 254,
   "tag": "div",
+  "boxed": false,
   "text": "Delivery & ReturnsWhere's my order?Delivery & collectionGuest order trackingGuest order returnReturns & refunds"
  },
  {
@@ -2557,6 +2876,7 @@
   "w": 336,
   "h": 44,
   "tag": "h2",
+  "boxed": false,
   "text": "Delivery & Returns"
  },
  {
@@ -2565,6 +2885,7 @@
   "w": 312,
   "h": 210,
   "tag": "ul",
+  "boxed": false,
   "text": "Where's my order?Delivery & collectionGuest order trackingGuest order returnReturns & refunds"
  },
  {
@@ -2573,6 +2894,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Where's my order?"
  },
  {
@@ -2581,6 +2903,7 @@
   "w": 142,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Where's my order?"
  },
  {
@@ -2589,6 +2912,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Delivery & collection"
  },
  {
@@ -2597,6 +2921,7 @@
   "w": 162,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Delivery & collection"
  },
  {
@@ -2605,6 +2930,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Guest order tracking"
  },
  {
@@ -2613,6 +2939,7 @@
   "w": 162,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Guest order tracking"
  },
  {
@@ -2621,6 +2948,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Guest order return"
  },
  {
@@ -2629,6 +2957,7 @@
   "w": 146,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Guest order return"
  },
  {
@@ -2637,6 +2966,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Returns & refunds"
  },
  {
@@ -2645,6 +2975,7 @@
   "w": 141,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Returns & refunds"
  },
  {
@@ -2653,6 +2984,7 @@
   "w": 336,
   "h": 254,
   "tag": "div",
+  "boxed": false,
   "text": "Shopping with UsSparksSparks FAQsGift card balanceSize guidesSustainability"
  },
  {
@@ -2661,6 +2993,7 @@
   "w": 336,
   "h": 44,
   "tag": "h2",
+  "boxed": false,
   "text": "Shopping with Us"
  },
  {
@@ -2669,6 +3002,7 @@
   "w": 312,
   "h": 210,
   "tag": "ul",
+  "boxed": false,
   "text": "SparksSparks FAQsGift card balanceSize guidesSustainability"
  },
  {
@@ -2677,6 +3011,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Sparks"
  },
  {
@@ -2685,6 +3020,7 @@
   "w": 53,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Sparks"
  },
  {
@@ -2693,6 +3029,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Sparks FAQs"
  },
  {
@@ -2701,6 +3038,7 @@
   "w": 98,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Sparks FAQs"
  },
  {
@@ -2709,6 +3047,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Gift card balance"
  },
  {
@@ -2717,6 +3056,7 @@
   "w": 134,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Gift card balance"
  },
  {
@@ -2725,6 +3065,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Size guides"
  },
  {
@@ -2733,6 +3074,7 @@
   "w": 88,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Size guides"
  },
  {
@@ -2741,6 +3083,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Sustainability"
  },
  {
@@ -2749,6 +3092,7 @@
   "w": 108,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Sustainability"
  },
  {
@@ -2757,6 +3101,7 @@
   "w": 336,
   "h": 296,
   "tag": "div",
+  "boxed": false,
   "text": "More from M&SOcadoCorporate siteM&S Corporate GiftsM&S MoneyM&S OpticiansCareers"
  },
  {
@@ -2765,6 +3110,7 @@
   "w": 336,
   "h": 44,
   "tag": "h2",
+  "boxed": false,
   "text": "More from M&S"
  },
  {
@@ -2773,6 +3119,7 @@
   "w": 312,
   "h": 252,
   "tag": "ul",
+  "boxed": false,
   "text": "OcadoCorporate siteM&S Corporate GiftsM&S MoneyM&S OpticiansCareers"
  },
  {
@@ -2781,6 +3128,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Ocado"
  },
  {
@@ -2789,6 +3137,7 @@
   "w": 52,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Ocado"
  },
  {
@@ -2797,6 +3146,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Corporate site"
  },
  {
@@ -2805,6 +3155,7 @@
   "w": 113,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Corporate site"
  },
  {
@@ -2813,6 +3164,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "M&S Corporate Gifts"
  },
  {
@@ -2821,6 +3173,7 @@
   "w": 160,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "M&S Corporate Gifts"
  },
  {
@@ -2829,6 +3182,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "M&S Money"
  },
  {
@@ -2837,6 +3191,7 @@
   "w": 91,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "M&S Money"
  },
  {
@@ -2845,6 +3200,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "M&S Opticians"
  },
  {
@@ -2853,6 +3209,7 @@
   "w": 113,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "M&S Opticians"
  },
  {
@@ -2861,6 +3218,7 @@
   "w": 312,
   "h": 42,
   "tag": "li",
+  "boxed": false,
   "text": "Careers"
  },
  {
@@ -2869,6 +3227,7 @@
   "w": 60,
   "h": 21,
   "tag": "a",
+  "boxed": false,
   "text": "Careers"
  },
  {
@@ -2877,6 +3236,7 @@
   "w": 1440,
   "h": 112,
   "tag": "div",
+  "boxed": true,
   "text": ""
  },
  {
@@ -2885,6 +3245,7 @@
   "w": 1440,
   "h": 112,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2893,6 +3254,7 @@
   "w": 272,
   "h": 32,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2901,6 +3263,7 @@
   "w": 32,
   "h": 32,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2909,6 +3272,7 @@
   "w": 32,
   "h": 32,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2917,6 +3281,7 @@
   "w": 32,
   "h": 32,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2925,6 +3290,7 @@
   "w": 32,
   "h": 32,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2933,6 +3299,7 @@
   "w": 32,
   "h": 32,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2941,6 +3308,7 @@
   "w": 32,
   "h": 32,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2949,6 +3317,7 @@
   "w": 412,
   "h": 48,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2957,6 +3326,7 @@
   "w": 145,
   "h": 48,
   "tag": "a",
+  "boxed": true,
   "text": ""
  },
  {
@@ -2965,6 +3335,7 @@
   "w": 111,
   "h": 10,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2973,6 +3344,7 @@
   "w": 141,
   "h": 48,
   "tag": "a",
+  "boxed": true,
   "text": ""
  },
  {
@@ -2981,6 +3353,7 @@
   "w": 107,
   "h": 20,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -2989,6 +3362,7 @@
   "w": 110,
   "h": 48,
   "tag": "a",
+  "boxed": true,
   "text": ""
  },
  {
@@ -2997,6 +3371,7 @@
   "w": 76,
   "h": 20,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3005,6 +3380,7 @@
   "w": 1440,
   "h": 96,
   "tag": "div",
+  "boxed": true,
   "text": "United Kingdom (£)"
  },
  {
@@ -3013,6 +3389,7 @@
   "w": 180,
   "h": 32,
   "tag": "button",
+  "boxed": false,
   "text": "United Kingdom (£)"
  },
  {
@@ -3021,6 +3398,7 @@
   "w": 20,
   "h": 20,
   "tag": "span",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3029,6 +3407,7 @@
   "w": 152,
   "h": 26,
   "tag": "span",
+  "boxed": false,
   "text": "United Kingdom (£)"
  },
  {
@@ -3037,6 +3416,7 @@
   "w": 1440,
   "h": 108,
   "tag": "div",
+  "boxed": true,
   "text": "© 2026 Marks and Spencer plc (UK)Terms & ConditionsPrivacyCookiesManage cookiesAccessibilityModern Slavery Act"
  },
  {
@@ -3045,6 +3425,7 @@
   "w": 1392,
   "h": 38,
   "tag": "span",
+  "boxed": false,
   "text": "© 2026 Marks and Spencer plc (UK)"
  },
  {
@@ -3053,6 +3434,7 @@
   "w": 149,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Terms & Conditions"
  },
  {
@@ -3061,6 +3443,7 @@
   "w": 66,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Privacy"
  },
  {
@@ -3069,6 +3452,7 @@
   "w": 71,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Cookies"
  },
  {
@@ -3077,6 +3461,7 @@
   "w": 126,
   "h": 22,
   "tag": "button",
+  "boxed": false,
   "text": "Manage cookies"
  },
  {
@@ -3085,6 +3470,7 @@
   "w": 102,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Accessibility"
  },
  {
@@ -3093,6 +3479,7 @@
   "w": 150,
   "h": 22,
   "tag": "a",
+  "boxed": false,
   "text": "Modern Slavery Act"
  },
  {
@@ -3101,6 +3488,7 @@
   "w": 1440,
   "h": 104,
   "tag": "div",
+  "boxed": true,
   "text": ""
  },
  {
@@ -3109,6 +3497,7 @@
   "w": 1440,
   "h": 104,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3117,6 +3506,7 @@
   "w": 296,
   "h": 72,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3125,6 +3515,7 @@
   "w": 296,
   "h": 72,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3133,6 +3524,7 @@
   "w": 40,
   "h": 72,
   "tag": "a",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3141,6 +3533,7 @@
   "w": 40,
   "h": 40,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3149,6 +3542,7 @@
   "w": 40,
   "h": 72,
   "tag": "a",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3157,6 +3551,7 @@
   "w": 40,
   "h": 40,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3165,6 +3560,7 @@
   "w": 40,
   "h": 72,
   "tag": "a",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3173,6 +3569,7 @@
   "w": 40,
   "h": 40,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3181,6 +3578,7 @@
   "w": 40,
   "h": 72,
   "tag": "a",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3189,6 +3587,7 @@
   "w": 40,
   "h": 40,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3197,6 +3596,7 @@
   "w": 40,
   "h": 72,
   "tag": "a",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3205,6 +3605,7 @@
   "w": 40,
   "h": 40,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3213,6 +3614,7 @@
   "w": 288,
   "h": 72,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3221,6 +3623,7 @@
   "w": 288,
   "h": 72,
   "tag": "div",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3229,6 +3632,7 @@
   "w": 136,
   "h": 72,
   "tag": "a",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3237,6 +3641,7 @@
   "w": 136,
   "h": 40,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3245,6 +3650,7 @@
   "w": 136,
   "h": 72,
   "tag": "a",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3253,6 +3659,7 @@
   "w": 136,
   "h": 40,
   "tag": "img",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3261,6 +3668,7 @@
   "w": 1,
   "h": 1,
   "tag": "p",
+  "boxed": false,
   "text": ""
  },
  {
@@ -3269,6 +3677,7 @@
   "w": 32,
   "h": 96,
   "tag": "button",
+  "boxed": false,
   "text": "Feedback"
  },
  {
@@ -3277,6 +3686,7 @@
   "w": 32,
   "h": 96,
   "tag": "div",
+  "boxed": true,
   "text": ""
  },
  {
@@ -3285,6 +3695,7 @@
   "w": 32,
   "h": 96,
   "tag": "div",
+  "boxed": false,
   "text": "Feedback"
  }
 ]

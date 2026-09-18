@@ -52,6 +52,21 @@ const COLLECT_RECTS = () => {
         return false;
     };
 
+    // Does this element draw its own box? A card is a box; the section it sits in is
+    // not, even though the section also has a background — what makes the card a module
+    // is that its background DIFFERS from its parent's, or that it has a border or a
+    // radius of its own. Comparing against the parent is the whole trick: without it,
+    // every sectioned page reads as one enormous container.
+    const boxed = (el, cs) => {
+        const own = cs.backgroundColor;
+        const parent = el.parentElement ? getComputedStyle(el.parentElement).backgroundColor : '';
+        const transparent = (c) => !c || c === 'transparent' || /rgba\(0, 0, 0, 0\)/.test(c);
+        if (!transparent(own) && own !== parent) return true;
+        if (parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0) return true;
+
+        return parseFloat(cs.borderTopLeftRadius) > 0;
+    };
+
     for (const el of document.querySelectorAll('body *')) {
         const cs = getComputedStyle(el);
         if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
@@ -64,6 +79,12 @@ const COLLECT_RECTS = () => {
             w: Math.round(r.width),
             h: Math.round(r.height),
             tag: el.tagName.toLowerCase(),
+            // Only the raw signal. Deciding WHICH boxes are modules means comparing them
+            // against each other, which belongs in segmentation where it is testable.
+            // Deciding it here meant guessing a pixel floor for "contains another box",
+            // and a 48px avatar inside a testimonial card was enough to disqualify the
+            // card — the exact module the cut was supposed to protect.
+            boxed: boxed(el, cs),
             text: (el.textContent || '').trim().slice(0, 200),
         });
     }
