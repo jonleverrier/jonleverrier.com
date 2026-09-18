@@ -129,6 +129,22 @@ test('a seam at the region frame cannot produce an empty block', () => {
     }
 });
 
+// THE OTHER SHAPE THE SEAM ARRIVES IN, and it is the more common one: gutters on BOTH
+// sides of the rule, so the boundary is a one-pixel gap between two big runs of
+// whitespace rather than the last thing before the next section starts. jtcgroup.com has
+// 86px either side of its `<section>` boundary; kohde.agency has 86 and 118 either side
+// of the colour step between two videos. Widest-first then offers the gutter BELOW the
+// seam as well, which is the case the rule has to answer twice.
+test('a seam in a one-pixel gap between two gutters is cut', () => {
+    const edges = denseExcept(WIDTH, HEIGHT, [[36, 55], [57, 90]]);
+    const ls = leaves(segment(edges, WIDTH, HEIGHT, {...OPTS, rects: [HEADER, BELOW]}));
+
+    assert.ok(
+        ls.some((l) => l.y === 0 && l.y + l.h === BELOW.y),
+        `the seam at y=${BELOW.y} should be the cut, got ${JSON.stringify(ls)}`,
+    );
+});
+
 // snapToEdge on its own, because `segment` decides several things at once and this is the
 // one of them under test. Both halves of the rule are checked against the same gutter.
 test('snapToEdge reaches a seam and refuses a lone edge', () => {

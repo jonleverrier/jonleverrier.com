@@ -103,13 +103,15 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   with the edge everyone can see: hsbc.co.uk's `<nav>` ends at y=118 with gutters at
   98–117 and 121–139, and the header, nav and hero came back as one 767px block.
   natwest.com is the same a pixel tighter, and kohde.agency stacks two full-bleed
-  1440×900 videos whose seam is a colour step rather than a border. So a cut may reach up
-  to `MODULE_BRIDGE` (2px) outside its gutter — but only to a **seam**, where one
+  1440×900 videos whose seam is a colour step rather than a border, and jtcgroup.com
+  leaves a one-pixel gap between two 86px gutters where its `<section>`s meet. So a cut
+  may reach up to `MODULE_BRIDGE` (2px) outside its gutter — but only to a **seam**, where one
   protected module ends, the next begins, and the gutter is the whitespace of one of
   them. Both halves are load-bearing: reaching for any module edge near any gutter turned
   the page margins beside jonleverrier's header into blocks (12 leaves to 17), and
-  dropping the "two modules meet" half took two more strips off the retail fixture. Nine
-  pages segment identically at 1, 2, 3, 4 and 6px, so nothing is balanced on the number.
+  dropping the "two modules meet" half took two more strips off the retail fixture. Ten
+  pages segment identically at every tolerance from 1 to 24px — the seam condition is
+  what bounds this, not the distance — so nothing is balanced on the number.
   **Only a seam BELOW or ABOVE a gutter is reached, never a lone outer edge** — a module
   edge with nothing on the other side of it is a page margin.
 - **The stitch is a second place a cut is decided.** `segmentTall` rebuilds a tall page

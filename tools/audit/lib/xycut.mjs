@@ -196,7 +196,10 @@ export function edgeCandidates(rects, horizontal) {
  * header's bottom edge at 111. Both headers came out merged into the hero. kohde.agency
  * stacks two full-bleed 1440x900 videos and is the same defect again with no border at
  * all — row 899 is the colour step from the dark hero to the light panel, and the seam
- * at y=900 is the only cut that band legally has.
+ * at y=900 is the only cut that band legally has. jtcgroup.com puts a 1px gap between
+ * gutters of 86 and 86 at the boundary of two `<section>`s. Four pages, four causes, one
+ * shape: the seam is a pixel or two outside a substantial gutter that points straight
+ * at it.
  *
  * WHAT MAY BE BRIDGED TO IS A SEAM: one module ends there, the next begins there, and
  * this gutter is the whitespace of one of the two. Both halves were measured into
@@ -207,13 +210,15 @@ export function edgeCandidates(rects, horizontal) {
  * nothing else begins. A seam is the one shape where the pixels, the DOM and the eye all
  * agree there is a boundary.
  *
- * THE TOLERANCE IS MEASURED AND THE MEASUREMENT IS FLAT. Every instance found is exactly
- * 1px — the seam is the row after the gutter's last, with one rule or one colour step in
- * between — and nine pages (both fixtures, hsbc, natwest, kohde, switch.je, boondmanager,
- * klark, clearleft, lloydsbank) segment IDENTICALLY at 1, 2, 3, 4 and 6. So the evidence
- * does not choose within that range and no page is balanced on it. 2 is taken because a
- * 2px rule is real — retail draws one at y=3443-3444 — and because the further this
- * reaches the more of an unseen page it can reach into.
+ * THE TOLERANCE IS MEASURED AND THE MEASUREMENT IS FLAT. Every instance found needs
+ * exactly 1px — the seam is the row after the gutter's last, with one rule or one colour
+ * step in between — and ten pages (both fixtures, hsbc, natwest, kohde, jtcgroup,
+ * switch.je, boondmanager, klark, clearleft, lloydsbank) segment IDENTICALLY at every
+ * value from 1 to 24. Nothing anywhere is balanced on this number, because what bounds
+ * the rule is the seam condition and not the distance: widening the reach finds no
+ * further seams because there are none to find. 2 is taken because a 2px rule is real —
+ * retail draws one at y=3443-3444 — and because reaching no further than the evidence
+ * is the cheapest kind of caution.
  *
  * SCOPED DELIBERATELY NARROWLY. Promoting every container edge to a cut line was tried
  * and reverted: switch.je went from 43 leaves to 116 and jonleverrier from 12 to 56. This
