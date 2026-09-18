@@ -237,7 +237,14 @@ export function snapToEdge(g, candidates, origin) {
  * 120px banner is a strip, not a module. Only something spanning nearly the whole width
  * AND tall enough to be a section earns the protection.
  */
-export const MEDIA_TAGS = new Set(['video', 'img', 'canvas', 'picture', 'svg']);
+/**
+ * NOT `svg`. A photograph or a video IS the module — opaque content whose interior holds
+ * no structure to find. A page-scale SVG is a decorative flourish drawn OVER the content,
+ * and protecting it protects everything beneath it: switch.je draws a 1440x810 curve
+ * starting at y=-76, above the page, across its header, headline, buttons and first two
+ * case studies. Treating that as a hero merged all of them into one block.
+ */
+export const MEDIA_TAGS = new Set(['video', 'img', 'canvas', 'picture']);
 export const FULL_BLEED = {widthFraction: 0.9, minH: 200};
 
 /** The rects a cut may not pass through. Empty without rects — they are never required. */
@@ -450,7 +457,18 @@ export function segment(edges, width, height, opts = {}) {
                 ? {x: rect.x, y: rect.y + at, w: rect.w, h: rect.h - at, depth: rect.depth + 1, children: []}
                 : {x: rect.x + at, y: rect.y, w: rect.w - at, h: rect.h, depth: rect.depth + 1, children: []};
 
-            if (tooSmall(a) || tooSmall(b)) continue;
+            // A MODULE'S OWN BOUNDARY OUTRANKS THE SIZE FLOOR. minSide exists to stop
+            // slivers, and it cannot tell a sliver from a genuinely short module: a 76px
+            // header strip is a real block, and refusing it merged switch.je's header,
+            // logo and primary nav into its headline. A container has already passed the
+            // 0.5% area gate, so cutting on its edge cannot produce the slivers minSide
+            // was defending against.
+            const absolute = (horizontal ? rect.y : rect.x) + at;
+            const onModuleEdge = keepWhole.some((m) => (horizontal
+                ? absolute === m.y || absolute === m.y + m.h
+                : absolute === m.x || absolute === m.x + m.w));
+
+            if (!onModuleEdge && (tooSmall(a) || tooSmall(b))) continue;
 
             rect.children = [cut(a), cut(b)];
 
