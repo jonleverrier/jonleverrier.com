@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
-    findGutters, widestGutter, rowDensity, segment, segmentTall, adaptiveMaxDensity, GUTTER,
+    findGutters, rowDensity, segment, segmentTall, adaptiveMaxDensity, GUTTER,
     moduleContainers,
 } from '../lib/xycut.mjs';
 import {edgeMapFromPng} from '../lib/edges.mjs';
@@ -24,15 +24,6 @@ test('findGutters ignores runs shorter than minRun', () => {
 test('findGutters includes a run that reaches the end', () => {
     const d = Float32Array.from([0.5, 0, 0, 0, 0]);
     assert.deepEqual(findGutters(d, {minRun: 3, maxDensity: 0.01}), [{start: 1, end: 5}]);
-});
-
-test('widestGutter picks the longest run, not the first', () => {
-    const g = [{start: 0, end: 4}, {start: 10, end: 20}, {start: 30, end: 33}];
-    assert.deepEqual(widestGutter(g), {start: 10, end: 20});
-});
-
-test('widestGutter returns null when there are none', () => {
-    assert.equal(widestGutter([]), null);
 });
 
 test('rowDensity counts only pixels inside the rect', () => {

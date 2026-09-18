@@ -136,15 +136,6 @@ export function findGutters(density, opts = GUTTER) {
     return runs;
 }
 
-export function widestGutter(gutters) {
-    let best = null;
-    for (const g of gutters) {
-        if (!best || g.end - g.start > best.end - best.start) best = g;
-    }
-
-    return best;
-}
-
 /**
  * A rect worth snapping to: an element that carries content, not the page scaffolding
  * around it. Page-level wrappers span the whole document, so their edges coincide with
