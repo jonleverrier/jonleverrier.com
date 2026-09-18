@@ -151,10 +151,16 @@ export async function edgeMapFromPng(path) {
     // mean allocating the very hundreds of megabytes the cap exists to avoid.
     const {width: declaredWidth, height: declaredHeight} = await sharp(path).metadata();
     if (declaredHeight > MAX_IMAGE_HEIGHT) {
-        throw new Error(`this image is ${declaredHeight}px tall and the limit is ${MAX_IMAGE_HEIGHT}px `
-            + '(Chromium cannot screenshot a page taller than that, so this did not come from a capture). '
-            + 'Crop it, or raise MAX_IMAGE_HEIGHT in lib/edges.mjs deliberately — segmenting it needs about '
-            + `${Math.round(declaredHeight * declaredWidth * BYTES_PER_PIXEL / 1e6)}MB`);
+        // NOT "so this did not come from a capture", which this message used to claim and
+        // which is false: phase 1 will happily write a 24,746px PNG for a page that tall.
+        // Chromium stops PAINTING at 16384 and pads the rest with background, so such a
+        // file is the right height and blank below the limit — visionarygrid.studio came
+        // through with 34% of its height white and its DOM rects intact underneath.
+        throw new Error(`this image is ${declaredHeight}px tall and the limit is ${MAX_IMAGE_HEIGHT}px. `
+            + 'Chromium stops painting there, so everything below is blank background rather than '
+            + 'the page — segmenting it would measure that emptiness as real. Capture warns about '
+            + 'this too. Crop it, or raise MAX_IMAGE_HEIGHT in lib/edges.mjs deliberately — '
+            + `segmenting it needs about ${Math.round(declaredHeight * declaredWidth * BYTES_PER_PIXEL / 1e6)}MB`);
     }
 
     const {data, info} = await sharp(path).removeAlpha().raw().toBuffer({resolveWithObject: true});

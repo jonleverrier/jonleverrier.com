@@ -10,8 +10,9 @@
  */
 import {capturePage} from './lib/capture.mjs';
 import {RENDERER_MAX, webglWarning} from './lib/webgl.mjs';
-import {shotTruncationWarning, unrenderedWarning} from './lib/unrendered.mjs';
+import {shotTruncationWarning, unrenderedWarning, paintLimitWarning} from './lib/unrendered.mjs';
 import {printable} from './lib/printable.mjs';
+import {sameUrl} from './lib/sameurl.mjs';
 
 /**
  * The page we ended on is not the page we asked for. Never a footnote.
@@ -21,7 +22,7 @@ import {printable} from './lib/printable.mjs';
  * is made on the RAW values first — a sanitised URL must never be able to match one
  * that differs only in a character this strips.
  */
-const wrongPageWarning = (meta) => (meta.capturedUrl && meta.capturedUrl !== meta.url
+const wrongPageWarning = (meta) => (meta.capturedUrl && !sameUrl(meta.capturedUrl, meta.url)
     ? `the capture ended on ${printable(meta.capturedUrl)}, not ${printable(meta.url)}. Every artefact in this`
         + ' directory is of that page, so any percentage from it belongs to that page too'
     : null);
@@ -40,7 +41,7 @@ try {
     // stranger submitted, so all of it goes through printable() on the way out. See
     // lib/printable.mjs: an ESC here is an ANSI sequence and a newline forges a line.
     console.log(`url          ${printable(meta.url)}`);
-    console.log(`captured     ${printable(meta.capturedUrl)}${meta.capturedUrl === meta.url ? '' : '   <-- NOT THE URL REQUESTED'}`);
+    console.log(`captured     ${printable(meta.capturedUrl)}${sameUrl(meta.capturedUrl, meta.url) ? '' : '   <-- NOT THE URL REQUESTED'}`);
     console.log(`full height  ${meta.fullHeight}px`);
     console.log(`image        ${meta.image.width}x${meta.image.height}`);
     console.log(`consent      ${meta.consentDismissed ? `dismissed via ${printable(meta.consentVia)}` : 'not dismissed (counts as surface area)'}${meta.consentNavigatedAway ? ' — a consent click navigated away and was undone' : ''}`);
@@ -56,6 +57,7 @@ try {
     for (const warning of [
         wrongPageWarning(meta),
         shotTruncationWarning(meta),
+        paintLimitWarning(meta),
         webglWarning(meta.webgl),
         unrenderedWarning(meta),
     ]) {

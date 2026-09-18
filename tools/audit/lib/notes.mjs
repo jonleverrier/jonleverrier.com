@@ -42,8 +42,9 @@
  * absence is not in here — a silence this file cannot break.
  */
 import {webglWarning} from './webgl.mjs';
-import {shotTruncationWarning, unrenderedWarning} from './unrendered.mjs';
+import {shotTruncationWarning, unrenderedWarning, paintLimitWarning, PAINT_LIMIT_PX} from './unrendered.mjs';
 import {printable} from './printable.mjs';
+import {sameUrl} from './sameurl.mjs';
 
 /**
  * What a condition does to the number, and therefore what a report must do about it.
@@ -86,7 +87,7 @@ export function runNotes(meta, reason = 'missing') {
 
     // WHICH PAGE THIS IS A MEASUREMENT OF comes first: a percentage attributed to the
     // wrong domain is wrong in a way no other note here can make up for.
-    if (meta.capturedUrl && meta.url && meta.capturedUrl !== meta.url) {
+    if (meta.capturedUrl && meta.url && !sameUrl(meta.capturedUrl, meta.url)) {
         add(
             'wrongPage',
             'attribution',
@@ -101,6 +102,19 @@ export function runNotes(meta, reason = 'missing') {
             pageHeight: meta.fullHeight,
             imageHeight: meta.image?.height ?? null,
             missing: meta.fullHeight - (meta.image?.height ?? 0),
+        });
+    }
+
+    // A DIFFERENT CONDITION FROM shotTruncated, and the reason that one could not see it:
+    // the PNG is the full height and the rows below the paint limit are background, so
+    // the two heights agree and nothing looks wrong. Only the page height against the
+    // limit reveals it.
+    const painted = paintLimitWarning(meta);
+    if (painted) {
+        add('paintLimit', 'unmeasured', painted, {
+            pageHeight: meta.fullHeight,
+            paintLimit: PAINT_LIMIT_PX,
+            missing: meta.fullHeight - PAINT_LIMIT_PX,
         });
     }
 

@@ -127,6 +127,40 @@ export const SHOT_SLACK_PX = 1;
  * the page with nothing declaring it — and once the browser has closed there is no way
  * to notice. Comparing the two numbers is the whole check.
  */
+/**
+ * The height above which Chromium stops painting a full-page screenshot.
+ *
+ * It still WRITES the full height — the PNG is the right size and the rows below are
+ * background — which is why comparing the two heights cannot see this. Only the page's
+ * own height against the limit can.
+ */
+export const PAINT_LIMIT_PX = 16384;
+
+/**
+ * One line when the page is taller than Chromium will paint, or null.
+ *
+ * visionarygrid.studio is 24,746px. The capture wrote a 24,746px PNG whose content stops
+ * dead at y=16382, so 8,364px — 34% of the page — is white background with the DOM rects
+ * for real content sitting underneath it. Nothing in that run looked wrong: the two
+ * heights agreed, the scroll cap was not hit, and `contentBottom` equalled `fullHeight`.
+ *
+ * Measuring that emptiness as page area is exactly the confident wrong number this tool
+ * exists to refuse, and it is the one case so far where the honest answer is that the
+ * capture cannot be used whole.
+ */
+export function paintLimitWarning(meta) {
+    const pageHeight = meta?.fullHeight;
+    if (!(pageHeight > PAINT_LIMIT_PX)) {
+        return null;
+    }
+    const missing = pageHeight - PAINT_LIMIT_PX;
+    const pct = ((missing / pageHeight) * 100).toFixed(1);
+
+    return `the page is ${pageHeight}px tall and Chromium stops painting at ${PAINT_LIMIT_PX}px, so the `
+        + `bottom ${missing}px (${pct}% of it) is blank background in the screenshot rather than `
+        + 'content. Phase 2 refuses an image this tall rather than measure that emptiness';
+}
+
 export function shotTruncationWarning(meta) {
     const pageHeight = meta?.fullHeight;
     const imageHeight = meta?.image?.height;
