@@ -29,6 +29,7 @@ import {mkdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {dismissConsent} from './consent.mjs';
 import {WEBGL_PROBE_INIT, probeWebgl} from './webgl.mjs';
+import {COLLECT_FIXED, heightGap} from './unrendered.mjs';
 
 export const VIEWPORT = {width: 1440, height: 900};
 
@@ -105,6 +106,10 @@ export async function capturePage(url, outDir, opts = {}) {
         }
         const scrollCapHit = scrolls >= maxScrolls;
 
+        // AT THE BOTTOM, before scrolling back: a reveal footer is only in its resting
+        // place once the content has travelled over it.
+        const fixed = await page.evaluate(COLLECT_FIXED);
+
         await page.evaluate(() => window.scrollTo(0, 0));
         await page.waitForTimeout(400);
 
@@ -124,6 +129,8 @@ export async function capturePage(url, outDir, opts = {}) {
             consentVia: consent.via,
             scrollCapHit,
             webgl,
+            fixed,
+            heightGap: heightGap(fullHeight, rects, fixed),
         };
         writeFileSync(join(outDir, 'rects.json'), JSON.stringify(rects, null, 1));
         writeFileSync(join(outDir, 'meta.json'), JSON.stringify(meta, null, 1));

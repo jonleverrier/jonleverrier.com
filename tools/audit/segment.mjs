@@ -23,6 +23,7 @@ import {segmentTall} from './lib/xycut.mjs';
 import {renderDebug} from './lib/debug.mjs';
 import {leaves, totalArea} from './lib/blocks.mjs';
 import {webglWarning} from './lib/webgl.mjs';
+import {unrenderedWarning} from './lib/unrendered.mjs';
 
 const outDir = process.argv[2];
 const depthArg = process.argv.find((a) => a.startsWith('--depth='));
@@ -83,10 +84,13 @@ try {
     // notice that part of the page never rendered.
     const metaPath = join(outDir, 'meta.json');
     if (existsSync(metaPath)) {
-        const warning = webglWarning(JSON.parse(readFileSync(metaPath, 'utf8')).webgl);
-        if (warning) {
-            console.log('unmeasured   YES — see warning');
-            process.stderr.write(`\nWARNING: ${warning}\n`);
+        const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
+        const warnings = [webglWarning(meta.webgl), unrenderedWarning(meta)].filter(Boolean);
+        if (warnings.length) {
+            console.log('unmeasured   YES — see warnings');
+            for (const w of warnings) {
+                process.stderr.write(`\nWARNING: ${w}\n`);
+            }
         }
     }
 } catch (e) {

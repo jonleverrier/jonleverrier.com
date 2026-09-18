@@ -9,6 +9,7 @@ reporting are not built yet.
 | `capture.mjs` | Phase 1 CLI. Loads a URL at 1440×900 and writes the screenshots, DOM rects and meta. |
 | `segment.mjs` | Phase 2 CLI. Turns a screenshot (plus `rects.json`, if present) into a block tree and a debug image. |
 | `lib/capture.mjs` | `capturePage()` — the Playwright run. The Craft job will import this, not the CLI. |
+| `lib/unrendered.mjs` | Regions that exist for a visitor and are missing from the capture. |
 | `lib/webgl.mjs` | Whether this browser could render a WebGL hero, and whether the page wanted one. |
 | `lib/consent.mjs` | The cookie-banner selectors, and one attempt at dismissing them. |
 | `lib/edges.mjs` | Greyscale → Sobel → non-max suppression → hysteresis. A Canny edge map. |
@@ -52,9 +53,21 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   whose hero is its homepage would otherwise be told a quarter of its page is nothing.
   Note the evidence is the draw count, never the renderer: keying off "software" would
   flag every site that renders happily in software, which is most of them.
+- **A `position: fixed` reveal footer does not get captured.** A full-page screenshot
+  does not paint fixed elements down the page, and DOM rects are collected at scroll-top
+  where a fixed element reports its viewport box. switch.je's footer is visible, 745px
+  tall, and appears in neither — the pixels there measure a flat fill with a standard
+  deviation of 0.0. `meta.heightGap` catches it by asking whether the page claims more
+  height than its captured content explains, which covers reveal panels and sticky
+  overlays too without special-casing any of them. **Nothing invents the missing pixels:**
+  writing a rect for something the screenshot lacks would snap cuts onto invisible
+  boundaries and hand phase 3 a blank rectangle to classify.
 - **Content behind `prefers-reduced-motion` is absent too.** It is forced, because
-  determinism requires it. That is a second way the captured page differs from the one a
-  visitor sees, and unlike the WebGL case nothing detects it.
+  determinism requires it. That is a third way the captured page differs from the one a
+  visitor sees, and unlike the other two nothing detects it.
+- **"Unmeasured" and "empty" are different answers.** Deliberate whitespace is a design
+  choice and should be reported as a number like any other. A region we could not capture
+  is a hole in our data. Never let the second masquerade as the first.
 - **Open `debug.png`.** The tests prove the tree is a valid partition. They cannot
   prove it is a sensible one.
 

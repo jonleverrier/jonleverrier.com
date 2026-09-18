@@ -1,0 +1,94 @@
+/**
+ * UNRENDERED
+ *
+ * The height-gap check: does the page claim more height than its captured content
+ * accounts for, and is that worth telling a human about?
+ *
+ *   node --test tools/audit/test/unrendered.test.mjs
+ *
+ * No browser. The decision under test is arithmetic on rects, which is where it belongs.
+ *
+ * The numbers in the first test are REAL, from switch.je: scrollHeight 4831, deepest
+ * captured element ending at 4088, and a visible `position: fixed` footer of 1440x745 at
+ * y=4086 that neither the screenshot nor rects.json contains.
+ */
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {contentBottom, heightGap, unrenderedWarning, GAP_MIN_PX} from '../lib/unrendered.mjs';
+
+const rect = (y, h, tag = 'div') => ({x: 0, y, w: 1440, h, tag, text: ''});
+
+test('the real switch.je shape is flagged, and names the footer', () => {
+    const g = heightGap(4831, [rect(0, 4088)], [{x: 0, y: 4086, w: 1440, h: 745, tag: 'footer'}]);
+    assert.equal(g.contentBottom, 4088);
+    assert.equal(g.gap, 743);
+    assert.equal(g.significant, true);
+    assert.equal(g.likelyCause.tag, 'footer');
+
+    const w = unrenderedWarning({heightGap: g});
+    assert.match(w, /743px/);
+    assert.match(w, /<footer>/);
+    assert.match(w, /unmeasured, not as empty space/);
+});
+
+test('a page whose content reaches the bottom is not flagged', () => {
+    const g = heightGap(4000, [rect(0, 4000)]);
+    assert.equal(g.gap, 0);
+    assert.equal(g.significant, false);
+    assert.equal(unrenderedWarning({heightGap: g}), null);
+});
+
+// Both conditions have to hold, and each one alone has to NOT be enough.
+test('a gap that is large in pixels but tiny in proportion is not flagged', () => {
+    const g = heightGap(20000, [rect(0, 19850)]); // 150px, but 0.75% of the page
+    assert.ok(g.gap > GAP_MIN_PX);
+    assert.equal(g.significant, false);
+});
+
+test('a gap that is proportionally large but tiny in pixels is not flagged', () => {
+    const g = heightGap(900, [rect(0, 840)]); // 6.7% of the page, but only 60px
+    assert.ok(g.fraction > 0.02);
+    assert.equal(g.significant, false);
+});
+
+test('a significant gap with no fixed element still flags, without naming a cause', () => {
+    const g = heightGap(4000, [rect(0, 3000)]);
+    assert.equal(g.significant, true);
+    assert.equal(g.likelyCause, null);
+    const w = unrenderedWarning({heightGap: g});
+    assert.match(w, /1000px/);
+    assert.doesNotMatch(w, /fixed </);
+});
+
+// Otherwise the warning blames a back-to-top chip for a missing footer.
+test('the largest fixed element in the band is named, not merely the first', () => {
+    const g = heightGap(4000, [rect(0, 3000)], [
+        {x: 1380, y: 3900, w: 48, h: 48, tag: 'button'},
+        {x: 0, y: 3000, w: 1440, h: 1000, tag: 'footer'},
+    ]);
+    assert.equal(g.likelyCause.tag, 'footer');
+});
+
+test('small fixed furniture is never blamed', () => {
+    const g = heightGap(4000, [rect(0, 3000)], [{x: 1380, y: 3900, w: 48, h: 48, tag: 'button'}]);
+    assert.equal(g.significant, true);
+    assert.equal(g.likelyCause, null, 'a 48x48 chip does not explain a 1000px gap');
+});
+
+test('a fixed element above the content bottom is not a suspect', () => {
+    // A sticky header is fixed and visible, but it explains nothing about the foot.
+    const g = heightGap(4000, [rect(0, 3000)], [{x: 0, y: 0, w: 1440, h: 80, tag: 'header'}]);
+    assert.equal(g.likelyCause, null);
+});
+
+test('contentBottom handles an empty or missing rect list', () => {
+    assert.equal(contentBottom([]), 0);
+    assert.equal(contentBottom(undefined), 0);
+    assert.equal(heightGap(1000, []).gap, 1000);
+});
+
+test('a missing heightGap never throws', () => {
+    for (const meta of [undefined, null, {}, {heightGap: null}]) {
+        assert.equal(unrenderedWarning(meta), null);
+    }
+});
