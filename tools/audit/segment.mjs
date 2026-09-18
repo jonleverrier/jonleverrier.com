@@ -24,11 +24,25 @@ import {leaves, totalArea} from './lib/blocks.mjs';
 
 const outDir = process.argv[2];
 const depthArg = process.argv.find((a) => a.startsWith('--depth='));
-const maxDepth = depthArg ? Number(depthArg.split('=')[1]) : 4;
+const depthValue = depthArg ? depthArg.slice('--depth='.length) : null;
 if (!outDir) {
     console.error('usage: node tools/audit/segment.mjs <outDir> [--depth=4]');
     process.exit(1);
 }
+// VALIDATE, do not just parse, and match the digits rather than asking Number() what it
+// thinks. An unparseable --depth yields NaN, and `rect.depth >= NaN` is always false, so
+// the cap is not merely ignored, it is REMOVED — the run then prints `depth NaN`, cuts
+// without limit, and still exits 0. A silently uncapped run that reports success is the
+// worst failure this CLI has: the number it produces looks like an answer.
+//
+// Number() alone cannot gate this, because it is generous in three different directions:
+// Number('') and Number(' ') are 0 (a typo becomes a deliberate "do not cut"), and
+// Number('0x4') is 4 (hex, silently). A plain decimal test refuses all of them.
+if (depthValue !== null && !/^\d+$/.test(depthValue)) {
+    console.error(`--depth must be a non-negative whole number, got "${depthValue}"`);
+    process.exit(1);
+}
+const maxDepth = depthValue === null ? 4 : Number(depthValue);
 
 const png = join(outDir, 'fullpage.png');
 process.stderr.write(`segmenting ${png} at depth ${maxDepth}\n`);
