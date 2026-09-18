@@ -15,6 +15,8 @@ reporting are not built yet.
 | `lib/edges.mjs` | Greyscale → Sobel → non-max suppression → hysteresis. A Canny edge map. |
 | `lib/xycut.mjs` | Density profiles, gutter finding, the recursive partition, and tall-page tiling. |
 | `lib/blocks.mjs` | The `Block` shape and `assertPartition()` — the invariant everything rests on. |
+| `lib/rects.mjs` | Loads and repairs `rects.json`. The only place a rects file is judged. |
+| `lib/printable.mjs` | Page text on its way to a terminal. Everything printed about a page goes through it. |
 | `lib/debug.mjs` | The screenshot with every block outlined. The review gate. |
 | `fixtures/` | Committed captures the segmentation tests run against. See its own README. |
 | `test/` | `node --test tools/audit/test/*.mjs` |
@@ -65,6 +67,17 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   gutter. It is optional — with only a PNG the cut falls back to the gutter midpoint,
   which is tens of pixels out wherever the whitespace is generous. Phase 2 says which
   it did on stderr; a run that quietly lost its rects looks like a worse segmenter.
+- **A rects file is repaired, not trusted, and never just believed.** The whole
+  measurement rests on whole pixels, and a fractional coordinate voids it: a rect
+  100.33333333333334px tall — an ordinary three-column grid, a fractional line-height,
+  anything under `transform: scale` — makes two children sum to 119999.99999999999
+  against an image of 120000. `lib/rects.mjs` rounds every coordinate as the file loads,
+  because phase 1 rounds already so a fractional file is an out-of-house one and refusing
+  it would fail an audit over a third of a pixel. Anything that cannot be repaired is
+  dropped and counted on stderr. `[1, 2, 3]` used to be accepted with stderr announcing
+  "snapping cuts to 3 DOM rects" while snapping to nothing; a file containing `null` was
+  reported as "no rects.json in `<dir>`" with the file right there; and `{"y": null}`
+  moved a cut by 50px in silence.
 - **A full-bleed `<video>`, `<img>` or `<canvas>` is one module, and rects are the only
   way to know it.** A photograph or a blurred video has no gutters, only noise, so the
   pixels alone will happily slice a hero into arbitrary pieces — and phase 3 can then

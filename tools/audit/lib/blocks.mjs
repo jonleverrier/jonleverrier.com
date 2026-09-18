@@ -39,7 +39,9 @@ export function overlaps(a, b) {
  * overlapping each other, and summing to the parent's area. Recurses.
  *
  * Area equality is exact integer arithmetic — every rect is whole pixels, so there
- * is no tolerance to tune and no floating-point slack to hide a bug in.
+ * is no tolerance to tune and no floating-point slack to hide a bug in. THAT PREMISE IS
+ * ENFORCED IN lib/rects.mjs, which rounds every coordinate as the file is loaded; it was
+ * assumed and unchecked until a rect 100.33333333333334px tall broke it.
  */
 export function assertPartition(root) {
     const kids = root.children ?? [];

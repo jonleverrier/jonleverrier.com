@@ -30,6 +30,7 @@ import {assertPartition, leaves, totalArea} from './lib/blocks.mjs';
 import {webglWarning} from './lib/webgl.mjs';
 import {shotTruncationWarning, unrenderedWarning} from './lib/unrendered.mjs';
 import {printable} from './lib/printable.mjs';
+import {loadRects} from './lib/rects.mjs';
 
 const outDir = process.argv[2];
 const depthArg = process.argv.find((a) => a.startsWith('--depth='));
@@ -76,10 +77,22 @@ try {
     // the pixel-only path still produces a valid partition. Say so rather than failing,
     // but do say so, because the cuts will be visibly less exact in debug.png and that
     // should not look like a bug in the segmenter.
+    //
+    // THEY ARE ALSO NOT TRUSTED. loadRects validates the file, rounds fractional
+    // coordinates onto the whole pixels the partition invariant assumes, drops what it
+    // cannot repair and says how many of each — see lib/rects.mjs. It returns null only
+    // when the file is genuinely absent, so the "no rects.json" message below can no
+    // longer be printed about a file that is sitting right there.
     const rectsPath = join(outDir, 'rects.json');
-    const rects = existsSync(rectsPath) ? JSON.parse(readFileSync(rectsPath, 'utf8')) : undefined;
-    if (rects) {
-        process.stderr.write(`snapping cuts to ${rects.length} DOM rects from ${printable(rectsPath)}\n`);
+    const loaded = loadRects(rectsPath);
+    const rects = loaded ? loaded.rects : undefined;
+    if (loaded) {
+        const repairs = [
+            loaded.rounded ? `${loaded.rounded} rounded to whole pixels` : null,
+            loaded.dropped ? `${loaded.dropped} dropped as unusable` : null,
+        ].filter(Boolean);
+        process.stderr.write(`snapping cuts to ${loaded.rects.length} DOM rects from ${printable(rectsPath)}`
+            + `${repairs.length ? ` (${repairs.join(', ')})` : ''}\n`);
     } else {
         process.stderr.write(`no rects.json in ${printable(outDir)} — cutting on pixels alone, boundaries will be approximate\n`);
     }
