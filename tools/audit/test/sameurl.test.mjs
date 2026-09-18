@@ -20,6 +20,8 @@ test('a trailing slash the browser added is not a different page', () => {
     assert.equal(sameUrl('https://www.visionarygrid.studio', 'https://www.visionarygrid.studio/'), true);
 });
 
+// The scheme line is the DOWNGRADE: `sameUrl(captured, requested)`, so this is asking
+// for https and being answered over http. The upgrade is forgiven and this is not.
 test('a differing host, scheme or port IS a different page', () => {
     assert.equal(sameUrl('https://a.com/', 'https://b.com/'), false);
     assert.equal(sameUrl('http://a.com/', 'https://a.com/'), false);
@@ -102,4 +104,78 @@ test('a trailing slash does not raise a wrongPage note', () => {
     });
 
     assert.equal('wrongPage' in notes.conditions, false);
+});
+
+// ---------------------------------------------------------------------------
+// The canonical redirect. `http://boondmanager.com` lands on
+// `https://www.boondmanager.com/` — an upgrade and a `www.` prefix at once, which is what
+// most of the web does with a bare hostname, and the old check called it another page.
+// ---------------------------------------------------------------------------
+
+test('an http request answered over https on www is not a different page', () => {
+    assert.equal(sameUrl('https://www.boondmanager.com/', 'http://boondmanager.com'), true);
+});
+
+test('a www prefix is not a difference, whichever side it turns up on', () => {
+    assert.equal(sameUrl('https://www.klark.ai/', 'https://klark.ai'), true);
+    assert.equal(sameUrl('https://klark.ai/', 'https://www.klark.ai'), true);
+});
+
+// The upgrade is forgiven in ONE direction. Being moved off TLS is worth knowing about,
+// and it is what a symmetric scheme rule would swallow along with the upgrade.
+test('an https request answered over http IS a different page', () => {
+    assert.equal(sameUrl('http://www.a.com/', 'https://a.com'), false);
+    assert.equal(sameUrl('http://a.com/', 'https://www.a.com'), false);
+});
+
+// Forgiving the prefix must not merge two sites, and `www.com` is a registrable domain in
+// its own right rather than a prefix on one.
+test('forgiving www does not merge different hosts', () => {
+    assert.equal(sameUrl('https://www.a.com/', 'https://www.b.com/'), false);
+    assert.equal(sameUrl('https://www.a.com/', 'https://b.com/'), false);
+    assert.equal(sameUrl('https://www.com/', 'https://com/'), false);
+});
+
+// The reason the check exists at all: a consent click carrying the capture onto another
+// page. Everything forgiven above is forgiven only while the page is the same one.
+test('a navigation away still fires, upgrade and www notwithstanding', () => {
+    assert.equal(sameUrl('https://www.a.com/cookie-policy', 'http://a.com'), false);
+    assert.equal(sameUrl('https://www.a.com/?consent=1', 'http://a.com'), false);
+    assert.equal(sameUrl('https://www.a.com:8443/', 'http://a.com'), false);
+});
+
+test('canonicalUrl says what it compares: scheme kept, www gone', () => {
+    assert.equal(canonicalUrl('https://www.a.com/work/'), 'https://a.com/work');
+    assert.equal(canonicalUrl('http://A.COM'), 'http://a.com');
+});
+
+// Through the notes, because that is what reaches blocks.json and the terminal.
+test('the ordinary canonical redirect raises no wrongPage note', () => {
+    const notes = runNotes({
+        url: 'http://boondmanager.com',
+        capturedUrl: 'https://www.boondmanager.com/',
+        fullHeight: 10619,
+        image: {width: 1440, height: 10619},
+        httpStatus: 200,
+        consentDismissed: true,
+        scrollCapHit: false,
+    });
+
+    assert.equal('wrongPage' in notes.conditions, false);
+});
+
+test('a capture that ended on another page still raises wrongPage', () => {
+    const notes = runNotes({
+        url: 'http://boondmanager.com',
+        capturedUrl: 'https://www.boondmanager.com/cookie-policy',
+        fullHeight: 10619,
+        image: {width: 1440, height: 10619},
+        httpStatus: 200,
+        consentDismissed: true,
+        scrollCapHit: false,
+    });
+
+    assert.ok('wrongPage' in notes.conditions);
+    assert.equal(notes.conditions.wrongPage.effect, 'attribution');
+    assert.equal(notes.conditions.wrongPage.facts.captured, 'https://www.boondmanager.com/cookie-policy');
 });
