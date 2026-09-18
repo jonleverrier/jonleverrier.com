@@ -1,12 +1,24 @@
 # Fixtures
 
-Committed captures the segmentation tests run against. Viewport-sized (1440×900), not
-full-page — nothing under `tools/` is gitignored and a full-page capture is megabytes.
+Committed captures the segmentation tests run against. **Full-page, not viewport-sized** —
+these are `fullpage.png` from a real capture, at the natural height of each page.
 
-| file | from | captured | why this one |
-|---|---|---|---|
-| `jonleverrier.png` | https://jonleverrier.com | 2026-09-17 | Text-led, clear column structure, no consent banner. The easy case. |
-| `retail.png` | https://www.marksandspencer.com | 2026-09-17 | Product grid, consent banner, lazy images. The case that breaks things. |
+| file | from | captured | size | why this one |
+|---|---|---|---|---|
+| `jonleverrier.png` | https://jonleverrier.com | 2026-09-18 | 1440×1296, 158K | Text-led, clear column structure, no consent banner. The easy case. |
+| `retail.png` | https://www.marksandspencer.com | 2026-09-18 | 1440×3752, 2.0M | Product grid, consent banner, lazy images, a blurred full-bleed hero video. Five tiles tall. The case that breaks things. |
+
+**They were viewport-sized (1440×900) until 2026-09-18, and that was a mistake worth
+recording.** Viewport crops keep the repo light, and nothing under `tools/` is gitignored,
+so the trade looked obvious. But `segmentTall` — the whole tall-page tiling path — never
+sees a second tile on a 900px image, so it was covered only by a synthetic edge map while
+every real-page test silently exercised plain `segment()`. The tiling defects found at the
+first review gate had never met a real page. 2MB is the price of testing the code that
+actually runs; pay it.
+
+The corollary: **`retail.png` must stay several tiles tall.** If it is ever recaptured
+shorter than ~1900px, the tiling path loses its only real-content coverage and the suite
+will not tell you.
 
 **Not John Lewis.** The brief suggested johnlewis.com; it refused the headless browser
 outright (`net::ERR_HTTP2_PROTOCOL_ERROR` on every load attempt). next.co.uk was tried
