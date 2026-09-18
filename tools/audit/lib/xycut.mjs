@@ -380,6 +380,58 @@ export function textRects(rects) {
     return rects.filter((r) => TEXT_TAGS.has(r.tag) && (r.text || '').trim().length > 0 && isContentRect(r));
 }
 
+/**
+ * A rect shrunk to the pixels that actually have ink in them, or null if none do.
+ *
+ * PROTECT THE WORDS, NOT THE BOX. A heading's element box is as wide as its column, and
+ * the words rarely fill it: M&S's footer headings are 336px boxes holding "Here to Help"
+ * (121px of ink) and the column gutter beside each one begins EXACTLY where its ink ends
+ * — 161 against ink ending at 146, 557 against 556, 898 against 897. Protecting the box
+ * rejected all three column cuts and left the footer's four link columns as one
+ * full-width band with the columns below it cut short.
+ *
+ * Shrinking loses nothing that mattered: on jonleverrier the headline's ink spans 511-932
+ * inside a 440-1000 box, and the cut that must stay refused — between "How" and "can" at
+ * x=745 — is inside the ink either way.
+ *
+ * `edges` must be the same coordinate space as `r`, which is what segment guarantees:
+ * segmentTall shifts rects to match each tile and band before handing both over.
+ */
+export function inkBounds(edges, width, height, r) {
+    const x0 = Math.max(0, r.x);
+    const x1 = Math.min(width, r.x + r.w);
+    const y0 = Math.max(0, r.y);
+    const y1 = Math.min(height, r.y + r.h);
+    if (x1 <= x0 || y1 <= y0) return null;
+
+    let left = null;
+    let right = null;
+    let top = null;
+    let bottom = null;
+    for (let y = y0; y < y1; y++) {
+        const base = y * width;
+        for (let x = x0; x < x1; x++) {
+            if (!edges[base + x]) continue;
+            if (left === null || x < left) left = x;
+            if (right === null || x > right) right = x;
+            if (top === null) top = y;
+            bottom = y;
+        }
+    }
+
+    // No ink at all — an empty heading box protects nothing.
+    return left === null
+        ? null
+        : {x: left, y: top, w: right - left + 1, h: bottom - top + 1, tag: r.tag, text: r.text};
+}
+
+/** The headings in `rects`, each shrunk to its ink. */
+export function inkedTextRects(edges, width, height, rects) {
+    return textRects(rects)
+        .map((r) => inkBounds(edges, width, height, r))
+        .filter(Boolean);
+}
+
 export function protectedRects(rects, width, pageHeight) {
     return [...fullBleedMedia(rects, width), ...moduleContainers(rects, width, pageHeight)];
 }
@@ -445,7 +497,9 @@ export function segment(edges, width, height, opts = {}) {
     const keepWhole = protectedRects(rects, width, pageHeight ?? height);
     // Rejection only. These never steer a snap and never excuse the size floor — they
     // are a veto on cutting through words, not a statement about module boundaries.
-    const keepIntact = textRects(rects);
+    // Shrunk to their ink: a heading box is as wide as its column and the words rarely
+    // fill it, so the box would veto the gutter beside the heading. See inkBounds.
+    const keepIntact = inkedTextRects(edges, width, height, rects);
     // The coordinates a snap should reach for when the gutter offers a choice.
     const moduleEdgeY = new Set(keepWhole.flatMap((m) => [m.y, m.y + m.h]));
     const moduleEdgeX = new Set(keepWhole.flatMap((m) => [m.x, m.x + m.w]));
@@ -658,8 +712,9 @@ export function segmentTall(edges, width, height, opts = {}) {
     // Page coordinates, unshifted: a harvested line is a page coordinate too.
     const keepWhole = protectedRects(opts.rects, width, height);
     // BOTH of `segment`'s rejection populations, because a harvested line is judged
-    // against the whole page and a heading is no more cuttable here than there.
-    const keepIntact = textRects(opts.rects);
+    // against the whole page and a heading is no more cuttable here than there. Ink, not
+    // boxes, for the same reason segment uses ink — see inkBounds.
+    const keepIntact = inkedTextRects(edges, width, height, opts.rects);
     const page = {x: 0, y: 0, w: width, h: height};
     for (let top = 0; top < height; top += step) {
         const h = Math.min(TILE_HEIGHT, height - top);
