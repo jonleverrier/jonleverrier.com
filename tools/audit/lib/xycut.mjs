@@ -31,7 +31,55 @@
 
 import {leaves} from './blocks.mjs';
 
-export const GUTTER = {minRun: 8, maxDensity: 0.005};
+/**
+ * What counts as a gutter.
+ *
+ * `maxDensity` is a FLOOR, not the threshold. The real threshold is relative to the
+ * region being cut — see adaptiveMaxDensity, and the reason it has to be.
+ */
+export const GUTTER = {
+    minRun: 8,
+    maxDensity: 0.005, // the floor: an all-but-empty region still needs a real answer
+    relative: 0.1, // …otherwise a tenth of the region's own median density
+    ceiling: 0.05, // and never more than this, however dense the region gets
+};
+
+/**
+ * The density below which a row or column counts as empty, scaled to the region.
+ *
+ * AN ABSOLUTE THRESHOLD CANNOT SEE A GUTTER SOMETHING IS DRAWN ACROSS, and that is
+ * common enough to have broken a real page. On switch.je a decorative curve loops
+ * through the 96px gap between the hero CTAs and the first case study; those rows run
+ * 0.010–0.028 against a 0.005 threshold, so the gap is disqualified and a CTA pair and a
+ * case-study card end up in one block. The same happens under any textured background,
+ * watermark, or full-bleed pattern.
+ *
+ * But the gap IS obviously a gutter — it is about 16x quieter than the content either
+ * side of it (median 0.136 there). So compare against the region rather than a constant.
+ *
+ * The median, not the mean: a region that is half whitespace drags a mean down until the
+ * threshold is meaningless, whereas the median tracks what "busy" looks like HERE.
+ *
+ * A tenth of it, measured rather than picked. On that switch.je region 5% finds nothing,
+ * 10% finds exactly the two gaps a person would point at, and 15% starts slicing between
+ * the two CTA buttons — over-cutting a single row of controls.
+ *
+ * The floor keeps an almost-empty region sane (a tenth of ~0 is ~0, which would find no
+ * gutters at all) and preserves the old behaviour wherever the old behaviour was right.
+ * The ceiling stops a very dense region from calling half its content a gutter.
+ */
+export function adaptiveMaxDensity(density, opts = GUTTER) {
+    const {maxDensity, relative, ceiling} = {...GUTTER, ...opts};
+    if (density.length === 0) {
+        return maxDensity;
+    }
+    // Float32Array.prototype.sort is numeric by default — no comparator needed, and it
+    // avoids materialising a normal array on every recursion.
+    const sorted = density.slice().sort();
+    const median = sorted[Math.floor(0.5 * (sorted.length - 1))];
+
+    return Math.min(ceiling, Math.max(maxDensity, relative * median));
+}
 
 export function rowDensity(edges, width, rect) {
     const out = new Float32Array(rect.h);
@@ -56,9 +104,18 @@ export function colDensity(edges, width, rect) {
     return out;
 }
 
-/** Runs where density stays at or below maxDensity for at least minRun. `end` is exclusive. */
+/**
+ * Runs of at least minRun that stay quiet. `end` is exclusive.
+ *
+ * "Quiet" is relative to this region by default (see adaptiveMaxDensity). Pass
+ * `adaptive: false` to compare against `maxDensity` flat — the unit tests do, so that
+ * they assert the run-finding rather than the thresholding.
+ */
 export function findGutters(density, opts = GUTTER) {
-    const {minRun, maxDensity} = opts;
+    const {minRun} = {...GUTTER, ...opts};
+    const maxDensity = opts.adaptive === false
+        ? {...GUTTER, ...opts}.maxDensity
+        : adaptiveMaxDensity(density, opts);
     const runs = [];
     let start = -1;
     for (let i = 0; i <= density.length; i++) {

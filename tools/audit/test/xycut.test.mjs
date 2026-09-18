@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {findGutters, widestGutter, rowDensity, segment, segmentTall} from '../lib/xycut.mjs';
+import {findGutters, widestGutter, rowDensity, segment, segmentTall, adaptiveMaxDensity, GUTTER} from '../lib/xycut.mjs';
 import {edgeMapFromPng} from '../lib/edges.mjs';
 import {leaves, totalArea, area, assertPartition, overlaps} from '../lib/blocks.mjs';
 
@@ -281,4 +281,53 @@ test('supplying rects changes the tree, and both runs are byte-identical', async
         JSON.stringify(segmentTall(edges, width, height, {maxDepth: 4})),
         'rects must actually reach the algorithm',
     );
+});
+
+// ---------------------------------------------------------------------------
+// Adaptive gutter threshold
+//
+// The defect: a decorative curve drawn across a gap disqualifies it. On switch.je one
+// loops through the 96px between the hero CTAs and the first case study, putting those
+// rows at 0.010-0.028 against a flat 0.005 threshold -- so a CTA pair and a case-study
+// card landed in one block. The gap is still ~16x quieter than its neighbours, which is
+// what the relative threshold sees and the absolute one cannot.
+// ---------------------------------------------------------------------------
+
+test('adaptiveMaxDensity scales to a tenth of the region median', () => {
+    // median 0.20 -> 0.02, comfortably above the floor
+    const d = Float32Array.from([0.2, 0.2, 0.2, 0.2, 0.2]);
+    assert.equal(Math.round(adaptiveMaxDensity(d) * 10000), 200);
+});
+
+test('adaptiveMaxDensity never drops below the absolute floor', () => {
+    // An almost-empty region: a tenth of ~0 is ~0, which would find no gutters at all.
+    const d = Float32Array.from([0, 0, 0, 0, 0.001]);
+    assert.equal(adaptiveMaxDensity(d), GUTTER.maxDensity);
+});
+
+test('adaptiveMaxDensity is capped however dense the region gets', () => {
+    const d = Float32Array.from([0.9, 0.9, 0.9, 0.9, 0.9]);
+    assert.equal(adaptiveMaxDensity(d), GUTTER.ceiling);
+});
+
+test('a gutter something is drawn across is found; a flat threshold misses it', () => {
+    // The switch.je shape: dense content, a quiet-but-not-empty band, dense content.
+    // The band sits at 0.015 -- three times the 0.005 floor, a tenth of the 0.15 median.
+    const d = Float32Array.from([
+        ...Array(12).fill(0.15),
+        ...Array(12).fill(0.015), // the gap, with a decoration crossing it
+        ...Array(12).fill(0.15),
+    ]);
+    assert.deepEqual(findGutters(d, {minRun: 8}), [{start: 12, end: 24}], 'adaptive should find it');
+    assert.deepEqual(findGutters(d, {minRun: 8, adaptive: false}), [], 'absolute should miss it');
+});
+
+test('a genuinely busy band is still not a gutter', () => {
+    // Half the median rather than a tenth of it -- quieter, but not a gap.
+    const d = Float32Array.from([
+        ...Array(12).fill(0.15),
+        ...Array(12).fill(0.075),
+        ...Array(12).fill(0.15),
+    ]);
+    assert.deepEqual(findGutters(d, {minRun: 8}), []);
 });
