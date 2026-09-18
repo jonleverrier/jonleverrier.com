@@ -47,19 +47,31 @@ test('an unavailable renderer string is unknown, NOT hardware', () => {
 });
 
 test('no warning when the page never asked for WebGL', () => {
-    assert.equal(webglWarning({renderer: HEADLESS, software: true, requested: [], blind: false}), null);
+    assert.equal(webglWarning({renderer: HEADLESS, software: true, requested: [], draws: 0, blind: false}), null);
 });
 
-test('no warning when the browser had a real GPU', () => {
-    const webgl = {renderer: 'Apple M1 Pro', software: false, requested: ['webgl2'], blind: false};
+// The correction that matters most in this file. SwiftShader DRAWS -- verified directly,
+// a shaded triangle reads back the right pixels -- so a site that renders in software is
+// rendering, full stop. An earlier version keyed the warning off the renderer string and
+// would have flagged every one of them.
+test('no warning when the page drew, even on a software renderer', () => {
+    const webgl = {renderer: HEADLESS, software: true, requested: ['webgl'], draws: 1420, blind: false};
     assert.equal(webglWarning(webgl), null);
 });
 
 test('a warning names what was asked for and says the region is unmeasured, not empty', () => {
-    const w = webglWarning({renderer: HEADLESS, software: true, requested: ['webgl2'], blind: true});
+    const w = webglWarning({renderer: HEADLESS, software: true, requested: ['webgl2'], draws: 0, blind: true});
     assert.match(w, /webgl2/);
-    assert.match(w, /SwiftShader/);
+    assert.match(w, /never drew/);
     assert.match(w, /unmeasured, not empty/);
+});
+
+// A page can decline for reasons that have nothing to do with the rasteriser -- a failed
+// asset fetch, a feature flag, its own error handling. The renderer only ever explains.
+test('a warning still fires on a real GPU when nothing was drawn, without blaming it', () => {
+    const w = webglWarning({renderer: 'Apple M1 Pro', software: false, requested: ['webgl'], draws: 0, blind: true});
+    assert.match(w, /never drew/);
+    assert.doesNotMatch(w, /likely because/);
 });
 
 test('a missing or absent webgl block never throws', () => {

@@ -6,25 +6,38 @@
  *
  *   node --test tools/audit/test/webgl.test.mjs
  *
- * WHY THIS EXISTS, because it is not obvious and it cost a real finding to learn:
- * headless Chromium has no GPU and falls back to SwiftShader. Well-built sites check
- * for that and deliberately DECLINE to render — pushing tens of thousands of points
- * through a software rasteriser would be slower and uglier than not bothering. So the
- * page loads, reports success, and simply has a hole where its hero belongs.
+ * WHY THIS EXISTS: a page can load perfectly, report success, and still have a hole
+ * where its hero belongs — and nothing about the capture looks wrong.
  *
- * Every GPU-less renderer sees the same hole: this tool, PageSpeed Insights, Lighthouse,
- * social unfurl cards. Nothing is broken; the region genuinely did not render. What
- * would be broken is measuring that hole as empty space and putting a confident number
- * on it — a site whose hero IS its homepage would be told a quarter of its page is
- * nothing.
+ * THE BROWSER IS NOT THE PROBLEM, and the first version of this file got that wrong.
+ * Headless Chromium renders WebGL fine through SwiftShader: verified directly, shaders
+ * compile and link and a drawn triangle reads back the right pixels. Software rendering
+ * is slow, not absent. So "no GPU" does NOT imply "nothing rendered", and a check built
+ * on the renderer string warns about every site that draws happily in software.
  *
- * So this never tries to force a render. It records what happened so the report can
- * decline to answer for that region.
+ * What actually happens is a decision by the PAGE. Sites with heavy scenes probe the
+ * renderer, see SwiftShader, and decline — pushing tens of thousands of points through a
+ * software rasteriser would be slower and uglier than not bothering. That is a correct
+ * call on their part, and PageSpeed Insights and Lighthouse see the same hole for the
+ * same reason, which is what confirms it is the page choosing rather than the tool
+ * failing.
  *
- * The limitation worth knowing: `requested` only catches a page that actually asked for
- * a context. A site that checks `navigator.gpu` or sniffs the UA and gives up BEFORE
- * touching getContext looks identical to a site with no WebGL at all. False negatives
- * are possible; false positives are not.
+ * So the signal here is a context that was asked for and never drawn with. That is the
+ * decision itself, and it holds whatever the renderer turns out to be. The renderer is
+ * recorded only to explain WHY in the warning text — it is never the evidence.
+ *
+ * Nothing here tries to force a render. It records what happened so the report can
+ * decline to answer for that region rather than measuring a hole as empty space: a blank
+ * region segments perfectly and conserves area, so a site whose hero IS its homepage
+ * would otherwise be told a quarter of its page is nothing.
+ *
+ * The limitations worth knowing, both false NEGATIVES — a page that draws is never
+ * wrongly flagged:
+ *
+ *   - `requested` only catches a page that called getContext. One that checks
+ *     `navigator.gpu`, sniffs the UA, or gives up before touching a canvas looks
+ *     identical to a page with no WebGL at all.
+ *   - A page that draws one frame and then abandons the scene counts as having drawn.
  */
 
 /**
@@ -55,14 +68,27 @@ export function isSoftwareRenderer(renderer) {
 }
 
 /**
- * Runs in the page BEFORE its own scripts, recording every getContext type asked for.
+ * Runs in the page BEFORE its own scripts, recording what was asked for and whether
+ * anything was ever actually drawn.
  *
- * A wrapper, not a replacement: it records and delegates, so a page that depends on the
- * context it gets back is unaffected. Install with page.addInitScript().
+ * THE DRAW COUNT IS THE REAL SIGNAL, and the renderer is not. Headless Chromium renders
+ * WebGL perfectly well through SwiftShader — verified directly: shaders compile and link,
+ * and a drawn triangle reads back the right pixels. So "software renderer" does NOT mean
+ * "nothing rendered", and treating it that way warns about every site that draws happily
+ * in software.
+ *
+ * What actually happened on the site that prompted this is narrower: it PROBED the
+ * renderer, saw SwiftShader, and chose not to draw. A context with zero draw calls is
+ * that decision, made visible — and it holds whatever the renderer turns out to be.
+ *
+ * Wrappers, not replacements: each records and delegates, so a page depending on what it
+ * gets back is unaffected. Install with page.addInitScript().
  */
 export const WEBGL_PROBE_INIT = () => {
     const seen = new Set();
     window.__auditWebglRequests = seen;
+    window.__auditWebglDraws = 0;
+
     const original = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
         if (typeof type === 'string' && /webgl|webgpu/i.test(type)) {
@@ -71,6 +97,22 @@ export const WEBGL_PROBE_INIT = () => {
 
         return original.call(this, type, ...rest);
     };
+
+    // Every call that puts geometry on screen. A scene that renders calls one of these
+    // per frame; a scene that gave up calls none of them ever.
+    const methods = ['drawArrays', 'drawElements', 'drawArraysInstanced', 'drawElementsInstanced'];
+    for (const proto of [window.WebGLRenderingContext?.prototype, window.WebGL2RenderingContext?.prototype]) {
+        if (!proto) continue;
+        for (const name of methods) {
+            const fn = proto[name];
+            if (typeof fn !== 'function') continue;
+            proto[name] = function (...args) {
+                window.__auditWebglDraws++;
+
+                return fn.apply(this, args);
+            };
+        }
+    }
 };
 
 /**
@@ -83,6 +125,7 @@ export const WEBGL_PROBE_INIT = () => {
 export async function probeWebgl(page) {
     const raw = await page.evaluate(() => {
         const requested = [...(window.__auditWebglRequests ?? [])];
+        const draws = window.__auditWebglDraws ?? 0;
 
         let renderer = null;
         try {
@@ -99,18 +142,20 @@ export async function probeWebgl(page) {
             renderer = null;
         }
 
-        return {requested, renderer};
+        return {requested, renderer, draws};
     });
-
-    const software = isSoftwareRenderer(raw.renderer);
 
     return {
         renderer: raw.renderer,
-        software,
+        // Reported for the human reading the warning, never used to decide it. It is the
+        // usual REASON a page declines to draw, which makes it worth printing and
+        // useless as evidence.
+        software: isSoftwareRenderer(raw.renderer),
         requested: raw.requested,
-        // The whole point: the page wanted WebGL and this browser could not give it one
-        // worth using, so something the page would normally draw is missing.
-        blind: software !== false && raw.requested.length > 0,
+        draws: raw.draws,
+        // Asked for a context and never drew a single thing with it. That is the page
+        // deciding not to render, and it is true regardless of renderer.
+        blind: raw.requested.length > 0 && raw.draws === 0,
     };
 }
 
@@ -120,7 +165,11 @@ export function webglWarning(webgl) {
         return null;
     }
 
-    return `this page asked for ${webgl.requested.join('/')} and the browser offered only `
-        + `${webgl.renderer || 'an unidentifiable renderer'} — a WebGL hero will not have `
-        + 'rendered, so any region it occupies is unmeasured, not empty';
+    const because = webgl.software === true
+        ? ` (likely because the renderer is ${webgl.renderer})`
+        : '';
+
+    return `this page asked for ${webgl.requested.join('/')} but never drew with it${because}`
+        + ' — whatever it would have rendered is missing, so any region it occupies is'
+        + ' unmeasured, not empty';
 }

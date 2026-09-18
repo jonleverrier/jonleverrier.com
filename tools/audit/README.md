@@ -40,16 +40,18 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   gutter. It is optional — with only a PNG the cut falls back to the gutter midpoint,
   which is tens of pixels out wherever the whitespace is generous. Phase 2 says which
   it did on stderr; a run that quietly lost its rects looks like a worse segmenter.
-- **This browser cannot draw a WebGL hero, and the page will not complain.** There is no
-  GPU, so WebGL falls back to SwiftShader, and sites that check for that deliberately
-  decline to render rather than push a heavy scene through a software rasteriser — the
-  page loads clean and simply has a hole where its hero belongs. PageSpeed Insights and
-  Lighthouse see the same hole, so this is a property of headless rendering, not a bug in
-  either tool. `meta.webgl` records the renderer and whether the page asked for a
-  context; both CLIs print a WARNING when it did and could not get a real one. **Do not
-  report a percentage for a region flagged this way** — it is unmeasured, not empty, and
-  a site whose hero is its homepage would otherwise be told a quarter of its page is
-  nothing.
+- **A page can decline to draw its own hero, and nothing will look wrong.** WebGL itself
+  works here — headless Chromium renders it through SwiftShader, verified, and
+  pola.co.jp draws a full WebGL scene in 1089 calls with no GPU at all. But a site with a
+  heavy scene may probe the renderer, see SwiftShader, and choose not to render; the page
+  then loads clean with a hole where its hero belongs. PageSpeed Insights and Lighthouse
+  see the same hole, which is what confirms it is the page deciding rather than the tool
+  failing. `meta.webgl` records the renderer, what was requested and **the draw count**;
+  both CLIs warn when a context was requested and never drawn with. **Do not report a
+  percentage for a region flagged this way** — it is unmeasured, not empty, and a site
+  whose hero is its homepage would otherwise be told a quarter of its page is nothing.
+  Note the evidence is the draw count, never the renderer: keying off "software" would
+  flag every site that renders happily in software, which is most of them.
 - **Content behind `prefers-reduced-motion` is absent too.** It is forced, because
   determinism requires it. That is a second way the captured page differs from the one a
   visitor sees, and unlike the WebGL case nothing detects it.

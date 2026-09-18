@@ -26,7 +26,8 @@ try {
     console.log(`consent      ${meta.consentDismissed ? 'dismissed' : 'not dismissed (counts as surface area)'}`);
     console.log(`scroll cap   ${meta.scrollCapHit ? 'HIT — page may be infinite-scroll' : 'not hit'}`);
     console.log(`webgl        ${meta.webgl.renderer || 'none'}${meta.webgl.software === true ? ' (software)' : ''}`);
-    console.log(`webgl asked  ${meta.webgl.requested.length ? meta.webgl.requested.join(', ') : 'no'}`);
+    console.log(`webgl asked  ${meta.webgl.requested.length ? meta.webgl.requested.join(", ") : "no"}`);
+    console.log(`webgl draws  ${meta.webgl.draws}`);
     console.log(`artefacts    ${outDir}`);
 
     // Loud, and on stderr, because the capture SUCCEEDED — the page is simply missing a
