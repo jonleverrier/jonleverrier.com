@@ -9,7 +9,7 @@
  * full-page screenshot of a commercial homepage is several megabytes.
  */
 import {capturePage} from './lib/capture.mjs';
-import {webglWarning} from './lib/webgl.mjs';
+import {RENDERER_MAX, webglWarning} from './lib/webgl.mjs';
 import {shotTruncationWarning, unrenderedWarning} from './lib/unrendered.mjs';
 import {printable} from './lib/printable.mjs';
 
@@ -45,8 +45,8 @@ try {
     console.log(`image        ${meta.image.width}x${meta.image.height}`);
     console.log(`consent      ${meta.consentDismissed ? `dismissed via ${printable(meta.consentVia)}` : 'not dismissed (counts as surface area)'}${meta.consentNavigatedAway ? ' — a consent click navigated away and was undone' : ''}`);
     console.log(`scroll cap   ${meta.scrollCapHit ? 'HIT — page may be infinite-scroll' : 'not hit'}`);
-    console.log(`webgl        ${printable(meta.webgl.renderer || 'none', 80)}${meta.webgl.software === true ? ' (software)' : ''}`);
-    console.log(`webgl asked  ${meta.webgl.requested.length ? printable(meta.webgl.requested.join(", "), 80) : "no"}`);
+    console.log(`webgl        ${printable(meta.webgl.renderer || 'none', RENDERER_MAX)}${meta.webgl.software === true ? ' (software)' : ''}`);
+    console.log(`webgl asked  ${meta.webgl.requested.length ? printable(meta.webgl.requested.join(", "), RENDERER_MAX) : "no"}`);
     console.log(`webgl draws  ${meta.webgl.draws}`);
     console.log(`content ends ${meta.heightGap.contentBottom}px of ${meta.fullHeight}px`);
     console.log(`artefacts    ${printable(outDir)}`);

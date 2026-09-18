@@ -52,6 +52,17 @@ import {printable} from './printable.mjs';
 export const SOFTWARE_RENDERER = /swiftshader|llvmpipe|software|basic render|microsoft basic/i;
 
 /**
+ * How much of a renderer string to print.
+ *
+ * Measured rather than guessed: headless Chromium here reports 96 characters — "ANGLE
+ * (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader
+ * driver)" — and a Windows D3D11 string is a similar length. An 80-character cap cut a
+ * real renderer in half. The full string is in meta.json either way; this is only the
+ * ceiling on what a page can put on a terminal line.
+ */
+export const RENDERER_MAX = 120;
+
+/**
  * Is this renderer a software rasteriser?
  *
  * `null` means "cannot tell" and is NOT the same as `false`: a browser that withholds
@@ -172,10 +183,10 @@ export function webglWarning(webgl) {
     // return whatever it likes, and the requested types are the arguments it passed to
     // getContext. This line is printed on a terminal, so neither reaches it raw.
     const because = webgl.software === true
-        ? ` (likely because the renderer is ${printable(webgl.renderer, 80)})`
+        ? ` (likely because the renderer is ${printable(webgl.renderer, RENDERER_MAX)})`
         : '';
 
-    return `this page asked for ${printable(webgl.requested.join('/'), 80)} but never drew with it${because}`
+    return `this page asked for ${printable(webgl.requested.join('/'), RENDERER_MAX)} but never drew with it${because}`
         + ' — whatever it would have rendered is missing, so any region it occupies is'
         + ' unmeasured, not empty';
 }
