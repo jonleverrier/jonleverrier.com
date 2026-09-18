@@ -369,6 +369,26 @@ export function moduleContainers(rects, width, pageHeight, opts = MODULE_AREA) {
  * test for the other — but what happens to a cut landing inside either is identical, so
  * the rejection is written once and both feed it.
  */
+export const TEXT_TAGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
+
+/**
+ * Elements that carry words. A cut may not pass THROUGH one.
+ *
+ * A gutter is a run of quiet pixels, and the space between two words in a large headline
+ * is exactly that — on jonleverrier the gap between "How" and "can" is a 268px-tall
+ * column of background, and a vertical cut went straight down it. Between elements is
+ * still fine; only the interior of one is off limits.
+ *
+ * Restricted to tags that hold text directly, because rects carry textContent including
+ * descendants: a <section>'s text is the whole page's, and protecting that would protect
+ * everything.
+ */
+export function textRects(rects) {
+    if (!rects || rects.length === 0) return [];
+
+    return rects.filter((r) => TEXT_TAGS.has(r.tag) && (r.text || '').trim().length > 0 && isContentRect(r));
+}
+
 export function protectedRects(rects, width, pageHeight) {
     return [...fullBleedMedia(rects, width), ...moduleContainers(rects, width, pageHeight)];
 }
@@ -432,6 +452,9 @@ export function segment(edges, width, height, opts = {}) {
     // `height` is this slice's height; the whole page's is only different when segmentTall
     // called us for a tile or a band, and it says so.
     const keepWhole = protectedRects(rects, width, pageHeight ?? height);
+    // Rejection only. These never steer a snap and never excuse the size floor — they
+    // are a veto on cutting through words, not a statement about module boundaries.
+    const keepIntact = textRects(rects);
     // The coordinates a snap should reach for when the gutter offers a choice.
     const moduleEdgeY = new Set(keepWhole.flatMap((m) => [m.y, m.y + m.h]));
     const moduleEdgeX = new Set(keepWhole.flatMap((m) => [m.x, m.x + m.w]));
@@ -475,6 +498,7 @@ export function segment(edges, width, height, opts = {}) {
             // partition is untouched. If every candidate goes, the region is a leaf —
             // which is the right answer for a region that is entirely one module.
             if (cutsInsideProtected(keepWhole, rect, (horizontal ? rect.y : rect.x) + at, horizontal)) continue;
+            if (cutsInsideProtected(keepIntact, rect, (horizontal ? rect.y : rect.x) + at, horizontal)) continue;
             const a = horizontal
                 ? {x: rect.x, y: rect.y, w: rect.w, h: at, depth: rect.depth + 1, children: []}
                 : {x: rect.x, y: rect.y, w: at, h: rect.h, depth: rect.depth + 1, children: []};
