@@ -4,8 +4,13 @@
  *
  *   node tools/audit/segment.mjs <outDir> [--depth=4]
  *
- * Reads fullpage.png from outDir — and rects.json beside it when phase 1 left one —
- * then writes blocks.json and debug.png into the same directory.
+ * Reads fullpage.png from outDir — and rects.json and meta.json beside it when phase 1
+ * left them — then writes blocks.json and debug.png into the same directory.
+ *
+ * blocks.json is `{notes, tree}`. The tree is the partition; the notes are every
+ * condition that applies to this run, in a form something downstream can branch on —
+ * including the case where meta.json was absent, so "nothing was wrong" and "we could
+ * not tell" are never the same answer. See lib/notes.mjs.
  *
  * ARTEFACTS ARE WRITTEN ONLY BY A RUN THAT PASSED. The tree is checked against the
  * partition invariant (lib/blocks.mjs) before anything is written, a failure exits 1,
@@ -27,8 +32,7 @@ import {edgeMapFromPng} from './lib/edges.mjs';
 import {segmentTall} from './lib/xycut.mjs';
 import {renderDebug} from './lib/debug.mjs';
 import {assertPartition, leaves, totalArea} from './lib/blocks.mjs';
-import {webglWarning} from './lib/webgl.mjs';
-import {shotTruncationWarning, unrenderedWarning} from './lib/unrendered.mjs';
+import {anyUnmeasured, noteCodes, runNotes} from './lib/notes.mjs';
 import {printable} from './lib/printable.mjs';
 import {loadRects} from './lib/rects.mjs';
 
@@ -113,10 +117,36 @@ try {
         throw new Error(`area check BROKEN: leaves total ${totalArea(ls)} against an image of ${width * height}`);
     }
 
+    // Carried through from phase 1 rather than re-probed: by the time anyone reads a
+    // percentage, the browser that failed to draw the page is long gone. A blank region
+    // segments perfectly and conserves area, so nothing downstream would otherwise
+    // notice that part of the page never rendered.
+    //
+    // READ BEFORE THE TREE IS WRITTEN, because it goes INTO the file. Warnings used to
+    // reach stdout and stderr only, and the Craft job imports lib/ rather than this CLI,
+    // so the whole honesty layer was invisible to everything downstream of a terminal.
+    const metaPath = join(outDir, 'meta.json');
+    let meta = null;
+    let metaReason = 'missing';
+    if (existsSync(metaPath)) {
+        try {
+            meta = JSON.parse(readFileSync(metaPath, 'utf8'));
+        } catch {
+            // NOT FATAL. The segmentation is sound; it is the provenance record that is
+            // broken, and saying so is more use than refusing to write a valid tree.
+            metaReason = 'unreadable';
+        }
+    }
+    const notes = runNotes(meta, metaReason);
+
     // Only now, with a tree that passed. debug.png first: if rendering throws there is
     // then no blocks.json beside it claiming the run succeeded.
+    //
+    // NOTES FIRST IN THE FILE, ahead of the tree: what is unmeasured about this page
+    // should be the first thing anyone opening it reads, and a consumer destructuring
+    // `{notes, tree}` cannot take the numbers without being handed the caveats.
     await renderDebug(png, root, debugPath);
-    writeFileSync(blocksPath, JSON.stringify(root, null, 1));
+    writeFileSync(blocksPath, JSON.stringify({notes, tree: root}, null, 1));
 
     const mean = Math.round(totalArea(ls) / ls.length);
     console.log(`image        ${width}x${height}`);
@@ -128,30 +158,19 @@ try {
     console.log('area check   conserved');
     console.log(`debug image  ${printable(debugPath)}`);
 
-    // Carried through from phase 1 rather than re-probed: by the time anyone reads a
-    // percentage, the browser that failed to draw the page is long gone. A blank region
-    // segments perfectly and conserves area, so nothing downstream would otherwise
-    // notice that part of the page never rendered.
-    const metaPath = join(outDir, 'meta.json');
-    if (existsSync(metaPath)) {
-        const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
-        // WHICH PAGE THIS IS A MEASUREMENT OF comes first: a percentage attributed to the
-        // wrong domain is wrong in a way no other warning here can make up for.
-        const wrongPage = meta.capturedUrl && meta.url && meta.capturedUrl !== meta.url
-            ? `these blocks are of ${printable(meta.capturedUrl)}, not the ${printable(meta.url)} that was requested`
-            : null;
-        const warnings = [
-            wrongPage,
-            shotTruncationWarning(meta),
-            webglWarning(meta.webgl),
-            unrenderedWarning(meta),
-        ].filter(Boolean);
-        if (warnings.length) {
-            console.log('unmeasured   YES — see warnings');
-            for (const w of warnings) {
-                process.stderr.write(`\nWARNING: ${w}\n`);
-            }
-        }
+    const codes = noteCodes(notes);
+    console.log(`notes        ${notes.metaRead
+        ? (codes.length ? `${codes.length} — ${codes.join(', ')}` : 'none')
+        : `NOT CHECKED — ${metaReason === 'unreadable' ? 'meta.json is unreadable' : 'no meta.json here'}`}`);
+    if (anyUnmeasured(notes)) {
+        console.log('unmeasured   YES — see warnings');
+    }
+
+    // The same sentences as before, from the same place the file now carries. Deriving
+    // both from `notes` is the point: a condition that reaches blocks.json and not the
+    // terminal, or the other way round, is how the two drift apart.
+    for (const code of codes) {
+        process.stderr.write(`\nWARNING: ${notes.conditions[code].message}\n`);
     }
 } catch (e) {
     console.error(`segmentation failed: ${printable(e.message, 500)}`);

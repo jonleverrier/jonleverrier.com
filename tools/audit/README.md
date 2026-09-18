@@ -7,7 +7,7 @@ reporting are not built yet.
 | file | what |
 |---|---|
 | `capture.mjs` | Phase 1 CLI. Loads a URL at 1440×900 and writes the screenshots, DOM rects and meta. |
-| `segment.mjs` | Phase 2 CLI. Turns a screenshot (plus `rects.json`, if present) into a block tree and a debug image. |
+| `segment.mjs` | Phase 2 CLI. Turns a screenshot (plus `rects.json`, if present) into `{notes, tree}` and a debug image. |
 | `lib/capture.mjs` | `capturePage()` — the Playwright run. The Craft job will import this, not the CLI. |
 | `lib/unrendered.mjs` | Regions that exist for a visitor and are missing from the capture. |
 | `lib/webgl.mjs` | Whether this browser could render a WebGL hero, and whether the page wanted one. |
@@ -15,6 +15,7 @@ reporting are not built yet.
 | `lib/edges.mjs` | Greyscale → Sobel → non-max suppression → hysteresis. A Canny edge map. |
 | `lib/xycut.mjs` | Density profiles, gutter finding, the recursive partition, and tall-page tiling. |
 | `lib/blocks.mjs` | The `Block` shape and `assertPartition()` — the invariant everything rests on. |
+| `lib/notes.mjs` | Every condition that applies to a run, in the shape `blocks.json` carries. |
 | `lib/rects.mjs` | Loads and repairs `rects.json`. The only place a rects file is judged. |
 | `lib/printable.mjs` | Page text on its way to a terminal. Everything printed about a page goes through it. |
 | `lib/debug.mjs` | The screenshot with every block outlined. The review gate. |
@@ -128,6 +129,16 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
 - **Content behind `prefers-reduced-motion` is absent too.** It is forced, because
   determinism requires it. That is a third way the captured page differs from the one a
   visitor sees, and unlike the other two nothing detects it.
+- **`blocks.json` is `{notes, tree}`, and the notes come first.** Every warning used to
+  reach stdout and stderr and stop there — and the Craft job imports `lib/`, not the CLIs,
+  so the entire honesty layer was invisible to everything downstream of a terminal.
+  `notes.conditions` is keyed by a stable code (`wrongPage`, `shotTruncated`,
+  `scrollCapHit`, `consentNotDismissed`, `webglBlind`, `unrenderedGap`, `metaMissing`),
+  each carrying an `effect` — `unmeasured`, `attribution`, `included` or `unknown`, which
+  is the axis a report branches on — a `message`, and raw `facts`. **`notes.metaRead`
+  distinguishes "nothing was wrong" from "we could not tell":** a missing `meta.json` used
+  to be a clean-looking exit 0. A `message` has been through `printable()` and is safe on
+  a terminal; `facts` is the record and keeps the page's bytes exactly.
 - **"Unmeasured" and "empty" are different answers.** Deliberate whitespace is a design
   choice and should be reported as a number like any other. A region we could not capture
   is a hole in our data. Never let the second masquerade as the first.

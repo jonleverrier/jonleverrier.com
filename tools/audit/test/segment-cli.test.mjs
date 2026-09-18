@@ -51,6 +51,19 @@ const attempt = async (args, nodeArgs = []) => {
 
 const exitCode = async (...args) => (await attempt(args)).code;
 
+/**
+ * Nothing left in this output that could act on a terminal.
+ *
+ * Newlines are allowed — this is a whole stream, not a label — so the forged-line half
+ * of the defect is asserted separately, by counting the lines that matter.
+ */
+const inert = (s) => ![...s].some((c) => {
+    const n = c.charCodeAt(0);
+
+    return (n < 0x20 && n !== 0x0a) || (n >= 0x7f && n <= 0x9f) || n === 0x2028 || n === 0x2029
+        || (n >= 0x202a && n <= 0x202e) || (n >= 0x2066 && n <= 0x2069);
+});
+
 /** Every coordinate in a block tree, root and descendants. */
 const coordinates = (b) => [b.x, b.y, b.w, b.h, ...(b.children ?? []).flatMap(coordinates)];
 
@@ -130,7 +143,7 @@ test('a fractional rect is rounded, and the run that used to fail now succeeds',
     assert.match(stderr, /rounded to whole pixels/, 'and must say that it repaired something');
 
     const written = JSON.parse(readFileSync(join(dir, 'blocks.json'), 'utf8'));
-    for (const n of coordinates(written)) {
+    for (const n of coordinates(written.tree)) {
         assert.ok(Number.isInteger(n), `every coordinate must be whole pixels, got ${n}`);
     }
 });
@@ -198,4 +211,114 @@ test('a tree that is not a partition exits non-zero and writes nothing', async (
     assert.match(stderr, /overlap|area/, 'and must say what was wrong with the tree');
     assert.equal(existsSync(join(dir, 'blocks.json')), false, 'nothing may be written');
     assert.equal(existsSync(join(dir, 'debug.png')), false, 'not even the debug image');
+});
+
+// ---------------------------------------------------------------------------
+// FINDING 6: the warnings used to die with the process, and the Craft job imports lib/
+// rather than this CLI. blocks.json now carries them.
+// ---------------------------------------------------------------------------
+
+const ESC = String.fromCharCode(0x1b);
+
+const withMeta = async (meta) => {
+    const {dir} = await fractionalDir();
+    writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta, null, 1));
+
+    return dir;
+};
+
+test('blocks.json carries the conditions that applied to the run', async () => {
+    const dir = await withMeta({
+        url: 'https://example.com/',
+        capturedUrl: 'https://example.com/',
+        fullHeight: 500,
+        image: {width: 240, height: 500},
+        consentDismissed: false,
+        consentNavigatedAway: false,
+        scrollCapHit: true,
+        webgl: {renderer: '', software: null, requested: [], draws: 0, blind: false},
+        heightGap: {contentBottom: 500, gap: 0, fraction: 0, significant: false, likelyCause: null},
+    });
+    const {code, stdout, stderr} = await attempt([dir]);
+    assert.equal(code, 0, stderr);
+
+    const {notes} = JSON.parse(readFileSync(join(dir, 'blocks.json'), 'utf8'));
+    assert.equal(notes.metaRead, true);
+    assert.ok('scrollCapHit' in notes.conditions, 'the scroll cap reached no warning function before');
+    assert.ok('consentNotDismissed' in notes.conditions, 'nor did an undismissed banner');
+    assert.equal(notes.conditions.scrollCapHit.effect, 'unmeasured');
+
+    assert.match(stdout, /^notes\s+2 — /m, 'and the terminal still says so');
+    for (const code of Object.keys(notes.conditions)) {
+        assert.ok(stderr.includes(notes.conditions[code].message), `${code} must reach stderr too`);
+    }
+});
+
+test('blocks.json records that meta.json was missing, rather than looking clean', async () => {
+    const {dir} = await fractionalDir();
+    const {code, stdout} = await attempt([dir]);
+    assert.equal(code, 0, 'a capture without meta is still a valid segmentation');
+
+    const {notes, tree} = JSON.parse(readFileSync(join(dir, 'blocks.json'), 'utf8'));
+    assert.equal(notes.metaRead, false, 'we could not tell, which is not the same as nothing was wrong');
+    assert.ok('metaMissing' in notes.conditions);
+    assert.ok(tree.w > 0 && tree.h > 0, 'and the tree is still there beside it');
+    assert.match(stdout, /^notes\s+NOT CHECKED/m);
+});
+
+test('a meta.json that is not JSON is noted, not fatal', async () => {
+    const {dir} = await fractionalDir();
+    writeFileSync(join(dir, 'meta.json'), '{ not json');
+    const {code} = await attempt([dir]);
+    assert.equal(code, 0, 'the segmentation is sound; it is the record that is broken');
+
+    const {notes} = JSON.parse(readFileSync(join(dir, 'blocks.json'), 'utf8'));
+    assert.equal(notes.conditions.metaMissing.facts.reason, 'unreadable');
+});
+
+// FINDING 11, end to end: every string in that meta came off a page.
+test('a meta.json full of escape characters cannot write to the terminal', async () => {
+    const dir = await withMeta({
+        url: 'https://example.com/',
+        capturedUrl: `https://elsewhere.example/${ESC}[2K${ESC}[31marea check   conserved`,
+        fullHeight: 500,
+        image: {width: 240, height: 500},
+        consentDismissed: true,
+        consentVia: `text "Accept${ESC}[0m"`,
+        scrollCapHit: false,
+        webgl: {renderer: `Swift${ESC}[31mShader`, software: true, requested: [`webgl${ESC}[0m`], draws: 0, blind: true},
+        heightGap: {contentBottom: 500, gap: 0, fraction: 0, significant: false, likelyCause: null},
+    });
+    const {stdout, stderr} = await attempt([dir]);
+    assert.ok(inert(stdout), 'stdout must be printable');
+    assert.ok(inert(stderr), 'stderr must be printable');
+    assert.ok(stderr.includes('elsewhere.example'), 'while still naming the page it ended on');
+    assert.equal(
+        stdout.split('\n').filter((l) => l.startsWith('area check')).length,
+        1,
+        'that URL ends in a forged result line; it must not be able to become one',
+    );
+
+    // The record keeps what the page actually said; only what is PRINTED is cleaned.
+    const {notes} = JSON.parse(readFileSync(join(dir, 'blocks.json'), 'utf8'));
+    assert.ok(notes.conditions.wrongPage.facts.captured.includes(ESC));
+    assert.ok(inert(notes.conditions.wrongPage.message));
+});
+
+test('two runs of the same input write a byte-identical blocks.json', async () => {
+    // Determinism is the promise the header makes, and the notes are now in the file.
+    const dir = await withMeta({
+        url: 'https://example.com/',
+        capturedUrl: 'https://example.com/',
+        fullHeight: 500,
+        image: {width: 240, height: 500},
+        consentDismissed: false,
+        scrollCapHit: true,
+        webgl: {renderer: '', software: null, requested: [], draws: 0, blind: false},
+        heightGap: {contentBottom: 500, gap: 0, fraction: 0, significant: false, likelyCause: null},
+    });
+    await run('node', [CLI, dir]);
+    const first = readFileSync(join(dir, 'blocks.json'), 'utf8');
+    await run('node', [CLI, dir]);
+    assert.equal(readFileSync(join(dir, 'blocks.json'), 'utf8'), first);
 });
