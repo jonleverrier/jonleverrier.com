@@ -197,15 +197,27 @@ export function edgeCandidates(rects, horizontal) {
  * deterministic, and by construction cannot leave the gutter. With no candidate in
  * range the midpoint stands.
  */
-export function snapToEdge(g, candidates, origin) {
+export function snapToEdge(g, candidates, origin, preferred = null) {
     const mid = (g.start + g.end) >> 1;
     if (!candidates || candidates.length === 0) return mid;
 
     const lo = origin + g.start;
     const hi = origin + g.end;
     const absMid = origin + mid;
+
+    // A MODULE'S OWN BOUNDARY BEATS A NEARER ELEMENT EDGE. Both are real edges, but one
+    // of them ends a module and the other merely ends some element inside the next one,
+    // and a gutter wide enough to hold both is exactly where that distinction decides
+    // the block. On jonleverrier the gutter below the header runs 115-307: its midpoint
+    // is 211, the header's bottom edge is at 116 and the headline's top at 288, so
+    // nearest-to-midpoint chose 288 by 18px and handed the header 170px of empty olive.
+    //
+    // Only ever picks between candidates ALREADY INSIDE this gutter, so no cut moves
+    // outside the whitespace the pixels chose and the partition is untouched.
     let best = null;
     let bestDistance = Infinity;
+    let bestPreferred = null;
+    let bestPreferredDistance = Infinity;
     for (const c of candidates) {
         if (c < lo) continue;
         if (c > hi) break;
@@ -214,9 +226,14 @@ export function snapToEdge(g, candidates, origin) {
             bestDistance = d;
             best = c;
         }
+        if (preferred !== null && preferred.has(c) && d < bestPreferredDistance) {
+            bestPreferredDistance = d;
+            bestPreferred = c;
+        }
     }
+    const chosen = bestPreferred !== null ? bestPreferred : best;
 
-    return best === null ? mid : best - origin;
+    return chosen === null ? mid : chosen - origin;
 }
 
 /**
@@ -415,6 +432,9 @@ export function segment(edges, width, height, opts = {}) {
     // `height` is this slice's height; the whole page's is only different when segmentTall
     // called us for a tile or a band, and it says so.
     const keepWhole = protectedRects(rects, width, pageHeight ?? height);
+    // The coordinates a snap should reach for when the gutter offers a choice.
+    const moduleEdgeY = new Set(keepWhole.flatMap((m) => [m.y, m.y + m.h]));
+    const moduleEdgeX = new Set(keepWhole.flatMap((m) => [m.x, m.x + m.w]));
     const tooSmall = (r) => r.w * r.h < minArea || Math.min(r.w, r.h) < minSide;
 
     const cut = (rect) => {
@@ -442,7 +462,12 @@ export function segment(edges, width, height, opts = {}) {
         });
 
         for (const {g, horizontal} of ranked) {
-            const at = snapToEdge(g, horizontal ? yCandidates : xCandidates, horizontal ? rect.y : rect.x);
+            const at = snapToEdge(
+                g,
+                horizontal ? yCandidates : xCandidates,
+                horizontal ? rect.y : rect.x,
+                horizontal ? moduleEdgeY : moduleEdgeX,
+            );
             // REJECT, NEVER RELOCATE. Tested after the snap, because the snap is what
             // decides where the cut actually lands; a gutter straddling a protected
             // element's own edge is kept precisely when the snap put the cut on that
