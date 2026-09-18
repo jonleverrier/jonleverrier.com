@@ -15,14 +15,14 @@ reporting are not built yet.
 | `lib/blocks.mjs` | The `Block` shape and `assertPartition()` — the invariant everything rests on. |
 | `lib/debug.mjs` | The screenshot with every block outlined. The review gate. |
 | `fixtures/` | Committed captures the segmentation tests run against. See its own README. |
-| `test/` | `node --test tools/audit/test/` |
+| `test/` | `node --test tools/audit/test/*.mjs` |
 
 ```sh
 node tools/audit/capture.mjs https://example.com /tmp/audit   # phase 1
 node tools/audit/segment.mjs /tmp/audit                       # phase 2, depth 4
 node tools/audit/segment.mjs /tmp/audit --depth=6             # cut further
-node --test tools/audit/test/                                 # unit + fixture tests
-AUDIT_LIVE=1 node --test tools/audit/test/                    # plus the network smoke test
+node --test tools/audit/test/*.mjs                             # unit + fixture tests
+AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the network smoke test
 ```
 
 ## Gotchas
