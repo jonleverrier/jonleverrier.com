@@ -137,20 +137,31 @@ export const SHOT_SLACK_PX = 1;
 export const PAINT_LIMIT_PX = 16384;
 
 /**
- * One line when the page is taller than Chromium will paint, or null.
+ * One line when the page is taller than Chromium will paint IN ONE SHOT, or null.
  *
- * visionarygrid.studio is 24,746px. The capture wrote a 24,746px PNG whose content stops
- * dead at y=16382, so 8,364px — 34% of the page — is white background with the DOM rects
- * for real content sitting underneath it. Nothing in that run looked wrong: the two
- * heights agreed, the scroll cap was not hit, and `contentBottom` equalled `fullHeight`.
+ * visionarygrid.studio is 24,746px. A single full-page screenshot wrote a 24,746px PNG
+ * whose content stopped dead at y=16382, so 8,364px — 34% of the page — was white
+ * background with the DOM rects for real content sitting underneath it. Nothing in that
+ * run looked wrong: the two heights agreed, the scroll cap was not hit, and
+ * `contentBottom` equalled `fullHeight`.
  *
- * Measuring that emptiness as page area is exactly the confident wrong number this tool
- * exists to refuse, and it is the one case so far where the honest answer is that the
- * capture cannot be used whole.
+ * A STITCHED CAPTURE DOES NOT HAVE THIS PROBLEM AND MUST NOT CLAIM TO. Every slice is a
+ * viewport shot, far below any texture limit, so the painting ceiling never applies —
+ * verified on that page at y=16000, 18000, 22000 and 24000, all of which photograph real
+ * content. `meta.capture.mode` says which path ran, and this warning is for the one that
+ * still can be truncated. A stitched image that came up short says so through its own
+ * height instead; see shotTruncationWarning.
+ *
+ * What remains true for a page this tall is that PHASE 2 declines to segment the image —
+ * MAX_IMAGE_HEIGHT in lib/edges.mjs is a memory budget, not a painting limit, and it is a
+ * separate refusal with a separate reason.
  */
 export function paintLimitWarning(meta) {
     const pageHeight = meta?.fullHeight;
     if (!(pageHeight > PAINT_LIMIT_PX)) {
+        return null;
+    }
+    if (meta?.capture?.mode === 'stitched') {
         return null;
     }
     const missing = pageHeight - PAINT_LIMIT_PX;

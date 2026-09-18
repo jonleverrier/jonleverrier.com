@@ -52,7 +52,11 @@ const describe = (v) => (v === null ? 'null' : Array.isArray(v) ? 'an array' : t
  *
  * `text` and `boxed` are decoration — they name a heading and a module container — so a
  * bad one is coerced to the value an absent one already means, rather than costing a
- * geometrically sound rect its place.
+ * geometrically sound rect its place. `boxed` is coerced because it is read for its
+ * truthiness, where the string "false" would be true. `transparentAncestor` is NOT, and
+ * deliberately: it is only ever read as `=== true` (see lib/painted.mjs), so nothing a
+ * file can put there survives the reading, and a rect this function did not have to
+ * touch should come back out the way it went in.
  */
 export function normaliseRects(value) {
     if (!Array.isArray(value)) {

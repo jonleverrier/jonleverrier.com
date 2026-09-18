@@ -60,6 +60,16 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   never loaded — silently, exit 0. The two numbers in `meta` are there to be compared:
   phase 2 divides by the image, so a screenshot that stopped early means every percentage
   is of a prefix of the page, and both CLIs warn when they disagree by more than rounding.
+- **A capture has a wall-clock budget, and it needs one.** bakerandpartners.com held a
+  capture for FOURTEEN MINUTES on 0.60s of CPU before it was killed by hand: `goto` and
+  `waitForLoadState` have timeouts, and `page.evaluate` and `screenshot` have none, because
+  Playwright applies no default there. On a CLI that is something you Ctrl-C; in the Craft
+  queue job it occupies a worker for ever and the prospect who submitted that URL never
+  receives an email. Every in-page step now runs against `CAPTURE_BUDGET_MS` (3 minutes),
+  and over budget fails like the 403 does — exit 1, a message naming the step, no
+  artefacts. Measured on that site afterwards: it fails at 3:00 with "dismissing a consent
+  banner did not finish within 175945ms", which also names the step that hangs, and it is
+  not one of the five the queue suspected.
 - **Phase 2 writes nothing unless the tree passed.** `assertPartition` runs in the CLI —
   containment, pairwise overlap and exact area equality at every node, not just the
   leaf-area total — and a failure exits 1. Previous artefacts are removed at the start of
@@ -135,29 +145,115 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   whose hero is its homepage would otherwise be told a quarter of its page is nothing.
   Note the evidence is the draw count, never the renderer: keying off "software" would
   flag every site that renders happily in software, which is most of them.
-- **A `position: fixed` reveal footer does not get captured.** A full-page screenshot
-  does not paint fixed elements down the page, and DOM rects are collected at scroll-top
-  where a fixed element reports its viewport box. switch.je's footer is visible, 745px
-  tall, and appears in neither — the pixels there measure a flat fill with a standard
-  deviation of 0.0. `meta.heightGap` catches it by asking whether the page claims more
-  height than its captured content explains, which covers reveal panels and sticky
+- **THE PAGE IS PHOTOGRAPHED A VIEWPORT AT A TIME AND THE SLICES ARE STITCHED.** One
+  `fullPage` shot is taken from scroll position 0, and that was wrong for three separate
+  reasons. Scroll-reveal content is not in its revealed state there: boondmanager.com puts
+  a whole section inside a `<div>` of `opacity: 0` whose children each report `opacity: 1`,
+  so every one of them lands in `rects.json` over an empty dark panel. Scroll-reveal
+  content is not always in POSITION there either, and that half is REVERSIBLE:
+  tpagency.com's region at y=1869–5890 holds 2 elements at the top of the page and 12 at
+  y=3000, with the document's element count unchanged at 306 throughout — things are moved
+  into place while the region is on screen and slide back out when it is not. And Chromium
+  stops painting a full-page screenshot at 16,384px, so visionarygrid.studio's 24,746px
+  PNG was the right height with content stopping dead at y=16,382. A viewport shot taken
+  while scrolled to the offset has none of those problems. The pass is deterministic on
+  purpose: offsets are multiples of the viewport, the settle is a fixed 200ms, and the
+  last slice's overlap is CROPPED rather than painted over the band before it. Measured on
+  jonleverrier.com, whose page has nothing to reveal, the stitched image is byte-for-byte
+  what `fullPage` produced.
+- **The DOM census is banded too, and that is not optional.** `COLLECT_RECTS` ran once, at
+  scroll 0, after the scroll pass — which on tpagency.com is precisely the moment the
+  content is absent. A correct image against an incomplete census is a worse failure than
+  the one it replaces: `lib/painted.mjs` compares the two, and it would have drawn the
+  wrong conclusion in the opposite direction. So each slice censuses the rows IT
+  contributes, at the same scroll position as its own shot, and the results are unioned.
+  De-duplication is ACROSS bands only — nesting is not unwound anywhere in this tool, so
+  two coincident rects in one band stay two — and an element seen at two different
+  coordinates in two bands keeps BOTH, because that is one element in two places and each
+  position belongs to the rows it was photographed with. The cost is one `body *` walk per
+  slice; the cheap test (a bounding box the browser has already laid out) comes first, so
+  only elements inside the band pay for `getComputedStyle` and the ancestor walks.
+- **`position: fixed` is hidden after the first slice. `position: sticky` is NOT.** A fixed
+  header is carried by the scroll, so every sighting after the first is the same element
+  again, and left alone it lands in the image once per slice down the whole page. Widening
+  that to sticky was tried and MEASURED WRONG: it took 4,000px of tpagency.com — 45% of the
+  page — to pure black, because the section is a pinned scrollytelling panel that swaps one
+  line of text per viewport. **A pinned panel therefore appears once per viewport it is
+  pinned across, and that is the right answer**: the visitor really does spend five
+  viewports on it and the page really does spend 4,000px of scroll height on it, so
+  collapsing it into one 900px band would under-report the space the site gives it.
+  **What that ruling costs, measured: a sticky NAV BAR repeats too.** Over the 29-site
+  sweep three pages do it — jerseyfinance.com ×3, hsbc.co.uk ×3, klark.ai ×6 — and on
+  jerseyfinance the second copy is painted across the middle of a paragraph, which both
+  occludes that text and hands the segmenter a protected `<header>` module at a place the
+  page has no boundary. Its leaf count went from 24 to 8. That is a phase-2 consequence of
+  a phase-1 ruling and it has not been resolved here: the position value does not separate
+  the two cases, and the distinction that would (does this element show DIFFERENT content
+  in each viewport it is pinned across) is a pixel comparison nobody has built. Left as it
+  is, on purpose, rather than guessed at.
+- **A viewport-anchored element that is neither `fixed` nor `sticky` defeats all of it.**
+  boondmanager.com carries an Axeptio consent card that holds the same viewport position in
+  every slice and so is painted twelve times down the stitched image — about 1.6% of that
+  page. Its computed position is `relative` (the card inside it is `static`); it is held in
+  place by script, not by CSS. Three separate rules miss it for the same reason: `HIDE_FIXED`
+  does not hide it, `COLLECT_FIXED` does not record it, and `lib/consent.mjs` never offered
+  it as a banner candidate — a candidate must sit under a `fixed`/`sticky` ancestor — which
+  is why `meta.consentBannerSeen` is false on a page with a consent card in plain sight. It
+  is also censused in NO band: twelve paintings, zero rects, the exact inverse of the
+  contradiction `contentNotPainted` looks for, and nothing detects that direction.
+- **The stitched image is exactly the viewport width; a full-page screenshot was not.**
+  lloydsbank.com's page is 1469px wide, so the old capture produced a 1469px PNG and phase 2
+  measured 29px of horizontal overflow that a 1440px visitor has to scroll sideways to
+  reach. Every slice is a viewport shot, so the new image is 1440px and that overflow is
+  outside it. The viewport has always been locked at 1440 and every fixture is that width,
+  so this is arguably the more consistent answer — but it is a decision, not an accident,
+  and `meta.capture.pageWidth` records the page's own width so the difference can be seen.
+  Both CLIs say so when the two disagree.
+- **A scrubbed animation can be photographed mid-transition.** The slice waits a fixed
+  400ms and shoots; a section that crossfades as it enters the viewport is then caught part
+  way. alchemy.je's pinned values section comes out with two states of its caption
+  superimposed, and altumgroup.com's quote block was a fade-in at a few per cent opacity —
+  real content, unreadable, and correctly flagged `contentNotPainted` at a 200ms settle. It
+  is a far better answer than the black void that was there before, and it is still not a
+  clean render. See SLICE_SETTLE_MS for what the wait was measured against.
+- **A `position: fixed` reveal footer still does not get captured.** Fixed elements appear
+  in the first slice only, at the viewport box they have at scroll 0, and DOM rects for
+  them are censused in that band for the same reason. switch.je's reveal footer is visible,
+  745px tall, and is in neither record — the pixels there measure a flat fill with a
+  standard deviation of 0.0. `meta.heightGap` catches it by asking whether the page claims
+  more height than its captured content explains, which covers reveal panels and sticky
   overlays too without special-casing any of them. **Nothing invents the missing pixels:**
   writing a rect for something the screenshot lacks would snap cuts onto invisible
   boundaries and hand phase 3 a blank rectangle to classify.
-- **Content behind `prefers-reduced-motion` is absent too — and phase 2 can now see
-  that.** Reduced motion is forced, because determinism requires it, so a scroll-reveal
-  that never fires leaves its elements in `rects.json` and nothing in the pixels. That
-  used to be recorded here as the one blind spot nothing detects. It is detectable as a
-  CONTRADICTION: on boondmanager.com a 1440×1199 block holds 102 elements carrying text
-  or media and **100 of them have no painted pixel inside them**. `lib/painted.mjs`
-  measures each block's ink against the background each ROW sits on — not a page-wide
-  colour, or a dark section reads as solid ink — and raises `contentNotPainted` when at
-  least 6 content elements are in a block and at least half of them are blank. **Ink alone
-  would be wrong**: klark.ai's logo strip is 4.3% ink and entirely correct, and none of
-  its 22 elements is blank. Measured over eleven pages, correctly rendered blocks run
-  0–16% blank and regions that did not render run 77–100%. It cannot say WHY the pixels
-  are missing — a lazy image, a failed script and a reveal that never fired look the same
-  — so the effect is `unmeasured` rather than a diagnosis.
+- **THE SLICE PASS REACHES WHAT SCROLLING REVEALS, AND NOTHING ELSE.** Content behind a
+  hover, a click, a tab, an accordion, a carousel step or a timer is reached by none of it,
+  and `prefers-reduced-motion` is still forced because phase 2 has to be deterministic. The
+  two mechanisms above were found by meeting them; any list of mechanisms is only the ones
+  we have happened to meet. Do not read a stitched capture as a guarantee of completeness —
+  it is a much better sample of the page, and the honesty layer below is still the thing
+  that says when it fell short.
+- **Content the capture never reached is still detectable, as a CONTRADICTION.** A
+  1440×1199 block on boondmanager.com held 102 elements carrying text or media and **100
+  of them had no painted pixel inside them**. `lib/painted.mjs` measures each block's ink
+  against the background each ROW sits on — not a page-wide colour, or a dark section
+  reads as solid ink — and raises `contentNotPainted` when at least 6 content elements are
+  in a block and at least half of them are blank. **Ink alone would be wrong**: klark.ai's
+  logo strip is 4.3% ink and entirely correct, and none of its 22 elements is blank.
+  Measured over eleven pages, correctly rendered blocks run 0–16% blank and regions that
+  did not render run 77–100%. It cannot say WHY the pixels are missing — a lazy image, a
+  failed script and a reveal that wanted a click look the same — so the effect is
+  `unmeasured` rather than a diagnosis.
+- **"Transparent when we looked" and "never painted" are different facts, and the rect
+  carries which.** `COLLECT_RECTS` skipped an element whose OWN opacity was 0 and never
+  walked its ancestors, so 89 elements inside one `opacity: 0` container were recorded as
+  ordinary visible content and `contentNotPainted` diagnosed them as a render that failed.
+  The walk now happens and the rect is flagged `transparentAncestor` — **flagged, not
+  dropped**, because a dropped element is indistinguishable from a page that genuinely has
+  nothing there. `contentNotPainted` gates on the blanks that flag does NOT explain, so one
+  transparent container can no longer carry a block over the threshold on its own, and
+  `contentTransparent` reports the ones it does explain. That second check needs BOTH
+  halves — flagged AND no ink — because the banded census catches most reveals in their
+  revealed state, and a flag over painted pixels is a capture that lost nothing.
 - **A region can be empty in BOTH records, and that is a different condition.**
   `contentNotPainted` needs a contradiction — elements that say there is content over
   pixels that say there is not. alchemy.je gives **49% of its page** to a black void with
@@ -175,7 +271,8 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   so the entire honesty layer was invisible to everything downstream of a terminal.
   `notes.conditions` is keyed by a stable code (`httpError`, `errorPageLikely`,
   `wrongPage`, `shotTruncated`, `paintLimit`, `scrollCapHit`, `consentNotDismissed`,
-  `webglBlind`, `contentNotPainted`, `blankRegion`, `unrenderedGap`, `metaMissing`),
+  `webglBlind`, `contentNotPainted`, `contentTransparent`, `blankRegion`, `unrenderedGap`,
+  `metaMissing`),
   each carrying an `effect` — `unmeasured`, `attribution`, `included` or `unknown`, which
   is the axis a report branches on — a `message`, and raw `facts`. **`notes.metaRead`
   distinguishes "nothing was wrong" from "we could not tell":** a missing `meta.json` used

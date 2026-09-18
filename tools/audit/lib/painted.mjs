@@ -5,16 +5,22 @@
  *
  *   node --test tools/audit/test/painted.test.mjs
  *
- * WHY THIS EXISTS. The capture forces `prefers-reduced-motion: reduce`, because a
- * carousel or an entrance animation makes the screenshot non-deterministic and phase 2
- * has to be deterministic. Content revealed on scroll therefore never fires, and
- * boondmanager.com's testimonial cards are in the DOM, in `rects.json`, and absent from
- * the pixels. The README recorded this as a limitation nothing could detect.
+ * WHY THIS EXISTS. A capture can miss content that a visitor sees — reduced motion is
+ * forced, a lazy image can fail to arrive, a script can die, and a reveal can want an
+ * interaction the capture never performs. boondmanager.com's testimonial cards were in
+ * the DOM, in `rects.json`, and absent from the pixels. The README recorded this as a
+ * limitation nothing could detect.
+ *
+ * Phase 1 now photographs each band of the page while that band is on screen and
+ * censuses it at the same moment, which removes the largest single cause — a
+ * scroll-gated reveal — from this file's caseload. It does not remove the file: a
+ * capture can still be short of what a visitor sees, and this is the only thing that
+ * compares the two records against each other rather than trusting either.
  *
  * It is detectable, because the two records contradict each other. A block of 1440x1199
- * there holds 102 elements carrying text or media, and 100 of them have not one painted
- * pixel inside them; the block as a whole is 0.4% ink. A page cannot be measured that
- * way and reported as empty space.
+ * on boondmanager.com held 102 elements carrying text or media, and 100 of them had not
+ * one painted pixel inside them; the block as a whole was 0.4% ink. A page cannot be
+ * measured that way and reported as empty space.
  *
  * THE TRAP IS A BLOCK THAT IS SPARSE ON PURPOSE, and it is the whole difficulty.
  * klark.ai's client logo strip is six logos with generous padding — correct, deliberate,
@@ -241,10 +247,30 @@ export function contentRects(rects, block) {
 export const UNPAINTED = {minBlankShare: 0.5, minRects: 6};
 
 /**
+ * An element that was inside an `opacity: 0` ancestor when its band was censused.
+ *
+ * THE FLAG IS THE DIFFERENCE BETWEEN TWO THINGS THAT USED TO BE ONE. "This element exists
+ * and was transparent when we looked at it" is a capture that arrived a moment too early;
+ * "this element should have painted and did not" is the failure. Both produce a rect with
+ * no ink under it, and before phase 1 walked the ancestor chain there was no way to tell
+ * them apart — so `contentNotPainted` was diagnosing the first as the second.
+ *
+ * Absent means false, the way `boxed` is read, so a rects file from an older capture or
+ * from somewhere else is simply a file where nothing was observed transparent.
+ */
+const transparentAncestor = (r) => r.transparentAncestor === true;
+
+/**
  * Every block whose DOM says content and whose pixels say nothing, with its numbers.
  *
  * In tree order, and machine-readable on purpose: the same measurement answers "how much
  * of this block is actually whitespace", which a report needs to describe space honestly.
+ *
+ * THE GATE IS THE UNEXPLAINED BLANKS, not every blank. A blank rect that was inside a
+ * transparent ancestor is accounted for — it is reported by `transparentBlocks` below,
+ * which says something different and truer about it — and counting it here would let one
+ * `opacity: 0` container carry a block over the threshold on its own. Every number is
+ * still recorded, so nothing is lost by the split.
  */
 export function unpaintedBlocks(page, blocks, rects, opts = UNPAINTED) {
     const {minBlankShare, minRects} = {...UNPAINTED, ...opts};
@@ -256,13 +282,55 @@ export function unpaintedBlocks(page, blocks, rects, opts = UNPAINTED) {
     for (const block of blocks) {
         const inside = contentRects(rects, block);
         if (inside.length < minRects) continue;
-        const blank = inside.filter((r) => inkCount(page, r) === 0).length;
-        if (blank < minBlankShare * inside.length) continue;
+        const blank = inside.filter((r) => inkCount(page, r) === 0);
+        const transparent = blank.filter(transparentAncestor).length;
+        const unexplained = blank.length - transparent;
+        if (unexplained < minBlankShare * inside.length) continue;
         found.push({
             x: block.x, y: block.y, w: block.w, h: block.h,
             domRects: inside.length,
-            blankRects: blank,
+            blankRects: blank.length,
+            transparentRects: transparent,
+            unexplainedRects: unexplained,
             // Three decimal places: a fraction, kept short enough to read in the file.
+            ink: Math.round(inkFraction(page, block) * 1000) / 1000,
+        });
+    }
+
+    return found;
+}
+
+/**
+ * Every block whose content was sitting behind an `opacity: 0` ancestor AND is missing
+ * from the pixels.
+ *
+ * BOTH HALVES ARE REQUIRED, and the second is what stops this being noise. The slice pass
+ * censuses each band at the scroll position of the shot that owns it, so most of what was
+ * once transparent is photographed in its revealed state and flagged in the census of
+ * some other band; a rect flagged transparent WITH ink under it is a capture that caught
+ * the page mid-reveal and lost nothing. Only a flagged rect with no ink at all describes
+ * a region that is in the DOM and not in the image.
+ *
+ * It uses the same gate as `unpaintedBlocks` — six elements, half the block — because it
+ * is the same question asked of the same populations, and a second set of thresholds for
+ * one detector would be two things to keep measured instead of one.
+ */
+export function transparentBlocks(page, blocks, rects, opts = UNPAINTED) {
+    const {minBlankShare, minRects} = {...UNPAINTED, ...opts};
+    if (!page || !Array.isArray(rects) || rects.length === 0) {
+        return [];
+    }
+
+    const found = [];
+    for (const block of blocks) {
+        const inside = contentRects(rects, block);
+        if (inside.length < minRects) continue;
+        const hidden = inside.filter((r) => transparentAncestor(r) && inkCount(page, r) === 0).length;
+        if (hidden < minBlankShare * inside.length) continue;
+        found.push({
+            x: block.x, y: block.y, w: block.w, h: block.h,
+            domRects: inside.length,
+            transparentRects: hidden,
             ink: Math.round(inkFraction(page, block) * 1000) / 1000,
         });
     }
@@ -343,12 +411,28 @@ export function unpaintedWarning(found) {
     if (!found || found.length === 0) {
         return null;
     }
-    const worst = found.reduce((a, b) => (a.blankRects >= b.blankRects ? a : b));
+    const worst = found.reduce((a, b) => (a.unexplainedRects >= b.unexplainedRects ? a : b));
     const where = found.length === 1 ? 'one block holds' : `${found.length} blocks hold`;
 
     return `${where} content that is in the DOM and was never painted — the worst is `
-        + `${worst.w}x${worst.h} at y=${worst.y}, where ${worst.blankRects} of ${worst.domRects} elements `
+        + `${worst.w}x${worst.h} at y=${worst.y}, where ${worst.unexplainedRects} of ${worst.domRects} elements `
         + `carrying text or media have no painted pixel inside them and the block is ${(worst.ink * 100).toFixed(1)}% `
-        + 'ink. Scroll-reveal content that never fired looks exactly like this, and the capture forces '
-        + 'reduced motion. Those regions are unmeasured, not empty';
+        + 'ink. A lazy image that never arrived looks exactly like this, and so does a script that failed. '
+        + 'Those regions are unmeasured, not empty';
+}
+
+/** The sentence for a terminal and for `notes`. */
+export function transparentWarning(found) {
+    if (!found || found.length === 0) {
+        return null;
+    }
+    const worst = found.reduce((a, b) => (a.transparentRects >= b.transparentRects ? a : b));
+    const where = found.length === 1 ? 'one block holds' : `${found.length} blocks hold`;
+
+    return `${where} content that was still behind a transparent ancestor when the page was censused and `
+        + `has no pixels either — the worst is ${worst.w}x${worst.h} at y=${worst.y}, where `
+        + `${worst.transparentRects} of ${worst.domRects} elements carrying text or media sit inside an `
+        + `element of opacity 0 and the block is ${(worst.ink * 100).toFixed(1)}% ink. The capture photographs `
+        + 'each band while it is on screen, so a reveal that fires on scroll is normally caught; one that '
+        + 'needs a hover, a click or a timer is not. That region is unmeasured, not empty';
 }

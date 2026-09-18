@@ -46,6 +46,21 @@ try {
     console.log(`http         ${meta.httpStatus ?? 'no response (same-document)'}${ok ? '' : '   <-- NOT A PAGE'}`);
     console.log(`full height  ${meta.fullHeight}px`);
     console.log(`image        ${meta.image.width}x${meta.image.height}`);
+    // WHICH CAPTURE PATH RAN, because the two produce visibly different images of the
+    // same page and a silent fallback would look like the page having changed.
+    const c = meta.capture ?? {};
+    console.log(`capture      ${c.mode === 'stitched'
+        ? `${c.slices} stitched slices of ${c.viewportHeight}px`
+        : `ONE FULL-PAGE SHOT — slicing failed: ${printable(c.fallbackReason ?? 'no reason recorded', 200)}`}`);
+    console.log(`rects        ${c.rects ?? 0}${c.mode === 'stitched' ? ` (${c.rectsAtTop ?? 0} from the top alone)` : ''}`);
+    // A page wider than the locked viewport loses the overflow, because every slice is a
+    // viewport shot. Said out loud rather than left to whoever compares two numbers.
+    if (c.pageWidth > meta.image.width) {
+        console.log(`page width   ${c.pageWidth}px — ${c.pageWidth - meta.image.width}px WIDER than the image`);
+    }
+    if (c.stoppedEarly) {
+        console.log(`slicing      STOPPED EARLY — ${printable(c.stoppedEarly, 200)}`);
+    }
     // "no banner found" and "a banner we could not dismiss" are different outcomes, and
     // saying the same thing for both is what made this line noise on most of the web.
     const consentState = meta.consentDismissed

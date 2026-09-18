@@ -6,25 +6,53 @@
  *
  *   node tools/audit/capture.mjs <url> [outDir]
  *
- * The limitation worth knowing: THIS BROWSER CANNOT DRAW EVERYTHING A VISITOR SEES, and
- * it does not always fail loudly.
+ * THE PAGE IS PHOTOGRAPHED A VIEWPORT AT A TIME AND THE SLICES ARE STITCHED, because
+ * `page.screenshot({fullPage: true})` is one shot taken from scroll position 0 and that
+ * is wrong for three independent reasons:
  *
- * Two separate causes, both of which produce a page that loads perfectly and is missing
- * a region:
+ *   - Scroll-reveal content is not in its revealed state. boondmanager.com holds a
+ *     section inside a `<div class="solutions-slider_tabs">` whose computed opacity is 0;
+ *     every child reports `opacity: 1` on its own, so all of them land in rects.json over
+ *     an empty dark panel. It is not reduced motion (a capture with `no-preference` is
+ *     pixel-identical), not a backgrounded page (rAF runs, IO fires) and not dwell time
+ *     (longer dwell is measurably WORSE).
+ *   - Scroll-reveal content is not always in POSITION either, and that half is reversible.
+ *     tpagency.com's void at y=1869–5890 holds 2 elements when the page is at the top and
+ *     12 when it is scrolled to y=3000, with the element count for the whole document
+ *     unchanged at 306 throughout: nothing is created, things are moved into place while
+ *     the region is on screen and slide back out when it is not.
+ *   - Chromium stops painting a full-page screenshot at 16,384px. visionarygrid.studio is
+ *     24,746px: the PNG was the full height with content stopping dead at y=16,382.
  *
- *   - prefers-reduced-motion is forced, because a carousel or an entrance animation
- *     makes the capture non-deterministic and phase 2 has to be deterministic. Content
- *     gated behind that query is therefore absent — and it is NOT true, as this comment
- *     used to claim, that the resting state is "what most visitors see": most visitors
- *     do not have reduced motion set, so they get the thing we skipped.
- *   - There is no GPU, so WebGL falls back to SwiftShader, and sites that check for
- *     that decline to render rather than push a heavy scene through a software
- *     rasteriser. See lib/webgl.mjs — `meta.webgl` records it so the report can decline
- *     to answer for that region instead of measuring a hole as empty space.
+ * A viewport shot taken while scrolled to the offset has none of those problems, so the
+ * capture is a sequence of those composited into one image — AND THE DOM CENSUS IS TAKEN
+ * THE SAME WAY, one band at a time, at the same scroll position as the shot that owns
+ * those rows. A single census at scroll 0 against a stitched image would compare a
+ * correct picture with an incomplete list and conclude that the picture was wrong.
  *
- * Neither is a bug to fix here. Both are conditions to declare.
+ * `meta.capture` records which path ran, how many slices it took, how many rects the
+ * banded census found against what a single one at the top would have, and the reason if
+ * it fell back to a single shot.
+ *
+ * WHAT THIS STILL DOES NOT SEE, and must not be read as solving: the slice pass reaches
+ * what SCROLLING reveals. Content behind a hover, a click, a tab, a carousel step or a
+ * timer is reached by none of it. The two mechanisms above were found by meeting them;
+ * any list of mechanisms is only the ones we have happened to meet.
+ *
+ * The other two limitations, both declared rather than fixed:
+ *
+ *   - prefers-reduced-motion is forced, because a carousel or an entrance animation makes
+ *     the capture non-deterministic and phase 2 has to be deterministic. Content gated
+ *     behind that query is therefore absent — and it is NOT true, as this comment used to
+ *     claim, that the resting state is "what most visitors see": most visitors do not
+ *     have reduced motion set, so they get the thing we skipped.
+ *   - There is no GPU, so WebGL falls back to SwiftShader, and sites that check for that
+ *     decline to render rather than push a heavy scene through a software rasteriser. See
+ *     lib/webgl.mjs — `meta.webgl` records it so the report can decline to answer for that
+ *     region instead of measuring a hole as empty space.
  */
 import {chromium} from 'playwright';
+import sharp from 'sharp';
 import {mkdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {dismissConsent} from './consent.mjs';
@@ -32,6 +60,100 @@ import {WEBGL_PROBE_INIT, probeWebgl} from './webgl.mjs';
 import {COLLECT_FIXED, heightGap} from './unrendered.mjs';
 
 export const VIEWPORT = {width: 1440, height: 900};
+
+/**
+ * The whole wall-clock budget for one capture, and the reason it exists.
+ *
+ * bakerandpartners.com blocked a capture for FOURTEEN MINUTES on 0.60s of CPU before it
+ * was killed by hand. `goto` has a timeout and `waitForLoadState` has one; every
+ * `page.evaluate` and every `screenshot` has none, because Playwright applies no default
+ * there — and there are five evaluates, three of them inside a loop that runs up to forty
+ * times. On a CLI that is something you Ctrl-C. In the Craft queue job it occupies a
+ * worker for ever and the prospect who submitted that URL never receives an email.
+ *
+ * Three minutes is deliberately generous: the slowest honest capture measured on this
+ * branch is a 24,746px page at a little over a minute end to end, so the budget is
+ * several times the worst real case and will only ever be reached by something stuck.
+ */
+export const CAPTURE_BUDGET_MS = 180000;
+
+/**
+ * How long a slice is given to settle after its scroll, before it is photographed.
+ *
+ * It has to outlast the compositor and the entrance transition the scroll itself starts,
+ * and it is the one number in this file that changes what a page measures as.
+ *
+ * MEASURED over the whole 29-site sweep, captured twice: at 200ms and at 400ms. The note
+ * set differs on TWO sites and in both cases 400ms is the better answer —
+ * altumgroup.com's `contentNotPainted` goes away (reproduced 3 times at each value: 3/3
+ * flagged at 200, 0/3 at 400; cropped and looked at, the region is a fade-in caught part
+ * way through, real content at a few per cent opacity) and jerseyfinance.com's
+ * `contentTransparent` goes away. Nothing gains a note. The cost is 476s against 525s
+ * across all 29 captures, about 10%.
+ *
+ * WHAT POINTS THE OTHER WAY, because it is the only thing that does: boondmanager.com was
+ * flagged `contentNotPainted` in 1 of 3 isolated runs at 400ms and 0 of 3 at 200ms, and
+ * its measured page height wanders by a few pixels at 400 where it is stable at 200 —
+ * longer dwell lets more lazy content land. Two sites fixed against one made occasionally
+ * flaky is the trade this number is set on, and it is a trade rather than a free win.
+ */
+export const SLICE_SETTLE_MS = 400;
+
+/**
+ * How long a tidy-up step gets, whatever is left of the budget.
+ *
+ * Putting hidden elements back and getting to the top of the page before the fallback shot
+ * both run on the way out of a failure, and the failure they most often follow is a page
+ * that stopped answering. Charging them to the capture's budget would be no protection at
+ * all when that budget is what has just run out.
+ */
+export const CLEANUP_MS = 5000;
+
+/**
+ * A wall-clock budget, as an object that can be asked how much is left.
+ *
+ * Separate from the clock so it can be tested without waiting: `now` is injectable.
+ * `check` THROWS rather than returning a flag, because every caller of it is a step that
+ * must not start when there is no time for it, and a budget that can be ignored by
+ * forgetting an `if` is not a budget.
+ */
+export function budget(ms, now = Date.now) {
+    const end = now() + ms;
+
+    return {
+        left: () => end - now(),
+        check(what) {
+            const left = end - now();
+            if (left <= 0) {
+                throw new Error(`the ${ms}ms capture budget was spent before ${what}`);
+            }
+
+            return left;
+        },
+    };
+}
+
+/**
+ * `promise`, or a rejection once `ms` has passed.
+ *
+ * The loser of the race is deliberately given its own handler: a `page.evaluate` that is
+ * still stuck when the browser is closed underneath it rejects LATER, and an unhandled
+ * rejection would take the process down after the error had already been reported
+ * properly.
+ */
+export function withDeadline(promise, ms, what) {
+    const guarded = Promise.resolve(promise);
+    guarded.catch(() => {});
+
+    let timer = null;
+    const bell = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${what} did not finish within ${ms}ms`)), ms);
+        // Never hold the process open for a timer that is only ever a safety net.
+        if (typeof timer.unref === 'function') timer.unref();
+    });
+
+    return Promise.race([guarded, bell]).finally(() => clearTimeout(timer));
+}
 
 /**
  * How tall the page is, measured the way the screenshot measures it. Runs IN the page.
@@ -53,6 +175,22 @@ export const PAGE_HEIGHT = () => Math.max(
 );
 
 /**
+ * How wide the page is, measured the same way. Runs IN the page.
+ *
+ * RECORDED BECAUSE THE STITCHED IMAGE IS EXACTLY THE VIEWPORT WIDTH and a full-page
+ * screenshot was not. lloydsbank.com's page is 1469px wide, so the old capture produced a
+ * 1469px image and phase 2 measured 29px of horizontal overflow that a 1440px visitor has
+ * to scroll sideways to see; the stitched one is 1440px and does not. Neither answer is
+ * obviously wrong — the viewport is locked at 1440 and every fixture is that width — but
+ * the difference must be visible rather than silently decided, so the page's own width
+ * goes in `meta.capture` beside the image's.
+ */
+export const PAGE_WIDTH = () => Math.max(
+    document.documentElement ? document.documentElement.scrollWidth : 0,
+    document.body ? document.body.scrollWidth : 0,
+);
+
+/**
  * A PNG's own pixel dimensions, straight out of its IHDR header.
  *
  * Read so that meta can carry the image's height beside the page's. They should agree;
@@ -69,23 +207,49 @@ export function pngSize(buffer) {
     return {width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20)};
 }
 
-/** Collect rects for every visible element. Runs IN the page. */
-const COLLECT_RECTS = () => {
+/**
+ * Collect rects for every visible element. Runs IN the page.
+ *
+ * `band` is `{top, bottom}` in page coordinates, or null for the whole document. It is
+ * what makes a census per slice affordable: the cheap test — a bounding box the browser
+ * has already laid out — comes first, and only an element that is in the band pays for
+ * `getComputedStyle` and the ancestor walks. The band is also what makes the census
+ * HONEST on a page that moves its content around, because each band is collected at the
+ * scroll position of the shot that owns those rows.
+ */
+const COLLECT_RECTS = (band) => {
     const out = [];
 
-    // Fully clipped by an ancestor's overflow — an off-screen carousel slide, a
-    // collapsed accordion panel with height:0 on the wrapper. The element itself
+    // TWO ANCESTOR CONDITIONS, ONE WALK, because they ask about the same chain.
+    //
+    // `clipped`: fully clipped by an ancestor's overflow — an off-screen carousel slide,
+    // a collapsed accordion panel with height:0 on the wrapper. The element itself
     // reports a perfectly normal rect, so only walking up catches it.
-    const clipped = (el) => {
-        const r = el.getBoundingClientRect();
-        for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+    //
+    // `transparent`: inside an ancestor whose computed opacity is 0. This walk did not
+    // exist, and it is why 89 elements of boondmanager.com's solutions slider were
+    // recorded as ordinary visible content: the container is `opacity: 0` and every child
+    // reports `opacity: 1` for itself. They are NOT dropped — a dropped element is
+    // indistinguishable from a page that genuinely has nothing there, which is the answer
+    // this tool must never give wrongly — they are recorded and flagged, so that
+    // "transparent when we looked" and "should have painted and did not" stop being the
+    // same fact. See lib/painted.mjs, which is where the difference is spent.
+    const ancestry = (el, r) => {
+        let transparent = false;
+        for (let a = el.parentElement; a && a !== document.documentElement; a = a.parentElement) {
             const cs = getComputedStyle(a);
-            if (cs.overflow === 'visible' && cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
-            const ar = a.getBoundingClientRect();
-            if (r.right <= ar.left || r.left >= ar.right || r.bottom <= ar.top || r.top >= ar.bottom) return true;
+            if (cs.opacity === '0') transparent = true;
+            if (a !== document.body
+                && !(cs.overflow === 'visible' && cs.overflowX === 'visible' && cs.overflowY === 'visible')) {
+                const ar = a.getBoundingClientRect();
+                if (r.right <= ar.left || r.left >= ar.right || r.bottom <= ar.top || r.top >= ar.bottom) {
+                    // Dropped anyway, so nothing above it needs asking.
+                    return {clipped: true, transparent};
+                }
+            }
         }
 
-        return false;
+        return {clipped: false, transparent};
     };
 
     // Does this element draw its own box? A card is a box; the section it sits in is
@@ -104,14 +268,17 @@ const COLLECT_RECTS = () => {
     };
 
     for (const el of document.querySelectorAll('body *')) {
-        const cs = getComputedStyle(el);
-        if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
         const r = el.getBoundingClientRect();
         if (r.width < 1 || r.height < 1) continue;
-        if (clipped(el)) continue;
-        out.push({
+        const top = r.y + window.scrollY;
+        if (band && (top + r.height <= band.top || top >= band.bottom)) continue;
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
+        const {clipped, transparent} = ancestry(el, r);
+        if (clipped) continue;
+        const rect = {
             x: Math.round(r.x + window.scrollX),
-            y: Math.round(r.y + window.scrollY),
+            y: Math.round(top),
             w: Math.round(r.width),
             h: Math.round(r.height),
             tag: el.tagName.toLowerCase(),
@@ -122,14 +289,265 @@ const COLLECT_RECTS = () => {
             // card — the exact module the cut was supposed to protect.
             boxed: boxed(el, cs),
             text: (el.textContent || '').trim().slice(0, 200),
-        });
+        };
+        // Written only when true, the way `boxed` is read: absent means false everywhere
+        // that consumes this file, and a flag on every rect of every page costs a line
+        // each in a file that is already tens of thousands of them.
+        if (transparent) rect.transparentAncestor = true;
+        out.push(rect);
     }
 
     return out;
 };
 
+/** A rect's identity for the purpose of merging one slice's census into another's. */
+const rectKey = (r) => `${r.tag}|${r.x}|${r.y}|${r.w}|${r.h}`;
+
+/**
+ * One census from the per-slice ones.
+ *
+ * NESTING IS NOT UNWOUND ANYWHERE IN THIS TOOL — an element's text includes its
+ * descendants', a wrapper and the paragraph inside it both count, and lib/painted.mjs's
+ * thresholds were measured against that definition. So a duplicate WITHIN a slice is
+ * kept, and only duplication ACROSS slices is removed: each key keeps as many copies as
+ * the single slice that saw the most of it. Two nested divs of identical size still
+ * contribute two rects; the header that band 0 and band 1 both saw contributes one.
+ *
+ * AN ELEMENT AT TWO DIFFERENT COORDINATES IN TWO SLICES KEEPS BOTH, because on a page
+ * like tpagency.com that is not an error — it is one element being moved, and the two
+ * positions are two different rows of the image. Each band only ever offers rects it saw
+ * while its own rows were on screen, so the position kept for a row is the one that row
+ * was photographed with.
+ *
+ * Insertion order is the order of first sight, which makes the union deterministic and
+ * keeps it close to document order within each band.
+ */
+export function unionRects(perSlice) {
+    const best = new Map();
+    for (const slice of perSlice) {
+        const seen = new Map();
+        for (const rect of slice) {
+            const key = rectKey(rect);
+            const list = seen.get(key);
+            if (list) list.push(rect);
+            else seen.set(key, [rect]);
+        }
+        for (const [key, list] of seen) {
+            const held = best.get(key);
+            if (!held || list.length > held.length) best.set(key, list);
+        }
+    }
+
+    return [...best.values()].flat();
+}
+
+/**
+ * Hide every `position: fixed` element. Runs IN the page, once per slice after the first,
+ * after the scroll has settled and before the shot.
+ *
+ * WITHOUT THIS A FIXED HEADER APPEARS ONCE PER SLICE, twenty times down the stitched
+ * image. A fixed element is carried by the scroll by definition, so the only slice in
+ * which it is where the page meant it to be is the first one, and every other sighting of
+ * it is the same element again. This is exactly the population `COLLECT_FIXED` gathers —
+ * see lib/unrendered.mjs — and `meta.fixed` is the record of it.
+ *
+ * `position: sticky` IS DELIBERATELY NOT IN THIS LIST, and the mistake is worth keeping
+ * written down because it was made and measured. Hiding sticky elements too took 4,000px
+ * of tpagency.com — 45% of that page — to pure black in every band: the section is a
+ * pinned scrollytelling panel that swaps one line of text per viewport, and hiding it
+ * reproduced the exact defect the slice pass exists to fix. A pinned panel therefore
+ * appears once per viewport it is pinned across, AND THAT IS THE RIGHT ANSWER: the
+ * visitor really does spend five viewports on it and the page really does spend 4,000px
+ * of scroll height on it, so a measurement that collapsed it into one 900px band would
+ * under-report the space the site gives it.
+ *
+ * `visibility: hidden` and not `display: none`: visibility takes an element out of the
+ * paint without taking it out of the layout, so nothing on the page moves. It also takes
+ * it out of the census, which is right — a fixed element is censused in the first band,
+ * at the viewport box every consumer of rects.json expects it to have.
+ *
+ * Idempotent, and additive: run again it hides anything that has become fixed since, and
+ * what is already hidden stays hidden and keeps the inline style it arrived with.
+ */
+export const HIDE_FIXED = () => {
+    const state = window.__auditStitch;
+    if (!state) return 0;
+
+    for (const el of document.querySelectorAll('body *')) {
+        if (state.hidden.has(el)) continue;
+        if (getComputedStyle(el).position !== 'fixed') continue;
+        const value = el.style.getPropertyValue('visibility');
+        state.hidden.set(el, value === '' ? null : {value, priority: el.style.getPropertyPriority('visibility')});
+        el.style.setProperty('visibility', 'hidden', 'important');
+    }
+
+    return state.hidden.size;
+};
+
+/** Start the record of what the slice pass has hidden. Runs IN the page, before the first slice. */
+export const BEGIN_HIDING = () => {
+    window.__auditStitch = {hidden: new Map()};
+
+    return 0;
+};
+
+/** Put back every element the slice pass hid, and forget it ever happened. Runs IN the page. */
+export const RESTORE_HIDDEN = () => {
+    const state = window.__auditStitch;
+    if (!state) return 0;
+    let restored = 0;
+    for (const [el, previous] of state.hidden) {
+        if (previous === null) el.style.removeProperty('visibility');
+        else el.style.setProperty('visibility', previous.value, previous.priority);
+        restored++;
+    }
+    delete window.__auditStitch;
+
+    return restored;
+};
+
+/**
+ * Where a shot taken at scroll offset `at` belongs in the stitched image, or null when it
+ * adds nothing to it.
+ *
+ * THE LAST SLICE IS THE REASON THIS IS A FUNCTION. A page is almost never an exact
+ * multiple of the viewport, so the browser clamps the final scroll and the final shot
+ * overlaps the one before it — on a 1296px page the last shot is of rows 396–1296, of
+ * which 396–900 are already written. The overlap is CROPPED rather than composited over
+ * the top: painting a band twice is a second rendering of the same rows and a second
+ * chance for them to differ.
+ */
+export function slicePlacement(at, written, pageHeight, viewportHeight) {
+    const bottom = Math.min(at + viewportHeight, pageHeight);
+    if (bottom <= written) {
+        return null;
+    }
+
+    return {top: written, skip: Math.max(0, written - at), height: bottom - written};
+}
+
+/**
+ * The slices, composited into one full-height PNG.
+ *
+ * `parts` are `{buffer, top, skip, height}` as `slicePlacement` describes them. A part
+ * that needs no crop is passed through as the bytes that came out of the browser, so the
+ * common case re-encodes nothing.
+ */
+export async function stitchSlices(parts, width, height) {
+    if (!Array.isArray(parts) || parts.length === 0) {
+        throw new Error('there are no slices to stitch');
+    }
+
+    const composites = [];
+    for (const part of parts) {
+        const shot = await sharp(part.buffer).metadata();
+        const cropped = part.skip > 0 || part.height !== shot.height;
+        composites.push({
+            input: cropped
+                ? await sharp(part.buffer)
+                    .extract({left: 0, top: part.skip, width: Math.min(width, shot.width), height: part.height})
+                    .png()
+                    .toBuffer()
+                : part.buffer,
+            top: part.top,
+            left: 0,
+        });
+    }
+
+    // White, because that is what an unpainted page is in Chromium — and because a canvas
+    // row no slice covered should be glaringly visible in debug.png rather than blending
+    // into a dark page as if it had been measured.
+    return sharp({create: {width, height, channels: 3, background: {r: 255, g: 255, b: 255}}})
+        .composite(composites)
+        .png()
+        .toBuffer();
+}
+
+/**
+ * Photograph the page a viewport at a time, censusing each band beside its own shot, and
+ * stitch the result into one image.
+ *
+ * THE HEIGHT IS DECIDED ONCE, before the first slice, and never revisited: a page that
+ * grows while it is being photographed would otherwise move every offset underneath the
+ * pass and produce an image no single state of the page ever had. What the growth costs
+ * instead is that the stitched image is a prefix of the taller page — which is exactly
+ * what `shotTruncationWarning` already says out loud, because `meta.fullHeight` is
+ * measured after the capture and the image's own height is recorded beside it.
+ *
+ * THE CENSUS IS BANDED TO THE ROWS THE SLICE CONTRIBUTES, not to its whole viewport. Each
+ * row of the image is owned by exactly one shot, so crediting a rect to the band it was
+ * seen in is what keeps the two records describing the same page: on a site that moves
+ * content into place only while it is on screen, an element seen at two positions is one
+ * element in two places, and the position that belongs to a row is the one that row was
+ * photographed with.
+ *
+ * Nothing here is allowed to add variance of its own: the offsets are multiples of the
+ * viewport, the settle is a fixed wait, the overlap is cropped rather than overpainted,
+ * and the pass stops on a condition rather than a timer.
+ */
+export async function slicedScreenshot(page, opts) {
+    const {width, height, viewportHeight, maxSlices, settleMs, step} = opts;
+
+    await step('opening the record of what the slice pass hides', () => page.evaluate(BEGIN_HIDING));
+
+    const parts = [];
+    const census = [];
+    let written = 0;
+    let stoppedEarly = null;
+    try {
+        for (let i = 0; i < maxSlices && written < height; i++) {
+            const at = await step(`scrolling to slice ${i}`, () => page.evaluate((target) => {
+                window.scrollTo(0, target);
+
+                return Math.round(window.scrollY);
+            }, i * viewportHeight));
+            // The pass has been overtaken by the page — the scroll went FURTHER than the
+            // rows already written, so the band between them was never photographed.
+            // Stopping leaves a short image, which the height comparison declares;
+            // carrying on would leave a hole in the middle of a full-height one.
+            if (at > written) {
+                stoppedEarly = `the page scrolled to y=${at} with only ${written}px photographed`;
+                break;
+            }
+            await page.waitForTimeout(settleMs);
+            // Never in the first slice: at scroll 0 a fixed element is where the page
+            // meant it to be, and that is the one sighting of it the image should keep.
+            if (i > 0) {
+                await step(`hiding fixed elements for slice ${i}`, () => page.evaluate(HIDE_FIXED));
+            }
+            const place = slicePlacement(at, written, height, viewportHeight);
+            if (!place) {
+                stoppedEarly = `the page stopped scrolling at y=${at} with ${written}px of ${height}px photographed`;
+                break;
+            }
+            const buffer = await step(`photographing slice ${i}`, () => page.screenshot());
+            const band = {top: place.top, bottom: place.top + place.height};
+            census.push(await step(`censusing slice ${i}`, () => page.evaluate(COLLECT_RECTS, band)));
+            parts.push({buffer, ...place});
+            written = place.top + place.height;
+        }
+    } finally {
+        // ON ITS OWN SHORT DEADLINE, not the capture's. This runs on the way out of a
+        // failure as well as a success, and the failure it most often follows is a page
+        // that stopped answering — which is exactly the page that would hang here and undo
+        // the whole point of having a budget.
+        await withDeadline(page.evaluate(RESTORE_HIDDEN), CLEANUP_MS, 'putting hidden elements back')
+            .catch(() => {});
+    }
+
+    return {
+        png: await stitchSlices(parts, width, written),
+        rects: unionRects(census),
+        slices: parts.length,
+        height: written,
+        stoppedEarly,
+    };
+}
+
 export async function capturePage(url, outDir, opts = {}) {
     const maxScrolls = opts.maxScrolls ?? 40;
+    const settleMs = opts.sliceSettleMs ?? SLICE_SETTLE_MS;
+    const clock = budget(opts.budgetMs ?? CAPTURE_BUDGET_MS);
     mkdirSync(outDir, {recursive: true});
 
     const browser = await chromium.launch();
@@ -140,6 +558,12 @@ export async function capturePage(url, outDir, opts = {}) {
             reducedMotion: 'reduce',
         });
         const page = await context.newPage();
+        // EVERY IN-PAGE STEP IS BOUNDED. Playwright puts no timeout on evaluate or on
+        // screenshot, and a page that never returned from one of them held a capture for
+        // fourteen minutes. The budget is the whole capture's, so a single stuck step
+        // spends what is left of it and then fails like the 403 does: exit 1, a clear
+        // message, no artefacts.
+        const step = (what, start) => withDeadline(start(), clock.check(what), what);
         // Before the page's own scripts, so a hero that asks for a context on first
         // evaluation is still recorded.
         await page.addInitScript(WEBGL_PROBE_INIT);
@@ -152,42 +576,119 @@ export async function capturePage(url, outDir, opts = {}) {
         //
         // `goto` returns null for a same-document navigation, where there is no response
         // to read. That is not a failure and must not be reported as one.
-        const response = await page.goto(url, {waitUntil: 'load', timeout: 45000});
+        const response = await page.goto(url, {
+            waitUntil: 'load',
+            timeout: Math.min(45000, clock.check('the page to load')),
+        });
         const httpStatus = response ? response.status() : null;
-        await page.waitForLoadState('networkidle', {timeout: 20000}).catch(() => {});
+        await page.waitForLoadState('networkidle', {
+            timeout: Math.min(20000, clock.check('the network to go quiet')),
+        }).catch(() => {});
 
-        const consent = await dismissConsent(page);
+        const consent = await step('dismissing a consent banner', () => dismissConsent(page));
+
+        // SMOOTH SCROLLING IS A SOURCE OF VARIANCE, and this pass scrolls a great deal. A
+        // page with `scroll-behavior: smooth` animates every scrollTo below, so a shot can
+        // land part way through one. Not fatal if the page refuses the style — a CSP can —
+        // but worth having wherever it is allowed.
+        await page.addStyleTag({content: 'html,body{scroll-behavior:auto !important}'}).catch(() => {});
 
         // Step down a viewport at a time so lazy images and in-view animations fire.
         let scrolls = 0;
         let previousHeight = -1;
         for (; scrolls < maxScrolls; scrolls++) {
-            const height = await page.evaluate(PAGE_HEIGHT);
-            const atBottom = await page.evaluate(
+            const height = await step('measuring the page height', () => page.evaluate(PAGE_HEIGHT));
+            const atBottom = await step('checking for the bottom of the page', () => page.evaluate(
                 (h) => window.scrollY + window.innerHeight >= h - 2,
                 height,
-            );
+            ));
             if (atBottom && height === previousHeight) break;
             previousHeight = height;
-            await page.evaluate(() => window.scrollBy(0, window.innerHeight));
+            await step('scrolling down a viewport', () => page.evaluate(() => window.scrollBy(0, window.innerHeight)));
             await page.waitForTimeout(400);
         }
         const scrollCapHit = scrolls >= maxScrolls;
 
         // AT THE BOTTOM, before scrolling back: a reveal footer is only in its resting
         // place once the content has travelled over it.
-        const fixed = await page.evaluate(COLLECT_FIXED);
+        const fixed = await step('collecting fixed elements', () => page.evaluate(COLLECT_FIXED));
 
-        await page.evaluate(() => window.scrollTo(0, 0));
+        await step('scrolling back to the top', () => page.evaluate(() => window.scrollTo(0, 0)));
         await page.waitForTimeout(400);
 
-        await page.screenshot({path: join(outDir, 'viewport.png')});
-        const shot = await page.screenshot({path: join(outDir, 'fullpage.png'), fullPage: true});
+        await step('photographing the viewport', () => page.screenshot({path: join(outDir, 'viewport.png')}));
 
-        const rects = await page.evaluate(COLLECT_RECTS);
-        const fullHeight = await page.evaluate(PAGE_HEIGHT);
+        // The height the slicing is planned against, taken once and at the top. See
+        // slicedScreenshot for what a page that grows after this costs.
+        const plannedHeight = await step('measuring the page for slicing', () => page.evaluate(PAGE_HEIGHT));
+        const pageWidth = await step('measuring the page width', () => page.evaluate(PAGE_WIDTH));
+        // No further than the scroll pass above was willing to go: content below the
+        // fortieth viewport was never given the chance to load, so photographing it would
+        // be photographing a region this capture never woke up. `scrollCapHit` already
+        // declares that the page ran past the end of the pass.
+        const maxSlices = opts.maxSlices ?? maxScrolls + 1;
+
+        let shot;
+        let rects = null;
+        const capture = {
+            mode: 'stitched',
+            slices: 0,
+            viewportHeight: VIEWPORT.height,
+            plannedHeight,
+            pageWidth,
+            rects: 0,
+            rectsAtTop: 0,
+            stoppedEarly: null,
+            fallbackReason: null,
+        };
+        try {
+            const sliced = await slicedScreenshot(page, {
+                width: VIEWPORT.width,
+                height: plannedHeight,
+                viewportHeight: VIEWPORT.height,
+                maxSlices,
+                settleMs,
+                step,
+            });
+            shot = sliced.png;
+            rects = sliced.rects;
+            capture.slices = sliced.slices;
+            capture.stoppedEarly = sliced.stoppedEarly;
+        } catch (e) {
+            // THE OLD BEHAVIOUR IS STILL AVAILABLE, and it is a reasonable image; it is
+            // simply the one taken from the top, with everything that costs. Recorded in
+            // meta so the difference is visible to everything downstream rather than being
+            // a silently worse capture that looks identical.
+            capture.mode = 'fullpage';
+            capture.fallbackReason = e.message;
+            await withDeadline(
+                page.evaluate(() => window.scrollTo(0, 0)),
+                CLEANUP_MS,
+                'getting back to the top for the fallback shot',
+            ).catch(() => {});
+            await page.waitForTimeout(400);
+            shot = await step('photographing the whole page in one shot', () => page.screenshot({fullPage: true}));
+        }
+        writeFileSync(join(outDir, 'fullpage.png'), shot);
+
+        // BACK TO THE TOP BEFORE ANYTHING ELSE IS MEASURED, because that is the coordinate
+        // space every consumer of rects.json assumes: a `position: fixed` element reports
+        // its viewport box, and measuring at the bottom of the slice pass would place all
+        // of them a page-height away from where the image has them.
+        await step('scrolling back to the top', () => page.evaluate(() => window.scrollTo(0, 0)));
+        await page.waitForTimeout(400);
+
+        // THE CENSUS THE OLD CAPTURE WOULD HAVE TAKEN, kept as a number rather than a
+        // list. It is what makes the banded census's gain visible per page instead of
+        // being a claim in a commit message — and on the fallback path it is the census.
+        const topRects = await step('collecting DOM rects', () => page.evaluate(COLLECT_RECTS, null));
+        capture.rectsAtTop = topRects.length;
+        if (!rects) rects = topRects;
+        capture.rects = rects.length;
+
+        const fullHeight = await step('measuring the final page height', () => page.evaluate(PAGE_HEIGHT));
         const image = pngSize(shot);
-        const webgl = await probeWebgl(page);
+        const webgl = await step('probing WebGL', () => probeWebgl(page));
 
         const meta = {
             url,
@@ -200,6 +701,7 @@ export async function capturePage(url, outDir, opts = {}) {
             viewport: VIEWPORT,
             fullHeight,
             image,
+            capture,
             httpStatus,
             consentDismissed: consent.dismissed,
             consentBannerSeen: consent.bannerSeen === true,

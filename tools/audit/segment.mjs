@@ -35,7 +35,7 @@ import {assertPartition, leaves, totalArea} from './lib/blocks.mjs';
 import {anyUnmeasured, noteCodes, runNotes} from './lib/notes.mjs';
 import {printable} from './lib/printable.mjs';
 import {loadRects} from './lib/rects.mjs';
-import {blankRegions, inkPrefix, pixelsFromPng, unpaintedBlocks} from './lib/painted.mjs';
+import {blankRegions, inkPrefix, pixelsFromPng, transparentBlocks, unpaintedBlocks} from './lib/painted.mjs';
 
 const outDir = process.argv[2];
 const depthArg = process.argv.find((a) => a.startsWith('--depth='));
@@ -145,12 +145,18 @@ try {
     // phase 2 holds both. See lib/painted.mjs.
     let unpainted = null;
     let blank = null;
+    let transparent = null;
     if (rects) {
         const raw = await pixelsFromPng(png);
         const measured = inkPrefix(raw.pixels, raw.width, raw.height);
         unpainted = unpaintedBlocks(measured, ls, rects);
+        // The same missing pixels with a cause attached: content that was still behind an
+        // `opacity: 0` ancestor when phase 1 censused it. Split out of the contradiction
+        // above because "we arrived before the reveal" and "this never rendered" are
+        // different answers and only one of them is the page's fault.
+        transparent = transparentBlocks(measured, ls, rects);
         // The other half of the same measurement: a region with nothing painted AND
-        // nothing in the DOM is not a contradiction, so the check above cannot see it —
+        // nothing in the DOM is not a contradiction, so the checks above cannot see it —
         // and alchemy.je gives half its page to one.
         blank = blankRegions(measured, ls);
     }
@@ -158,7 +164,7 @@ try {
     // how it was captured — an error page served as a success, and DOM content that
     // never made it into the pixels. Both are in lib/, because the Craft job imports
     // lib/ and not this CLI.
-    const notes = runNotes(meta, metaReason, rects ?? null, unpainted, blank);
+    const notes = runNotes(meta, metaReason, rects ?? null, unpainted, blank, transparent);
 
     // AN ERROR PAGE IS NOT A WEAKER MEASUREMENT, IT IS A MEASUREMENT OF SOMETHING ELSE.
     // Every other condition here describes a page we can still honestly report on, with

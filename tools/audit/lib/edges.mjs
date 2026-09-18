@@ -127,18 +127,23 @@ export function hysteresis(mag, width, height, low = CANNY_LOW, high = CANNY_HIG
 /**
  * The tallest image this will decode, in pixels.
  *
- * CHROMIUM CANNOT PRODUCE A FULL-PAGE SCREENSHOT TALLER THAN THIS — 16,384 is its
- * texture-size ceiling, and the reason shotTruncationWarning exists at all — so an
- * image above the cap did not come out of phase 1. Phase 2 accepts a PNG from anywhere,
- * which is the whole point of the pixel-only path, and nothing else in either phase caps
- * a page's height.
+ * IT IS A MEMORY BUDGET, AND NOTHING ELSE. It used to be justified as a provenance check
+ * too — 16,384 is Chromium's texture ceiling, so a taller PNG "did not come out of phase
+ * 1" — and that has been false twice over. Phase 1 would happily write a 24,746px file for
+ * a page that tall, with everything below 16,384 blank; and now that it photographs the
+ * page a viewport at a time and stitches the slices, a 24,746px file is a taller page
+ * FULLY PAINTED. Neither is a reason to refuse it. Running out of memory is.
  *
- * The number is a memory budget as much as a provenance check. This function holds
- * roughly 18 bytes per pixel at once — raw RGB, grey, mag, dir, thin, edges and the
- * hysteresis stack — so 1440 x 16,384 is about 425MB, which is survivable. A 60,000px
- * page would be 1.5GB, and a queue worker taking URLs from strangers should decline that
- * in a sentence rather than discover it as an OOM. Width is not capped here because
- * sharp already refuses more than 268M pixels by default.
+ * This function holds roughly 18 bytes per pixel at once — raw RGB, grey, mag, dir, thin,
+ * edges and the hysteresis stack — so 1440 x 16,384 is about 425MB, which is survivable. A
+ * 60,000px page would be 1.5GB, and a queue worker taking URLs from strangers should
+ * decline that in a sentence rather than discover it as an OOM. Width is not capped here
+ * because sharp already refuses more than 268M pixels by default.
+ *
+ * The consequence worth knowing: a page taller than this is captured correctly and NOT
+ * segmented. That is one honest refusal rather than a confident percentage of a prefix,
+ * but it is a refusal, and raising the number is a deliberate decision about how much
+ * memory one audit may take.
  */
 export const MAX_IMAGE_HEIGHT = 16384;
 
@@ -151,16 +156,17 @@ export async function edgeMapFromPng(path) {
     // mean allocating the very hundreds of megabytes the cap exists to avoid.
     const {width: declaredWidth, height: declaredHeight} = await sharp(path).metadata();
     if (declaredHeight > MAX_IMAGE_HEIGHT) {
-        // NOT "so this did not come from a capture", which this message used to claim and
-        // which is false: phase 1 will happily write a 24,746px PNG for a page that tall.
-        // Chromium stops PAINTING at 16384 and pads the rest with background, so such a
-        // file is the right height and blank below the limit — visionarygrid.studio came
-        // through with 34% of its height white and its DOM rects intact underneath.
+        // THE MESSAGE SAYS WHAT THE LIMIT IS, not what it guesses about the file. It used
+        // to claim "this did not come from a capture", and then "everything below is blank
+        // background" — the first was never true and the second stopped being true when
+        // phase 1 started stitching viewport shots. Whatever is in the image, this
+        // function cannot hold it.
         throw new Error(`this image is ${declaredHeight}px tall and the limit is ${MAX_IMAGE_HEIGHT}px. `
-            + 'Chromium stops painting there, so everything below is blank background rather than '
-            + 'the page — segmenting it would measure that emptiness as real. Capture warns about '
-            + 'this too. Crop it, or raise MAX_IMAGE_HEIGHT in lib/edges.mjs deliberately — '
-            + `segmenting it needs about ${Math.round(declaredHeight * declaredWidth * BYTES_PER_PIXEL / 1e6)}MB`);
+            + `Segmenting it needs about ${Math.round(declaredHeight * declaredWidth * BYTES_PER_PIXEL / 1e6)}MB `
+            + 'of arrays held at once, which is the budget one audit is allowed. Crop it, or raise '
+            + 'MAX_IMAGE_HEIGHT in lib/edges.mjs deliberately. Nothing is claimed here about whether '
+            + 'the image is any good: a stitched capture of a page this tall is fully painted, and '
+            + 'meta.capture says which path took it');
     }
 
     const {data, info} = await sharp(path).removeAlpha().raw().toBuffer({resolveWithObject: true});

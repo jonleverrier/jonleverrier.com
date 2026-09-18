@@ -21,7 +21,7 @@ import {tmpdir} from 'node:os';
 import sharp from 'sharp';
 import {
     inkPrefix, inkFraction, inkCount, contentRects, unpaintedBlocks, unpaintedWarning, UNPAINTED,
-    blankRegions, blankRegionWarning, BLANK_REGION,
+    blankRegions, blankRegionWarning, BLANK_REGION, transparentBlocks, transparentWarning,
 } from '../lib/painted.mjs';
 import {edgeMapFromPng} from '../lib/edges.mjs';
 import {segmentTall} from '../lib/xycut.mjs';
@@ -201,6 +201,97 @@ for (const fixture of ['jonleverrier', 'retail']) {
         assert.deepEqual(unpaintedBlocks(measured, ls, rects), [], 'a correctly rendered page is never flagged');
     });
 }
+
+/* --------------------------------- content that was behind a transparent ancestor */
+
+/**
+ * THE TWO THINGS THAT USED TO BE ONE. A rect with no ink under it can mean the page
+ * failed to render it, or it can mean the capture looked while an `opacity: 0` ancestor
+ * still had it. Phase 1 now walks the ancestor chain and flags the second, and these say
+ * that the flag changes the answer rather than merely being written down.
+ */
+test('blank elements behind a transparent ancestor are not counted as a failure to render', () => {
+    const rects = elements(20, 10).map((r) => ({...r, transparentAncestor: true}));
+    const measured = page(painted(WIDTH, HEIGHT, [255, 255, 255]));
+
+    assert.deepEqual(
+        unpaintedBlocks(measured, [WHOLE], rects),
+        [],
+        'every blank here is accounted for, so there is no contradiction left',
+    );
+});
+
+test('they are reported as what they are instead, and nothing is lost', () => {
+    const rects = elements(20, 10).map((r) => ({...r, transparentAncestor: true}));
+    const found = transparentBlocks(page(painted(WIDTH, HEIGHT, [255, 255, 255])), [WHOLE], rects);
+
+    assert.equal(found.length, 1);
+    assert.equal(found[0].domRects, 20);
+    assert.equal(found[0].transparentRects, 20);
+    assert.match(transparentWarning(found), /behind a transparent ancestor/);
+});
+
+test('a flagged element WITH pixels under it is a reveal the capture caught, and says nothing', () => {
+    // The slice pass photographs each band while it is on screen, so most of what was
+    // once transparent is painted by the time its band is taken. A flag over ink is a
+    // capture that lost nothing, and a detector that fired on it would fire on every
+    // scroll-reveal page there is.
+    const rects = elements(20, 10).map((r) => ({...r, transparentAncestor: true}));
+    const marks = rects.map((r) => ({x: r.x + 2, y: r.y + 2, w: 40, h: 12, colour: [0, 0, 0]}));
+    const measured = page(painted(WIDTH, HEIGHT, [255, 255, 255], marks));
+
+    assert.deepEqual(transparentBlocks(measured, [WHOLE], rects), []);
+    assert.deepEqual(unpaintedBlocks(measured, [WHOLE], rects), []);
+});
+
+test('one transparent container cannot carry a block over the contradiction threshold', () => {
+    // boondmanager.com had 89 elements inside a single `opacity: 0` container. Half a
+    // block being blank for that one reason is not 89 separate failures to render.
+    const stack = elements(16, 10);
+    const rects = stack.map((r, i) => (i < 8 ? r : {...r, transparentAncestor: true}));
+    const marks = stack.slice(0, 8).map((r) => ({x: r.x + 2, y: r.y + 2, w: 40, h: 12, colour: [0, 0, 0]}));
+    const measured = page(painted(WIDTH, HEIGHT, [255, 255, 255], marks));
+
+    assert.equal(contentRects(rects, WHOLE).length, 16, 'the block holds both halves');
+    assert.deepEqual(unpaintedBlocks(measured, [WHOLE], rects), [], '8 blank of 16 are all explained');
+    assert.equal(transparentBlocks(measured, [WHOLE], rects).length, 1, 'and the explanation is reported');
+});
+
+test('an unexplained blank is still a contradiction even beside explained ones', () => {
+    const rects = elements(20, 5).map((r, i) => (i < 12 ? r : {...r, transparentAncestor: true}));
+    const found = unpaintedBlocks(page(painted(WIDTH, HEIGHT, [255, 255, 255])), [WHOLE], rects);
+
+    assert.equal(found.length, 1);
+    assert.equal(found[0].blankRects, 20, 'every blank is recorded');
+    assert.equal(found[0].transparentRects, 8);
+    assert.equal(found[0].unexplainedRects, 12, 'and the twelve with no excuse are what it is flagged for');
+    assert.match(unpaintedWarning(found), /12 of 20 elements/);
+});
+
+test('with no rects, and with nothing flagged, this claims nothing', () => {
+    const measured = page(painted(WIDTH, HEIGHT, [255, 255, 255]));
+
+    assert.deepEqual(transparentBlocks(measured, [WHOLE], []), []);
+    assert.deepEqual(transparentBlocks(measured, [WHOLE], null), []);
+    assert.deepEqual(transparentBlocks(null, [WHOLE], elements(20, 10)), []);
+    assert.deepEqual(transparentBlocks(measured, [WHOLE], elements(20, 10)), [], 'an unflagged blank is not this');
+    assert.equal(transparentWarning([]), null);
+    assert.equal(transparentWarning(null), null);
+});
+
+test('the transparent note is its own condition, unmeasured, carrying its blocks', () => {
+    const meta = {url: 'https://a.com/', capturedUrl: 'https://a.com/', httpStatus: 200, fullHeight: 600,
+        image: {width: WIDTH, height: HEIGHT}, consentDismissed: true, scrollCapHit: false};
+    const rects = elements(20, 10).map((r) => ({...r, transparentAncestor: true}));
+    const found = transparentBlocks(page(painted(WIDTH, HEIGHT, [255, 255, 255])), [WHOLE], rects);
+    const notes = runNotes(meta, 'missing', null, null, null, found);
+
+    assert.ok('contentTransparent' in notes.conditions);
+    assert.equal(notes.conditions.contentTransparent.effect, 'unmeasured');
+    assert.deepEqual(notes.conditions.contentTransparent.facts.blocks, found);
+    assert.equal('contentNotPainted' in notes.conditions, false, 'and it is NOT the other one');
+    assert.equal('contentTransparent' in runNotes(meta).conditions, false, 'and it needs the measurement');
+});
 
 test('the note is unmeasured and carries the blocks', () => {
     const meta = {url: 'https://a.com/', capturedUrl: 'https://a.com/', httpStatus: 200, fullHeight: 600,

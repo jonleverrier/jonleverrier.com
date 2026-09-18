@@ -48,7 +48,7 @@ import {shotTruncationWarning, unrenderedWarning, paintLimitWarning, PAINT_LIMIT
 import {printable} from './printable.mjs';
 import {sameUrl} from './sameurl.mjs';
 import {errorPageEvidence, errorPageWarning} from './errorpage.mjs';
-import {blankRegionWarning, unpaintedWarning} from './painted.mjs';
+import {blankRegionWarning, transparentWarning, unpaintedWarning} from './painted.mjs';
 
 /**
  * What a condition does to the number, and therefore what a report must do about it.
@@ -68,13 +68,13 @@ export const EFFECTS = ['unmeasured', 'attribution', 'included', 'unknown'];
  * it was missing or unreadable, because "you never captured this" and "your capture
  * record is corrupt" are different problems with the same shape.
  *
- * `rects` is the same list phase 2 segments with; `unpainted` and `blank` are the two
- * results of lib/painted.mjs over the finished tree. All three are OPTIONAL for the same
- * reason rects are optional in the segmenter: a caller may have nothing but a PNG. The
- * conditions that need them simply do not fire, which is the honest answer — not a claim
- * that nothing was wrong.
+ * `rects` is the same list phase 2 segments with; `unpainted`, `blank` and `transparent`
+ * are the three results of lib/painted.mjs over the finished tree. All of them are
+ * OPTIONAL for the same reason rects are optional in the segmenter: a caller may have
+ * nothing but a PNG. The conditions that need them simply do not fire, which is the
+ * honest answer — not a claim that nothing was wrong.
  */
-export function runNotes(meta, reason = 'missing', rects = null, unpainted = null, blank = null) {
+export function runNotes(meta, reason = 'missing', rects = null, unpainted = null, blank = null, transparent = null) {
     const conditions = {};
     const add = (code, effect, message, facts = {}) => {
         conditions[code] = {effect, message, facts};
@@ -200,6 +200,18 @@ export function runNotes(meta, reason = 'missing', rects = null, unpainted = nul
     const unpaintedRegions = unpaintedWarning(unpainted);
     if (unpaintedRegions) {
         add('contentNotPainted', 'unmeasured', unpaintedRegions, {blocks: unpainted});
+    }
+
+    // THE SAME MISSING PIXELS WITH A CAUSE ATTACHED, and a separate code because it is a
+    // separate thing to do about it. `contentNotPainted` says content should have painted
+    // and did not; this says content was still behind an `opacity: 0` ancestor when the
+    // page was censused, which is a reveal the capture did not reach rather than a render
+    // that failed. Conflating them had one consequence in particular: 89 elements inside
+    // one transparent container on boondmanager.com could carry a block over the
+    // contradiction threshold on their own.
+    const stillTransparent = transparentWarning(transparent);
+    if (stillTransparent) {
+        add('contentTransparent', 'unmeasured', stillTransparent, {blocks: transparent});
     }
 
     // A REGION EMPTY IN BOTH RECORDS, which the check above cannot see by design: where
