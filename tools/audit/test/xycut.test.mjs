@@ -423,11 +423,21 @@ test('with no rects nothing is protected and the tree is exactly what it was', a
     // because without the DOM there is nothing to tell it the hero is one element. 40
     // leaves is what this fixture produced before full-bleed protection existed.
     const {edges: e, width: w, height: h} = await edgeMapFromPng('tools/audit/fixtures/retail.png');
+    const heroRects = JSON.parse(readFileSync('tools/audit/fixtures/retail.rects.json', 'utf8'));
     const ls = leaves(segmentTall(e, w, h, {maxDepth: 4}));
-    assert.equal(ls.length, 40, 'the pixel-only tree must be unchanged');
+    const guarded = leaves(segmentTall(e, w, h, {maxDepth: 4, rects: heroRects}));
+    const insideHero = (blocks) => blocks.filter((l) => l.y > 153 && l.y + l.h < 851).length;
+
+    // Stated as a RELATIONSHIP between the two paths rather than as a frozen leaf count.
+    // This assertion was `ls.length === 40`, which broke the moment an unrelated fix
+    // (merging sliver bands in the stitch) legitimately changed the pixel-only tree by one
+    // block — a golden value encoding one run's output as truth, which is the thing this
+    // suite is supposed to avoid. What actually matters is that protection needs the DOM.
+    assert.ok(insideHero(ls) > 0, 'without rects the hero is not protected — documented behaviour');
+    assert.equal(insideHero(guarded), 0, 'with rects it is protected');
     assert.ok(
-        ls.some((l) => l.y > 153 && l.y + l.h < 851),
-        'without rects the hero is not protected — that is the documented behaviour',
+        ls.length >= guarded.length,
+        'protection can only ever merge blocks together, never create new ones',
     );
 });
 

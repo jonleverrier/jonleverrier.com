@@ -424,6 +424,62 @@ function shiftRects(rects, dy) {
  * gutter dominates it, a plain `segment()` on that band is the right tool, and its
  * result — including whatever columns it finds — becomes the band's subtree.
  */
+/**
+ * The shortest a stitched band is allowed to be.
+ *
+ * Not `minSide`: this is a floor on the STITCH, which has different work to do from the
+ * splitter. Measured — at 8 the 11px band survives, and at 12 or more the merge starts
+ * taking real boundaries with it.
+ */
+export const BAND_MIN_HEIGHT = 16;
+
+/**
+ * Collapse cut lines that sit closer together than a band is allowed to be.
+ *
+ * `segment` refuses to make a child below `minSide`, but the stitch built its bands from
+ * the union of every tile's cut lines and checked only that the height was positive. Two
+ * overlapping tiles that disagree by a pixel therefore produced a 1px band — seen on a
+ * real page as `x=0 y=3978 w=1440 h=1`. Applying a floor here is not a new rule, it is an
+ * existing one reaching the one path that skipped it.
+ *
+ * WHICH OF THE PAIR TO KEEP IS THE WHOLE POINT, and keeping the earlier one is wrong. On
+ * switch.je the close pair was y=2517 (11px from any element) and y=2528 (exactly an
+ * element edge); dropping by position threw away the only true boundary of the two. So
+ * prefer the cut that lands on a real element edge, and fall back to the earlier one when
+ * neither does or both do.
+ *
+ * The page's own top edge is never displaced, and the bottom edge is not negotiable — if
+ * keeping it would leave a sliver, the cut before it is the one that goes.
+ */
+export function mergeNearbyCuts(ys, minBand, edgeSet = null) {
+    if (ys.length <= 2) {
+        return [...ys];
+    }
+
+    const onEdge = (y) => edgeSet !== null && edgeSet.has(y);
+
+    const kept = [ys[0]];
+    for (let i = 1; i < ys.length - 1; i++) {
+        const y = ys[i];
+        const previous = kept[kept.length - 1];
+        if (y - previous >= minBand) {
+            kept.push(y);
+            continue;
+        }
+        if (onEdge(y) && !onEdge(previous) && kept.length > 1) {
+            kept[kept.length - 1] = y;
+        }
+    }
+
+    const last = ys[ys.length - 1];
+    while (kept.length > 1 && last - kept[kept.length - 1] < minBand) {
+        kept.pop();
+    }
+    kept.push(last);
+
+    return kept;
+}
+
 export function segmentTall(edges, width, height, opts = {}) {
     if (height <= TILE_HEIGHT) {
         return segment(edges, width, height, opts);
@@ -449,7 +505,12 @@ export function segmentTall(edges, width, height, opts = {}) {
 
     // Overlapping tiles produce duplicate and partial rows. Rebuild one clean
     // vertical partition from the distinct horizontal cut lines they agree on.
-    const ys = [...cuts].filter((y) => y >= 0 && y <= height).sort((a, b) => a - b);
+    const sortedCuts = [...cuts].filter((y) => y >= 0 && y <= height).sort((a, b) => a - b);
+    const ys = mergeNearbyCuts(
+        sortedCuts,
+        opts.minBand ?? BAND_MIN_HEIGHT,
+        new Set(edgeCandidates(opts.rects, true)),
+    );
 
     const children = [];
     for (let i = 0; i < ys.length - 1; i++) {
