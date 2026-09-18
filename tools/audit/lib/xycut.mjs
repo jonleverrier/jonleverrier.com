@@ -709,10 +709,20 @@ export function segment(edges, width, height, opts = {}) {
             // measured and is not needed: with the seam rule in place both fixtures,
             // kohde and HSBC are identical either way, and the narrower reading on its own
             // moved jonleverrier to 11 leaves and retail to 24 with a cut 4px out.
+            // AND THE MODULE HAS TO BE HERE. A coordinate on its own has no position on
+            // the other axis, so matching one anywhere on the page licensed a cut
+            // anywhere on that line. tpagency.com is the case that found it: a 288x288
+            // card in the hero at y=746 has its left edge at x=408, and that waived the
+            // size floor for a vertical cut at x=408 down inside a pinned panel 1,500px
+            // below it, producing 38px-wide slivers of black. On any page with a card
+            // grid, every card's left and right edge became a licensed cut line for the
+            // whole page.
             const absolute = (horizontal ? rect.y : rect.x) + at;
             const onModuleEdge = keepWhole.some((m) => (horizontal
-                ? absolute === m.y || absolute === m.y + m.h
-                : absolute === m.x || absolute === m.x + m.w));
+                ? (absolute === m.y || absolute === m.y + m.h)
+                    && m.x < rect.x + rect.w && rect.x < m.x + m.w
+                : (absolute === m.x || absolute === m.x + m.w)
+                    && m.y < rect.y + rect.h && rect.y < m.y + m.h));
 
             if (!onModuleEdge && (tooSmall(a) || tooSmall(b))) continue;
 
