@@ -20,14 +20,22 @@ export async function load(url, context, nextLoad) {
         return {
             format: 'module',
             shortCircuit: true,
-            // Two full-width children, the first one pixel too tall. Their areas do not
-            // sum to the parent's and they overlap on one row — the two separate things
-            // assertPartition checks.
+            // AN OVERLAP THAT A GAP PAYS FOR. The first child is a row too tall and the
+            // second a row too short, so the two children overlap on row `half`, leave
+            // the last row of the parent uncovered, and their areas sum to EXACTLY the
+            // parent's.
+            //
+            // That arithmetic is the whole point. An earlier version of this mutant
+            // overlapped without compensating, so the cheap leaf-area total caught it
+            // and the gate passed its test with `assertPartition` deleted — the strong
+            // check was the thing being defended and the only thing not being tested.
+            // This shape is invisible to any area comparison and is caught solely by
+            // assertPartition's pairwise overlap test.
             source: 'export function segmentTall(edges, width, height) {'
                 + ' const half = Math.floor(height / 2);'
                 + ' return {x: 0, y: 0, w: width, h: height, depth: 0, children: ['
                 + '  {x: 0, y: 0, w: width, h: half + 1, depth: 1, children: []},'
-                + '  {x: 0, y: half, w: width, h: height - half, depth: 1, children: []},'
+                + '  {x: 0, y: half, w: width, h: height - half - 1, depth: 1, children: []},'
                 + ']};'
                 + '}',
         };
