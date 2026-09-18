@@ -191,6 +191,7 @@ export async function capturePage(url, outDir, opts = {}) {
             fullHeight,
             image,
             consentDismissed: consent.dismissed,
+            consentBannerSeen: consent.bannerSeen === true,
             consentVia: consent.via,
             consentNavigatedAway: consent.navigatedAway === true,
             scrollCapHit,

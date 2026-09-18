@@ -453,26 +453,86 @@ async function restore(page, url) {
 }
 
 /**
+ * Consent wording, for telling a banner apart from any other positioned element.
+ *
+ * Deliberately about the SUBJECT, not the buttons: a banner always says what it is about,
+ * whatever its accept control happens to be labelled, and a sticky header or a chat
+ * widget never does. Matching on accept wording instead would fire on every "I agree"
+ * checkbox on the page.
+ */
+export const CONSENT_SUBJECT = new RegExp(
+    [
+        'cookie', 'consent', 'gdpr', 'privacy', 'tracking',
+        'datenschutz', 'zustimmung', // German
+        'confidentialit', 'témoins', // French
+        'privacidad', 'consentimiento', // Spanish
+        'privacy', 'informativa', // Italian
+        'クッキー', '同意', 'プライバシー', // Japanese
+        '쿠키', '개인정보', // Korean
+        'cookies', 'integritet', // Scandinavian
+    ].join('|'),
+    'i',
+);
+
+/** How much text to read from a candidate before deciding. A banner says it early. */
+const SUBJECT_SAMPLE = 400;
+
+/**
+ * Is there a consent banner on this page at all? Runs IN the page.
+ *
+ * Banner-shaped AND about consent. Shape alone is far too common — sticky headers, chat
+ * bubbles, back-to-top chips are all fixed — and wording alone matches any page with a
+ * privacy link in its footer.
+ */
+export const FIND_BANNER = (subjectSource) => {
+    const subject = new RegExp(subjectSource, 'i');
+    for (const el of document.querySelectorAll('div, section, aside, dialog, form')) {
+        const cs = getComputedStyle(el);
+        const positioned = cs.position === 'fixed' || cs.position === 'sticky';
+        const role = el.getAttribute('role');
+        if (!positioned && role !== 'dialog' && role !== 'alertdialog' && el.ariaModal !== 'true') continue;
+        if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 100 || r.height < 30) continue;
+        if (subject.test((el.textContent || '').slice(0, 400))) return true;
+    }
+
+    return false;
+};
+
+/**
  * Dismiss the banner if we can recognise it.
  *
  * Searches the main frame and every child frame, because several platforms render the
  * banner inside an iframe where a page-level query cannot see it.
  *
- * Returns `{dismissed, via, navigatedAway}` — `via` being the selector pass, the text that
- * was clicked, or null. That is recorded in meta.json: a capture where the banner was
- * dismissed by a loose text match is a capture worth looking at twice.
+ * Returns `{dismissed, via, navigatedAway, bannerSeen}` — `via` being the selector pass,
+ * the text that was clicked, or null. That is recorded in meta.json: a capture where the
+ * banner was dismissed by a loose text match is a capture worth looking at twice.
  *
  * `navigatedAway` means a click moved the page and was undone. It is NOT a dismissal and
  * never reports as one; the capture goes on with the banner still there, which is a page
  * we can honestly measure, unlike a different page entirely.
+ *
+ * `bannerSeen` EXISTS BECAUSE `dismissed: false` MEANT TWO DIFFERENT THINGS. "There was a
+ * wall and we could not get past it" and "this page has no cookie banner" were recorded
+ * identically, so the report warned that the measurement was "largely a measurement of
+ * the wall" on liquidlight.co.uk and vaiie.com, neither of which has a banner at all — on
+ * most of the web, in other words. A warning that fires on the ordinary case teaches its
+ * reader to skip the one that matters.
  */
 export async function dismissConsent(page, timeoutMs = 2000) {
     const requested = page.url();
     const frames = [page, ...page.frames().filter((f) => f !== page.mainFrame())];
+
+    // ASKED FIRST, while the banner is still up. Afterwards a dismissed banner is gone
+    // and the question cannot be answered at all.
+    const bannerSeen = await lookForBanner(frames);
+
     const undo = async () => {
         const restored = await restore(page, requested);
 
-        return {dismissed: false, via: null, navigatedAway: true, restored};
+        return {dismissed: false, via: null, navigatedAway: true, restored, bannerSeen};
     };
 
     for (const frame of frames) {
@@ -481,7 +541,9 @@ export async function dismissConsent(page, timeoutMs = 2000) {
             return await undo();
         }
         if (outcome === 'dismissed') {
-            return {dismissed: true, via: 'vendor selector', navigatedAway: false};
+            // A vendor selector matching IS a banner, whatever the shape-and-wording test
+            // made of it.
+            return {dismissed: true, via: 'vendor selector', navigatedAway: false, bannerSeen: true};
         }
     }
 
@@ -493,9 +555,24 @@ export async function dismissConsent(page, timeoutMs = 2000) {
         }
         if (outcome === 'dismissed') {
             // printable: this label is the page's text, and it ends up on a terminal.
-            return {dismissed: true, via: `text "${printable(label, 60)}"`, navigatedAway: false};
+            return {dismissed: true, via: `text "${printable(label, 60)}"`, navigatedAway: false, bannerSeen: true};
         }
     }
 
-    return {dismissed: false, via: null, navigatedAway: false};
+    return {dismissed: false, via: null, navigatedAway: false, bannerSeen};
+}
+
+/** Any frame showing something banner-shaped and about consent. Never throws. */
+async function lookForBanner(frames) {
+    for (const frame of frames) {
+        try {
+            if (await frame.evaluate(FIND_BANNER, CONSENT_SUBJECT.source)) {
+                return true;
+            }
+        } catch {
+            // Frame went away, or is cross-origin and unreadable. Try the next.
+        }
+    }
+
+    return false;
 }

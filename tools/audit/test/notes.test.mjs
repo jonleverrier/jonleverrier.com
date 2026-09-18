@@ -72,7 +72,7 @@ test('the scroll cap reaches the notes, having reached no warning function befor
 test('a banner that was not dismissed reaches the notes, and is not called unmeasured', () => {
     // It IS in the measurement, which is the right answer — a consent wall is real
     // surface area. The note exists so the number can be explained, not discounted.
-    const notes = runNotes(clean({consentDismissed: false, consentNavigatedAway: true, consentVia: null}));
+    const notes = runNotes(clean({consentDismissed: false, consentBannerSeen: true, consentNavigatedAway: true, consentVia: null}));
     assert.equal(notes.conditions.consentNotDismissed.effect, 'included');
     assert.equal(notes.conditions.consentNotDismissed.facts.navigatedAway, true);
     assert.equal(anyUnmeasured(notes), false, 'nothing is missing from the image');
@@ -109,6 +109,7 @@ test('every condition declares an effect from the closed set', () => {
         capturedUrl: 'https://elsewhere.example/',
         scrollCapHit: true,
         consentDismissed: false,
+        consentBannerSeen: true,
         image: {width: 1440, height: 1200},
         webgl: {renderer: 'SwiftShader', software: true, requested: ['webgl'], draws: 0, blind: true},
         heightGap: {contentBottom: 1200, gap: 800, fraction: 0.4, significant: true, likelyCause: {tag: 'footer', w: 1440, h: 700}},
@@ -147,4 +148,27 @@ test('conditions are keyed by code, so a code cannot appear twice', () => {
     const notes = runNotes(clean({scrollCapHit: true}));
     assert.equal(Object.keys(notes.conditions).length, new Set(Object.keys(notes.conditions)).size);
     assert.ok('scrollCapHit' in notes.conditions, 'membership is the cheap question this shape answers');
+});
+
+// THE FALSE ALARM THIS DISTINCTION EXISTS FOR. `consentDismissed: false` used to mean
+// both "there was a wall we could not get past" and "this page has no cookie banner", so
+// the note fired on liquidlight.co.uk and vaiie.com — neither of which has one —
+// announcing that their measurements were "largely a measurement of the wall". On most of
+// the web, in other words.
+test('a page with no banner at all raises no consent note', () => {
+    const notes = runNotes(clean({consentDismissed: false, consentBannerSeen: false}));
+    assert.equal('consentNotDismissed' in notes.conditions, false);
+});
+
+test('a banner that was found and left standing still raises one', () => {
+    const notes = runNotes(clean({consentDismissed: false, consentBannerSeen: true}));
+    assert.equal(notes.conditions.consentNotDismissed.effect, 'included');
+    assert.match(notes.conditions.consentNotDismissed.message, /found and not dismissed/);
+});
+
+// An older capture has no such field, and must not start claiming a wall that was never
+// recorded either way.
+test('a capture predating the field raises no consent note', () => {
+    const notes = runNotes(clean({consentDismissed: false}));
+    assert.equal('consentNotDismissed' in notes.conditions, false);
 });

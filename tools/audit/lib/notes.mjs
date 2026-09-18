@@ -131,12 +131,18 @@ export function runNotes(meta, reason = 'missing') {
         );
     }
 
-    if (meta.consentDismissed === false) {
+    // ONLY WHEN A BANNER WAS ACTUALLY THERE. `consentDismissed: false` used to mean both
+    // "there was a wall and we could not get past it" and "this page has no cookie
+    // banner", so this note fired on liquidlight.co.uk and vaiie.com — neither of which
+    // has one — announcing that their measurements were "largely a measurement of the
+    // wall". On most of the web, in other words. A warning that fires on the ordinary
+    // case teaches its reader to skip the one that matters.
+    if (meta.consentDismissed === false && meta.consentBannerSeen === true) {
         add(
             'consentNotDismissed',
             'included',
-            'the consent banner was not dismissed, so it is part of what was measured. That is the '
-                + 'right answer — it is real surface area — but a full-screen wall means this is '
+            'a consent banner was found and not dismissed, so it is part of what was measured. That is '
+                + 'the right answer — it is real surface area — but a full-screen wall means this is '
                 + 'largely a measurement of the wall'
                 + (meta.consentNavigatedAway === true ? ', and a consent click moved the page and was undone' : ''),
             {navigatedAway: meta.consentNavigatedAway === true, via: meta.consentVia ?? null},

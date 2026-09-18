@@ -44,7 +44,12 @@ try {
     console.log(`captured     ${printable(meta.capturedUrl)}${sameUrl(meta.capturedUrl, meta.url) ? '' : '   <-- NOT THE URL REQUESTED'}`);
     console.log(`full height  ${meta.fullHeight}px`);
     console.log(`image        ${meta.image.width}x${meta.image.height}`);
-    console.log(`consent      ${meta.consentDismissed ? `dismissed via ${printable(meta.consentVia)}` : 'not dismissed (counts as surface area)'}${meta.consentNavigatedAway ? ' — a consent click navigated away and was undone' : ''}`);
+    // "no banner found" and "a banner we could not dismiss" are different outcomes, and
+    // saying the same thing for both is what made this line noise on most of the web.
+    const consentState = meta.consentDismissed
+        ? `dismissed via ${printable(meta.consentVia)}`
+        : (meta.consentBannerSeen ? 'BANNER FOUND, not dismissed (counts as surface area)' : 'no banner found');
+    console.log(`consent      ${consentState}${meta.consentNavigatedAway ? ' — a consent click navigated away and was undone' : ''}`);
     console.log(`scroll cap   ${meta.scrollCapHit ? 'HIT — page may be infinite-scroll' : 'not hit'}`);
     console.log(`webgl        ${printable(meta.webgl.renderer || 'none', RENDERER_MAX)}${meta.webgl.software === true ? ' (software)' : ''}`);
     console.log(`webgl asked  ${meta.webgl.requested.length ? printable(meta.webgl.requested.join(", "), RENDERER_MAX) : "no"}`);
