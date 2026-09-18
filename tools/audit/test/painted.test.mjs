@@ -21,6 +21,7 @@ import {tmpdir} from 'node:os';
 import sharp from 'sharp';
 import {
     inkPrefix, inkFraction, inkCount, contentRects, unpaintedBlocks, unpaintedWarning, UNPAINTED,
+    blankRegions, blankRegionWarning, BLANK_REGION,
 } from '../lib/painted.mjs';
 import {edgeMapFromPng} from '../lib/edges.mjs';
 import {segmentTall} from '../lib/xycut.mjs';
@@ -246,4 +247,71 @@ test('the CLI writes the condition into blocks.json', async () => {
     assert.equal(condition.effect, 'unmeasured');
     assert.ok(condition.facts.blocks.length >= 1);
     assert.ok(condition.facts.blocks.every((b) => b.blankRects >= UNPAINTED.minRects));
+});
+
+// ---------------------------------------------------------------------------
+// A REGION EMPTY IN BOTH RECORDS. alchemy.je gives 49% of its page to a black void with a
+// "Scroll" indicator in it, and tpagency.com 45%; the DOM says nothing is there either,
+// so there is no contradiction to find and both pages came through with `notes none`.
+// ---------------------------------------------------------------------------
+
+test('a void across half the page is flagged even with no DOM content', () => {
+    const height = 4000;
+    const measured = page(painted(WIDTH, height, [0, 0, 0]));
+    const block = {x: 0, y: 0, w: WIDTH, h: Math.round(height * 0.5)};
+    const found = blankRegions(measured, [block]);
+
+    assert.equal(found.length, 1);
+    assert.equal(found[0].ink, 0);
+    assert.ok(found[0].share >= BLANK_REGION.minShare);
+    assert.match(blankRegionWarning(found), /nothing painted/);
+    assert.deepEqual(unpaintedBlocks(measured, [block], []), [], 'and the contradiction rule stays quiet');
+});
+
+// The size gate is the one carrying this rule: a small band of flat colour is ordinary
+// design, and every page measured has several.
+test('a small empty band is ordinary design', () => {
+    const height = 4000;
+    const measured = page(painted(WIDTH, height, [250, 250, 250]));
+    const band = {x: 0, y: 100, w: WIDTH, h: Math.round(height * BLANK_REGION.minShare) - 100};
+
+    assert.deepEqual(blankRegions(measured, [band]), []);
+});
+
+// Not a full-width strip: that would be the background of the rows it covers, which is
+// the whole point of measuring per row — see "a second background band" above.
+test('a large block with something painted in it is not a void', () => {
+    const height = 4000;
+    const marks = [{x: 100, y: 500, w: 200, h: 100, colour: [255, 255, 255]}];
+    const measured = page(painted(WIDTH, height, [0, 0, 0], marks));
+    const block = {x: 0, y: 0, w: WIDTH, h: Math.round(height * 0.5)};
+
+    assert.ok(inkFraction(measured, block) > BLANK_REGION.maxInk, 'the mark has to be enough ink to matter');
+    assert.deepEqual(blankRegions(measured, [block]), []);
+});
+
+for (const fixture of ['jonleverrier', 'retail']) {
+    test(`the ${fixture} fixture has no blank region`, async () => {
+        const png = `tools/audit/fixtures/${fixture}.png`;
+        const {rects} = loadRects(`tools/audit/fixtures/${fixture}.rects.json`);
+        const {edges, width, height} = await edgeMapFromPng(png);
+        const ls = leaves(segmentTall(edges, width, height, {maxDepth: 4, rects}));
+        const raw = await sharp(png).removeAlpha().raw().toBuffer({resolveWithObject: true});
+        const measured = inkPrefix(raw.data, raw.info.width, raw.info.height);
+
+        assert.deepEqual(blankRegions(measured, ls), []);
+    });
+}
+
+test('the void note is unmeasured and carries the blocks', () => {
+    const meta = {url: 'https://a.com/', capturedUrl: 'https://a.com/', httpStatus: 200, fullHeight: 4000,
+        image: {width: WIDTH, height: 4000}, consentDismissed: true, scrollCapHit: false};
+    const measured = page(painted(WIDTH, 4000, [0, 0, 0]));
+    const found = blankRegions(measured, [{x: 0, y: 0, w: WIDTH, h: 2000}]);
+    const notes = runNotes(meta, 'missing', null, null, found);
+
+    assert.ok('blankRegion' in notes.conditions);
+    assert.equal(notes.conditions.blankRegion.effect, 'unmeasured');
+    assert.deepEqual(notes.conditions.blankRegion.facts.blocks, found);
+    assert.equal('blankRegion' in runNotes(meta).conditions, false, 'and it needs the measurement');
 });

@@ -35,7 +35,7 @@ import {assertPartition, leaves, totalArea} from './lib/blocks.mjs';
 import {anyUnmeasured, noteCodes, runNotes} from './lib/notes.mjs';
 import {printable} from './lib/printable.mjs';
 import {loadRects} from './lib/rects.mjs';
-import {inkPrefix, pixelsFromPng, unpaintedBlocks} from './lib/painted.mjs';
+import {blankRegions, inkPrefix, pixelsFromPng, unpaintedBlocks} from './lib/painted.mjs';
 
 const outDir = process.argv[2];
 const depthArg = process.argv.find((a) => a.startsWith('--depth='));
@@ -144,15 +144,21 @@ try {
     // recorded: the pixels and the DOM have to be compared against each other, and only
     // phase 2 holds both. See lib/painted.mjs.
     let unpainted = null;
+    let blank = null;
     if (rects) {
         const raw = await pixelsFromPng(png);
-        unpainted = unpaintedBlocks(inkPrefix(raw.pixels, raw.width, raw.height), ls, rects);
+        const measured = inkPrefix(raw.pixels, raw.width, raw.height);
+        unpainted = unpaintedBlocks(measured, ls, rects);
+        // The other half of the same measurement: a region with nothing painted AND
+        // nothing in the DOM is not a contradiction, so the check above cannot see it —
+        // and alchemy.je gives half its page to one.
+        blank = blankRegions(measured, ls);
     }
     // The rects go in too: some conditions are about what the page CONTAINS rather than
     // how it was captured — an error page served as a success, and DOM content that
     // never made it into the pixels. Both are in lib/, because the Craft job imports
     // lib/ and not this CLI.
-    const notes = runNotes(meta, metaReason, rects ?? null, unpainted);
+    const notes = runNotes(meta, metaReason, rects ?? null, unpainted, blank);
 
     // AN ERROR PAGE IS NOT A WEAKER MEASUREMENT, IT IS A MEASUREMENT OF SOMETHING ELSE.
     // Every other condition here describes a page we can still honestly report on, with

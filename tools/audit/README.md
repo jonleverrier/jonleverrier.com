@@ -158,12 +158,24 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   0–16% blank and regions that did not render run 77–100%. It cannot say WHY the pixels
   are missing — a lazy image, a failed script and a reveal that never fired look the same
   — so the effect is `unmeasured` rather than a diagnosis.
+- **A region can be empty in BOTH records, and that is a different condition.**
+  `contentNotPainted` needs a contradiction — elements that say there is content over
+  pixels that say there is not. alchemy.je gives **49% of its page** to a black void with
+  a "Scroll" indicator in it and three tiny elements; tpagency.com gives 45% to the same
+  thing with none. There is no contradiction there, so that check is right to stay quiet,
+  and both pages came through phase 2 with `notes none` — a report would then have said
+  what percentage of the page is navigation with half of it a hole. `blankRegion` fires
+  on a block that is **at least 15% of the page and under 0.1% ink**. Measured over
+  seventeen pages: those two voids are 49.4% and 45.3%, and the next largest near-empty
+  block anywhere is 6.3%. What is actually in such a region cannot be known from here — a
+  scroll-driven scene, a canvas that declined, or genuinely empty design — so the effect
+  is `unmeasured`.
 - **`blocks.json` is `{notes, tree}`, and the notes come first.** Every warning used to
   reach stdout and stderr and stop there — and the Craft job imports `lib/`, not the CLIs,
   so the entire honesty layer was invisible to everything downstream of a terminal.
   `notes.conditions` is keyed by a stable code (`httpError`, `errorPageLikely`,
   `wrongPage`, `shotTruncated`, `paintLimit`, `scrollCapHit`, `consentNotDismissed`,
-  `webglBlind`, `contentNotPainted`, `unrenderedGap`, `metaMissing`),
+  `webglBlind`, `contentNotPainted`, `blankRegion`, `unrenderedGap`, `metaMissing`),
   each carrying an `effect` — `unmeasured`, `attribution`, `included` or `unknown`, which
   is the axis a report branches on — a `message`, and raw `facts`. **`notes.metaRead`
   distinguishes "nothing was wrong" from "we could not tell":** a missing `meta.json` used

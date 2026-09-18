@@ -270,6 +270,74 @@ export function unpaintedBlocks(page, blocks, rects, opts = UNPAINTED) {
     return found;
 }
 
+/**
+ * A REGION THAT IS EMPTY IN BOTH RECORDS, which is a different condition from the one
+ * above and needed its own rule.
+ *
+ * alchemy.je has a block of 1440x4266 — 49% of its page — that is pure black with a
+ * "Scroll" indicator at the bottom of it. tpagency.com has 1440x4021, 45%, the same.
+ * NEITHER IS A CONTRADICTION: the DOM says nothing is there either (three tiny elements
+ * on alchemy, none on tpa), so `unpaintedBlocks` correctly says nothing, and both pages
+ * came through phase 2 with `notes none`. A report would then have said what percentage
+ * of that page is navigation while half of it was a hole.
+ *
+ * What is actually in such a region cannot be known from here — a scroll-driven scene
+ * this capture cannot run, a canvas that declined to draw, or a genuinely empty stretch
+ * of design — which is exactly why the effect is `unmeasured` rather than a number.
+ *
+ * MEASURED across seventeen pages. Blocks with under 0.1% ink: alchemy 49.4% of its
+ * page, tpa 45.3%, and then NOTHING above 6.3% — kohde's unpainted panel at 6.3% (which
+ * the rule above already has), jsy 5.3% (a yellow band with a faint decorative circle,
+ * verified by eye and correct), switch.je 4.6%, masonbreese 4.4%, gcsc 3.2%, hsbc 2.9%.
+ * 15% sits between 6.3% and 45.3% with roughly a factor of three either side. The ink
+ * gate is not the delicate one: the two voids measure 0.003% and 0.007%.
+ *
+ * The limitation worth knowing: this is per block, so a void split across several blocks
+ * of 14% each is missed. Blocks are a partition and their boundaries are arbitrary, so
+ * summing them would be the more robust rule; it is not taken here because every void
+ * measured came out as one block and a rule with no failing example is a rule nobody has
+ * tested.
+ */
+export const BLANK_REGION = {maxInk: 0.001, minShare: 0.15};
+
+/** The blocks that are a large share of the page and have nothing painted in them. */
+export function blankRegions(page, blocks, opts = BLANK_REGION) {
+    const {maxInk, minShare} = {...BLANK_REGION, ...opts};
+    if (!page || !Array.isArray(blocks)) {
+        return [];
+    }
+    const pageArea = page.width * page.height;
+    const found = [];
+    for (const block of blocks) {
+        const share = (block.w * block.h) / pageArea;
+        if (share < minShare) continue;
+        const ink = inkFraction(page, block);
+        if (ink > maxInk) continue;
+        found.push({
+            x: block.x, y: block.y, w: block.w, h: block.h,
+            share: Math.round(share * 1000) / 1000,
+            ink: Math.round(ink * 10000) / 10000,
+        });
+    }
+
+    return found;
+}
+
+/** The sentence for a terminal and for `notes`. */
+export function blankRegionWarning(found) {
+    if (!found || found.length === 0) {
+        return null;
+    }
+    const worst = found.reduce((a, b) => (a.share >= b.share ? a : b));
+    const where = found.length === 1 ? 'one block' : `${found.length} blocks`;
+
+    return `${where} of this page has nothing painted in it and nothing in the DOM either — the worst is `
+        + `${worst.w}x${worst.h} at y=${worst.y}, which is ${(worst.share * 100).toFixed(0)}% of the page at `
+        + `${(worst.ink * 100).toFixed(2)}% ink. A scroll-driven scene this capture cannot run looks like this, `
+        + 'and so does a canvas that declined to draw; so does a genuinely empty stretch of page. Nothing here '
+        + 'can tell which, so that region is unmeasured rather than a number';
+}
+
 /** The sentence for a terminal and for `notes`. */
 export function unpaintedWarning(found) {
     if (!found || found.length === 0) {
