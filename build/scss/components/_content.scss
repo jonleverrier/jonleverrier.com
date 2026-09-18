@@ -395,7 +395,8 @@ $c-content-subheading: getmap($colour, light, 880); // the sub-heading grey — 
     > h4,
     > ul,
     > ol,
-    > blockquote {
+    > blockquote,
+    > .c-table {
         max-width: $c-content-measure;
         margin-inline: auto;
     }

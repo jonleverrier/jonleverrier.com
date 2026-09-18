@@ -9,11 +9,13 @@ use craft\elements\Entry;
 use modules\frontend\helpers\CaseStudies;
 use modules\frontend\helpers\Headings;
 use modules\frontend\helpers\Notes;
+use modules\frontend\helpers\RichText;
 use modules\frontend\helpers\Social;
 use modules\frontend\helpers\Testimonials;
 use modules\jonson\Jonson;
 use nystudio107\pluginvite\helpers\FileHelper;
 use nystudio107\vite\Vite;
+use Twig\Markup;
 
 /**
  * Template helpers exposed as `craft.frontend`.
@@ -133,6 +135,25 @@ class FrontEndVariable
     public function headingAnchors(iterable $blocks): array
     {
         return Headings::anchor($blocks);
+    }
+
+    /**
+     * A CKEditor field's HTML, ready to print. See helpers\RichText.
+     *
+     * Takes over the emptiness check the templates were each doing for themselves.
+     * A CKEditor field returns a Markup object, which is TRUTHY EVEN WHEN EMPTY, so
+     * `{% if entry.content %}` is always true and every caller had to remember
+     * `|trim` to avoid rendering an empty prose block. Returning null for an empty
+     * field puts that trap in one place instead of in each template.
+     *
+     * Markup back out, so a template still prints it with `|raw` exactly as it
+     * printed the field.
+     */
+    public function richText($html): ?Markup
+    {
+        $source = trim((string) $html);
+
+        return $source === '' ? null : new Markup(RichText::prepare($source), Craft::$app->charset);
     }
 
     public function readingTime(Entry $entry): int

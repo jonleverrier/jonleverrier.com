@@ -16,10 +16,12 @@
 {% set slabModifier = 'b-slab--l600' %}
 
 {% block siteContent %}
-    {# `|trim ? … : null` rather than a plain truthiness test: a CKEditor field returns
-       a Markup object, which is always truthy even when it holds nothing — an empty
-       field would otherwise render an empty prose block. #}
-    {% set prose = entry.content|trim ? entry.content : null %}
+    {# Through craft.frontend.richText, which renames CKEditor's own generic wrapper
+       classes to the site's (a table's `figure.table` becomes `figure.c-table` — see
+       helpers\RichText) and returns null for an empty field. That last part matters:
+       a CKEditor field returns a Markup object, which is truthy even when it holds
+       nothing, so a plain truthiness test here would render an empty prose block. #}
+    {% set prose = craft.frontend.richText(entry.content) %}
 
     {# The Summary as a standfirst: the one line about who this is, at the head of
        the body so it sits on the same measure as the prose that follows it — not in

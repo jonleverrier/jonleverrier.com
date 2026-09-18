@@ -1,0 +1,203 @@
+/**
+ * COMPONENT: TABLE
+ *
+ * A table authored in a rich-text field. CKEditor wraps every one it emits in a
+ * <figure>, and that wrapper reaches the page as .c-table rather than the editor's
+ * own generic `table` class (see helpers\RichText).
+ *
+ * THE FIGURE SCROLLS, THE TABLE FILLS. Two elements, two jobs, and they can't be
+ * merged: `overflow` does nothing on a table box, so a table cannot scroll itself —
+ * it needs a block wrapper around it, which is the whole reason the editor emits one.
+ * The figure sits on the reading measure and scrolls; the table inside runs to 100%
+ * of it until the columns would start stranding single words, then stops shrinking
+ * and lets the figure carry what no longer fits.
+ *
+ * THREE BANDS, STEPPING LIGHTER: the head one palette step below the slab, then rows
+ * alternating white and the faintest warm off-white, white first. No rules anywhere —
+ * the bands do the work a grid of lines would, and quieter.
+ *
+ * EVERY ROW IS PAINTED. An earlier version left alternate rows transparent, which on
+ * the eggshell slab gave the same colour for free — but the page's dot grid showed
+ * straight through them, so the table read as a stack of bands laid loosely over the
+ * page rather than one block set into it. Opaque rows give it an edge.
+ *
+ * Real tokens, not tints mixed from the inherited ink, which is what these were first.
+ * A mix follows any ground it's used on, which sounds like the safer choice until you
+ * pick the values: 5% of the prose ink on the eggshell lands within a shade of
+ * light 650, so the head and the stripe came out near enough identical and the whole
+ * table read as one block. The palette already has the steps, spaced by someone
+ * choosing them.
+ *
+ * The cost is that this assumes A LIGHT GROUND, which is where rich text actually
+ * lives here — the cream content slab and the case study's prose, both near-black ink
+ * on eggshell. A table on the olive Jonson response would need a modifier; nothing
+ * emits one there, since Jonson's answers come through the inline-markdown pipeline,
+ * which has no table in it.
+ *
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// The head's fill: the SAME token the cream ask-bar footer and the testimonial panel
+// use (see the note on light 650 in theme/_setup) — the site's one answer to "a block
+// that sits on the eggshell slab and has to read as its own panel". A table's head is
+// a third of those, so it takes the existing step rather than inventing one.
+//
+// It is also the only thing dividing the head from the body: no rule under it. A line
+// along the bottom of a filled band draws the same edge twice.
+$c-table-head: getmap($colour, light, 650);
+
+// The zebra: white, then the faintest warm off-white. Both go the OTHER WAY from the
+// head, which is what keeps the head distinct — it steps down from the slab while the
+// rows step up past it.
+//
+// A HEX, NOT A TOKEN, and deliberately. The light scale jumps straight from white to
+// 700 (#f1eada), and 700 was tried here: it is a cream a shade off the slab, far enough
+// from white that alternate rows read as two different kinds of row rather than as one
+// table banded for tracking. This sits between the two, close enough to white that the
+// stripe is felt more than seen. Nothing else on the site wants it yet — the palette is
+// for steps more than one component shares (see the note on light 650), so this stays
+// here until something else asks for it.
+$c-table-row: getmap($colour, light, 100); // white — the first row, always
+$c-table-row-alt: #f9f5ed;
+
+// Below this the columns stop shrinking and the figure scrolls. Measured rather than
+// picked: at 390px — the narrowest phone worth designing for — a three-column table
+// of short entries breaks to two or three words a line, which is still readable; much
+// under 460 and cells start stranding single words.
+$c-table-min: 460;
+
+// The viewport at which the table starts scrolling, and so where the edge fade below
+// switches on. Measured, not derived: under the 740 reading cap the figure runs the
+// viewport less the wrap's 56px of gutters, which passes under $c-table-min at 516.
+$c-table-scrolls-below: $c-table-min + 56;
+
+.c-table {
+    // NO `margin: 0` HERE, though a UA <figure> badly wants one. base/_reset.scss has
+    // already zeroed it, and a second reset at this specificity outranks the prose
+    // rhythm's own `> * + *` — which is where a table's air above it comes from — so
+    // it welded the table to the paragraph over it.
+    width: 100%;
+    overflow-x: auto;
+    // A sideways swipe that runs out of table stays in the table: without this it
+    // carries on into the page and, on a trackpad, into the browser's back gesture.
+    overscroll-behavior-x: contain;
+
+    // The same radius the code panel and the case study figures take — a table is
+    // another block sitting on the slab, and they should all be cut to one curve.
+    //
+    // It needs NO `overflow: hidden` to hold its corners, which is the usual companion
+    // to this and would be wrong here: `overflow-x: auto` has already made this a scroll
+    // container on both axes, and a scroll container clips to its own border radius. The
+    // head's top corners and the last row's bottom ones are cut by the figure, so no
+    // cell needs a radius of its own — which matters, because WHICH cells are the corner
+    // ones depends on how many columns the author gave it.
+    border-radius: $b-radius-200;
+
+    // THE ONLY SIGN THERE IS MORE. Once the figure scrolls, the columns past its right
+    // edge are simply gone: the bands run to the edge and stop square, and a table with
+    // one column showing looks exactly like a table that only has one. So the last of
+    // what fits dissolves instead of ending, which reads as "this continues" — and it
+    // is the bands doing the reading, which is why this works better here than it would
+    // on a ruled table: a fading block is unmistakable in a way a fading hairline isn't.
+    //
+    // A mask on the FIGURE, not a gradient inside it: the figure is the scroller, so
+    // anything placed within it scrolls away with the content, while the mask applies
+    // to the element's own box and stays pinned to the edge.
+    //
+    // PX IN THE QUERY, NEVER REM. A rem in a media query means the INITIAL font size,
+    // 16px — not this site's 10px root — so `46rem` here would read as 736 and fade
+    // tables with room to spare. (The same trap as a `sizes` attribute.)
+    @media (max-width: #{$c-table-scrolls-below}px) {
+        mask-image: linear-gradient(to right, #000 calc(100% - #{rem(28)}), transparent);
+    }
+
+    // The figure carries `tabindex="0"` (added in helpers\RichText), because a scroll
+    // container only takes arrow keys if it can hold focus — without it the columns
+    // off the right edge are reachable by swipe and by nothing else.
+    //
+    // :focus-visible, not :focus. That tabindex also makes the table focusable by
+    // CLICK, and a ring drawn round a table someone merely tapped is noise; this way
+    // the ring appears for the visitor who needs it to know where the arrow keys are
+    // pointing, and never for the one using a pointer.
+    &:focus-visible {
+        outline: rem(2) solid currentColor;
+        outline-offset: rem(4);
+    }
+
+    table {
+        width: 100%;
+        min-width: rem($c-table-min);
+        // Collapsed for the SPACING, not for any border: `separate` is the default and
+        // brings `border-spacing: 2px` with it, which opens a 2px channel between every
+        // cell — and with the stripe painted on the row, the row's colour shows through
+        // those channels as a grid of seams across each band.
+        border-collapse: collapse;
+        font-family: $g-font-secondary; // JonSonMono, the prose's own face
+        @include typography(p-sm);
+        // 500, the same weight the prose around it is set in. JonSonMono ships exactly
+        // TWO faces — 500 (leicht) and 600 (halbfett) — so this is a real cut, and the
+        // data reads as data rather than as a table of emphasis. 400 is not an option
+        // that exists: the browser would serve 500 anyway or fake a lighter one.
+        font-weight: 500;
+        line-height: 1.5;
+        text-align: left;
+    }
+
+    th,
+    td {
+        // Room above and below a cell's text, and a clear channel between columns.
+        // Top-aligned: rows are as tall as their longest cell, and centring the short
+        // ones against it leaves them floating away from the row's first line.
+        padding: getmap($space, rhythm, 400) getmap($space, rhythm, 500);
+        vertical-align: top;
+    }
+
+    // The outer cells take a SHORTER inset than the channels between columns, not none
+    // at all. Zero would put the first column exactly on the prose's left edge, which
+    // is the alignment to want — but the head and the stripes are filled bands, and a
+    // band with no padding runs hard into its own first letter.
+    //
+    // So the BAND takes the measure and the type sits a little inside it, which is the
+    // better trade anyway: the edge the eye lines up against is the band's, and that one
+    // is exactly where the paragraphs above and below start.
+    th:first-child,
+    td:first-child {
+        padding-left: getmap($space, rhythm, 300);
+    }
+
+    th:last-child,
+    td:last-child {
+        padding-right: getmap($space, rhythm, 300);
+    }
+
+    thead th {
+        // Mono like the rest — these are labels on the data, not a different voice —
+        // in the heavier of the mono's two faces, and tracked out a little so a
+        // one-word heading still reads as a label over its column.
+        //
+        // 600, NOT 700. There is no 700 face: asking for one has the browser take the
+        // 600 and smear it, which is a different shape from the one the type designer
+        // drew and reads as slightly blurred beside the real cuts around it.
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        background-color: $c-table-head;
+    }
+
+    // THE ZEBRA. On the ROW, not on its cells: a colour painted per cell stops at each
+    // padding edge, so the band would break into pieces at every column boundary.
+    //
+    // WHITE FIRST, always. Eggshell first was tried and it opens the table on a row the
+    // same colour as the page: the head band is followed by what looks like a gap, and
+    // on a two-row table — which is most of them — the banding never gets going, so the
+    // table reads as a header with one white box under it. Leading on white gives the
+    // head an edge to end on and puts the data on its own ground from the first row.
+    tbody tr:nth-child(odd) {
+        background-color: $c-table-row;
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: $c-table-row-alt;
+    }
+}
