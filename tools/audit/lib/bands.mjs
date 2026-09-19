@@ -71,12 +71,36 @@ export function snapBoundaries(edges, candidates, reach = SNAP_REACH) {
  * already had, so no percentage moves; only the granularity does, and by the depth ruling
  * a cut that changes no label was not worth making.
  */
+/**
+ * Below this, a block at a seam is a fragment the model could not identify, and it takes
+ * the category of the confident section it abuts.
+ *
+ * A slice boundary falls at an arbitrary 1400px grid, so a section can start a hundred
+ * pixels before one. The slice above then sees a sliver and says so — masonbreese.com
+ * produced `unclassified` at confidence 0.4 for the last 133px of a section, described as
+ * "grey section begins", while the slice below named the whole thing confidently. Leaving
+ * that sliver unclassified reports as unmeasured something we did in fact measure.
+ *
+ * ONLY AT A SEAM, and only when the two ends disagree in confidence. Two confident blocks
+ * that differ are two sections, and neither gives way.
+ */
+export const FRAGMENT_MAX_CONFIDENCE = 0.5;
+
 export function mergeSeams(blocks, seams) {
     const at = new Set(seams);
     const out = [];
     for (const b of blocks) {
         const last = out[out.length - 1];
-        const joins = last && last.y1 === b.y0 && at.has(b.y0) && last.category === b.category;
+        const meets = last && last.y1 === b.y0 && at.has(b.y0);
+        // A fragment the slice above could not identify, abutting a section the slice
+        // below could: adopt the confident answer rather than keep the guess.
+        if (meets && last.category !== b.category
+            && (last.confidence ?? 0) <= FRAGMENT_MAX_CONFIDENCE
+            && (b.confidence ?? 0) > FRAGMENT_MAX_CONFIDENCE) {
+            last.category = b.category;
+            last.what = b.what;
+        }
+        const joins = meets && last.category === b.category;
         if (joins) {
             last.y1 = b.y1;
             // The widest column count, because one half of a grid may show fewer columns

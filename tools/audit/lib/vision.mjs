@@ -137,7 +137,21 @@ Return ONLY a JSON array, no prose and no code fence:
  * Told what came immediately before, the model can give the continuation the same category
  * and description, and lib/bands.mjs then merges them at the seam.
  */
-export const carryOver = (previous) => (previous
+/**
+ * Below this, the previous slice's answer is a guess and is not worth passing on.
+ *
+ * masonbreese.com is why. A section starts 133px before the seam at y=1400, so the slice
+ * above could see only its first sliver and said `unclassified`, confidence 0.4, "grey
+ * section begins". The carry-over then handed that to the next slice — which could see the
+ * whole section — and it dutifully continued the fragment. 814px of "What we do" inherited
+ * a guess made from 133 pixels, and that page came back 22% unclassified.
+ *
+ * A confident answer is worth continuing. An uncertain one is worth nothing, and saying
+ * nothing lets the slice that can actually see the section name it.
+ */
+export const CARRY_MIN_CONFIDENCE = 0.6;
+
+export const carryOver = (previous) => ((previous && (previous.confidence ?? 0) >= CARRY_MIN_CONFIDENCE)
     ? `\nThe slice immediately above this one ended with a block described as "${previous.what}", `
         + `category "${previous.category}". If the region at the very top of THIS image is a `
         + 'continuation of it, give it the same description and the same category so the two '

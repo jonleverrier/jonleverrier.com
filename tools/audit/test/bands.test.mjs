@@ -124,3 +124,46 @@ test('no blocks at all yields one leaf covering the page', () => {
     assert.equal(ls[0].label.category, 'unclassified');
     assert.equal(totalArea(ls), 1440 * 1200);
 });
+
+/* -------------------------------------------------- a fragment at a seam adopts its section */
+
+/**
+ * masonbreese.com. A section starts 133px before the seam at y=1400, so the slice above
+ * saw a sliver and returned `unclassified` at confidence 0.4, "grey section begins", while
+ * the slice below named the whole thing. Leaving that sliver unclassified reports as
+ * unmeasured something that was in fact measured — and on that page it was 22% of the
+ * page, not a sliver.
+ */
+test('an unidentified fragment at a seam takes the confident category beside it', () => {
+    const fragment = {y0: 1267, y1: 1400, category: 'unclassified', what: 'grey section begins', cols: 1, confidence: 0.4};
+    const section = {y0: 1400, y1: 2081, category: 'hero', what: 'What we do', cols: 1, confidence: 0.9};
+    const got = mergeSeams([fragment, section], [1400]);
+
+    assert.equal(got.length, 1, 'and having adopted it, the two are one block');
+    assert.equal(got[0].category, 'hero');
+    assert.equal(got[0].y0, 1267);
+    assert.equal(got[0].y1, 2081);
+});
+
+/** Two confident blocks that disagree are two sections, and neither gives way. */
+test('a confident block never adopts its neighbour', () => {
+    const a = {y0: 0, y1: 1400, category: 'trust', what: 'logos', cols: 1, confidence: 0.9};
+    const b = {y0: 1400, y1: 2000, category: 'hero', what: 'pitch', cols: 1, confidence: 0.9};
+
+    assert.equal(mergeSeams([a, b], [1400]).length, 2);
+});
+
+test('a fragment away from a seam is left alone', () => {
+    const fragment = {y0: 600, y1: 700, category: 'unclassified', what: '?', cols: 1, confidence: 0.4};
+    const section = {y0: 700, y1: 1200, category: 'hero', what: 'pitch', cols: 1, confidence: 0.9};
+
+    assert.equal(mergeSeams([fragment, section], [1400]).length, 2);
+});
+
+test('two uncertain blocks at a seam do not invent a category between them', () => {
+    const a = {y0: 0, y1: 1400, category: 'unclassified', what: '?', cols: 1, confidence: 0.3};
+    const b = {y0: 1400, y1: 2000, category: 'unclassified', what: '?', cols: 1, confidence: 0.4};
+    const got = mergeSeams([a, b], [1400]);
+
+    assert.equal(got[0].category, 'unclassified');
+});

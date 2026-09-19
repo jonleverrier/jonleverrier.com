@@ -180,7 +180,8 @@ test('the prompt keeps a section whole, small print and all', () => {
 
 /** The seam carry-over, which is what stops one section being read as two. */
 test('a slice is told what the one above it ended with', () => {
-    const text = carryOver({what: 'prize draw promotion', category: 'promotion'});
+    // A confidence is required: an uncertain answer is deliberately not passed on.
+    const text = carryOver({what: 'prize draw promotion', category: 'promotion', confidence: 0.9});
     assert.match(text, /prize draw promotion/);
     assert.match(text, /same category/);
 });
@@ -220,4 +221,19 @@ test('a request we built wrongly is not', () => {
 
 test('three attempts, because one retry is a coin toss and ten is a hang', () => {
     assert.equal(TILE_ATTEMPTS, 3);
+});
+
+/**
+ * A confident answer is worth continuing across a seam; an uncertain one is worth nothing,
+ * and passing it on actively harms the next slice. masonbreese.com inherited "grey section
+ * begins" — a guess made from 133 pixels — for 814px of a section the next slice could see
+ * in full, and came back 22% unclassified.
+ */
+test('an uncertain previous block is not carried over', () => {
+    assert.equal(carryOver({what: 'grey section begins', category: 'unclassified', confidence: 0.4}), '');
+});
+
+test('a confident previous block is', () => {
+    const text = carryOver({what: 'prize draw promotion', category: 'promotion', confidence: 0.9});
+    assert.match(text, /prize draw promotion/);
 });
