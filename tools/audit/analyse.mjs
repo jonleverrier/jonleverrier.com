@@ -39,6 +39,7 @@ import {anyUnmeasured, noteCodes, runNotes} from './lib/notes.mjs';
 import {loadRects} from './lib/rects.mjs';
 import {printable} from './lib/printable.mjs';
 import {renderDebug} from './lib/debug.mjs';
+import {overlaysInPng} from './lib/overlay.mjs';
 import {blankRegions, inkFraction, inkPrefix, pixelsFromPng, transparentBlocks, unpaintedBlocks} from './lib/painted.mjs';
 
 const outDir = process.argv[2];
@@ -122,7 +123,13 @@ try {
             l.coverage = Number(inkFraction(measured, l).toFixed(4));
         }
     }
-    const notes = runNotes(meta, 'present', rects, unpainted, blank, transparent);
+    // Chrome the DOM census could not reach, found in the stitched image itself. Only
+    // meaningful on a stitched capture, where the repeat IS the artefact. See
+    // lib/overlay.mjs.
+    const overlays = meta.capture?.mode === 'stitched'
+        ? await overlaysInPng(png, meta.capture.viewportHeight ?? 900)
+        : [];
+    const notes = runNotes(meta, 'present', rects, unpainted, blank, transparent, overlays);
 
     // debug.png first: if rendering throws there is then no blocks.json beside it claiming
     // the run succeeded.

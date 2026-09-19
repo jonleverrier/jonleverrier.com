@@ -46,6 +46,7 @@
 import {webglWarning} from './webgl.mjs';
 import {shotTruncationWarning, unrenderedWarning, paintLimitWarning, PAINT_LIMIT_PX} from './unrendered.mjs';
 import {printable} from './printable.mjs';
+import {overlayWarning} from './overlay.mjs';
 import {sameUrl} from './sameurl.mjs';
 import {errorPageEvidence, errorPageWarning} from './errorpage.mjs';
 import {blankRegionWarning, transparentWarning, unpaintedWarning} from './painted.mjs';
@@ -74,7 +75,7 @@ export const EFFECTS = ['unmeasured', 'attribution', 'included', 'unknown'];
  * nothing but a PNG. The conditions that need them simply do not fire, which is the
  * honest answer — not a claim that nothing was wrong.
  */
-export function runNotes(meta, reason = 'missing', rects = null, unpainted = null, blank = null, transparent = null) {
+export function runNotes(meta, reason = 'missing', rects = null, unpainted = null, blank = null, transparent = null, overlays = null) {
     const conditions = {};
     const add = (code, effect, message, facts = {}) => {
         conditions[code] = {effect, message, facts};
@@ -212,6 +213,20 @@ export function runNotes(meta, reason = 'missing', rects = null, unpainted = nul
                 slices: meta.capture.slices ?? null,
             },
         );
+    }
+
+    // CHROME THE DOM CENSUS COULD NOT REACH, found in the pixels instead. natwest.com's
+    // chat widget is rendered by LivePerson into something no walk can see — not the light
+    // DOM, not an open shadow root, and its two LivePerson iframes are 0x0 — so the pinned
+    // census correctly reports nothing pinned while the widget is painted into all eight
+    // slices. See lib/overlay.mjs.
+    //
+    // UNMEASURED, because what an overlay covers was never photographed. Painting the
+    // repeats out would be inventing pixels, and counting them as content would count one
+    // element eight times.
+    const overlaid = overlayWarning(overlays, meta.image?.height ?? meta.fullHeight ?? 0);
+    if (overlaid) {
+        add('pinnedOverlay', 'unmeasured', overlaid, {regions: overlays});
     }
 
     const blind = webglWarning(meta.webgl);
