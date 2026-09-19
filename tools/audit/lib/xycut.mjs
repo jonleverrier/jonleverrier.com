@@ -1362,6 +1362,72 @@ export function textRuns(edges, width, height, rects, opts = TEXT_RUN, inkOpts =
  * `offsetY` says where the slice these rects were shifted into sits in the page; without
  * it the backdrop test cannot be asked at all. See isBackdrop.
  */
+/** A list needs this many items before it is a list rather than a stray element. */
+export const LIST_TAGS = new Set(['ul', 'ol', 'dl']);
+export const LIST_MIN_ITEMS = 2;
+
+/**
+ * Lists, taken from the markup rather than inferred from the layout.
+ *
+ * THE PAGE ALREADY SAYS WHICH ELEMENTS ARE ONE LIST, and until now nothing read it. A
+ * footer's link column, a primary nav, a set of related links — each is a `<ul>` with its
+ * items inside, declared, at any length. `repeatedRuns` was reaching the same conclusion
+ * from geometry, needing four members and an adjacency threshold, and stopping short of
+ * every list with three: whitepaper's "Legal" and "Quick Links" columns were cut per link
+ * for want of a fourth item. A rule that fires at four and not at three is not a rule
+ * about lists, it is a rule about counting.
+ *
+ * Under the depth ruling the cut inside a list changes no answer, whatever the length —
+ * every member of a nav takes the label `navigation`, every member of a link list takes
+ * the same label as its neighbours. So the list is the block.
+ *
+ * NO MINIMUM AREA, and that is the point of having this separate from
+ * `moduleContainers`. That floor exists to stop a stray decorative box being called a
+ * module; most link lists in the corpus are 0.1% to 0.4% of the page and would never
+ * clear it. A `<ul>` carrying two or more items is structure the author declared, not a
+ * box that happens to be there. The upper bound stays: something spanning more of the
+ * page than a module ever should is a layout device, not a list.
+ *
+ * What this does NOT touch is the guard it could most easily break. andybudd's three
+ * feature columns — Coaching, Educating, Speaking — must stay cut apart, and they are not
+ * a list: they are three `<div>`s. Checked across the corpus before this was written.
+ *
+ * A VETO, NOT A MODULE, and this was measured the wrong way round first. Adding lists to
+ * `protectedRects` broke both fixtures' footers, and the reason is worth keeping: a band
+ * boundary is a FULL-WIDTH line, tested against every protected rect on the page, so a
+ * 128px-wide column of links at `720,986` vetoed the page-wide line that used to separate
+ * the footer's rows — and it was that line which created the band the columns were then
+ * cut in. jonleverrier fell from 12 leaves to 8. A list is not a module the page drew; it
+ * is a statement that these items belong together, which is exactly what the repeated-run
+ * population already means.
+ *
+ * `stacked` carries the axis, on the same reasoning as REPEAT. A column of links forbids
+ * only the horizontal cut that would slice it, because the vertical gutter a reader sees
+ * BETWEEN two such columns is the one thing that must stay legal. A nav laid out across
+ * the page forbids both, because a horizontal cut through a single row of links is no
+ * more wanted than a vertical one.
+ */
+export function listContainers(rects, width, pageHeight, opts = MODULE_AREA) {
+    if (!rects || rects.length === 0) return [];
+    const {max} = {...MODULE_AREA, ...opts};
+    const pageArea = width * pageHeight;
+    const items = rects.filter((r) => r.tag === 'li' || r.tag === 'dd' || r.tag === 'dt');
+    const out = [];
+
+    for (const r of rects) {
+        if (!LIST_TAGS.has(r.tag)) continue;
+        if (r.w * r.h > max * pageArea) continue;
+        const held = items.filter((i) => i.x >= r.x - 1 && i.y >= r.y - 1
+            && i.x + i.w <= r.x + r.w + 1 && i.y + i.h <= r.y + r.h + 1);
+        if (held.length < LIST_MIN_ITEMS) continue;
+        // Taller than one item by more than a line's worth means the items are stacked.
+        const tallest = held.reduce((t, i) => Math.max(t, i.h), 0);
+        out.push({...r, stacked: r.h > tallest * 1.5});
+    }
+
+    return out;
+}
+
 export function protectedRects(rects, width, pageHeight, offsetY = 0) {
     return [
         ...fullBleedMedia(rects, width),
@@ -1528,7 +1594,12 @@ export function segment(edges, width, height, opts = {}) {
     // `keepWhole`: every member of a run takes the same label, so the gutters between them
     // are not boundaries worth having — but the run is not a module the page declared, so
     // it may not steer a snap or waive the size floor. See REPEAT and protectedRects.
-    const runs = repeatedRuns(rects, width, pageHeight ?? height);
+    // A DECLARED LIST IS THE SAME CLAIM, MADE BY THE MARKUP INSTEAD OF THE LAYOUT, and it
+    // reaches the lists `repeatedRuns` cannot: that rule needs four members, so a
+    // three-link column — whitepaper's "Legal" and "Quick Links" — was cut per link for
+    // want of a fourth. A `<ul>` says so at any length. See listContainers.
+    const runs = [...repeatedRuns(rects, width, pageHeight ?? height),
+        ...listContainers(rects, width, pageHeight ?? height)];
     const keepIntact = [
         ...inkedTextRects(edges, width, height, rects, inkCluster),
         ...textRuns(edges, width, height, rects, textRun, inkCluster),
@@ -1545,8 +1616,18 @@ export function segment(edges, width, height, opts = {}) {
     const landmarkY = new Set(landmarks.flatMap((l) => [l.y, l.y + l.h]));
     // The coordinates a snap should reach for when the gutter offers a choice. Taken from
     // `bounds`, never from `keepWhole`: see boundingRects.
-    const moduleEdgeY = new Set(bounds.flatMap((m) => [m.y, m.y + m.h]));
-    const moduleEdgeX = new Set(bounds.flatMap((m) => [m.x, m.x + m.w]));
+    // A LIST'S OWN EDGE IS PREFERRED TOO, for the same reason a module's is: it forbids
+    // cuts inside itself, so the place a cut can legally go is its boundary, and a snap
+    // landing two pixels short of that boundary is refused rather than nudged. On the
+    // jonleverrier fixture the footer's row boundary wants y=1120 while the tallest link
+    // column ends at 1122; without this the band is never split and its three columns are
+    // never reached, taking the page from 12 leaves to 8.
+    //
+    // PREFERENCE ONLY. A list still steers no bridge and waives no size floor — it is not
+    // a module the page drew, and `bounds` stays exactly as it was.
+    const lists = listContainers(rects, width, pageHeight ?? height);
+    const moduleEdgeY = new Set([...bounds, ...lists].flatMap((m) => [m.y, m.y + m.h]));
+    const moduleEdgeX = new Set([...bounds, ...lists].flatMap((m) => [m.x, m.x + m.w]));
     // The same edges, each keeping the module it belongs to, so a snap can ask whether
     // the gutter it is bridging out of is that module's own whitespace. See
     // MODULE_BRIDGE: the edge alone is not enough to tell a hairline from a margin.
