@@ -18,6 +18,15 @@
  * that refuses as about what it reaches: a module's own outer edge with nothing beyond
  * it is a page margin, and reaching for those moved the jonleverrier fixture from 12
  * leaves to 17 while it was being built.
+ *
+ * THE MODULES HERE ARE INSET BY A PIXEL, which is not decoration. This file is about the
+ * module population — the cards, headers and testimonial boxes `moduleContainers` finds —
+ * and the page it keeps citing is jonleverrier, whose header "runs 17-1423 in a 1440px
+ * page". An element spanning the viewport edge to edge is a different population with a
+ * different rule: see pageLandmarks, and landmarks.test.mjs, which carries both halves of
+ * that rule including this file's refusals restated for it. Before the inset, these
+ * fixtures were page landmarks by accident and these tests asserted the landmark rule's
+ * negation rather than the module rule's.
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -40,8 +49,8 @@ const WIDTH = 400;
 const HEIGHT = 1200;
 // Two stacked modules meeting at y=56, each 4.7% of the page — inside MODULE_AREA, and
 // neither containing the other, so both survive the innermost-box rule.
-const HEADER = {x: 0, y: 0, w: WIDTH, h: 56, tag: 'header', boxed: false, text: ''};
-const BELOW = {x: 0, y: 56, w: WIDTH, h: 56, tag: 'nav', boxed: false, text: ''};
+const HEADER = {x: 1, y: 0, w: WIDTH - 2, h: 56, tag: 'header', boxed: false, text: ''};
+const BELOW = {x: 1, y: 56, w: WIDTH - 2, h: 56, tag: 'nav', boxed: false, text: ''};
 // The header's trailing padding, then one row of rule at y=55, then the seam at 56.
 const HAIRLINE = [[36, 55]];
 const OPTS = {maxDepth: 1, minSide: 120, minAreaFraction: 0.02};

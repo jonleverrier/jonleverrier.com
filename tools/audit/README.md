@@ -12,7 +12,8 @@ reporting are not built yet.
 | `lib/pinned.mjs` | Which elements hold the viewport, and which of those draw the same thing every time. |
 | `lib/unrendered.mjs` | Regions that exist for a visitor and are missing from the capture. |
 | `lib/webgl.mjs` | Whether this browser could render a WebGL hero, and whether the page wanted one. |
-| `lib/consent.mjs` | The cookie-banner selectors, and one attempt at dismissing them. |
+| `lib/consent.mjs` | The cookie-banner selectors, and the two attempts at dismissing one. |
+| `lib/shadow.mjs` | One walk of the page that does not stop at a web component's boundary. |
 | `lib/edges.mjs` | Greyscale → Sobel → non-max suppression → hysteresis. A Canny edge map. |
 | `lib/xycut.mjs` | Density profiles, gutter finding, the recursive partition, and tall-page tiling. |
 | `lib/blocks.mjs` | The `Block` shape and `assertPartition()` — the invariant everything rests on. |
@@ -143,6 +144,55 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   what bounds this, not the distance — so nothing is balanced on the number.
   **Only a seam BELOW or ABOVE a gutter is reached, never a lone outer edge** — a module
   edge with nothing on the other side of it is a page margin.
+- **A page landmark's own boundary is a boundary, whatever else is drawn there.** Brand
+  and navigation are two of the four categories this tool measures and both live in the
+  `<header>`, so a page whose header is fused into its hero cannot be measured at all —
+  and four of the 29 captured pages came back that way, each blocked by a different rule
+  that is right about the population it was written for. Nothing BEGINS where a header
+  ends, so the seam above cannot reach it (jtcgroup y=94, jerseyfinance y=58); a
+  full-bleed hero drawn UNDER a header is not that header's interior (jersey.com y=134);
+  and a 94px header is not a sliver (`minSide`). So a `<header>` or `<footer>` spanning
+  the page **edge to edge** (`pageLandmarks`) gets three things the module population does
+  not: its boundary is bridgeable from either side, it overrides the protected-element
+  veto, and it waives the size floor. **Horizontal only** — a landmark's side edges are
+  the page margin, and reaching for those cut two 17px slivers off the jonleverrier
+  fixture's header band. **Edge to edge, not merely wide** — an inset landmark is a card,
+  and admitting one at 0.9 of the width moved the same fixture from 12 leaves to 9.
+  `<nav>` and `<main>` are excluded: a full-width nav is a strip inside the header, and
+  main's edges are the page's own. It never overrides the word vetoes.
+- **A drawn boundary is evidence too, and it is the last resort.** andybudd.com has no
+  gutter near its header edge at all — a decorative dot matrix holds every row from y=10
+  down at 0.017–0.025 against a 0.0128 threshold — but a rule covering 89% of the width
+  is drawn along it. So a landmark boundary with ink along it is considered as a cut
+  **after every gutter the pixels found has been tried and refused**, which is the one
+  cut in the segmenter that whitespace does not justify. `LANDMARK_RULE` (0.05) sits in a
+  gap the corpus measures plainly: of the 51 landmark edges across 29 pages and both
+  fixtures, 30 score 0.131 or more and 21 score 0.023 or less, with nothing in between.
+  Lowering the gutter threshold instead was measured and is the wrong tool by a wide
+  margin — at the lowest setting that finds andybudd's rows, switch.je gains 8 leaves,
+  liquidlight 11, dept 9, and the jonleverrier fixture moves.
+- **A box can hold ink in more than one piece.** `inkBounds` shrinks a heading to the
+  leftmost and rightmost lit pixel in its box, which is the right answer only while the
+  ink is one piece. andybudd.com's `<h4>` "Popular articles" is a 1276×27 box whose words
+  occupy x=82–285, with a decorative dot matrix clipping through BOTH ENDS — so the
+  shrink returned the full 1276px, did nothing at all, and that one element vetoed every
+  vertical cut in its region, leaving three columns with 42px gutters in one 1440×1219
+  block. Any textured, noisy or photographic backdrop behind a heading does this,
+  silently. `inkClusters` takes the ink as it lies — runs of inked columns, merged where
+  the gap reads as a word space — and protects each group. The tolerance is the one
+  `TEXT_RUN.gap` already measured for the same question between elements (0.75 of the
+  shorter ink's height): of 359 multi-piece headings in the corpus 336 are untouched, the
+  largest genuine word space is 0.53, and jonleverrier's "How can" — the gap this
+  population exists to protect — is 0.11.
+- **A line of ink is not a set of columns.** Columns are two-dimensional; a region whose
+  ink lies in one or two rows holds a rule, and any vertical cut through it is an accident
+  of how that rule dithers. tpagency.com's 1440×150 strip above its footer is blank apart
+  from the 1px line bounding it, whose ~700 scattered pixels each scored 1/150 against the
+  0.005 density floor — 32 column runs, and the empty strip came out cut into eight
+  columns of nothing. Six more pages had the same thing somewhere. No density threshold
+  can answer it (the region's median is 0, so every threshold is the floor, and lowering
+  the floor makes it worse); counting how many rows carry any ink answers it in one
+  number, against `GUTTER.minRun`.
 - **The stitch is a second place a cut is decided.** `segmentTall` rebuilds a tall page
   from full-width bands, so a cut that was legal inside one column becomes a line across
   the whole page. EVERY protection rule is applied to the harvested line as well as inside
@@ -222,16 +272,41 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   each. The census population also feeds `COLLECT_PINNED` and `lib/consent.mjs`, so
   `meta.fixed` records a script-held card and `consentBannerSeen` stops lying about one.
   `meta.capture.pinned` carries every decision with the number it was made on.
+- **EVERY WALK CROSSES OPEN SHADOW ROOTS.** `document.querySelectorAll('body *')` stops dead
+  at a component boundary, and so does `parentElement` at the top of a shadow tree — so a
+  page's web components were PAINTED and recorded in nothing: no rect, no pinned census,
+  nothing to hide, nothing to warn about. boondmanager.com's Axeptio consent card is the
+  measurement: `div.axeptio_mount` (relative, 1440x0) → `div.needsclick` (1440x0, open
+  shadow root) → `div.ax-website-overlay` (fixed, 1440x0) → the card (absolute, 420x223).
+  The light-DOM walk sees three zero-height wrappers, drops all of them for having no area,
+  and never reaches the card; the card painted twelve times down a 10,567px capture while
+  `rects.json` held not one rect for it. `lib/shadow.mjs` installs one walk on the page
+  before its own scripts run, and **`capturePage` refuses to continue without it** — a
+  census that quietly stopped counting part of the page is the one failure this tool is not
+  allowed to have. `meta.capture.shadow` records the hosts and how many elements are behind
+  them, so "no web components" and "the walk broke" are different numbers on every site.
+  **A CLOSED shadow root is still unreachable**, by design and with no way round it; it is
+  the same blind spot as a cross-origin iframe.
 - **THE PINNED CENSUS RUNS ONCE, SO SOMETHING THAT ARRIVES LATER IS JUDGED BY NOTHING.**
-  boondmanager.com loads its Axeptio consent card through a tag manager partway down the
-  page: it is absent for the first 30 seconds of a still page, appears during the scroll,
-  and its mount is a `1440x0` div whose card was not there at any point the census looked.
-  It therefore repeats down the image exactly as it did before. The slice pass keeps
-  measuring, and anything it finds holding the viewport that the census never saw is
-  counted in `meta.capture.pinned.lateArrivals` and printed by the CLI as "MORE ARRIVED
-  AFTER THE DECISION AND MAY REPEAT" — **declared, not fixed**. Deciding one of these would
-  need an isolated pair of photographs taken mid-pass, which is a second screenshot at
-  every slice for a case that has turned up once.
+  The census rides on the scroll pass, so it SEES a late arrival; what it cannot do is
+  revisit the offsets the decision was made at. The slice pass keeps measuring, and anything
+  it finds holding the viewport that the decision never covered is counted in
+  `meta.capture.pinned.lateArrivals` and printed by the CLI as "MORE ARRIVED AFTER THE
+  DECISION AND MAY REPEAT" — **declared, not fixed**. Deciding one of these would need an
+  isolated pair of photographs taken mid-pass, which is a second screenshot at every slice
+  for a case that has turned up once.
+- **THE CONSENT BANNER IS ASKED FOR TWICE, and the second time is stricter.**
+  boondmanager.com's card is loaded by a tag manager and opens about eight seconds in, three
+  viewports down the scroll pass — long after the one attempt at consent had run and gone,
+  so it was never offered a click at all. `dismissLateConsent` runs after the scroll pass,
+  and **only when the first attempt found no banner AND there is one now**: a banner that was
+  already seen and refused has had its attempt, and a page with nothing there pays one
+  `FIND_BANNER` per frame and no more. The second attempt will not click anything whose
+  ancestor is merely banner-SHAPED, because by then the pinned census has marked hundreds of
+  elements as holding the viewport (647 on boondmanager.com) and that test has gone loose;
+  its candidates must sit inside something that is positioned AND says what it is about.
+  `meta.consentArrivedLate` says when this happened, because every measurement taken before
+  the scroll pass was then of a page without the banner.
 - **The stitched image is exactly the viewport width; a full-page screenshot was not.**
   lloydsbank.com's page is 1469px wide, so the old capture produced a 1469px PNG and phase 2
   measured 29px of horizontal overflow that a 1440px visitor has to scroll sideways to

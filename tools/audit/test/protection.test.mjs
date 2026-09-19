@@ -70,12 +70,21 @@ test('without a module boundary the size floor still refuses the cut', () => {
 
 // The floor is only overridden ON the boundary itself — a cut elsewhere in the same
 // region gets no dispensation.
+//
+// `landmarkRule: 2` is the documented off-switch for the last-resort landmark cut, and
+// it is here because this fixture is BOTH populations at once: a 400px-wide `<header>`
+// in a 400px page is a module container and also a page landmark, and in a map this
+// dense its bottom edge counts as drawn, so the landmark rule cuts at 76 on its own
+// evidence. That is the right answer for that rule and it would hide this one. See
+// pageLandmarks, and landmarks.test.mjs for the same boundary asserted from the
+// other side.
 test('the override applies to the module edge, not to the whole region', () => {
     const width = 400, height = 1200;
     // Quiet at 20-40, nowhere near the header's 76px boundary.
     const edges = denseExcept(width, height, [[20, 40]]);
     const header = {x: 0, y: 0, w: 400, h: 76, tag: 'header', boxed: false, text: ''};
-    const ls = leaves(segment(edges, width, height, {maxDepth: 1, minSide: 120, minAreaFraction: 0.001, rects: [header]}));
+    const opts = {maxDepth: 1, minSide: 120, minAreaFraction: 0.001, landmarkRule: 2, rects: [header]};
+    const ls = leaves(segment(edges, width, height, opts));
 
     assert.equal(ls.length, 1, 'a 30px cut is still a sliver even with a module in the region');
 });

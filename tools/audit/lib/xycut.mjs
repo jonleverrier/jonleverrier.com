@@ -20,11 +20,17 @@
  * populations earn that, chosen by different rules and rejected by the same one — a
  * full-bleed `<video>`, `<img>` or `<canvas>` whose interior is only noise (FULL_BLEED);
  * a module container: a card, a header, a testimonial box, whose interior gaps are its
- * own padding (MODULE_AREA); a heading, shrunk to its ink (inkedTextRects); and a RUN OF
- * TEXT, which is a line assembled from several elements (TEXT_RUN). See protectedRects,
- * textRuns and cutsInsideProtected. Rects are OPTIONAL throughout — without them every
- * cut falls back to the gutter midpoint, nothing is protected, and the pure-pixel path
- * still works exactly as it did.
+ * own padding (MODULE_AREA); a heading, shrunk to the groups of ink it holds
+ * (inkedTextRects, inkClusters); and a RUN OF TEXT, which is a line assembled from
+ * several elements (TEXT_RUN). See protectedRects, textRuns and cutsInsideProtected.
+ * Rects are OPTIONAL throughout — without them every cut falls back to the gutter
+ * midpoint, nothing is protected, and the pure-pixel path still works exactly as it did.
+ *
+ * ONE POPULATION GOES THE OTHER WAY, and it is the only one that does: the page's own
+ * `<header>` and `<footer>` (pageLandmarks). Those are boundaries rather than things to
+ * keep whole, because brand and navigation are two of the four categories this tool
+ * exists to measure, so a landmark's own edge outranks the protections drawn over it and
+ * outranks the size floor. Never the words.
  *
  * `segment` is the reason this file exists: the block tree it produces is a TRUE
  * PARTITION at every level. See segment's own doc comment for why that is the
@@ -252,7 +258,7 @@ export const MODULE_BRIDGE = 2;
  */
 export function snapToEdge(g, candidates, origin, preferred = null, opts = {}) {
     const mid = (g.start + g.end) >> 1;
-    const {bridge = MODULE_BRIDGE, extent = null, spans = null} = opts;
+    const {bridge = MODULE_BRIDGE, extent = null, spans = null, landmarks = null} = opts;
     const bridging = extent !== null && spans !== null && bridge > 0;
     // NOT "no candidates, so the midpoint": the bridged population is a different list,
     // and a page whose only protected modules are taller than CONTENT_RECT allows has no
@@ -313,14 +319,22 @@ export function snapToEdge(g, candidates, origin, preferred = null, opts = {}) {
     // videos, and CONTENT_RECT excludes anything 700px or taller, so the seam at y=900 —
     // the only cut that band legally has — was never offered. The sort keeps the choice
     // independent of the order rects.json happened to list its elements in.
+    //
+    // A PAGE LANDMARK'S OWN BOUNDARY IS REACHABLE ON THE SAME TERMS AND WITHOUT THE SEAM,
+    // because nothing has to begin where a header ends for that edge to be a boundary.
+    // See pageLandmarks for why that population can be reached from either side when the
+    // module population cannot.
     if (bridging) {
-        for (const c of [...spans.keys()].sort((p, q) => p - q)) {
+        const reachable = landmarks === null
+            ? [...spans.keys()]
+            : [...new Set([...spans.keys(), ...landmarks])];
+        for (const c of reachable.sort((p, q) => p - q)) {
             if (c < lo - bridge || c > hi + bridge) continue;
             if (c >= lo && c <= hi) continue;
             // The region's own frame is no longer out of reach, and a cut there would
             // hand `segment` a child of zero height.
             if (c - origin <= 0 || c - origin >= extent) continue;
-            if (!isASeam(c)) continue;
+            if (!isASeam(c) && !(landmarks !== null && landmarks.has(c))) continue;
             const d = Math.abs(c - absMid);
             if (d < bestPreferredDistance) {
                 bestPreferredDistance = d;
@@ -459,6 +473,104 @@ export function moduleContainers(rects, width, pageHeight, opts = MODULE_AREA) {
 }
 
 /**
+ * A PAGE LANDMARK'S OWN BOUNDARY IS A BOUNDARY, WHATEVER ELSE IS DRAWN THERE.
+ *
+ * Brand and navigation are two of the four categories this tool exists to measure, and
+ * both of them live in the `<header>`. A page whose header is fused into its hero cannot
+ * be measured at all, so the header's bottom edge is not one module edge among many — it
+ * is the single most valuable cut line on the page. The same holds for the `<footer>`,
+ * which is where the legal and contact surface is.
+ *
+ * Three rules elsewhere in this file each blocked that cut on a real page, and each is
+ * right about the population it was written for and wrong about this one:
+ *
+ *   - `isASeam` (see MODULE_BRIDGE) reaches a module edge just outside a gutter only
+ *     where ONE MODULE ENDS AND ANOTHER BEGINS. Nothing begins where a header ends:
+ *     jtcgroup.com's `<header>` ends at y=94 between gutters of 68-93 and 97-120, and
+ *     jerseyfinance.com's at y=58 between 39-56 and 59-73. Both came out fused.
+ *   - `cutsInsideProtected` refuses a cut landing inside a full-bleed element. jersey.com
+ *     draws its 1440x134 header ON TOP of a 1440x860 hero `<img>`, and the gutter 99-173
+ *     holds the header's edge perfectly — the cut was available and was thrown away. A
+ *     landmark drawn over an element is not that element's interior. andybudd.com is the
+ *     same shape against a module container: a 306x306 decorative dot patch spans y=-101
+ *     to 205 and vetoed the header cut at y=105 during the stitch.
+ *   - `minSide` calls a 94px child a sliver. A header strip is a real block; the size
+ *     floor is already waived on a module container's edge for exactly that reason.
+ *
+ * A LANDMARK'S BOUNDARY IS THE LINE WHERE IT STOPS, WHICH IS HORIZONTAL. Its left and
+ * right edges are the page margin, not a boundary, and granting anything to those is the
+ * failure the seam rule's other half — "and this gutter is the whitespace of one of them"
+ * — exists to prevent: a module's padding reaches past its own edge and the margin beside
+ * it becomes a block. That is not a hypothetical here. Reaching for a landmark's side
+ * edges as well was measured on the jonleverrier fixture, whose `<header>` is 17,51
+ * 1406x65 inside a 1440px page, and it cut two 17px-wide slivers of empty margin off the
+ * header band. Horizontal only, and the population is then about three coordinates per
+ * page: 40 rects over the 29 captured pages and both fixtures, 1.4 per page, against the
+ * 664 rects pola.co.jp alone hands `moduleContainers`.
+ *
+ * REACHABLE FROM EITHER SIDE, unlike a module seam. That is what the whole mechanism is
+ * for: nothing begins where a header ends, so requiring the gutter to belong to the
+ * landmark would refuse andybudd.com, where the only gutter near the boundary is the one
+ * BELOW the rule the header draws under itself.
+ *
+ * EDGE TO EDGE, NOT MERELY WIDE, and this is the gate that decides what the population
+ * means. A landmark reaching both page edges is the page's OWN band — the strip the site
+ * draws its brand across — and its top and bottom are where that band starts and stops.
+ * A landmark inset by a page margin is a CARD, and a card's own top edge competes with
+ * the content inside it rather than announcing a section. Measured on the jonleverrier
+ * fixture, whose `<footer>` is 17,900 1406x380 inside a 1440px page: admitted at 0.9 of
+ * the width, its top edge at y=900 outranked the element edge at y=946 that the gutter
+ * itself offered, the stitch rebuilt the bands around it, and the footer's four link
+ * columns stopped being cut — 12 leaves to 9. Every page this mechanism exists for draws
+ * its header at x=0 spanning the full 1440. The cost is stated rather than hidden:
+ * dept.com's `<footer>` at 21,13103 1398x483 and gcsc's at 53,3600 1335x512 are inset,
+ * so they get nothing from this rule.
+ *
+ * NOT `nav`, NOT `main`, and both exclusions are deliberate. A full-width `<nav>` is
+ * normally a strip INSIDE the header (the retail fixture has one at 0,112 1440x40, 1px
+ * from the header's own bottom edge at 153), so admitting it would put two competing
+ * boundaries 41px apart and move a committed fixture. `<main>` spans the page: its edges
+ * are the page's own extremes plus the footer boundary, which the `<footer>` already
+ * gives, so it adds no coordinate that is not already here.
+ */
+export const LANDMARK_TAGS = new Set(['header', 'footer']);
+
+/**
+ * How much of a region's width must carry ink along a landmark's edge for that boundary
+ * to count as DRAWN — a divider rule, a border, or the colour step between two panels.
+ *
+ * Only the last-resort cut in `segment` asks this. See the comment on `landmarkGutters`
+ * for the measurement: the corpus splits at 0.023 and 0.131 with nothing between.
+ */
+export const LANDMARK_RULE = 0.05;
+
+/** The page's own header and footer bands, in the order phase 1 listed them. */
+export function pageLandmarks(rects, width) {
+    if (!rects || rects.length === 0) return [];
+
+    return rects.filter((r) => LANDMARK_TAGS.has(r.tag) && r.x <= 0 && r.x + r.w >= width && r.h > 0);
+}
+
+/**
+ * Is `at` — an ABSOLUTE coordinate, the same space `landmarks` is in — a page landmark's
+ * own top or bottom edge, drawn across the region being cut?
+ *
+ * ALWAYS FALSE ON THE VERTICAL AXIS, and that is the rule rather than an oversight: a
+ * landmark's side edges are the page margin. See pageLandmarks. Answering here rather
+ * than at each call site is what keeps every one of them honest.
+ *
+ * The other axis matters for the same reason it does in `cutsInsideProtected`: the cut is
+ * a line segment across `rect`, and a landmark that does not reach this region says
+ * nothing about it. Touching at a single edge is not overlapping.
+ */
+export function onLandmarkBoundary(landmarks, rect, at, horizontal) {
+    if (!horizontal) return false;
+
+    return landmarks.some((l) => (at === l.y || at === l.y + l.h)
+        && Math.max(rect.x, l.x) < Math.min(rect.x + rect.w, l.x + l.w));
+}
+
+/**
  * Everything a cut may not pass through, in one list.
  *
  * TWO POPULATIONS, ONE REJECTION. Full-bleed media and module containers are selected by
@@ -488,6 +600,10 @@ export function textRects(rects) {
 
 /**
  * A rect shrunk to the pixels that actually have ink in them, or null if none do.
+ *
+ * THE BOUNDING BOX OF ALL OF IT, which is the right answer only while the ink is one
+ * piece. What the segmenter protects is `inkClusters` — see there for the page that made
+ * the difference matter.
  *
  * PROTECT THE WORDS, NOT THE BOX. A heading's element box is as wide as its column, and
  * the words rarely fill it: M&S's footer headings are 336px boxes holding "Here to Help"
@@ -531,11 +647,126 @@ export function inkBounds(edges, width, height, r) {
         : {x: left, y: top, w: right - left + 1, h: bottom - top + 1, tag: r.tag, text: r.text};
 }
 
-/** The headings in `rects`, each shrunk to its ink. */
-export function inkedTextRects(edges, width, height, rects) {
-    return textRects(rects)
-        .map((r) => inkBounds(edges, width, height, r))
-        .filter(Boolean);
+/**
+ * A BOX CAN HOLD SEVERAL SEPARATE PIECES OF INK, AND THE SPAN BETWEEN THE FAR ENDS OF
+ * THEM IS NOT ONE OF THEM.
+ *
+ * `inkBounds` takes the leftmost and rightmost edge pixel anywhere in the box, which is
+ * the right answer when the ink is one line of words and the wrong one as soon as it is
+ * not. andybudd.com is the case that found it: its `<h4>` "Popular articles" is a
+ * 1276x27 box, the words occupy x=82..285, and the page draws a decorative dot matrix
+ * that clips through both ends of the box — roughly 100 to 190 edge pixels per row,
+ * spread right across it. `inkBounds` returned the full 1276px, which is not a shrink to
+ * ink at all, and that one element then vetoed every vertical cut in the region: the
+ * three columns of its Coaching / Educating / Speaking row stayed in one 1440x1219
+ * block, with 42px-wide gutters four times quieter than the threshold sitting unused.
+ *
+ * This is the same failure `inkBounds` was written to prevent — a heading's box being
+ * wider than its content and vetoing a real gutter, the M&S footer case — arrived at
+ * from the other side. A textured, noisy or photographic backdrop defeats a shrink to
+ * ink by putting a few pixels of ink everywhere, and nothing about it is specific to one
+ * page: it is silent wherever it happens.
+ *
+ * So take the ink as it actually lies: runs of inked columns, merged where the gap
+ * between two runs is small enough to read as a word space, and each surviving group
+ * protected on its own. The words stay protected — on andybudd the glyphs and the dots
+ * that overlap them are one group, 82..285 — and the 932px of background between that
+ * group and the dot patch at the other end stops being called ink.
+ *
+ * WHAT MUST NOT CHANGE is the case the population exists for: on jonleverrier the gap
+ * between "How" and "can" in the headline is a 268px-tall column of background, and a
+ * vertical cut went straight down it. A word space inside one heading is the same
+ * physical thing as a word space between two elements of one line, so this asks the
+ * question `TEXT_RUN.gap` already answered and takes its answer: the gap as a fraction of
+ * the shorter neighbouring ink's height, 0.75, measured there against a must-merge of
+ * 0.47 and a must-not of 1.07. Measured again here over the 29 captured pages and both
+ * fixtures: of 359 headings whose ink is in more than one piece, 336 have every gap under
+ * 0.75 and are untouched. The largest genuine word space in the corpus is 0.53
+ * (hsbc "Northern Ireland"), and jonleverrier's headline — the case above — is 0.11.
+ */
+export const INK_CLUSTER = {gap: 0.75};
+
+/**
+ * The groups of ink inside `r`, left to right, or [] if it holds none.
+ *
+ * One group is what `inkBounds` returns; the usual case is exactly that. `edges` must be
+ * the same coordinate space as `r`, which is what segment guarantees.
+ */
+export function inkClusters(edges, width, height, r, opts = INK_CLUSTER) {
+    const {gap} = {...INK_CLUSTER, ...opts};
+    const x0 = Math.max(0, r.x);
+    const x1 = Math.min(width, r.x + r.w);
+    const y0 = Math.max(0, r.y);
+    const y1 = Math.min(height, r.y + r.h);
+    if (x1 <= x0 || y1 <= y0) return [];
+
+    // Per column: does it carry ink, and between which rows. The vertical extent is kept
+    // per column so each group reports its own height rather than the whole box's.
+    const top = new Int32Array(x1 - x0).fill(-1);
+    const bottom = new Int32Array(x1 - x0).fill(-1);
+    for (let y = y0; y < y1; y++) {
+        const base = y * width;
+        for (let x = x0; x < x1; x++) {
+            if (!edges[base + x]) continue;
+            const i = x - x0;
+            if (top[i] < 0) top[i] = y;
+            bottom[i] = y;
+        }
+    }
+
+    // Maximal runs of inked columns.
+    const runs = [];
+    let start = -1;
+    for (let i = 0; i <= top.length; i++) {
+        const inked = i < top.length && top[i] >= 0;
+        if (inked && start < 0) start = i;
+        if (!inked && start >= 0) {
+            runs.push(group(start, i - 1));
+            start = -1;
+        }
+    }
+    if (runs.length === 0) return [];
+
+    // Merge neighbours separated by no more than a word space. The normaliser is the
+    // SHORTER of the two, exactly as in textRuns: a tall neighbour must not license a
+    // wide gap to a short one.
+    const merged = [runs[0]];
+    for (let i = 1; i < runs.length; i++) {
+        const held = merged[merged.length - 1];
+        const next = runs[i];
+        const between = next.x - (held.x + held.w);
+        if (between <= gap * Math.min(held.h, next.h)) {
+            const y = Math.min(held.y, next.y);
+            merged[merged.length - 1] = {
+                x: held.x,
+                y,
+                w: next.x + next.w - held.x,
+                h: Math.max(held.y + held.h, next.y + next.h) - y,
+                tag: r.tag,
+                text: r.text,
+            };
+        } else {
+            merged.push(next);
+        }
+    }
+
+    return merged;
+
+    function group(from, to) {
+        let lo = Infinity;
+        let hi = -Infinity;
+        for (let i = from; i <= to; i++) {
+            if (top[i] < lo) lo = top[i];
+            if (bottom[i] > hi) hi = bottom[i];
+        }
+
+        return {x: x0 + from, y: lo, w: to - from + 1, h: hi - lo + 1, tag: r.tag, text: r.text};
+    }
+}
+
+/** The headings in `rects`, each shrunk to the groups of ink it actually holds. */
+export function inkedTextRects(edges, width, height, rects, opts = INK_CLUSTER) {
+    return textRects(rects).flatMap((r) => inkClusters(edges, width, height, r, opts));
 }
 
 /**
@@ -625,7 +856,7 @@ export const TEXT_RUN = {
  * spans the gap, and a run built from it would say nothing. The parts are what carry the
  * evidence, so keep only rects that contain no smaller text-bearing rect.
  */
-export function lineSpans(edges, width, height, rects, opts = TEXT_RUN) {
+export function lineSpans(edges, width, height, rects, opts = TEXT_RUN, inkOpts = INK_CLUSTER) {
     if (!rects || rects.length === 0) return [];
     const {lineAspect} = {...TEXT_RUN, ...opts};
 
@@ -634,9 +865,16 @@ export function lineSpans(edges, width, height, rects, opts = TEXT_RUN) {
     for (let i = 0; i < bearing.length; i++) {
         const r = bearing[i];
         if (bearing.some((n, j) => j !== i && containsRect(r, n) && n.w * n.h < r.w * r.h)) continue;
-        const ink = inkBounds(edges, width, height, r);
-        if (!ink || ink.w < lineAspect * ink.h) continue;
-        spans.push({...ink, box: r});
+        // GROUPS OF INK, NOT THE SPAN BETWEEN THEIR FAR ENDS — see inkClusters. A backdrop
+        // that puts a few pixels of ink across the whole box would otherwise hand the
+        // aspect test a "line" the element does not contain, and the run built from it
+        // would veto cuts nowhere near any words.
+        // `inkOpts`, never `opts`: TEXT_RUN happens to carry a `gap` too and it answers a
+        // different question about different things.
+        for (const ink of inkClusters(edges, width, height, r, inkOpts)) {
+            if (ink.w < lineAspect * ink.h) continue;
+            spans.push({...ink, box: r});
+        }
     }
 
     return spans;
@@ -652,9 +890,9 @@ export function lineSpans(edges, width, height, rects, opts = TEXT_RUN) {
  * narrow: a gap BETWEEN two parts of one line is not a boundary. Everything else about
  * what is protected stays exactly as it was.
  */
-export function textRuns(edges, width, height, rects, opts = TEXT_RUN) {
+export function textRuns(edges, width, height, rects, opts = TEXT_RUN, inkOpts = INK_CLUSTER) {
     const {lineBox, sameLine, gap} = {...TEXT_RUN, ...opts};
-    const spans = lineSpans(edges, width, height, rects, opts);
+    const spans = lineSpans(edges, width, height, rects, opts, inkOpts);
     if (spans.length < 2) return [];
     spans.sort((a, b) => a.x - b.x || a.y - b.y);
 
@@ -770,7 +1008,16 @@ export function cutsInsideProtected(keepWhole, rect, at, horizontal) {
     return false;
 }
 
-export const SEGMENT_DEFAULTS = {maxDepth: 4, minAreaFraction: 0.02, minSide: 120, moduleBridge: MODULE_BRIDGE};
+// `landmarkRule` above 1 switches the last-resort landmark cut off, the way
+// `moduleBridge: 0` switches bridging off: no row's density can exceed 1, so nothing
+// qualifies. The tests use both, to assert what the rules refuse as well as what they reach.
+export const SEGMENT_DEFAULTS = {
+    maxDepth: 4,
+    minAreaFraction: 0.02,
+    minSide: 120,
+    moduleBridge: MODULE_BRIDGE,
+    landmarkRule: LANDMARK_RULE,
+};
 
 /**
  * Recursive XY-cut. Considers every gutter on both axes, widest first, and splits on
@@ -797,7 +1044,7 @@ export const SEGMENT_DEFAULTS = {maxDepth: 4, minAreaFraction: 0.02, minSide: 12
  * partition, depth changes which labels get applied and never the arithmetic.
  */
 export function segment(edges, width, height, opts = {}) {
-    const {maxDepth, minAreaFraction, minSide, moduleBridge, rects, pageHeight, textRun} = {...SEGMENT_DEFAULTS, ...opts};
+    const {maxDepth, minAreaFraction, minSide, moduleBridge, landmarkRule, rects, pageHeight, textRun, inkCluster} = {...SEGMENT_DEFAULTS, ...opts};
     const minArea = width * height * minAreaFraction;
     const yCandidates = edgeCandidates(rects, true);
     const xCandidates = edgeCandidates(rects, false);
@@ -811,9 +1058,14 @@ export function segment(edges, width, height, opts = {}) {
     // A line assembled from several elements is one span too, or the space between two
     // words is a legal gutter and a headline gets cut between them. See textRuns.
     const keepIntact = [
-        ...inkedTextRects(edges, width, height, rects),
-        ...textRuns(edges, width, height, rects, textRun),
+        ...inkedTextRects(edges, width, height, rects, inkCluster),
+        ...textRuns(edges, width, height, rects, textRun, inkCluster),
     ];
+    // The page's own header and footer. A boundary in their own right, on terms the
+    // module population does not get — see pageLandmarks. Their top and bottom edges
+    // only: the side edges are the page margin.
+    const landmarks = pageLandmarks(rects, width);
+    const landmarkY = new Set(landmarks.flatMap((l) => [l.y, l.y + l.h]));
     // The coordinates a snap should reach for when the gutter offers a choice.
     const moduleEdgeY = new Set(keepWhole.flatMap((m) => [m.y, m.y + m.h]));
     const moduleEdgeX = new Set(keepWhole.flatMap((m) => [m.x, m.x + m.w]));
@@ -827,19 +1079,80 @@ export function segment(edges, width, height, opts = {}) {
     const cut = (rect) => {
         if (rect.depth >= maxDepth) return rect;
 
-        const rows = findGutters(rowDensity(edges, width, rect));
-        const cols = findGutters(colDensity(edges, width, rect));
+        // Kept rather than discarded: the landmark rule below asks this same profile
+        // whether a boundary is drawn.
+        const rowD = rowDensity(edges, width, rect);
+        const colD = colDensity(edges, width, rect);
+        const rows = findGutters(rowD);
+        const cols = findGutters(colD);
+        // COLUMNS ARE A TWO-DIMENSIONAL STRUCTURE, AND A LINE IS NOT ONE. A cut on either
+        // axis needs the region's ink to reach across the OTHER axis by at least as much
+        // as a gutter is wide; below that there is a line or a speck, not two things side
+        // by side. Measured on tpagency.com, where the 1440x150 strip above the footer is
+        // blank apart from the 1px rule drawing the footer's own top edge: the dither
+        // along that single row broke into 32 column runs, and the empty strip was cut
+        // into eight columns of nothing. No density threshold can answer that — the
+        // region's median is 0, so every threshold is the floor — but the question "how
+        // many rows have anything in them at all" answers it in one number: two.
+        const inked = (d) => {
+            let n = 0;
+            for (let i = 0; i < d.length; i++) if (d[i] > 0) n++;
+
+            return n;
+        };
+        const cuttable = {horizontal: inked(colD) >= GUTTER.minRun, vertical: inked(rowD) >= GUTTER.minRun};
         // Gutters touching an edge of the region are padding, not a divider: splitting
         // on one produces an empty child and a copy of the parent, which recurses
         // forever without making progress.
         const inner = (gs, extent) => gs.filter((g) => g.start > 0 && g.end < extent);
 
+        // A DRAWN LANDMARK BOUNDARY IS EVIDENCE OF ITS OWN, AND IT IS THE LAST RESORT.
+        //
+        // Everywhere else in this file a cut needs whitespace to justify it, and it
+        // should: a boundary the pixels do not show is one nobody reading the report can
+        // see either. This is the one exception, and it is not a weaker standard but the
+        // same one met a different way — the standard MODULE_BRIDGE states, that the
+        // pixels, the DOM and the eye all agree. A rule or a colour step drawn along a
+        // `<header>`'s bottom edge IS the boundary, visible to anyone looking at the page;
+        // whitespace is simply not the only way a page can draw one.
+        //
+        // andybudd.com is why it is here and shows what it costs to do without. Its
+        // header ends at y=105 under a rule covering 89% of the width, and the rows
+        // either side of that rule run 0.017-0.025 against an adaptive threshold of
+        // 0.0128 — not because the page has no whitespace, but because a decorative dot
+        // matrix occupies the left 306px of every row from y=10 down. No gutter is found,
+        // and the header, the hero and the portrait came back as one 1440x821 block.
+        // Lowering the gutter threshold to reach those rows was measured as the
+        // alternative and is the wrong tool by a wide margin: at the lowest setting that
+        // finds them, switch.je gains 8 leaves, liquidlight 11, dept 9, atkearney 8, and
+        // the jonleverrier fixture moves.
+        //
+        // DRAWN, MEASURED: the density of the row at the boundary or the one above it.
+        // Over the 51 landmark edges in the 29 captured pages and both fixtures the
+        // population is sharply bimodal — 30 edges at 0.131 and above (20 of them at
+        // 0.997+, a full-width rule or a colour step) and 21 at 0.023 and below, with
+        // nothing in between. LANDMARK_RULE sits in that gap. Undrawn boundaries lose
+        // nothing by it: they are the ones with whitespace around them, which the gutters
+        // and MODULE_BRIDGE already reach — jersey.com's header edge at y=134 measures
+        // 0.000 here and is cut anyway, by the 74-row gutter that holds it.
+        //
+        // ZERO WIDTH IS HOW IT RANKS LAST, not a trick: the order is width descending, so
+        // a landmark boundary is considered only after every gutter the pixels actually
+        // found has been tried and refused. It then faces every other test unchanged —
+        // the heading and text-run vetoes, the partition, and the degenerate-child floor.
+        const landmarkGutters = landmarks
+            .flatMap((l) => [l.y, l.y + l.h])
+            .filter((e) => e > rect.y && e < rect.y + rect.h)
+            .filter((e) => Math.max(rowD[e - rect.y - 1], rowD[e - rect.y]) >= landmarkRule)
+            .map((e) => ({g: {start: e - rect.y, end: e - rect.y}, horizontal: true}));
+
         // Width descending, then axis, then start. Two distinct candidates can never
         // compare equal: same axis and same start is the same gutter, because
         // findGutters returns disjoint runs.
         const ranked = [
-            ...inner(rows, rect.h).map((g) => ({g, horizontal: true})),
-            ...inner(cols, rect.w).map((g) => ({g, horizontal: false})),
+            ...(cuttable.horizontal ? inner(rows, rect.h).map((g) => ({g, horizontal: true})) : []),
+            ...(cuttable.vertical ? inner(cols, rect.w).map((g) => ({g, horizontal: false})) : []),
+            ...(cuttable.horizontal ? landmarkGutters : []),
         ].sort((p, q) => {
             const byWidth = (q.g.end - q.g.start) - (p.g.end - p.g.start);
             if (byWidth !== 0) return byWidth;
@@ -861,6 +1174,7 @@ export function segment(edges, width, height, opts = {}) {
                     bridge: moduleBridge,
                     extent: horizontal ? rect.h : rect.w,
                     spans: horizontal ? moduleSpanY : moduleSpanX,
+                    landmarks: horizontal ? landmarkY : null,
                 },
             );
             // REJECT, NEVER RELOCATE. Tested after the snap, because the snap is what
@@ -869,8 +1183,16 @@ export function segment(edges, width, height, opts = {}) {
             // edge. Rejection only shortens `ranked`, so no cut ever moves and the
             // partition is untouched. If every candidate goes, the region is a leaf —
             // which is the right answer for a region that is entirely one module.
-            if (cutsInsideProtected(keepWhole, rect, (horizontal ? rect.y : rect.x) + at, horizontal)) continue;
-            if (cutsInsideProtected(keepIntact, rect, (horizontal ? rect.y : rect.x) + at, horizontal)) continue;
+            //
+            // A PAGE LANDMARK'S OWN BOUNDARY IS EXEMPT FROM THAT ONE REJECTION, because a
+            // header drawn on top of a hero image is not the image's interior. See
+            // pageLandmarks. The exemption stops there: `keepIntact` is a veto on cutting
+            // through words, and a landmark boundary running through a headline would be
+            // as wrong as any other cut that does.
+            const here = (horizontal ? rect.y : rect.x) + at;
+            const landmarkHere = onLandmarkBoundary(landmarks, rect, here, horizontal);
+            if (!landmarkHere && cutsInsideProtected(keepWhole, rect, here, horizontal)) continue;
+            if (cutsInsideProtected(keepIntact, rect, here, horizontal)) continue;
             const a = horizontal
                 ? {x: rect.x, y: rect.y, w: rect.w, h: at, depth: rect.depth + 1, children: []}
                 : {x: rect.x, y: rect.y, w: at, h: rect.h, depth: rect.depth + 1, children: []};
@@ -900,14 +1222,26 @@ export function segment(edges, width, height, opts = {}) {
             // below it, producing 38px-wide slivers of black. On any page with a card
             // grid, every card's left and right edge became a licensed cut line for the
             // whole page.
-            const absolute = (horizontal ? rect.y : rect.x) + at;
-            const onModuleEdge = keepWhole.some((m) => (horizontal
-                ? (absolute === m.y || absolute === m.y + m.h)
+            // A PAGE LANDMARK'S EDGE WAIVES IT TOO, and for the reason the rule was
+            // written: a header strip is a real block. jtcgroup.com's is 94px tall and
+            // jerseyfinance.com's is 58px, both under the 120px floor, and both are
+            // exactly the block this tool is trying to measure.
+            const onModuleEdge = landmarkHere || keepWhole.some((m) => (horizontal
+                ? (here === m.y || here === m.y + m.h)
                     && m.x < rect.x + rect.w && rect.x < m.x + m.w
-                : (absolute === m.x || absolute === m.x + m.w)
+                : (here === m.x || here === m.x + m.w)
                     && m.y < rect.y + rect.h && rect.y < m.y + m.h));
 
-            if (!onModuleEdge && (tooSmall(a) || tooSmall(b))) continue;
+            // A BOUNDARY OUTRANKS THE SIZE FLOOR, NOT THE DEFINITION OF A BLOCK. The
+            // waiver says a short module is a real block; it cannot say a 1px strip is.
+            // Measured on atkearney.com, whose `<footer>` begins at y=8597 one pixel
+            // inside a band the stitch had already ended at 8596: the waiver took the
+            // cut and the page gained a leaf of 1440x1. BAND_MIN_HEIGHT is the project's
+            // existing answer to how short is too short to be a block, so it is the
+            // answer here too rather than a second number.
+            const degenerate = Math.min(a.w, a.h) < BAND_MIN_HEIGHT || Math.min(b.w, b.h) < BAND_MIN_HEIGHT;
+
+            if ((!onModuleEdge || degenerate) && (tooSmall(a) || tooSmall(b))) continue;
 
             rect.children = [cut(a), cut(b)];
 
@@ -1061,9 +1395,15 @@ export function segmentTall(edges, width, height, opts = {}) {
     // boxes, for the same reason segment uses ink — see inkBounds. Runs of text as well,
     // for the same reason both populations are here: this is the same rule, promoted.
     const keepIntact = [
-        ...inkedTextRects(edges, width, height, opts.rects),
-        ...textRuns(edges, width, height, opts.rects, opts.textRun),
+        ...inkedTextRects(edges, width, height, opts.rects, opts.inkCluster),
+        ...textRuns(edges, width, height, opts.rects, opts.textRun, opts.inkCluster),
     ];
+    // Page coordinates too. A harvested line on a landmark's own edge is exempt from the
+    // module rejection for the same reason it is inside `segment` — see pageLandmarks —
+    // and this is the path that was actually dropping andybudd.com's header cut, which a
+    // tile had already found: a 306x306 decorative dot patch spans y=-101 to 205 and the
+    // stitch judged the line at y=105 against it.
+    const landmarks = pageLandmarks(opts.rects, width);
     const page = {x: 0, y: 0, w: width, h: height};
     for (let top = 0; top < height; top += step) {
         const h = Math.min(TILE_HEIGHT, height - top);
@@ -1091,7 +1431,8 @@ export function segmentTall(edges, width, height, opts = {}) {
                 // boundary taken from the right column's whitespace went on slicing a
                 // left-column headline. Every rule `segment` applies to a cut applies
                 // here too — this is the same line, promoted.
-                if (cutsInsideProtected(keepWhole, page, line, true)) continue;
+                if (!onLandmarkBoundary(landmarks, page, line, true)
+                    && cutsInsideProtected(keepWhole, page, line, true)) continue;
                 if (cutsInsideProtected(keepIntact, page, line, true)) continue;
                 cuts.add(line);
             }
