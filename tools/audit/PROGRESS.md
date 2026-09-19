@@ -19,14 +19,16 @@ Phase 3 (classify) and phase 4 (report and email) do not exist yet.
 copied flat to `/tmp/audit-review/<host>.png` for review. This corpus is the evaluation
 set: every defect below was found by looking at those images, not by guessing.
 
-Five of the 29 produce no measurement, all deliberately:
+Four of the 30 produce no measurement, all deliberately:
 
 | site | why |
 |---|---|
 | webreality, jerseyfsc, afdb | HTTP 403. Refused as error pages rather than measured. |
-| lloydsbank | HTTP 200 serving "We are sorry an error has occurred". Flagged `errorPageLikely`. |
+| lloydsbank | HTTP 200 serving "We are sorry an error has occurred". Flagged `errorPageLikely`. Reviewed the image: it really is an error page. |
 | visionarygrid | 24,746px. Captured whole; phase 2 refuses on the memory budget. |
-| bakerandpartners | Dies at the 3-minute deadline inside `dismissConsent`. Used to hang forever. |
+
+bakerandpartners.com is no longer on that list. It hung for 14 minutes, then failed at the
+3-minute deadline, and now captures in **30 seconds** into 36 blocks with no notes.
 
 ---
 
@@ -38,9 +40,21 @@ Five of the 29 produce no measurement, all deliberately:
 | 5 | A 295px soft-focus photograph shredded into ~15 fragments | dept.agency | in progress |
 | 6 | Three oversized part-off-canvas `<img>` treated as modules, fusing header + hero + featured across the top 1,482px | gcsc | in progress |
 | 8 | `shotTruncated` fires on a 3px difference — true statement, noisy threshold | liquidlight | not started |
-| — | Consent card in a shadow root, repeats 12×, `consentBannerSeen` false | boondmanager | in progress |
 | — | Whitespace reported as coverage per block, not as a category of block (user's ruling) | all | phase 3/4 |
 | — | `webglBlind`: canvas content the edge map cannot read | 8 sites | accepted, declared in notes |
+
+Found by reviewing the debug images on 19 Sep, not reported by the user:
+
+| # | Defect | Site |
+|---|---|---|
+| 9 | **A cut runs through a paragraph mid-sentence.** `inkedTextRects` is meant to make this impossible, so either the population has a gap or something outranks it | milk |
+| 10 | A display word is cut **between its letters** — "Launch." sliced L‑a‑u‑n‑c‑h | kohde |
+| 11 | Header still fused into the hero; Task 17's landmark rule did not reach it | kohde |
+| 12 | A photograph shredded into fragments — the same defect as dept.agency, so that one is not a one-off | milk |
+| 13 | Repeating siblings cut per item: footer link lists, a primary nav row, service and product card grids. Same defect as #4 at three scales | whitepaper, clearleft, liquidlight, natwest, milk |
+| 14 | Footer columns not separated | vaiie |
+| 15 | Slivers holding a single `>` chevron | hsbc |
+| 16 | An undismissed late banner is kept from slice 0 rather than from first sighting, so "measured once" is not literally true | queued by task 18 |
 
 ---
 
@@ -50,6 +64,9 @@ Each row is a defect that was visible in a debug image and is not any more.
 
 | Defect | Found on | Fixed by | Evidence |
 |---|---|---|---|
+| A capture blocked for 14 minutes, then failed at the deadline — the site was unauditable | bakerandpartners | `02f5b47` | 30.5s, 36 blocks, `notes: none`. Cause: a frame whose URL is the empty string, on which `frame.evaluate` never returns |
+| Consent card in a shadow root, repeating 12×, `consentBannerSeen` false | boondmanager | `02f5b47` | dismissed after the scroll pass; cropped y=2400 and the card is gone from all twelve places |
+| A widget painted once per slice with `notes: none` — one element counted four times | natwest | `a8a7b1e` | the condition reached the phase 1 terminal only; now in blocks.json |
 | Header fused into the hero | jtcgroup, jerseyfinance, jersey.com, andybudd | `dfbf10d` | all four have a header block; cropped and checked |
 | A whole page left as 4 blocks — 3 columns, a heading and 3 cards in one box | andybudd | `dfbf10d` | 4 → 17 leaves |
 | Cuts between the words of a headline | tpagency | `d3539a0` | 44 → 30 leaves, one band per headline |
