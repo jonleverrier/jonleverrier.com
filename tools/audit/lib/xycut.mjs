@@ -967,7 +967,27 @@ export const TEXT_TAGS = new Set([
 export function textRects(rects) {
     if (!rects || rects.length === 0) return [];
 
-    return rects.filter((r) => TEXT_TAGS.has(r.tag) && (r.text || '').trim().length > 0 && isContentRect(r));
+    // NOT `isContentRect`, and the difference is one of its three gates. That helper
+    // answers "is this worth snapping a cut to", and its 700px height ceiling is there to
+    // keep PAGE-LEVEL WRAPPERS out of the candidate list — a `<div>` around the whole
+    // document marks nothing and would otherwise be the most numerous candidate near any
+    // cut. That reasoning does not transfer here: an element in TEXT_TAGS holds words
+    // directly, so it cannot be a page wrapper however tall it is, and a headline is
+    // exactly the thing that most needs protecting when it is big.
+    //
+    // alchemy.je is the page that found it. Its `<h1>` at 16,212 is 1408x704 — FOUR
+    // PIXELS over the ceiling — so "IGNITING BUSINESS SUCCESS / THROUGH THE POWER OF
+    // DIFFERENCE." was protected by nothing and got cut between its words and in places
+    // between its letters, taking about 19 of that page's 91 blocks. The two `<span>`s
+    // inside it are under the ceiling but are inline, so they are not in TEXT_TAGS
+    // either, and being on separate lines they form no run. Nothing in the file reached
+    // it.
+    //
+    // The other two gates stay: a hairline or an icon is still too small to be a section
+    // break, and protecting one would veto an axis for nothing.
+    const bigEnough = (r) => r.w >= CONTENT_RECT.minW && r.h >= CONTENT_RECT.minH;
+
+    return rects.filter((r) => TEXT_TAGS.has(r.tag) && (r.text || '').trim().length > 0 && bigEnough(r));
 }
 
 /**

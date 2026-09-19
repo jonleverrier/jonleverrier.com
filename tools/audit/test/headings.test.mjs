@@ -10,15 +10,22 @@
  * 268px-tall column of background and a vertical cut went straight down it, splitting
  * the headline in half.
  *
- * HEADINGS ONLY, and that narrowness is the point. The first attempt protected every
- * text-bearing element, which reads as the more principled rule and is worse: one
- * full-width line of text vetoes every cut on that axis across the region it occupies.
- * jonleverrier's copyright line is 1315px wide at the foot of the footer, so protecting
- * it merged all four footer columns into a single block — the exact structure that most
- * needs to stay apart, because those columns carry different labels.
+ * BLOCK-LEVEL TEXT, WHICH USED TO MEAN HEADINGS ONLY. The first attempt protected every
+ * text-bearing element and was reverted, for a good reason: a protected rect was its own
+ * BOX, so one full-width line vetoed every cut on that axis across the region it
+ * occupies. jonleverrier's copyright line is 1315px wide at the foot of the footer, and
+ * protecting it merged all four footer columns into a single block — the exact structure
+ * that most needs to stay apart, because those columns carry different labels.
  *
- * A heading is a single phrase, always short, and never the thing you want to cut
- * through. Body text is left cuttable and the columns survive.
+ * That reason expired. `inkBounds` and `inkClusters` arrived afterwards and shrink a
+ * protected rect to the pixels it actually draws, so that copyright line now protects the
+ * width of its own sentence and nothing else. Body text rejoined the population once the
+ * old regression was re-measured and did not come back: both fixtures unmoved, and all
+ * four corpus pages with real multi-column footers keeping their columns. Three pages
+ * were being cut through the middle of a paragraph for want of it.
+ *
+ * Inline elements — `<span>`, `<a>` — are still out. They are everywhere, and a run of
+ * them that reads as one line is `textRuns`' job rather than this one's.
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -34,7 +41,6 @@ test('headings are protected', () => {
     assert.equal(textRects([rect('h3', 0, 0, 400, 100)]).length, 1);
 });
 
-// Deliberately NOT protected — see the header comment.
 /**
  * THIS TEST USED TO ASSERT THE OPPOSITE, and the change is deliberate. Body text was
  * excluded because protecting every text element merged four footer columns — a 1315px
@@ -108,4 +114,26 @@ test('the jonleverrier footer columns stay separate', async () => {
     const columns = ls.filter((l) => l.y >= 940 && l.y < 1120);
 
     assert.ok(columns.length > 1, `the footer should be in columns, got ${columns.length} block(s)`);
+});
+
+/* ------------------------------------------------- a headline taller than a wrapper */
+
+/**
+ * alchemy.je's `<h1>` is 1408x704 — FOUR PIXELS over `CONTENT_RECT.maxH` — so its
+ * headline was protected by nothing and got cut between its words and in places between
+ * its letters, taking about 19 of that page's 91 blocks.
+ *
+ * The ceiling belongs to the SNAP CANDIDATE question, where it keeps page-level wrappers
+ * out of a list they would otherwise dominate. An element in TEXT_TAGS holds words
+ * directly and cannot be a page wrapper, so the ceiling never applied here.
+ */
+test('a display headline taller than the content-rect ceiling is still protected', () => {
+    const headline = rect('h1', 16, 212, 1408, 704, 'Igniting business success. Through the power of difference.');
+
+    assert.deepEqual(textRects([headline]).map((r) => r.h), [704]);
+});
+
+test('a hairline and an icon are still too small to protect', () => {
+    assert.deepEqual(textRects([rect('h1', 0, 0, 1408, 4, 'hairline')]), []);
+    assert.deepEqual(textRects([rect('p', 0, 0, 20, 20, 'icon')]), []);
 });
