@@ -76,6 +76,26 @@ Return ONLY a JSON array, no prose and no code fence:
 [{"y0": <int>, "y1": <int>, "cols": <int>, "what": "<3-5 words>", "category": "<one of the six>", "confidence": <0 to 1>}]`;
 
 /**
+ * What the slice above ended with, so a section cut by a seam is recognised as continuing.
+ *
+ * natwest.com is why this exists. Its "Supporting 18 million customers" section straddles
+ * the seam at y=5600, and without this the two halves came back as `other` "Supporting 18
+ * million section start" and `brand` "hero heading, app badges, phone" — one section, two
+ * categories, and a number that moved because of where a 1400px grid happened to fall. The
+ * prize draw above it split the same way into two `promotion` blocks, which cost nothing
+ * but looked wrong to the person reading it.
+ *
+ * Told what came immediately before, the model can give the continuation the same category
+ * and description, and lib/bands.mjs then merges them at the seam.
+ */
+export const carryOver = (previous) => (previous
+    ? `\nThe slice immediately above this one ended with a block described as "${previous.what}", `
+        + `category "${previous.category}". If the region at the very top of THIS image is a `
+        + 'continuation of it, give it the same description and the same category so the two '
+        + 'can be rejoined. If it is something else, describe it as what it is.\n'
+    : '');
+
+/**
  * The key. `KEY_ANTHROPIC_API` in this repo, NOT `ANTHROPIC_API_KEY`.
  *
  * THE ENVIRONMENT FIRST, then the file. The Craft queue job that will run this on Forge
@@ -175,7 +195,8 @@ export async function askTile(tile, pageSize, opts = {}) {
                     {
                         type: 'text',
                         text: `This slice is ${Math.round(pageSize.width * tile.scale)}x`
-                            + `${Math.round(tile.height * tile.scale)} pixels.\n\n${TILE_PROMPT}`,
+                            + `${Math.round(tile.height * tile.scale)} pixels.`
+                            + `${carryOver(opts.previous)}\n\n${TILE_PROMPT}`,
                     },
                 ],
             }],
@@ -216,7 +237,9 @@ export async function askPage(pngPath, meta, opts = {}) {
     const usage = {input_tokens: 0, output_tokens: 0};
     let secs = 0;
     for (const tile of tiles) {
-        const r = await askTile(tile, {width, height}, opts);
+        // Each tile is told what the one above it ended with, so a section cut by a seam
+        // is recognised as continuing rather than described twice. See carryOver.
+        const r = await askTile(tile, {width, height}, {...opts, previous: blocks[blocks.length - 1]});
         if (r.error) {
             return {error: r.error, tiles: tiles.length};
         }

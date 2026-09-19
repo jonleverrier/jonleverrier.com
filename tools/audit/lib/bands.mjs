@@ -55,25 +55,37 @@ export function snapBoundaries(edges, candidates, reach = SNAP_REACH) {
  * Blocks split by a tile seam, put back together.
  *
  * A section taller than one tile is shown to the model in pieces and comes back as two
- * blocks with the same label, meeting exactly at the seam. NOTHING ELSE MAY MERGE: two
- * adjacent sections that happen to share a category are still two sections, and joining
- * them would hide a boundary a reader can see. So the test is all three of — they meet,
- * they meet AT A SEAM, and they carry the same label.
+ * blocks meeting exactly at the seam. The test is that they meet, that they meet AT A
+ * SEAM, and that they carry the same CATEGORY.
+ *
+ * NOT THE SAME WORDING, and that was the first attempt. The model sees two halves and
+ * describes them as two halves: natwest.com's prize draw came back as "prize draw promo
+ * section" for 1233-1400 and "ISA prize draw offer" for 1400-1720, both `promotion`, both
+ * the same panel, and requiring the text to match left them as two blocks — which a reader
+ * reported as the defect it is. The description is the model's prose; the category is its
+ * judgement, and the judgement is what should decide.
+ *
+ * The cost of the looser rule is bounded. Two genuinely different sections have to meet at
+ * exactly the seam — an arbitrary 1400px grid, unrelated to the page — AND share a
+ * category. When that happens they merge into one block carrying the label they both
+ * already had, so no percentage moves; only the granularity does, and by the depth ruling
+ * a cut that changes no label was not worth making.
  */
 export function mergeSeams(blocks, seams) {
     const at = new Set(seams);
     const out = [];
     for (const b of blocks) {
         const last = out[out.length - 1];
-        const joins = last && last.y1 === b.y0 && at.has(b.y0)
-            && last.category === b.category && last.what === b.what;
+        const joins = last && last.y1 === b.y0 && at.has(b.y0) && last.category === b.category;
         if (joins) {
             last.y1 = b.y1;
             // The widest column count, because one half of a grid may show fewer columns
             // than the other; the lowest confidence, because a run is only as sure as its
-            // least sure part.
+            // least sure part; and the fuller description, because the half that named the
+            // thing is more use than the half that named its bottom edge.
             last.cols = Math.max(last.cols, b.cols);
             last.confidence = Math.min(last.confidence, b.confidence);
+            if (String(b.what).length > String(last.what).length) last.what = b.what;
             continue;
         }
         out.push({...b});
