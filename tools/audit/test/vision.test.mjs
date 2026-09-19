@@ -12,7 +12,7 @@
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {parseTileReply, CATEGORIES, TILE_PROMPT} from '../lib/vision.mjs';
+import {parseTileReply, CATEGORIES, TILE_PROMPT, apiKey} from '../lib/vision.mjs';
 
 const tile = {index: 2, top: 2800, height: 1400, scale: 0.75};
 
@@ -93,4 +93,32 @@ test('the prompt carries the category definitions and their precedence', () => {
         assert.match(TILE_PROMPT, new RegExp(`"${c}"`), c);
     }
     assert.match(TILE_PROMPT, /first match wins/);
+});
+
+/* -------------------------------------------------------------------------- the key */
+
+/**
+ * The environment first, then the file. A Craft queue job on Forge has the variable and
+ * may not have a readable craft/.env relative to its working directory; a git worktree has
+ * neither, because the file is gitignored and does not travel with the checkout.
+ */
+test('the environment is preferred over the file', () => {
+    const held = process.env.KEY_ANTHROPIC_API;
+    process.env.KEY_ANTHROPIC_API = 'from-the-environment';
+    try {
+        assert.equal(apiKey('/nonexistent/.env'), 'from-the-environment');
+    } finally {
+        if (held === undefined) delete process.env.KEY_ANTHROPIC_API;
+        else process.env.KEY_ANTHROPIC_API = held;
+    }
+});
+
+test('an unreadable file says so, and says where it looked', () => {
+    const held = process.env.KEY_ANTHROPIC_API;
+    delete process.env.KEY_ANTHROPIC_API;
+    try {
+        assert.throws(() => apiKey('/nonexistent/.env'), /\/nonexistent\/\.env could not be read/);
+    } finally {
+        if (held !== undefined) process.env.KEY_ANTHROPIC_API = held;
+    }
 });

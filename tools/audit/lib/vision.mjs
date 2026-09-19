@@ -75,11 +75,31 @@ no overlaps.
 Return ONLY a JSON array, no prose and no code fence:
 [{"y0": <int>, "y1": <int>, "cols": <int>, "what": "<3-5 words>", "category": "<one of the six>", "confidence": <0 to 1>}]`;
 
-/** The key lives in craft/.env as KEY_ANTHROPIC_API, not ANTHROPIC_API_KEY. */
+/**
+ * The key. `KEY_ANTHROPIC_API` in this repo, NOT `ANTHROPIC_API_KEY`.
+ *
+ * THE ENVIRONMENT FIRST, then the file. The Craft queue job that will run this on Forge
+ * has the variable and may not have a readable `craft/.env` relative to its working
+ * directory; a git worktree has neither, since the file is gitignored and does not travel.
+ * Reading the environment first means the same code runs in both without a flag.
+ *
+ * The error says which places were tried, because "no API key" with no path is the kind of
+ * message that costs somebody twenty minutes.
+ */
 export function apiKey(envPath = 'craft/.env') {
-    const found = (readFileSync(envPath, 'utf8').match(/^KEY_ANTHROPIC_API\s*=\s*"?([^"\n\r]+)"?/m) ?? [])[1];
+    if (process.env.KEY_ANTHROPIC_API) {
+        return process.env.KEY_ANTHROPIC_API;
+    }
+
+    let file = '';
+    try {
+        file = readFileSync(envPath, 'utf8');
+    } catch {
+        throw new Error(`no KEY_ANTHROPIC_API in the environment, and ${envPath} could not be read`);
+    }
+    const found = (file.match(/^KEY_ANTHROPIC_API\s*=\s*"?([^"\n\r]+)"?/m) ?? [])[1];
     if (!found) {
-        throw new Error(`no KEY_ANTHROPIC_API in ${envPath}`);
+        throw new Error(`no KEY_ANTHROPIC_API in the environment or in ${envPath}`);
     }
 
     return found;
