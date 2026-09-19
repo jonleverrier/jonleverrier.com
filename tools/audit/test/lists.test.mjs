@@ -112,3 +112,49 @@ test('the jonleverrier fixture keeps its footer columns apart', async () => {
     const footer = ls.filter((l) => l.y >= 940 && l.y < 1120);
     assert.ok(footer.length > 1, `the footer should be in columns, got ${footer.length} block(s)`);
 });
+
+/* ------------------------------------------------ the markup outranks the geometry */
+
+/**
+ * vaiie.com is the page, and it is the defect the user reported twice. Its footer has
+ * three `<ul>` columns at x=599, 876 and 1152, each 242 wide and each declared by the
+ * markup. `repeatedRuns` also found a run at `46,2864 1348x257` covering all three at
+ * once, not stacked, which vetoed every vertical cut between them — the whole footer came
+ * back as one block.
+ *
+ * Both rules were working as designed. Only one of them was reading what the page said.
+ */
+test('every declared footer column survives as its own block', async () => {
+    const {edges, width, height} = await edgeMapFromPng('tools/audit/fixtures/retail.png');
+    const rects = JSON.parse(readFileSync('tools/audit/fixtures/retail.rects.json', 'utf8'));
+
+    // The footer's four columns are four separate <ul>s in the fixture, at y=3048.
+    const columns = listContainers(rects, width, height).filter((l) => l.y >= 3000 && l.y < 3320);
+    assert.ok(columns.length >= 2, 'the fixture must still declare its footer columns as lists');
+
+    // The band they sit in starts above them, so ask which leaves OVERLAP them rather
+    // than which begin inside an arbitrary window.
+    const top = Math.min(...columns.map((l) => l.y));
+    const bottom = Math.max(...columns.map((l) => l.y + l.h));
+    const ls = leaves(segmentTall(edges, width, height, {rects}));
+    const over = ls.filter((l) => l.y < bottom && l.y + l.h > top);
+
+    assert.ok(over.length >= columns.length,
+        `${columns.length} declared columns should not merge: got ${over.length} block(s) over them`);
+    // …and none of those blocks may straddle two of the columns.
+    for (const l of over) {
+        const held = columns.filter((c) => c.x >= l.x && c.x + c.w <= l.x + l.w);
+        assert.ok(held.length <= 1, `a block spans ${held.length} declared columns: ${JSON.stringify(l)}`);
+    }
+});
+
+/** …and a run holding only ONE list is still a run, so a card grid is unaffected. */
+test('a run holding a single list is left alone', () => {
+    const run = {x: 0, y: 0, w: 900, h: 400};
+    const one = [{x: 10, y: 10, w: 200, h: 100}];
+    const two = [{x: 10, y: 10, w: 200, h: 100}, {x: 300, y: 10, w: 200, h: 100}];
+    const holds = (r, l) => l.x >= r.x && l.y >= r.y && l.x + l.w <= r.x + r.w && l.y + l.h <= r.y + r.h;
+
+    assert.equal(one.filter((l) => holds(run, l)).length < 2, true, 'one list: the run stands');
+    assert.equal(two.filter((l) => holds(run, l)).length < 2, false, 'two lists: the run goes');
+});

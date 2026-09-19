@@ -1598,8 +1598,21 @@ export function segment(edges, width, height, opts = {}) {
     // reaches the lists `repeatedRuns` cannot: that rule needs four members, so a
     // three-link column — whitepaper's "Legal" and "Quick Links" — was cut per link for
     // want of a fourth. A `<ul>` says so at any length. See listContainers.
-    const runs = [...repeatedRuns(rects, width, pageHeight ?? height),
-        ...listContainers(rects, width, pageHeight ?? height)];
+    const declared = listContainers(rects, width, pageHeight ?? height);
+    // WHERE THE MARKUP HAS SPOKEN, THE GEOMETRY DOES NOT OVERRULE IT. A repeated run that
+    // swallows two or more declared lists is not describing a module, it is describing the
+    // lists — and saying they are one thing when the page says they are several.
+    //
+    // vaiie.com is the case, and it is the defect the user reported twice. Its footer has
+    // three `<ul>` columns at x=599, 876 and 1152, each 242 wide and each declared. The
+    // run at `46,2864 1348x257` covers all three, is not stacked, and so vetoed every
+    // vertical cut between them: the whole footer came back as one block. Dropping the run
+    // leaves the three lists, each still whole, with the gutters between them legal.
+    const holds = (run, l) => l.x >= run.x && l.y >= run.y
+        && l.x + l.w <= run.x + run.w && l.y + l.h <= run.y + run.h;
+    const inferred = repeatedRuns(rects, width, pageHeight ?? height)
+        .filter((run) => declared.filter((l) => holds(run, l)).length < 2);
+    const runs = [...inferred, ...declared];
     const keepIntact = [
         ...inkedTextRects(edges, width, height, rects, inkCluster),
         ...textRuns(edges, width, height, rects, textRun, inkCluster),
