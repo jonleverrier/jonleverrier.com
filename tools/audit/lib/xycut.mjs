@@ -1473,7 +1473,19 @@ export function repeatedGroups(rects, width, pageHeight, opts = MODULE_AREA) {
         // The largest child decides the tile; everything the same size is a member.
         const tile = held.reduce((big, t) => (t.w * t.h > big.w * big.h ? t : big), held[0]);
         const same = (t) => Math.abs(t.w - tile.w) <= GROUP_TOLERANCE && Math.abs(t.h - tile.h) <= GROUP_TOLERANCE;
-        const members = held.filter(same);
+        // AT DISTINCT POSITIONS. One element wrapped in two divs of its own size is
+        // ordinary markup and is not a grid of three, and counting it as one is how this
+        // rule first went wrong: natwest.com has an `<img>` inside three `<div>`s all at
+        // `138,4218 435x544`, which read as four members covering 280% of their container
+        // — passing the coverage guard below by counting one box four times. The section
+        // boundaries either side of it were then vetoed and three sections came back as
+        // one 1440x1761 block.
+        const seen = new Map();
+        for (const t of held.filter(same)) {
+            const key = `${t.x},${t.y},${t.w},${t.h}`;
+            if (!seen.has(key)) seen.set(key, t);
+        }
+        const members = [...seen.values()];
         if (members.length < 2) continue;
         // Nothing substantial inside that is NOT a member or a member's own content: the
         // container must be the group and not a section that happens to hold one.

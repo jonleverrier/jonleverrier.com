@@ -293,3 +293,29 @@ test('a nav holding two rows of links keeps its protection', () => {
 
     assert.deepEqual(stacked, [], 'a bar holds rows, and rows do not release the container');
 });
+
+/**
+ * One element wrapped in two divs of its own size is ordinary markup, not a grid of
+ * three. natwest.com has an `<img>` inside three `<div>`s all at `138,4218 435x544`; as
+ * four members they covered 280% of their container and sailed past the coverage guard,
+ * and the section boundaries either side were then vetoed — three sections came back as
+ * one 1440x1761 block, which is what a reader reported.
+ */
+test('the same box repeated is one member, not several', () => {
+    const wrapped = [
+        {x: 126, y: 0, w: 594, h: 568, tag: 'div', boxed: false, text: ''},
+        {x: 138, y: 24, w: 435, h: 544, tag: 'div', boxed: false, text: ''},
+        {x: 138, y: 24, w: 435, h: 544, tag: 'div', boxed: false, text: ''},
+        {x: 138, y: 24, w: 435, h: 544, tag: 'img', boxed: false, text: ''},
+    ];
+    assert.deepEqual(repeatedGroups(wrapped, 1440, 7405), []);
+});
+
+test('two tiles at distinct positions are still a group', () => {
+    const real = [
+        {x: 0, y: 0, w: 500, h: 140, tag: 'div', boxed: false, text: ''},
+        {x: 0, y: 0, w: 244, h: 136, tag: 'div', boxed: false, text: 'a'},
+        {x: 250, y: 0, w: 244, h: 136, tag: 'div', boxed: false, text: 'b'},
+    ];
+    assert.equal(repeatedGroups(real, 1440, 7405).length, 1);
+});
