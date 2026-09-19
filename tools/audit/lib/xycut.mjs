@@ -1640,7 +1640,29 @@ export function segment(edges, width, height, opts = {}) {
     const contentX = edgeCandidates(rects, false);
     // `height` is this slice's height; the whole page's is only different when segmentTall
     // called us for a tile or a band, and it says so.
-    const keepWhole = protectedRects(rects, width, pageHeight ?? height, pageOffsetY);
+    const declaredLists = listContainers(rects, width, pageHeight ?? height);
+    const encloses = (outer, inner) => inner.x >= outer.x && inner.y >= outer.y
+        && inner.x + inner.w <= outer.x + outer.w && inner.y + inner.h <= outer.y + outer.h
+        && !(inner.w === outer.w && inner.h === outer.h);
+    // THE MORE SPECIFIC CLAIM WINS, when the page makes two that disagree. A module
+    // container says "I am one thing"; a `<ul>` inside it says "and I am one of several".
+    // Both are the markup speaking, so neither can simply be preferred by tag — but a
+    // container holding two or more declared lists is describing a REGION that holds
+    // them, not an atom, and treating it as an atom forbids every cut between them.
+    //
+    // boondmanager.com is the case. Its entire footer is wrapped in `<nav> 48,9813
+    // 1344x419`, which is a module by tag at any width and is inset, so neither the band
+    // rule nor the size gates touch it. Inside are three `<ul>` columns at x=459, 665 and
+    // 870. The nav vetoed all five column gutters and the footer came back as one block —
+    // the same defect vaiie had, arriving by a different route.
+    // STACKED LISTS ONLY, and the difference is a bar against a region. A nav BAR holds
+    // its `<ul>`s in a row — natwest wraps two in one strip — and it really is one thing;
+    // dropping its protection cut it into pieces and took that page from 13 blocks to 20.
+    // A container holding two or more COLUMNS of links is the other shape: a footer,
+    // where the columns are what a reader sees and the gutters between them are the
+    // boundaries that matter. `stacked` already carries exactly that distinction.
+    const keepWhole = protectedRects(rects, width, pageHeight ?? height, pageOffsetY)
+        .filter((m) => declaredLists.filter((l) => l.stacked && encloses(m, l)).length < 2);
     // The subset whose own edges are boundaries. A picture's edge is not one — see
     // boundingRects — so it steers no snap, bridges no seam and waives no size floor.
     const bounds = boundingRects(rects, width, pageHeight ?? height, pageOffsetY);

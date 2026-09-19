@@ -244,3 +244,52 @@ test('the innermost container wins, so the group is the tiles own parent', () =>
     const found = repeatedGroups(rects, 1440, 9061);
     assert.equal(found.length, 1, 'one group, not one per wrapper');
 });
+
+/* ------------------------------------- two markup claims, and the specific one wins */
+
+/**
+ * boondmanager.com wraps its ENTIRE footer in `<nav> 48,9813 1344x419`. `nav` is a module
+ * tag, taken at its word at any width, and the element is inset, so neither the band rule
+ * nor the size gates touch it. Inside are three `<ul>` columns at x=459, 665 and 870. The
+ * nav vetoed all five column gutters and the footer came back as one block — the same
+ * defect vaiie had, arriving by a different route.
+ *
+ * Both claims are the markup speaking, so neither wins by tag. A container holding two or
+ * more declared COLUMNS of links is describing a region that holds them rather than an
+ * atom, and treating it as an atom forbids every cut between them.
+ *
+ * STACKED ONLY. A nav BAR holds its lists in a row and really is one thing — natwest
+ * wraps two in a single strip, and dropping its protection took that page from 13 blocks
+ * to 20, cutting a nav bar into pieces.
+ */
+const ulColumn = (x, y) => [
+    at('ul', x, y, 182, 120),
+    at('li', x, y, 182, 30), at('li', x, y + 30, 182, 30),
+    at('li', x, y + 60, 182, 30), at('li', x, y + 90, 182, 30),
+];
+const ulRow = (x, y) => [
+    at('ul', x, y, 400, 30),
+    at('li', x, y, 90, 30), at('li', x + 100, y, 90, 30), at('li', x + 200, y, 90, 30),
+];
+
+test('a nav holding two columns of links is a region, not a module', () => {
+    const rects = [
+        at('nav', 48, 9813, 1344, 419),
+        ...ulColumn(459, 9847), ...ulColumn(665, 9847), ...ulColumn(870, 9847),
+    ];
+    const lists = listContainers(rects, 1440, 10619).filter((l) => l.stacked);
+    assert.equal(lists.length, 3, 'the three columns are declared lists');
+
+    const nav = rects[0];
+    const encloses = (o, i) => i.x >= o.x && i.y >= o.y
+        && i.x + i.w <= o.x + o.w && i.y + i.h <= o.y + o.h && !(i.w === o.w && i.h === o.h);
+    assert.ok(lists.filter((l) => encloses(nav, l)).length >= 2,
+        'the nav holds them, so it must give up its own protection');
+});
+
+test('a nav holding two rows of links keeps its protection', () => {
+    const rects = [at('nav', 0, 0, 1440, 40), ...ulRow(100, 0), ...ulRow(600, 0)];
+    const stacked = listContainers(rects, 1440, 4000).filter((l) => l.stacked);
+
+    assert.deepEqual(stacked, [], 'a bar holds rows, and rows do not release the container');
+});
