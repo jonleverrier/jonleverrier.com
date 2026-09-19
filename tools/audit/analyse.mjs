@@ -150,7 +150,7 @@ try {
     const overlays = meta.capture?.mode === 'stitched'
         ? await overlaysInPng(png, meta.capture.viewportHeight ?? 900)
         : [];
-    const notes = runNotes(meta, 'present', rects, unpainted, blank, transparent, overlays);
+    const notes = runNotes(meta, 'present', rects, unpainted, blank, transparent, overlays, ls);
 
     // debug.png first: if rendering throws there is then no blocks.json beside it claiming
     // the run succeeded.

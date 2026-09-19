@@ -234,3 +234,52 @@ test('a capture with nothing arriving late stays quiet about it', () => {
 test('a capture with no pinned census at all does not invent the condition', () => {
     assert.equal('lateArrivals' in runNotes(clean({})).conditions, false);
 });
+
+/* ------------------------------------------------ what the model was unsure about */
+
+const confLeaf = (category, confidence, h = 500) => ({
+    x: 0, y: 0, w: 1440, h, label: {category, confidence, what: 'x', cols: 1},
+});
+
+/**
+ * Every other condition in this file is about the CAPTURE. These two are about the
+ * READING of it, and nothing else can see them: the model's own confidence, and any band
+ * that fell between the blocks it returned.
+ */
+test('a page the model was largely unsure about says so', () => {
+    const notes = runNotes(clean({}), 'present', [], null, null, null, null, [
+        confLeaf('brand', 0.95), confLeaf('unclassified', 0.2), confLeaf('unclassified', 0.1),
+    ]);
+    assert.ok('lowConfidence' in notes.conditions);
+    assert.equal(notes.conditions.lowConfidence.effect, 'unknown');
+});
+
+test('a confident page stays quiet', () => {
+    const notes = runNotes(clean({}), 'present', [], null, null, null, null,
+        [confLeaf('brand', 0.95), confLeaf('routing', 0.9)]);
+    assert.equal('lowConfidence' in notes.conditions, false);
+});
+
+/** A little uncertainty is normal; a fifth of the page being guesswork is not. */
+test('one unsure block among many does not raise it', () => {
+    const notes = runNotes(clean({}), 'present', [], null, null, null, null, [
+        confLeaf('brand', 0.95, 4000), confLeaf('routing', 0.2, 200),
+    ]);
+    assert.equal('lowConfidence' in notes.conditions, false);
+});
+
+test('a region nothing labelled is declared unmeasured, not absorbed', () => {
+    const notes = runNotes(clean({}), 'present', [], null, null, null, null, [
+        confLeaf('brand', 0.9, 800),
+        {x: 0, y: 800, w: 1440, h: 400,
+            label: {category: 'unclassified', confidence: 0, what: 'unlabelled region', cols: 1}},
+    ]);
+    assert.ok('unlabelledRegion' in notes.conditions);
+    assert.equal(notes.conditions.unlabelledRegion.effect, 'unmeasured');
+});
+
+test('no leaves at all does not invent either condition', () => {
+    const notes = runNotes(clean({}), 'present', [], null, null, null, null, null);
+    assert.equal('lowConfidence' in notes.conditions, false);
+    assert.equal('unlabelledRegion' in notes.conditions, false);
+});

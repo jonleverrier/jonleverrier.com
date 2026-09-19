@@ -62,6 +62,12 @@ import {blankRegionWarning, transparentWarning, unpaintedWarning} from './painte
  */
 export const EFFECTS = ['unmeasured', 'attribution', 'included', 'unknown'];
 
+/** Below this, a block's category is a guess rather than a reading. */
+export const LOW_CONFIDENCE = 0.5;
+
+/** …and this much of a page being guesswork is worth saying out loud. */
+export const LOW_CONFIDENCE_SHARE = 0.2;
+
 /**
  * The conditions that apply to a run, from its meta.json.
  *
@@ -75,7 +81,8 @@ export const EFFECTS = ['unmeasured', 'attribution', 'included', 'unknown'];
  * nothing but a PNG. The conditions that need them simply do not fire, which is the
  * honest answer — not a claim that nothing was wrong.
  */
-export function runNotes(meta, reason = 'missing', rects = null, unpainted = null, blank = null, transparent = null, overlays = null) {
+export function runNotes(meta, reason = 'missing', rects = null, unpainted = null, blank = null,
+    transparent = null, overlays = null, leaves = null) {
     const conditions = {};
     const add = (code, effect, message, facts = {}) => {
         conditions[code] = {effect, message, facts};
@@ -276,6 +283,45 @@ export function runNotes(meta, reason = 'missing', rects = null, unpainted = nul
             contentBottom: meta.heightGap?.contentBottom ?? null,
             likelyCause: meta.heightGap?.likelyCause ?? null,
         });
+    }
+
+    // WHAT THE MODEL WAS UNSURE ABOUT. Every other condition here is about the capture;
+    // these two are about the READING of it, and nothing else in the pipeline can see
+    // them.
+    //
+    // `unclassified` is never redistributed into the four categories. A percentage that
+    // quietly absorbs our own uncertainty is exactly the confident wrong number this tool
+    // exists to avoid, and the person reading the report owns the site — they are entitled
+    // to know how much of it we could not name.
+    if (Array.isArray(leaves) && leaves.length) {
+        const area = (l) => l.w * l.h;
+        const total = leaves.reduce((a, l) => a + area(l), 0);
+
+        const unsure = leaves.filter((l) => (l.label?.confidence ?? 0) < LOW_CONFIDENCE);
+        const unsureShare = total > 0 ? unsure.reduce((a, l) => a + area(l), 0) / total : 0;
+        if (unsureShare >= LOW_CONFIDENCE_SHARE) {
+            add(
+                'lowConfidence',
+                'unknown',
+                `${(unsureShare * 100).toFixed(1)}% of this page is in blocks the model was not confident `
+                    + `about (below ${LOW_CONFIDENCE}). Those blocks are reported as unclassified and are `
+                    + 'not shared out among the four categories',
+                {share: Number(unsureShare.toFixed(4)), blocks: unsure.length, threshold: LOW_CONFIDENCE},
+            );
+        }
+
+        const unlabelled = leaves.filter((l) => l.label?.what === 'unlabelled region');
+        if (unlabelled.length) {
+            const share = total > 0 ? unlabelled.reduce((a, l) => a + area(l), 0) / total : 0;
+            add(
+                'unlabelledRegion',
+                'unmeasured',
+                `${unlabelled.length} region${unlabelled.length === 1 ? '' : 's'} covering `
+                    + `${(share * 100).toFixed(1)}% of the page fell between the blocks the model returned `
+                    + 'and carries no label. It is reported as unmeasured rather than folded into a neighbour',
+                {share: Number(share.toFixed(4)), blocks: unlabelled.length},
+            );
+        }
     }
 
     return {metaRead: true, conditions};
