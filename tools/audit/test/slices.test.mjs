@@ -211,6 +211,11 @@ test('a capture with no record of how it was taken is assumed to be one shot', (
  *   - a CARD HELD IN THE VIEWPORT BY SCRIPT while computing `position: relative`, which is
  *     boondmanager.com's consent card: no CSS rule can find it, it repeated twelve times,
  *     and `consentBannerSeen` was false on a page carrying it;
+ *   - a CARD RENDERED INSIDE A WEB COMPONENT, behind the three zero-height wrappers
+ *     boondmanager.com's consent card really sits behind. Every walk this capture takes was
+ *     a `querySelectorAll('body *')`, which stops at a shadow boundary, so the card was
+ *     PAINTED once per slice and recorded in nothing at all — the exact inverse of the
+ *     contradiction `contentNotPainted` looks for, and nothing detected that direction;
  *   - a REVERSIBLE reveal: a section whose opacity is 0 unless it is on screen, which is
  *     the tpagency.com mechanism and is invisible to a shot taken from the top;
  *   - a panel behind an `opacity: 0` ancestor at every scroll position, which no capture
@@ -239,6 +244,16 @@ const PAGE = `<!doctype html><html><head><title>Slice me</title><style>
  #pin .chip{width:120px;height:40px;margin:0 0 0 20px;background:rgb(0,255,80)}
  #ghost{opacity:0}
  #held{position:relative;width:240px;height:120px;background:rgb(0,200,200);color:#003}
+ /* boondmanager.com's mount, to the pixel: a direct child of body computing position
+    relative and sized 1440x0, holding a host that is also 1440x0. Both are dropped by the
+    census for having no area, and the light-DOM walk gets no further. */
+ #mount{position:relative;width:1440px;height:0}
+ #host{display:block;width:1440px;height:0}
+ /* A SECOND COMPONENT, behind an opacity:0 wrapper in the LIGHT DOM. Its card is a direct
+    child of the shadow root, so the walk up from it is null at the first step: the wrapper
+    that makes it invisible is on the other side of the boundary. */
+ #ghostmount{position:fixed;top:200px;left:0;opacity:0}
+ #ghosthost{display:block;width:200px;height:80px}
  /* A DESCENDANT THAT KEEPS ITSELF VISIBLE, which is the ordinary way a widget or a
     scroll-reveal is written — and which ignores a hide applied only to its ancestor. */
  #held p{visibility:visible;margin:0;width:240px;height:120px;background:rgb(0,200,200)}
@@ -258,6 +273,45 @@ const PAGE = `<!doctype html><html><head><title>Slice me</title><style>
  </div>
  <div class="bar">FIXED BAR</div>
  <div id="held"><p>We use cookies.</p></div>
+ <div id="mount"><div id="host"></div></div>
+ <div id="ghostmount"><div id="ghosthost"></div></div>
+ <script>
+  // THE WEB COMPONENT, built the way boondmanager.com's consent card is: an open shadow
+  // root on a zero-height host, a fixed overlay that is also zero-height, and the card
+  // itself absolutely positioned inside it. Nothing with any area is in the light DOM, so a
+  // walk that stops at the shadow boundary finds the page has nothing here.
+  //
+  // The card carries a NESTED component of its own, whose chip keeps itself visible — the
+  // ordinary scroll-reveal idiom. Hiding the card has to descend through that second
+  // boundary to reach it, or the chip paints on every slice with the card gone.
+  //
+  // Beside the card and NOT inside it, a strip that swaps colour once a viewport and keeps
+  // itself visible. It is what a component leaks into someone else's photograph: in the
+  // card's isolated shot it has to be hidden WHERE IT STANDS, or the card's two renderings
+  // differ by the strip's own colour and the card is called content and left to repeat.
+  document.getElementById('host').attachShadow({mode: 'open'}).innerHTML =
+    '<style>.overlay{position:fixed;top:0;left:0;width:100%;height:0}'
+    + '.card{position:absolute;top:300px;right:0;width:240px;height:150px;background:rgb(255,220,0)}'
+    + '#inner{display:block;position:absolute;bottom:0;left:0;width:240px;height:50px}'
+    + '#leak{position:absolute;top:300px;right:0;width:100px;height:40px;visibility:visible}</style>'
+    + '<div class="overlay"><div class="card">SHADOW CARD<span id="inner"></span></div><div id="leak"></div></div>';
+  const shadow = document.getElementById('host').shadowRoot;
+  shadow.getElementById('inner').attachShadow({mode: 'open'}).innerHTML =
+    '<div style="width:240px;height:50px;background:rgb(0,150,255);visibility:visible"></div>';
+  const leak = shadow.getElementById('leak');
+  const tint = () => {
+    leak.style.background = Math.floor(window.scrollY / 900) % 2 ? 'rgb(120,0,60)' : 'rgb(60,0,120)';
+  };
+  addEventListener('scroll', tint, {passive: true});
+  tint();
+
+  // The ghost's card is a DIRECT child of its shadow root, so the walk up from it is null at
+  // the first step and the opacity:0 wrapper that makes it invisible is never reached. It
+  // must be recorded AND flagged: a dropped element is indistinguishable from a page with
+  // nothing there, and an unflagged one is a claim that the page painted something it did not.
+  document.getElementById('ghosthost').attachShadow({mode: 'open'}).innerHTML =
+    '<div style="width:200px;height:80px;background:rgb(10,10,10)">SHADOW GHOST</div>';
+ </script>
  <script>
   const target = document.querySelector('#reveal');
   new IntersectionObserver((entries) => {
@@ -336,6 +390,8 @@ const GREEN = [0, 128, 0];
 const MAGENTA = [200, 0, 200];
 const ORANGE = [255, 140, 0];
 const CYAN = [0, 200, 200];
+const YELLOW = [255, 220, 0];
+const SKY = [0, 150, 255];
 
 test('the premise: a single shot from the top misses a reveal that is only in place on screen', async () => {
     const {control} = await captures();
@@ -407,6 +463,77 @@ test('an element held in the viewport BY SCRIPT appears once, though no CSS says
     const card = await rowsOfColour(join(stitched.dir, 'fullpage.png'), CYAN, 0.1);
     assert.ok(card.length > 0, 'the card is in the image');
     assert.ok(card.length <= 130, `one 120px card, not one per slice: ${card.length} rows`);
+});
+
+test('a card rendered inside a web component is in the census at all', async () => {
+    // The walk every population here takes used to be `querySelectorAll('body *')`, which
+    // stops dead at a shadow boundary. This card was PAINTED and recorded in nothing: no
+    // rect, no pinned census, nothing to hide, nothing to warn about. A page can be wrong in
+    // both records at once; it must not be wrong in only one of them.
+    const {stitched} = await captures();
+    const card = stitched.rects.filter((rect) => rect.text.startsWith('SHADOW CARD'));
+    assert.ok(card.length > 0, 'the card inside the component is censused');
+    assert.deepEqual([card[0].w, card[0].h], [240, 150], JSON.stringify(card[0]));
+});
+
+test('…and appears once in the image, not once per slice', async () => {
+    // Nothing in the light DOM has any area — the mount and the host are both 1440x0 — so
+    // the only thing that can be measured as pinned is the card itself, through the shadow
+    // boundary. Without that it is in no population, is hidden by nothing, and paints on
+    // every one of the six slices.
+    const {stitched} = await captures();
+    const card = await rowsOfColour(join(stitched.dir, 'fullpage.png'), YELLOW, 0.1);
+    assert.ok(card.length > 0, 'the card is in the image');
+    assert.ok(card.length <= 110, `one card's worth of rows, not one per slice: ${card.length} rows`);
+});
+
+test('…and a component beside it is hidden out of its isolated photograph', async () => {
+    // The strip is not part of the card and swaps colour once a viewport. Hiding everything
+    // outside a candidate has to reach WHERE IT STANDS, inside the component — an inherited
+    // hide is ignored by anything carrying its own `visibility: visible`, which is how a
+    // widget is ordinarily written. Left in the shot, the card's two renderings differ by
+    // the strip's colour, the card is called content, and it repeats down the whole image.
+    const {stitched} = await captures();
+    const card = stitched.meta.capture.pinned.elements.find((e) => e.box && e.box[2] === 240 && e.box[3] === 150);
+    assert.ok(card, `the card was decided: ${JSON.stringify(stitched.meta.capture.pinned.elements)}`);
+    assert.equal(card.verdict, 'chrome', `decided on ${card.changed} of its own pixels changing`);
+});
+
+test('a card inside a component behind a transparent ancestor is recorded AND flagged', async () => {
+    // The walk UP is the other half. This card is a direct child of its shadow root, so
+    // `parentElement` is null at the first step and the opacity:0 wrapper that makes it
+    // invisible is on the other side of the boundary. Unflagged, it is a claim that the page
+    // painted something it did not — which is boondmanager.com's solutions slider exactly,
+    // 89 elements recorded as ordinary visible content over an empty panel.
+    const {stitched} = await captures();
+    const ghosts = stitched.rects.filter((rect) => rect.text.startsWith('SHADOW GHOST'));
+    assert.ok(ghosts.length > 0, 'the ghost card is censused rather than dropped');
+    assert.ok(
+        ghosts.every((rect) => rect.transparentAncestor === true),
+        `and every one of them is flagged: ${JSON.stringify(ghosts)}`,
+    );
+});
+
+test('…and hiding it reaches through a SECOND component boundary to its chip', async () => {
+    // The chip lives in a nested shadow root inside the card and carries its own
+    // `visibility: visible`, which is how a widget or a scroll-reveal is ordinarily written
+    // and which ignores an inherited hide completely. Hiding the card element by element has
+    // to cross that boundary too, or the chip paints on every slice with the card gone.
+    const {stitched} = await captures();
+    const chip = await rowsOfColour(join(stitched.dir, 'fullpage.png'), SKY, 0.1);
+    assert.ok(chip.length > 0, 'the chip is in the image');
+    assert.ok(chip.length <= 60, `one 50px chip, not one per slice: ${chip.length} rows`);
+});
+
+test('meta says how much of the page is behind a component boundary', async () => {
+    // So that "this page has no web components" and "the walk that finds them stopped
+    // working" are different numbers on every site rather than the same silence.
+    const {stitched} = await captures();
+    const shadow = stitched.meta.capture.shadow;
+    assert.equal(shadow.installed, true);
+    assert.ok(shadow.hosts >= 2, `the host and its nested one: ${JSON.stringify(shadow)}`);
+    assert.ok(shadow.inShadow >= 4, `overlay, card, inner and chip: ${JSON.stringify(shadow)}`);
+    assert.ok(shadow.elements > shadow.inShadow, 'and the light DOM is counted in the same total');
 });
 
 test('a banner held in the viewport by script is SEEN, though no CSS says it is a banner', async () => {

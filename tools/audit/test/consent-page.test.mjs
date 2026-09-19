@@ -27,7 +27,8 @@ import {createServer} from 'node:http';
 import {mkdtempSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {dismissConsent} from '../lib/consent.mjs';
+import {dismissConsent, dismissLateConsent} from '../lib/consent.mjs';
+import {SHADOW_INIT} from '../lib/shadow.mjs';
 import {VIEWPORT} from '../lib/capture.mjs';
 
 const dir = mkdtempSync(join(tmpdir(), 'audit-consent-'));
@@ -45,6 +46,23 @@ const BANNER = (inner, style = '') => '<div id="banner" style="position:fixed;le
     + `background:#eee;padding:20px;${style}">`
     + `<p>We use cookies.</p>${inner}</div>`;
 const REMOVE = 'document.getElementById(\'banner\').remove()';
+
+/** How long after load the late banner appears. Short; the mechanism is the subject, not the wait. */
+const LATE_MS = 400;
+
+/** Markup that is not on the page when it loads, and is a moment later. */
+const arrivesLate = (html) => `<script>setTimeout(function () {
+    document.body.insertAdjacentHTML('beforeend', ${JSON.stringify(html)});
+}, ${LATE_MS});</script>`;
+
+/**
+ * A web component: `#host` inside `#mount`, with `inner` in an OPEN shadow root on it.
+ *
+ * `style` goes on the host, in the light DOM, which is where a component's positioning
+ * usually lives and which is exactly what an ancestor walk cannot reach from inside.
+ */
+const component = (style, inner) => `<div id="mount"><div id="host" style="display:block;${style}"></div></div>`
+    + `<script>document.getElementById('host').attachShadow({mode: 'open'}).innerHTML = ${JSON.stringify(inner)};</script>`;
 
 /** ESC, then an 8-bit CSI: an ANSI sequence and an ANSI introducer, in a button label. */
 const ANSI = `${String.fromCharCode(0x1b)}[2K${String.fromCharCode(0x9b)}31m`;
@@ -113,6 +131,71 @@ const URLS = {
         `${HOME}<div id="banner" style="position:relative;background:#eee;padding:20px">`
             + `<p>We use cookies.</p><button onclick="${REMOVE}">Accept all cookies</button></div>`,
     ),
+    // THE LATE BANNER. boondmanager.com's Axeptio card is loaded by a tag manager and opens
+    // about eight seconds in, three viewports down the scroll pass — long after the one
+    // attempt at consent had run and gone. Nothing here is wrong at load; there is simply
+    // nothing there yet.
+    lateBanner: page$(
+        'late-banner.html',
+        HOME + arrivesLate(BANNER(`<button onclick="${REMOVE}">Accept all cookies</button>`)),
+    ),
+    // …AND WHAT ELSE IS ON THE PAGE BY THEN. The second attempt runs after the scroll pass,
+    // where the pinned census has marked hundreds of elements as holding the viewport and
+    // `IS_BANNER_SHAPED` would accept any of them. This panel is fixed, says nothing about
+    // consent, carries a perfect accept label, and REMOVES ITSELF when clicked — so a
+    // looser gate does not merely click it, it reports the click as the dismissal. It comes
+    // first in the DOM, which is the order the controls are tried in.
+    lateBannerAndFurniture: page$(
+        'late-furniture.html',
+        HOME + arrivesLate(
+            '<div id="furniture" style="position:fixed;top:0;left:0;right:0;background:#ddd;padding:20px">'
+            + '<p>Join our newsletter for product news.</p>'
+            + '<button onclick="document.getElementById(\'furniture\').remove()">Accept</button></div>'
+            + BANNER(`<button onclick="${REMOVE}">Accept all cookies</button>`),
+        ),
+    ),
+    // A banner that is there from the start and cannot be got rid of. The first attempt
+    // sees it, clicks it and gets nowhere; the click is COUNTED, so a second attempt on a
+    // banner that has already been refused is visible rather than merely wasteful.
+    stubbornBanner: page$(
+        'stubborn-banner.html',
+        HOME + BANNER('<button onclick="window.__clicks = (window.__clicks || 0) + 1">Accept all cookies</button>'),
+    ),
+    // A BANNER INSIDE A WEB COMPONENT, with the positioning on the HOST — the ordinary
+    // `<my-cookie-banner style="position:fixed">` shape. The ancestor walk hits
+    // `parentElement === null` at the top of the shadow tree, so before it crossed to the
+    // host it concluded that an accept button sitting in a fixed banner was page furniture.
+    shadowBanner: page$(
+        'shadow-banner.html',
+        HOME + component(
+            'position:fixed;left:0;right:0;bottom:0;background:#eee;padding:20px',
+            '<div id="banner" style="width:400px;height:120px"><p>We use cookies.</p>'
+            + '<button onclick="this.getRootNode().host.remove()">Accept all cookies</button></div>',
+        ),
+    ),
+    // A FRAME THAT NEVER ANSWERS. bakerandpartners.com carries one whose URL is the empty
+    // string: `frame.evaluate` on it returns never — measured at 60s and given up on rather
+    // than waited out — so the search for a banner stopped there and spent the whole
+    // three-minute capture budget, and the capture died with no artefacts at all. Its JS
+    // thread is blocked here instead, which is the same thing from outside; the spin ends on
+    // its own so a machine running this suite never loses a core for longer than that.
+    hangingFrame: page$(
+        'hanging-frame.html',
+        `${HOME}<iframe style="width:200px;height:100px" srcdoc="`
+            + '&lt;script&gt;const end = Date.now() + 20000; while (Date.now() &lt; end) {}&lt;/script&gt;'
+            + '"></iframe>',
+    ),
+    // The same component with NO accept control, which is the other half of the answer: a
+    // wall we cannot get past still has to be SEEN, or the run reports "no banner found" on
+    // a page carrying one. `textContent` on a host returns its light DOM only, so the card
+    // is findable only by walking into the shadow root.
+    shadowCard: page$(
+        'shadow-card.html',
+        HOME + component(
+            'position:fixed;left:0;right:0;bottom:0;background:#eee;padding:20px',
+            '<div id="banner" style="width:400px;height:120px"><p>We use cookies to measure the audience.</p></div>',
+        ),
+    ),
 };
 
 /**
@@ -167,27 +250,68 @@ after(async () => {
  * CMP selector, so the default 2s per frame is spent waiting for something that is not
  * there. The text pass, which is the subject, keeps its own timings.
  */
-const attempt = async (url, {pinned = false} = {}) => {
+/** `#banner`, wherever it is — a page's own document, or a component's shadow root. */
+const BANNER_ELEMENT = () => {
+    const host = document.getElementById('host');
+
+    return document.getElementById('banner')
+        ?? (host && host.shadowRoot ? host.shadowRoot.getElementById('banner') : null);
+};
+
+/** What the page looks like once consent has had its go at it. */
+const look = async (page) => ({
+    url: page.url(),
+    heading: await page.evaluate(() => document.querySelector('h1').textContent),
+    mousedown: await page.evaluate(() => window.__mousedown === true),
+    bannerStillThere: await page.evaluate(BANNER_ELEMENT) !== null,
+    furnitureStillThere: await page.evaluate(() => document.getElementById('furniture') !== null),
+    clicks: await page.evaluate(() => window.__clicks ?? 0),
+});
+
+const open = async (url, pinned) => {
     const page = await context.newPage();
+    // As lib/capture.mjs installs it, and for the same reason: without it the ancestor walk
+    // stops at a shadow boundary and the banner-shape tests answer about the component
+    // rather than about the page.
+    await page.addInitScript(SHADOW_INIT);
     await page.goto(url, {waitUntil: 'load'});
     // The mark lib/pinned.mjs leaves on an element it MEASURED holding its viewport box.
     // Set by hand here so this file stays a test of the consent rules rather than of the
     // census that feeds them; the census's own half is in test/slices.test.mjs.
     if (pinned) {
         await page.evaluate(() => {
-            document.getElementById('banner').__auditPinned = true;
+            const el = document.getElementById('banner')
+                ?? document.getElementById('host').shadowRoot.getElementById('banner');
+            el.__auditPinned = true;
         });
     }
+
+    return page;
+};
+
+const attempt = async (url, {pinned = false} = {}) => {
+    const page = await open(url, pinned);
     const consent = await dismissConsent(page, 250);
-    const state = {
-        url: page.url(),
-        heading: await page.evaluate(() => document.querySelector('h1').textContent),
-        mousedown: await page.evaluate(() => window.__mousedown === true),
-        bannerStillThere: await page.evaluate(() => document.getElementById('banner') !== null),
-    };
+    const state = await look(page);
     await page.close();
 
     return {consent, state};
+};
+
+/**
+ * Both attempts on one page, as lib/capture.mjs makes them: the load-time one, then the
+ * scroll pass (which is only a wait here — what the banner is waiting for is time, not
+ * scrolling), then the second.
+ */
+const bothAttempts = async (url, {pinned = false, waitMs = LATE_MS + 200} = {}) => {
+    const page = await open(url, pinned);
+    const first = await dismissConsent(page, 250);
+    await page.waitForTimeout(waitMs);
+    const consent = await dismissLateConsent(page, first, 250);
+    const state = await look(page);
+    await page.close();
+
+    return {first, consent, state};
 };
 
 test('an ordinary link labelled OK on a bannerless page is never touched', async () => {
@@ -285,4 +409,99 @@ test('a navigation that commits slowly is caught before it is called a dismissal
     assert.equal(consent.restored, true);
     assert.equal(state.url, slowSite);
     assert.equal(state.heading, 'THIS IS THE HOMEPAGE');
+});
+
+/* ------------------------------------------ a banner that was not there when we asked */
+
+// THE DEFECT TASK 18 EXISTS FOR, in miniature. boondmanager.com's consent card opens about
+// eight seconds in, three viewports down the scroll pass; the one attempt at consent had
+// run and gone by then, so the card was never offered a click, painted twelve times down
+// the capture, and `consentBannerSeen` reported false on a page carrying it in plain sight.
+test('a banner that arrives after the page has loaded is dismissed by the second attempt', async () => {
+    const {first, consent, state} = await bothAttempts(URLS.lateBanner);
+    assert.equal(first.dismissed, false, 'the premise: there is nothing there when the first attempt runs');
+    assert.equal(first.bannerSeen, false, 'and nothing to see either');
+    assert.equal(consent.dismissed, true);
+    assert.equal(consent.bannerSeen, true);
+    assert.equal(consent.arrivedLate, true, 'and the record says the page was not measured without it');
+    assert.match(consent.via, /after the scroll pass/);
+    assert.equal(state.bannerStillThere, false);
+    assert.equal(state.url, URLS.lateBanner, 'dismissing must not move the page');
+});
+
+// WHAT ELSE IS ON THE PAGE BY THEN. The second attempt runs after the scroll pass, where
+// the pinned census has marked hundreds of elements as holding the viewport and
+// IS_BANNER_SHAPED accepts any of them. This panel is fixed, says nothing about consent,
+// carries a perfect accept label and removes itself when clicked — so the loose gate would
+// not merely click it, it would report the click as the dismissal and leave the banner up.
+test('a fixed panel that says nothing about consent is not clicked by the second attempt', async () => {
+    const {consent, state} = await bothAttempts(URLS.lateBannerAndFurniture);
+    assert.equal(state.furnitureStillThere, true, 'the newsletter panel is page furniture, not a banner');
+    assert.equal(consent.dismissed, true, 'and the real banner is still found');
+    assert.match(consent.via, /Accept all cookies/);
+    assert.equal(state.bannerStillThere, false);
+});
+
+// A BANNER THE FIRST ATTEMPT ALREADY REFUSED IS NOT CLICKED AGAIN. It has had its one
+// attempt; a second buys nothing but the time it costs, on a page that has just proved slow.
+test('a banner that was already seen and not dismissed is not clicked a second time', async () => {
+    const {first, consent, state} = await bothAttempts(URLS.stubbornBanner, {waitMs: 0});
+    assert.equal(first.bannerSeen, true, 'the premise: this banner was there from the start');
+    assert.equal(first.dismissed, false, 'and clicking it does nothing');
+    assert.equal(consent.arrivedLate, false, 'nothing arrived late — this is the same banner');
+    assert.equal(consent.bannerSeen, true, 'and it is still counted as surface area');
+    assert.equal(state.clicks, 1, 'the accept control was clicked exactly once, by the first attempt');
+});
+
+// …AND NEITHER IS A PAGE WITH NOTHING ON IT. The common case, and the one the cost is paid
+// on: a page with no banner must come out of the second attempt exactly as it went in.
+test('a page with no banner at all is unchanged by the second attempt', async () => {
+    const {first, consent, state} = await bothAttempts(URLS.bannerlessLink, {waitMs: 0});
+    assert.deepEqual(consent, {...first, arrivedLate: false});
+    assert.equal(state.url, URLS.bannerlessLink, 'and the OK link is still not clicked');
+    assert.equal(state.heading, 'THIS IS THE HOMEPAGE');
+});
+
+/* ----------------------------------------------- a banner inside a web component */
+
+// The ancestor walk hits `parentElement === null` at the top of a shadow tree and stopped
+// there, so an accept button sitting inside a `position: fixed` banner read as page
+// furniture and was left alone. The positioning is on the HOST, in the light DOM, which is
+// where a component ordinarily puts it and exactly what the walk could not reach.
+test('an accept button inside a component is reached through the shadow boundary', async () => {
+    const {consent, state} = await attempt(URLS.shadowBanner);
+    assert.equal(consent.dismissed, true);
+    assert.match(consent.via, /Accept all cookies/);
+    assert.equal(state.bannerStillThere, false);
+});
+
+// The other half, and the more damaging one: a wall we cannot get past still has to be
+// SEEN. `textContent` on a host returns its light DOM only — nothing — so the card is
+// findable only by walking INTO the shadow root.
+test('a consent card inside a component with no accept control is still seen', async () => {
+    const {consent, state} = await attempt(URLS.shadowCard, {pinned: true});
+    assert.equal(consent.bannerSeen, true, 'a banner in a component is still a banner');
+    assert.equal(consent.dismissed, false, 'this one has no accept control, and is left alone');
+    assert.equal(state.bannerStillThere, true, 'so it stays on the page and counts as surface area');
+});
+
+/* -------------------------------------------- a frame that never answers a question */
+
+// THE THREE-MINUTE HANG, and the page the brief warned about. bakerandpartners.com has seven
+// frames and one of them has an EMPTY URL; `page.evaluate` has no timeout of its own, so the
+// search for a banner stopped on that frame for ever. Measured at HEAD, three runs out of
+// three: `dismissConsent` had not returned after 120s, and the capture died at 3:00 with
+// "dismissing a consent banner did not finish within 175945ms" and no artefacts at all.
+test('a frame that never answers is given up on rather than waited out', async () => {
+    const page = await open(URLS.hangingFrame, false);
+    const at = Date.now();
+    const finished = await Promise.race([
+        dismissConsent(page, 250),
+        new Promise((resolve) => setTimeout(() => resolve('STILL GOING'), 25000)),
+    ]);
+    const took = Date.now() - at;
+    await page.close();
+    assert.notEqual(finished, 'STILL GOING', `dismissConsent had not returned after ${took}ms`);
+    assert.equal(finished.dismissed, false, 'there is no banner on this page');
+    assert.equal(finished.bannerSeen, false, 'and a frame that cannot answer is skipped, not believed');
 });

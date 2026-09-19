@@ -37,12 +37,19 @@
  *      a panel doing its job, keep it, because the visitor really does spend those
  *      viewports on it.
  *
- * THE CENSUS RUNS ONCE, BEFORE THE SLICING, and that bounds what any of this can reach.
- * boondmanager.com's card is loaded by a tag manager partway down the page and is in no
- * population the census took, so it still repeats; the slice pass counts what arrives after
- * it as `lateArrivals` rather than pretending it judged them. The MECHANISM is covered —
- * test/slices.test.mjs holds a card kept in the viewport by a scroll handler, and it is
- * hidden after the first slice and found by the consent finder — but that live page is not.
+ * EVERY WALK HERE CROSSES OPEN SHADOW ROOTS — see lib/shadow.mjs. Without that, a card a
+ * page renders inside a web component is in no population at all: nothing measures it,
+ * nothing decides it, nothing hides it, and it paints once per slice.
+ *
+ * THE CENSUS RUNS ONCE, BEFORE THE SLICING, and that bounds what any of this can reach. An
+ * element that arrives during the scroll pass is measured by the census (which rides on that
+ * pass) but was not there when the DECISION offsets were chosen, so the slice pass counts
+ * what arrives after the decision as `lateArrivals` rather than pretending it judged them.
+ * boondmanager.com's Axeptio card was the case this cost: it opens about eight seconds in,
+ * three viewports down. It is now DISMISSED instead — lib/consent.mjs asks a second time
+ * after the scroll pass — which is the honest answer for a consent wall and not one this
+ * file could have given, because a banner is not repeating chrome, it is a wall a visitor
+ * gets past.
  *
  * ISOLATION IS THE PART THAT MAKES THE ANSWER ABOUT THE ELEMENT. Cropping the element's box
  * out of the ordinary screenshot answers a different question — "do these pixels change" —
@@ -327,12 +334,16 @@ export const BEGIN_PIN = () => {
  * Deliberately cheap: a bounding box the browser has already laid out, and nothing else.
  * No `getComputedStyle`, because this runs at every step of a pass that already walks the
  * page. Measured across the six sites: 74–463ms for a whole capture's worth of steps.
+ *
+ * The walk crosses open shadow roots — see lib/shadow.mjs. Without it a card rendered by a
+ * web component is in no population, so nothing can measure it, decide it or hide it.
  */
 export const MEASURE_BOXES = () => {
     const state = window.__auditPin;
     if (!state) return {scrollY: 0, boxes: []};
+    const deep = window.__auditDeep;
     const boxes = [];
-    for (const el of document.querySelectorAll('body *')) {
+    for (const el of deep ? deep.all(document.body) : document.querySelectorAll('body *')) {
         const r = el.getBoundingClientRect();
         if (r.width < 1 || r.height < 1) continue;
         let id = state.idx.get(el);
@@ -369,6 +380,16 @@ export const MARK_PINNED = (ids) => {
  */
 export const DESCRIBE_PINNED = (ids) => {
     const state = window.__auditPin;
+    // THE RECORD CAN BE GONE BY THE TIME THIS RUNS. A consent click that navigates is undone
+    // by RELOADING the page, and lib/consent.mjs can now do that after the census has been
+    // taken — which takes `window.__auditPin` and every element identity in it with it.
+    // Reading `state.els` then throws, and would take down a capture that is otherwise fine.
+    // An element nobody can describe is one nobody can decide, which is what null already
+    // means here and what leaves the element alone. Reasoned from the reload, not observed
+    // on a live page: no site in the sweep has a late banner whose accept control navigates.
+    if (!state) return ids.map(() => null);
+    const deep = window.__auditDeep;
+    const above = deep ? deep.parent : (el) => el.parentElement;
 
     return ids.map((id) => {
         const el = state.els[id];
@@ -376,7 +397,7 @@ export const DESCRIBE_PINNED = (ids) => {
         const cs = getComputedStyle(el);
         const r = el.getBoundingClientRect();
         const ancestors = [];
-        for (let a = el.parentElement; a && a !== document.documentElement; a = a.parentElement) {
+        for (let a = above(el); a && a !== document.documentElement; a = above(a)) {
             const pid = state.idx.get(a);
             if (pid !== undefined) ancestors.push(pid);
         }
@@ -424,6 +445,11 @@ export const DESCRIBE_PINNED = (ids) => {
 export const ISOLATE_ON = (ids) => {
     const state = window.__auditPin;
     if (!state) return 0;
+    // BOTH WALKS CROSS SHADOW BOUNDARIES. The keep set has to reach a candidate's shadow
+    // descendants or they are hidden out of its own photograph, and the hide has to reach
+    // everyone else's or a component paints into an "isolated" shot. See lib/shadow.mjs.
+    const deep = window.__auditDeep;
+    const under = (root) => (deep ? deep.all(root) : root.querySelectorAll('*'));
     if (!state.iso) {
         const style = document.createElement('style');
         style.textContent = 'html,body{background:#fff !important;background-image:none !important}'
@@ -447,9 +473,9 @@ export const ISOLATE_ON = (ids) => {
         if (!el || !el.isConnected) continue;
         shown.push(el);
         keep.add(el);
-        for (const descendant of el.querySelectorAll('*')) keep.add(descendant);
+        for (const descendant of under(el)) keep.add(descendant);
     }
-    for (const el of document.querySelectorAll('body *')) {
+    for (const el of under(document.body)) {
         if (keep.has(el)) continue;
         if (remember(el, state.iso.hidden)) el.style.setProperty('visibility', 'hidden', 'important');
     }
@@ -507,6 +533,8 @@ export const ISOLATE_OFF = () => {
 export const HIDE_PINNED = (ids) => {
     const state = window.__auditPin;
     if (!state) return 0;
+    const deep = window.__auditDeep;
+    const under = (root) => (deep ? deep.all(root) : root.querySelectorAll('*'));
     const properties = ['visibility', 'transition', 'animation'];
     let asked = 0;
     for (const id of ids) {
@@ -520,7 +548,7 @@ export const HIDE_PINNED = (ids) => {
         // with `div.userway_buttons_wrapper` hidden and every other descendant inheriting
         // it, `IMG.si_w` inside it still computed `visible`, and the accessibility widget
         // painted a second time 900px down the image.
-        for (const el of [root, ...root.querySelectorAll('*')]) {
+        for (const el of [root, ...under(root)]) {
             if (!state.hidden.has(el)) {
                 state.hidden.set(el, properties.map((name) => ({
                     name,

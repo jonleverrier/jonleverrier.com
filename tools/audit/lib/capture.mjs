@@ -37,9 +37,19 @@
  * census rides along on the scroll pass below; the decision costs one or two extra pairs of
  * screenshots before the slicing starts.
  *
+ * EVERY WALK CROSSES OPEN SHADOW ROOTS. A `querySelectorAll('body *')` stops at a component
+ * boundary, so a card a page builds inside one was painted and censused as nothing at all —
+ * see lib/shadow.mjs for the measurement. The walk is installed on the page before its own
+ * scripts run, and this file REFUSES TO CONTINUE without it.
+ *
+ * THE CONSENT BANNER IS ASKED FOR TWICE: once at load, and once after the scroll pass for a
+ * banner that was not there the first time. boondmanager.com's opens about eight seconds in.
+ * The second attempt is narrower about what it will click — see lib/consent.mjs.
+ *
  * `meta.capture` records which path ran, how many slices it took, how many rects the
  * banded census found against what a single one at the top would have, what the pinned
- * census decided about each element it found, and the reason if it fell back to a single
+ * census decided about each element it found, how much of the page is behind a component
+ * boundary, what each consent attempt cost, and the reason if it fell back to a single
  * shot.
  *
  * WHAT THIS STILL DOES NOT SEE, and must not be read as solving: the slice pass reaches
@@ -63,7 +73,8 @@ import {chromium} from 'playwright';
 import sharp from 'sharp';
 import {mkdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
-import {dismissConsent} from './consent.mjs';
+import {dismissConsent, dismissLateConsent} from './consent.mjs';
+import {SHADOW_CENSUS, SHADOW_INIT} from './shadow.mjs';
 import {WEBGL_PROBE_INIT, probeWebgl} from './webgl.mjs';
 import {COLLECT_PINNED, heightGap} from './unrendered.mjs';
 import {
@@ -237,8 +248,16 @@ export function pngSize(buffer) {
  * `getComputedStyle` and the ancestor walks. The band is also what makes the census
  * HONEST on a page that moves its content around, because each band is collected at the
  * scroll position of the shot that owns those rows.
+ *
+ * THE WALK CROSSES SHADOW BOUNDARIES, both down and up. `querySelectorAll('body *')` stops
+ * at a shadow root, so a page's web components were painted and censused as nothing; and
+ * `parentElement` stops there too, so the clipping and opacity walks below read the
+ * component as the whole document. See lib/shadow.mjs for the measurement that forced it.
  */
 const COLLECT_RECTS = (band) => {
+    const deep = window.__auditDeep;
+    const elements = deep ? deep.all(document.body) : document.querySelectorAll('body *');
+    const above = deep ? deep.parent : (el) => el.parentElement;
     const out = [];
 
     // TWO ANCESTOR CONDITIONS, ONE WALK, because they ask about the same chain.
@@ -257,7 +276,7 @@ const COLLECT_RECTS = (band) => {
     // same fact. See lib/painted.mjs, which is where the difference is spent.
     const ancestry = (el, r) => {
         let transparent = false;
-        for (let a = el.parentElement; a && a !== document.documentElement; a = a.parentElement) {
+        for (let a = above(el); a && a !== document.documentElement; a = above(a)) {
             const cs = getComputedStyle(a);
             if (cs.opacity === '0') transparent = true;
             if (a !== document.body
@@ -280,7 +299,7 @@ const COLLECT_RECTS = (band) => {
     // every sectioned page reads as one enormous container.
     const boxed = (el, cs) => {
         const own = cs.backgroundColor;
-        const parent = el.parentElement ? getComputedStyle(el.parentElement).backgroundColor : '';
+        const parent = above(el) ? getComputedStyle(above(el)).backgroundColor : '';
         const transparent = (c) => !c || c === 'transparent' || /rgba\(0, 0, 0, 0\)/.test(c);
         if (!transparent(own) && own !== parent) return true;
         if (parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0) return true;
@@ -288,7 +307,7 @@ const COLLECT_RECTS = (band) => {
         return parseFloat(cs.borderTopLeftRadius) > 0;
     };
 
-    for (const el of document.querySelectorAll('body *')) {
+    for (const el of elements) {
         const r = el.getBoundingClientRect();
         if (r.width < 1 || r.height < 1) continue;
         const top = r.y + window.scrollY;
@@ -553,6 +572,9 @@ export async function capturePage(url, outDir, opts = {}) {
         // Before the page's own scripts, so a hero that asks for a context on first
         // evaluation is still recorded.
         await page.addInitScript(WEBGL_PROBE_INIT);
+        // In EVERY frame, and before the page builds its components: every walk this
+        // capture takes calls it, including the consent finder inside a CMP's iframe.
+        await page.addInitScript(SHADOW_INIT);
         // THE STATUS WAS THROWN AWAY, and a blocked request looks exactly like a page.
         // webreality.co.uk answers a headless browser with a CloudFront 403: the capture
         // succeeded, wrote its artefacts, segmented into two blocks with area conserved
@@ -577,6 +599,14 @@ export async function capturePage(url, outDir, opts = {}) {
         // but worth having wherever it is allowed.
         await page.addStyleTag({content: 'html,body{scroll-behavior:auto !important}'}).catch(() => {});
 
+        // REFUSED RATHER THAN DEGRADED. Without this walk every census below silently skips
+        // whatever a page builds inside a web component, and the capture looks exactly the
+        // same: fewer rects, no error, no flag. A number that quietly stops counting part of
+        // the page is the one failure this tool is not allowed to have.
+        if (!(await step('checking the shadow-DOM walk', () => page.evaluate(SHADOW_CENSUS))).installed) {
+            throw new Error('the shadow-DOM walk was not installed, so every census would miss this page\'s components');
+        }
+
         await step('opening the pinned census', () => page.evaluate(BEGIN_PIN));
         // BEFORE THE BANNER IS DISMISSED, because afterwards the banner is gone and the
         // question of whether it held the viewport cannot be asked at all. See
@@ -588,7 +618,9 @@ export async function capturePage(url, outDir, opts = {}) {
         const earlyPinned = await markEarlyPinned(page, {step, settleMs: EARLY_SETTLE_MS});
         const earlyMs = Date.now() - startedEarly;
 
-        const consent = await step('dismissing a consent banner', () => dismissConsent(page));
+        const startedConsent = Date.now();
+        const atLoad = await step('dismissing a consent banner', () => dismissConsent(page));
+        const atLoadConsentMs = Date.now() - startedConsent;
 
         // Step down a viewport at a time so lazy images and in-view animations fire — AND
         // MEASURE EVERY ELEMENT'S VIEWPORT BOX AT EACH STEP. The pass already stops and
@@ -619,9 +651,22 @@ export async function capturePage(url, outDir, opts = {}) {
         }
         const scrollCapHit = scrolls >= maxScrolls;
 
+        // ONE MORE ATTEMPT AT A BANNER THAT WAS NOT THERE WHEN WE ASKED, and this is the
+        // moment for it: the page has been scrolled to the bottom, so a banner loaded by a
+        // tag manager has certainly arrived, and nothing has been photographed yet. See
+        // dismissLateConsent — it costs one FIND_BANNER per frame on a page with nothing to
+        // do, and it never runs at all if the first attempt already saw a banner.
+        const startedLate = Date.now();
+        const consent = await step('looking again for a consent banner', () => dismissLateConsent(page, atLoad));
+        const lateConsentMs = Date.now() - startedLate;
+
         // AT THE BOTTOM, before scrolling back: a reveal footer is only in its resting
         // place once the content has travelled over it.
         const fixed = await step('collecting pinned elements', () => page.evaluate(COLLECT_PINNED));
+        // Beside it, and from the same place: how much of this page is behind a component
+        // boundary. "This page has no web components" and "the walk stopped working" are
+        // then different numbers rather than the same silence.
+        const shadow = await step('counting web components', () => page.evaluate(SHADOW_CENSUS));
 
         // WHICH OF THEM REPEAT, decided on their own pixels rather than on `position`.
         const startedDecision = Date.now();
@@ -662,6 +707,11 @@ export async function capturePage(url, outDir, opts = {}) {
             stoppedEarly: null,
             fallbackReason: null,
             pinned: {earlyPinned, ...decided.record, hidden: 0, lateArrivals: 0, earlyMs, censusMs, decideMs},
+            // How much of the page is behind a component boundary, and what each consent
+            // attempt cost in wall clock. Both are paid on every capture, and a cost nobody
+            // can see is a cost nobody can argue with.
+            shadow,
+            consentMs: {atLoad: atLoadConsentMs, late: lateConsentMs},
         };
         try {
             const sliced = await slicedScreenshot(page, {
@@ -733,6 +783,9 @@ export async function capturePage(url, outDir, opts = {}) {
             consentBannerSeen: consent.bannerSeen === true,
             consentVia: consent.via,
             consentNavigatedAway: consent.navigatedAway === true,
+            // THE BANNER WAS NOT THERE WHEN THE PAGE LOADED. It arrived during the scroll
+            // pass, so every measurement taken before that point was of a page without it.
+            consentArrivedLate: consent.arrivedLate === true,
             scrollCapHit,
             webgl,
             fixed,

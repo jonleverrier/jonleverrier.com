@@ -1,7 +1,37 @@
 /**
  * CONSENT
  *
- * One attempt at the cookie banner, and one only.
+ * ONE ATTEMPT PER BANNER, AND ONE ONLY.
+ *
+ * That used to read "one attempt at the cookie banner, and one only", counted per PAGE,
+ * and it was the right rule for the wrong reason. The point was never the number of tries:
+ * it was that a banner is clicked once, on evidence, and a click that does anything other
+ * than dismiss it is never tried again. A banner that was not on the page when we asked has
+ * had no attempt at all, and refusing it one is not caution, it is an unasked question.
+ *
+ * MEASURED ON boondmanager.com, which is the page this rule cost. Its Axeptio card is
+ * loaded by a tag manager and OPENS ABOUT EIGHT SECONDS IN, three viewports down the
+ * scroll pass — long after `dismissConsent` has run and gone. It then held its place for
+ * the rest of the capture and painted twelve times down the image, 1.6% of the page, while
+ * `consentBannerSeen` reported `false`. So:
+ *
+ *   - `dismissConsent` runs at load, exactly as before.
+ *   - `dismissLateConsent` runs ONCE MORE, after the scroll pass, and ONLY when the first
+ *     attempt found no banner at all AND there is one now. A banner the first attempt SAW
+ *     is not offered a second click — it was already refused once and the only thing a
+ *     retry buys is the cost of it.
+ *   - THE SECOND ATTEMPT IS STRICTER ABOUT WHAT IT WILL CLICK, because the page underneath
+ *     it has changed. By then the pinned census has marked hundreds of elements as holding
+ *     the viewport — 647 of them on boondmanager.com — and `IS_BANNER_SHAPED` accepts any
+ *     of those, so the wording pass would be loose exactly where the page is least
+ *     familiar. Its candidates must sit inside something that is banner-shaped AND SAYS
+ *     WHAT IT IS ABOUT: the same consent wording `FIND_BANNER` already demands. The vendor
+ *     selectors are left ungated, because a CMP's own accept button is not ambiguous.
+ *
+ * AND EVERY QUESTION PUT TO A FRAME IS NOW BOUNDED. `page.evaluate` has no timeout of its
+ * own, and bakerandpartners.com carries a frame whose URL is the empty string that never
+ * answers one: the search for a banner stopped there and spent the WHOLE three-minute
+ * capture budget, and the capture died with no artefacts. See FRAME_ANSWER_MS.
  *
  * A banner we fail to dismiss is NOT a failure of the capture. It is a real part of that
  * page's surface area, it will classify as promotion, and that is the correct answer — a
@@ -199,15 +229,54 @@ export const CLICKABLE = 'button, [role="button"], input[type="button"], input[t
  *
  * The walk goes up from the control itself, because the accept button is usually several
  * static divs deep inside the positioned element that is the banner.
+ *
+ * AND IT CROSSES SHADOW BOUNDARIES, because `parentElement` is null at the top of a shadow
+ * tree and the walk simply stopped there. boondmanager.com's accept button sits four
+ * elements inside an open shadow root; the `position: fixed` overlay that makes it a banner
+ * is in the same shadow tree, and the walk never reached it. See lib/shadow.mjs.
  */
 export const IS_BANNER_SHAPED = (el) => {
-    for (let a = el; a; a = a.parentElement) {
+    const deep = window.__auditDeep;
+    const above = deep ? deep.parent : (node) => node.parentElement;
+    for (let a = el; a; a = above(a)) {
         if (a.__auditPinned === true) return true;
         const role = a.getAttribute ? a.getAttribute('role') : null;
         if (role === 'dialog' || role === 'alertdialog') return true;
         if (a.getAttribute && a.getAttribute('aria-modal') === 'true') return true;
         const cs = getComputedStyle(a);
         if (cs.position === 'fixed' || cs.position === 'sticky') return true;
+    }
+
+    return false;
+};
+
+/**
+ * Is this control inside something that is banner-shaped AND says it is about consent?
+ * Runs IN the page.
+ *
+ * THE GATE FOR THE SECOND ATTEMPT, and the reason it is stricter than IS_BANNER_SHAPED is
+ * the state of the page it runs on. By the time the scroll pass has finished, the pinned
+ * census has marked every element it measured holding the viewport — 647 of them on
+ * boondmanager.com — and `__auditPinned` alone would make most of a page's chrome
+ * banner-shaped. Requiring the SAME ancestor to be positioned and to say what it is about
+ * is what `FIND_BANNER` already asks of a banner, and a sticky header or a chat bubble
+ * never says it.
+ *
+ * Deliberately about the SUBJECT, not the buttons: a banner always states its subject,
+ * whatever its accept control happens to be labelled. The wording of the button is
+ * isAcceptLabel's job and has already been applied by the time this runs.
+ */
+export const IS_CONSENT_BANNER = (el, subjectSource) => {
+    const subject = new RegExp(subjectSource, 'i');
+    const deep = window.__auditDeep;
+    const above = deep ? deep.parent : (node) => node.parentElement;
+    for (let a = el; a; a = above(a)) {
+        const role = a.getAttribute ? a.getAttribute('role') : null;
+        const shaped = a.__auditPinned === true
+            || role === 'dialog' || role === 'alertdialog'
+            || (a.getAttribute && a.getAttribute('aria-modal') === 'true')
+            || ['fixed', 'sticky'].includes(getComputedStyle(a).position);
+        if (shaped && subject.test((a.textContent || '').slice(0, 400))) return true;
     }
 
     return false;
@@ -380,12 +449,48 @@ async function frameIsBanner(page, frame) {
     if (frame === page) {
         return false;
     }
-    try {
+
+    return ask(async () => {
         const owner = await frame.frameElement();
 
         return owner ? await owner.evaluate(IS_BANNER_SHAPED) : false;
-    } catch {
-        return false;
+    }, false);
+}
+
+/**
+ * How long ONE question to ONE frame may take before it is given up on.
+ *
+ * NOT A GUESS, AND NOT A TIDINESS MEASURE. `page.evaluate` has no timeout of its own, and a
+ * frame that never answers hangs the caller for ever. bakerandpartners.com carries a frame
+ * whose URL is the EMPTY STRING; `frame.evaluate` on it returns never, measured at 60s and
+ * given up on rather than waited out. That one frame spent the WHOLE three-minute capture
+ * budget inside this module — "dismissing a consent banner did not finish within 175945ms" —
+ * and the capture died with no artefacts at all.
+ *
+ * Two seconds is the same order as the vendor pass already spends per frame, and three
+ * orders of magnitude above anything measured: `FIND_BANNER` answers in 1–11ms on every
+ * real frame in the corpus and the control query in 4–26ms. A frame given up on is SKIPPED,
+ * which is exactly what the catch around each of these already did for a frame that threw.
+ */
+export const FRAME_ANSWER_MS = 2000;
+
+/**
+ * `work()`, or `fallback` once the frame has had FRAME_ANSWER_MS to answer. Never throws.
+ *
+ * The loser of the race gets its own handler: a `frame.evaluate` that is still stuck when
+ * the browser closes underneath it rejects LATER, and an unhandled rejection would take the
+ * process down long after this had returned the right answer.
+ */
+async function ask(work, fallback) {
+    let timer = null;
+    const bell = new Promise((resolve) => {
+        timer = setTimeout(() => resolve(fallback), FRAME_ANSWER_MS);
+        if (typeof timer.unref === 'function') timer.unref();
+    });
+    try {
+        return await Promise.race([Promise.resolve().then(work).catch(() => fallback), bell]);
+    } finally {
+        clearTimeout(timer);
     }
 }
 
@@ -394,30 +499,28 @@ async function frameIsBanner(page, frame) {
  *
  * Returns `{outcome, label}`. The banner test runs only on controls whose wording already
  * qualified, which keeps it to a handful of round trips on a page of hundreds of controls.
+ *
+ * `gate` is the in-page test a candidate has to pass — IS_BANNER_SHAPED at load, and the
+ * stricter IS_CONSENT_BANNER once the page has been scrolled. See the header.
  */
-async function clickByLabel(page, frame, wholeFrameIsBanner) {
-    let handles = [];
-    try {
-        handles = await frame.$$(CLICKABLE);
-    } catch {
-        return {outcome: 'none', label: null}; // frame went away mid-search
-    }
+async function clickByLabel(page, frame, wholeFrameIsBanner, gate) {
+    // EVERY QUESTION PUT TO THE FRAME IS BOUNDED — see FRAME_ANSWER_MS. A frame that never
+    // answers used to hang here as surely as in lookForBanner; the empty fallback is what
+    // the catch around each of these already meant, arrived at on a clock as well as on an
+    // exception. "frame went away mid-search" and "frame never answered" are the same
+    // outcome to this pass: try the next frame.
+    const handles = await ask(() => frame.$$(CLICKABLE), []);
     if (handles.length === 0) {
         return {outcome: 'none', label: null};
     }
 
-    let described = [];
-    try {
-        described = await frame.evaluate(DESCRIBE_CONTROLS, handles);
-    } catch {
-        return {outcome: 'none', label: null};
-    }
+    const described = await ask(() => frame.evaluate(DESCRIBE_CONTROLS, handles), []);
 
     for (let i = 0; i < handles.length; i++) {
         const d = described[i];
         if (!d || !d.visible || !isAcceptLabel(d.label)) continue;
         try {
-            if (!wholeFrameIsBanner && !(await handles[i].evaluate(IS_BANNER_SHAPED))) continue;
+            if (!wholeFrameIsBanner && !(await ask(() => handles[i].evaluate(gate.test, gate.arg), false))) continue;
             const outcome = await clickAndConfirm(page, handles[i], 1000);
             if (outcome === 'dismissed' || outcome === 'navigated') {
                 return {outcome, label: d.label};
@@ -498,10 +601,19 @@ const SUBJECT_SAMPLE = 400;
  * `__auditPinned` is here for the same reason it is in IS_BANNER_SHAPED: a card held in
  * the viewport by script computes `position: relative`, and `consentBannerSeen` was
  * therefore FALSE on a page with a consent card in plain sight.
+ *
+ * THE WALK CROSSES SHADOW BOUNDARIES for the other half of the same answer: the card itself
+ * is inside an open shadow root on boondmanager.com, so a light-DOM query found only its
+ * 1440x0 wrappers, dropped them for being too small, and said `false` again for a different
+ * reason. See lib/shadow.mjs.
  */
 export const FIND_BANNER = (subjectSource) => {
     const subject = new RegExp(subjectSource, 'i');
-    for (const el of document.querySelectorAll('div, section, aside, dialog, form')) {
+    const deep = window.__auditDeep;
+    const candidates = deep
+        ? deep.all(document.body).filter((el) => ['DIV', 'SECTION', 'ASIDE', 'DIALOG', 'FORM'].includes(el.tagName))
+        : document.querySelectorAll('div, section, aside, dialog, form');
+    for (const el of candidates) {
         const cs = getComputedStyle(el);
         const positioned = cs.position === 'fixed' || cs.position === 'sticky' || el.__auditPinned === true;
         const role = el.getAttribute('role');
@@ -521,9 +633,12 @@ export const FIND_BANNER = (subjectSource) => {
  * Searches the main frame and every child frame, because several platforms render the
  * banner inside an iframe where a page-level query cannot see it.
  *
- * Returns `{dismissed, via, navigatedAway, bannerSeen}` — `via` being the selector pass,
- * the text that was clicked, or null. That is recorded in meta.json: a capture where the
- * banner was dismissed by a loose text match is a capture worth looking at twice.
+ * THE FIRST OF TWO ATTEMPTS. See `dismissLateConsent` for the second, which runs after the
+ * scroll pass and only for a banner that was not on the page when this one ran.
+ *
+ * Returns `{dismissed, via, navigatedAway, bannerSeen, arrivedLate}` — `via` being the
+ * selector pass, the text that was clicked, or null. That is recorded in meta.json: a
+ * capture where the banner was dismissed by a loose text match is one worth looking at twice.
  *
  * `navigatedAway` means a click moved the page and was undone. It is NOT a dismissal and
  * never reports as one; the capture goes on with the banner still there, which is a page
@@ -538,54 +653,138 @@ export const FIND_BANNER = (subjectSource) => {
  */
 export async function dismissConsent(page, timeoutMs = 2000) {
     const requested = page.url();
-    const frames = [page, ...page.frames().filter((f) => f !== page.mainFrame())];
+    const frames = everyFrame(page);
 
     // ASKED FIRST, while the banner is still up. Afterwards a dismissed banner is gone
     // and the question cannot be answered at all.
     const bannerSeen = await lookForBanner(frames);
+    const outcome = await attempt(page, frames, timeoutMs, AT_LOAD);
+    if (outcome.navigated) {
+        return {dismissed: false, via: null, navigatedAway: true, restored: await restore(page, requested), bannerSeen};
+    }
 
-    const undo = async () => {
-        const restored = await restore(page, requested);
-
-        return {dismissed: false, via: null, navigatedAway: true, restored, bannerSeen};
+    return {
+        dismissed: outcome.dismissed,
+        via: outcome.via,
+        navigatedAway: false,
+        // A control that dismissed IS a banner, whatever the shape-and-wording test made of it.
+        bannerSeen: outcome.dismissed ? true : bannerSeen,
+        arrivedLate: false,
     };
+}
 
+/**
+ * One more attempt, for a banner that was not on the page when the first one ran.
+ *
+ * `first` is what `dismissConsent` returned. This RETURNS THE SAME SHAPE, so the caller
+ * keeps one consent record rather than two to reconcile — with `arrivedLate` saying which
+ * attempt answered it.
+ *
+ * IT RUNS ONLY WHEN THE FIRST ATTEMPT FOUND NOTHING AT ALL. A banner the first attempt saw
+ * and failed to dismiss has already been refused once; trying the same controls again buys
+ * nothing but the time it costs, and that time is charged to the capture's budget on a page
+ * that has already proved to be slow. A first attempt that NAVIGATED is likewise not
+ * repeated — the one control we know about takes the page somewhere else.
+ *
+ * WHERE IT BELONGS IN THE CAPTURE: after the scroll pass, before anything is photographed.
+ * That is the first moment a late banner is certainly there — boondmanager.com's opens
+ * about eight seconds in — and the last moment before the slice pass would start painting
+ * it into the image.
+ *
+ * THE COST WHEN THERE IS NOTHING TO DO is one `FIND_BANNER` per frame, and nothing else.
+ */
+export async function dismissLateConsent(page, first, timeoutMs = 2000) {
+    if (first.dismissed || first.navigatedAway || first.bannerSeen) {
+        return {...first, arrivedLate: false};
+    }
+    const requested = page.url();
+    const frames = everyFrame(page);
+    if (!(await lookForBanner(frames))) {
+        return {...first, arrivedLate: false};
+    }
+
+    const outcome = await attempt(page, frames, timeoutMs, AFTER_SCROLLING);
+    if (outcome.navigated) {
+        return {
+            dismissed: false,
+            via: null,
+            navigatedAway: true,
+            restored: await restore(page, requested),
+            bannerSeen: true,
+            arrivedLate: true,
+        };
+    }
+
+    return {
+        dismissed: outcome.dismissed,
+        // Said out loud in meta.json: a banner dismissed here was on screen for part of the
+        // capture, and the page measured before this point still had it.
+        via: outcome.via === null ? null : `${outcome.via}, after the scroll pass`,
+        navigatedAway: false,
+        bannerSeen: true,
+        arrivedLate: true,
+    };
+}
+
+/** The main frame and every child frame, which is where a CMP's own document lives. */
+const everyFrame = (page) => [page, ...page.frames().filter((f) => f !== page.mainFrame())];
+
+/**
+ * What a candidate has to be, for each of the two attempts. See the header for why they
+ * differ: `wholeFrame` is the shortcut that lets a CMP's iframe vouch for its own controls,
+ * and it is only sound while the parent document is the one the page loaded with.
+ */
+const AT_LOAD = {test: IS_BANNER_SHAPED, arg: null, wholeFrame: true};
+const AFTER_SCROLLING = {test: IS_CONSENT_BANNER, arg: CONSENT_SUBJECT.source, wholeFrame: false};
+
+/**
+ * The two passes, in order, over every frame. Shared by both attempts.
+ *
+ * Returns `{dismissed, via, navigated}`. `navigated` is not a dismissal and never reports
+ * as one — the caller undoes it and the capture goes on with the banner still standing,
+ * which is a page we can honestly measure, unlike a different page entirely.
+ */
+async function attempt(page, frames, timeoutMs, gate) {
     for (const frame of frames) {
         const outcome = await clickKnownVendor(page, frame, timeoutMs);
         if (outcome === 'navigated') {
-            return await undo();
+            return {dismissed: false, via: null, navigated: true};
         }
         if (outcome === 'dismissed') {
-            // A vendor selector matching IS a banner, whatever the shape-and-wording test
-            // made of it.
-            return {dismissed: true, via: 'vendor selector', navigatedAway: false, bannerSeen: true};
+            return {dismissed: true, via: 'vendor selector', navigated: false};
         }
     }
 
     for (const frame of frames) {
-        const wholeFrameIsBanner = await frameIsBanner(page, frame);
-        const {outcome, label} = await clickByLabel(page, frame, wholeFrameIsBanner);
+        const wholeFrameIsBanner = gate.wholeFrame ? await frameIsBanner(page, frame) : false;
+        const {outcome, label} = await clickByLabel(page, frame, wholeFrameIsBanner, gate);
         if (outcome === 'navigated') {
-            return await undo();
+            return {dismissed: false, via: null, navigated: true};
         }
         if (outcome === 'dismissed') {
             // printable: this label is the page's text, and it ends up on a terminal.
-            return {dismissed: true, via: `text "${printable(label, 60)}"`, navigatedAway: false, bannerSeen: true};
+            return {dismissed: true, via: `text "${printable(label, 60)}"`, navigated: false};
         }
     }
 
-    return {dismissed: false, via: null, navigatedAway: false, bannerSeen};
+    return {dismissed: false, via: null, navigated: false};
 }
 
-/** Any frame showing something banner-shaped and about consent. Never throws. */
+/**
+ * Any frame showing something banner-shaped and about consent. Never throws, and never
+ * waits on a frame for longer than FRAME_ANSWER_MS.
+ *
+ * THIS IS WHERE THE THREE-MINUTE HANG WAS. bakerandpartners.com has seven frames and one of
+ * them has an EMPTY URL; `frame.evaluate` on it returns never, so a page whose banner was
+ * not found on an earlier frame stopped here for the whole capture budget. Measured: HEAD
+ * gives up at 3:00 in `dismissConsent` on three runs out of three, and the same page
+ * captures in 29s once this loop can stop asking. A frame that does not answer is skipped,
+ * which is what the catch here already did for a frame that threw.
+ */
 async function lookForBanner(frames) {
     for (const frame of frames) {
-        try {
-            if (await frame.evaluate(FIND_BANNER, CONSENT_SUBJECT.source)) {
-                return true;
-            }
-        } catch {
-            // Frame went away, or is cross-origin and unreadable. Try the next.
+        if (await ask(() => frame.evaluate(FIND_BANNER, CONSENT_SUBJECT.source), false)) {
+            return true;
         }
     }
 

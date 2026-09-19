@@ -68,9 +68,14 @@ export const FIXED_MIN_AREA = 40000;
  * rest with it anyway.
  */
 export const COLLECT_PINNED = () => {
+    // Both walks cross open shadow roots, for the reason lib/shadow.mjs gives: the card this
+    // function exists to record is rendered inside one, and the light-DOM walk reached only
+    // the three 1440x0 wrappers above it.
+    const deep = window.__auditDeep;
+    const above = deep ? deep.parent : (el) => el.parentElement;
     const held = (el) => el.__auditPinned === true || getComputedStyle(el).position === 'fixed';
     const out = [];
-    for (const el of document.querySelectorAll('body *')) {
+    for (const el of deep ? deep.all(document.body) : document.querySelectorAll('body *')) {
         const cs = getComputedStyle(el);
         const pinned = el.__auditPinned === true;
         const fixed = cs.position === 'fixed';
@@ -79,7 +84,7 @@ export const COLLECT_PINNED = () => {
         const r = el.getBoundingClientRect();
         if (r.width < 1 || r.height < 1) continue;
         let outermost = true;
-        for (let a = el.parentElement; a && a !== document.documentElement; a = a.parentElement) {
+        for (let a = above(el); a && a !== document.documentElement; a = above(a)) {
             if (held(a)) {
                 outermost = false;
                 break;

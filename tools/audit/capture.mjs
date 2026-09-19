@@ -75,7 +75,16 @@ try {
     const consentState = meta.consentDismissed
         ? `dismissed via ${printable(meta.consentVia)}`
         : (meta.consentBannerSeen ? 'BANNER FOUND, not dismissed (counts as surface area)' : 'no banner found');
-    console.log(`consent      ${consentState}${meta.consentNavigatedAway ? ' — a consent click navigated away and was undone' : ''}`);
+    // A banner that was not on the page at load changes what every measurement taken
+    // before the scroll pass was a measurement OF, so it is never left implicit.
+    const lateNote = meta.consentArrivedLate ? ' — it was not there at load; it arrived during the scroll' : '';
+    console.log(`consent      ${consentState}${lateNote}${meta.consentNavigatedAway ? ' — a consent click navigated away and was undone' : ''}`);
+    // "This page has no web components" and "the walk that finds them stopped working"
+    // would otherwise be the same silence. Only printed when there is something to say.
+    const shadow = c.shadow;
+    if (shadow && shadow.hosts > 0) {
+        console.log(`components   ${shadow.hosts} shadow roots holding ${shadow.inShadow} of ${shadow.elements} elements`);
+    }
     console.log(`scroll cap   ${meta.scrollCapHit ? 'HIT — page may be infinite-scroll' : 'not hit'}`);
     console.log(`webgl        ${printable(meta.webgl.renderer || 'none', RENDERER_MAX)}${meta.webgl.software === true ? ' (software)' : ''}`);
     console.log(`webgl asked  ${meta.webgl.requested.length ? printable(meta.webgl.requested.join(", "), RENDERER_MAX) : "no"}`);
