@@ -797,13 +797,42 @@ test('coincident boxes collapse to one instead of cancelling each other out', ()
     assert.equal(got[0].tag, 'nav', 'the semantic element should be the survivor, not its wrapper');
 });
 
+/**
+ * THE PAIR IS INSET BY A PIXEL, which is load-bearing rather than tidy. This test is
+ * about WHICH of two identical boxes survives the collapse, and nothing else. Both of
+ * its rects are plain — a `div` and a `span` — and a plain box reaching both page edges
+ * is now a band rather than a module, so at the original x=0 w=1440 the pair would be
+ * dropped before the collapse ever ran and the test would pass or fail for a reason it
+ * is not asking about. The test above keeps its full width deliberately: its survivor is
+ * a `<nav>`, which is taken at its word at any width, and that is worth asserting.
+ */
 test('coincident boxes with no semantic tag keep the earlier rect', () => {
-    const first = {x: 0, y: 112, w: 1440, h: 40, tag: 'div', boxed: true, text: 'first'};
-    const second = {x: 0, y: 112, w: 1440, h: 40, tag: 'span', boxed: true, text: 'second'};
+    const first = {x: 1, y: 112, w: 1438, h: 40, tag: 'div', boxed: true, text: 'first'};
+    const second = {x: 1, y: 112, w: 1438, h: 40, tag: 'span', boxed: true, text: 'second'};
 
     const got = moduleContainers([first, second], 1440, 3752);
     assert.equal(got.length, 1);
     assert.equal(got[0].text, 'first', 'order must come from rects.json, not from chance');
+});
+
+/**
+ * The rule that forced the inset above, stated directly so it cannot be lost by accident.
+ * vaiie.com's footer wrapper is the page: `div 0,2795 1440x394`, 12% of the page, which
+ * as a module vetoed all three gutters between its four visible footer columns.
+ */
+test('a plain full-width box is a band, not a module', () => {
+    const band = {x: 0, y: 2795, w: 1440, h: 394, tag: 'div', boxed: true, text: 'footer wrapper'};
+    assert.deepEqual(moduleContainers([band], 1440, 3284), []);
+});
+
+test('…but a semantic element is taken at its word at any width', () => {
+    const nav = {x: 0, y: 112, w: 1440, h: 40, tag: 'nav', boxed: false, text: 'primary'};
+    assert.equal(moduleContainers([nav], 1440, 3752).length, 1);
+});
+
+test('an inset plain box is still a module', () => {
+    const card = {x: 120, y: 900, w: 400, h: 300, tag: 'div', boxed: true, text: 'card'};
+    assert.equal(moduleContainers([card], 1440, 3752).length, 1);
 });
 
 test("the retail fixture's wrapped primary nav is protected", () => {

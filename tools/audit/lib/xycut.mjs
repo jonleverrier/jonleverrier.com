@@ -536,6 +536,32 @@ export function moduleContainers(rects, width, pageHeight, opts = MODULE_AREA) {
 
     const candidates = rects.filter((r) => {
         if (r.boxed !== true && !MODULE_TAGS.has(r.tag)) return false;
+        // A FULL-WIDTH BOX THAT ONLY DRAWS A BACKGROUND IS A BAND, NOT A MODULE.
+        //
+        // Nearly everything this population keeps whole is INSET — a card, a testimonial
+        // box — sitting in the page with room either side, its interior gaps its own
+        // padding. A box reaching both page edges is usually the thing those sit IN, and
+        // protecting it forbids every cut BETWEEN the modules it holds.
+        //
+        // vaiie.com is the case. Its footer wrapper is `div 0,2795 1440x394`, 12.0% of
+        // the page and so a module by area, and it vetoed all three gutters between the
+        // four footer columns a reader can plainly see. The whole footer came back as
+        // one block. The corpus holds 73 edge-to-edge boxes against 353 inset ones, and
+        // the wide ones are bands: whole `<section>`s on jtc and bakerandpartners, the
+        // footer wrapper on tpagency, a cookie bar on alchemy.
+        //
+        // BUT WIDTH ALONE IS THE WRONG TEST, and the retail fixture says so: M&S's
+        // primary `<nav>` spans the full 1440px and is exactly the kind of thing that
+        // must stay whole — navigation is one of the four categories this tool reports.
+        // So the question is not how wide the box is, it is whether it SAYS WHAT IT IS.
+        // A `<nav>`, `<header>`, `<article>` or `<figure>` is taken at its word at any
+        // width. A plain `<div>` or `<section>` that qualified only by drawing itself a
+        // background has claimed nothing, and at full width it is a band.
+        //
+        // The `<footer>`s dropped by this lose nothing: an edge-to-edge landmark is
+        // protected by `pageLandmarks`, a better rule for them, which makes the boundary
+        // a cut rather than merely refusing one inside.
+        if (!MODULE_TAGS.has(r.tag) && r.x <= 0 && r.x + r.w >= width) return false;
         const a = r.w * r.h;
 
         return a >= min * pageArea && a <= max * pageArea;
