@@ -39,7 +39,7 @@ import {anyUnmeasured, noteCodes, runNotes} from './lib/notes.mjs';
 import {loadRects} from './lib/rects.mjs';
 import {printable} from './lib/printable.mjs';
 import {renderDebug} from './lib/debug.mjs';
-import {blankRegions, inkPrefix, pixelsFromPng, transparentBlocks, unpaintedBlocks} from './lib/painted.mjs';
+import {blankRegions, inkFraction, inkPrefix, pixelsFromPng, transparentBlocks, unpaintedBlocks} from './lib/painted.mjs';
 
 const outDir = process.argv[2];
 if (!outDir) {
@@ -115,6 +115,12 @@ try {
         unpainted = unpaintedBlocks(measured, ls, rects);
         transparent = transparentBlocks(measured, ls, rects);
         blank = blankRegions(measured, ls);
+        // EACH LEAF'S OWN INK, which is how whitespace is reported. A client logo strip is
+        // 4% ink and 96% space; counted by area alone that space silently becomes whatever
+        // the strip was labelled. See lib/surface.mjs.
+        for (const l of ls) {
+            l.coverage = Number(inkFraction(measured, l).toFixed(4));
+        }
     }
     const notes = runNotes(meta, 'present', rects, unpainted, blank, transparent);
 
