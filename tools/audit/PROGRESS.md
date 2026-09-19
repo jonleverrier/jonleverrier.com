@@ -43,18 +43,31 @@ bakerandpartners.com is no longer on that list. It hung for 14 minutes, then fai
 | — | Whitespace reported as coverage per block, not as a category of block (user's ruling) | all | phase 3/4 |
 | — | `webglBlind`: canvas content the edge map cannot read | 8 sites | accepted, declared in notes |
 
-Found by reviewing the debug images on 19 Sep, not reported by the user:
+### Found by reviewing the debug images, 19 Sep — not reported by the user
 
-| # | Defect | Site |
-|---|---|---|
-| 9 | **A cut runs through a paragraph mid-sentence.** `inkedTextRects` is meant to make this impossible, so either the population has a gap or something outranks it | milk |
-| 10 | A display word is cut **between its letters** — "Launch." sliced L‑a‑u‑n‑c‑h | kohde |
-| 11 | Header still fused into the hero; Task 17's landmark rule did not reach it | kohde |
-| 12 | A photograph shredded into fragments — the same defect as dept.agency, so that one is not a one-off | milk |
-| 13 | Repeating siblings cut per item: footer link lists, a primary nav row, service and product card grids. Same defect as #4 at three scales | whitepaper, clearleft, liquidlight, natwest, milk |
-| 14 | Footer columns not separated | vaiie |
-| 15 | Slivers holding a single `>` chevron | hsbc |
-| 16 | An undismissed late banner is kept from slice 0 rather than from first sighting, so "measured once" is not literally true | queued by task 18 |
+A pass over 22 of the 25 segmented sites. Ordered by how many sites carry each defect,
+which is a better guide to what to fix next than how bad any single instance looks.
+
+| # | Defect | Sites | Cause |
+|---|---|---|---|
+| 9 | **Repeating siblings cut one block per item** — nav rows, footer link lists, logo strips, card grids, step lists. Every member takes the same label, so by the depth ruling the cut changes no answer | pola, whitepaper, clearleft, liquidlight, natwest, milk, klark, switch, gcsc, hettich — **10** | the geometry cannot tell a repeating run from distinct sections. Same defect as #4 at three scales (row, list, 2D grid) |
+| 10 | **A cut runs through a paragraph** — vertically between its words on altum and milk, horizontally between its lines on hettich | altum, milk, hettich — **3** | **measured**: `TEXT_TAGS` is h1–h6 only, so a `<p>` is in no protected population. On altum the `<h2>` at 46,1028 is protected and shrunk to 706px of ink while the `<p>` at 46,1092 sized 1337x72 is not, and cuts land at x=805, 1073, 1248 — clear of the heading, through the paragraph |
+| 11 | **Display type shredded** — a headline cut between words and in places between letters. alchemy loses ~19 of its 91 blocks to one headline | alchemy, kohde, dept — **3** | task 16 merges runs of separate ELEMENTS on a line; this is one element whose letter and word spacing at display size opens gutters wider than the threshold |
+| 12 | **Whitespace given its own blocks** — empty background strips either side of centred content | klark, milk, liquidlight, hettich — **4** | relates to the ruling that space is a coverage measure across blocks, not a kind of block |
+| 13 | **Slivers holding a single `>` chevron** | hsbc, hettich — **2** | a link's arrow is a separate element with a gutter each side |
+| 14 | Header still fused into the hero; task 17's landmark rule did not reach it | kohde — **1** | unknown; likely no `<header>` landmark, or not edge to edge |
+| 15 | Footer columns not separated | vaiie — **1** | unknown |
+| 16 | An undismissed late banner is kept from slice 0 rather than from first sighting, so "present and measured once" is not literally true | — | queued by task 18, costs an image change on every site with chrome that fades in |
+
+**Two sites confirm defects the user reported on one site each**, which matters because a
+one-site defect can be special pleading and a two-site defect cannot:
+
+- bakerandpartners carries gcsc's backdrop defect — one block spans y≈754–2216 holding four
+  distinct sections, behind oversized graphics that run off the canvas both sides.
+- milk carries dept.agency's shredded-photograph defect.
+
+switch.je shows the backdrop problem in its other direction: its decorative pink swoosh
+fragments the hero into six blocks rather than fusing it.
 
 ---
 
