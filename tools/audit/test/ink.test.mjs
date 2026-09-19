@@ -58,17 +58,36 @@ test('a box entirely outside the image yields nothing', () => {
     assert.equal(inkBounds(inkAt(100, 20, 0, 50), 100, 20, {x: 500, y: 0, w: 50, h: 20}), null);
 });
 
-test('inkedTextRects drops headings with no ink and keeps the rest', () => {
+/**
+ * The third rect used to be a `<p>`, as an example of a tag outside the protected
+ * population. `<p>` is IN the population now — see TEXT_TAGS — so the control has moved
+ * to `<span>`, which is inline, is everywhere on a page, and is still deliberately out.
+ * The subject of the test is unchanged: no ink, no protection.
+ */
+test('inkedTextRects drops text with no ink and keeps the rest', () => {
     const edges = inkAt(400, 40, 10, 60);
     const rects = [
         {x: 0, y: 0, w: 300, h: 40, tag: 'h2', boxed: false, text: 'inked'},
         {x: 300, y: 0, w: 90, h: 40, tag: 'h2', boxed: false, text: 'blank'},
-        {x: 0, y: 0, w: 300, h: 40, tag: 'p', boxed: false, text: 'not a heading'},
+        {x: 0, y: 0, w: 300, h: 40, tag: 'span', boxed: false, text: 'not in the population'},
     ];
 
     const got = inkedTextRects(edges, 400, 40, rects);
     assert.equal(got.length, 1, 'only the inked heading survives');
     assert.equal(got[0].text, 'inked');
+});
+
+/** …and the same question asked of body text, which now IS in the population. */
+test('inkedTextRects protects an inked paragraph and drops a blank one', () => {
+    const edges = inkAt(400, 40, 10, 60);
+    const rects = [
+        {x: 0, y: 0, w: 300, h: 40, tag: 'p', boxed: false, text: 'inked prose'},
+        {x: 300, y: 0, w: 90, h: 40, tag: 'p', boxed: false, text: 'blank prose'},
+    ];
+
+    const got = inkedTextRects(edges, 400, 40, rects);
+    assert.equal(got.length, 1);
+    assert.equal(got[0].text, 'inked prose');
 });
 
 // The real pair, both directions, on the committed fixtures.

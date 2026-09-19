@@ -35,11 +35,42 @@ test('headings are protected', () => {
 });
 
 // Deliberately NOT protected — see the header comment.
-test('body text is not protected', () => {
-    for (const tag of ['p', 'li', 'blockquote', 'span', 'a', 'button', 'td']) {
+/**
+ * THIS TEST USED TO ASSERT THE OPPOSITE, and the change is deliberate. Body text was
+ * excluded because protecting every text element merged four footer columns — a 1315px
+ * copyright line vetoed the whole axis. `inkBounds` and `inkClusters` arrived afterwards
+ * and shrink a protected rect to the ink it actually draws, so that line now protects the
+ * width of its own sentence. Three pages in the corpus were being cut through the middle
+ * of a paragraph for want of this; both fixtures are unmoved by it.
+ *
+ * The block-level tags below hold words directly. The inline ones still must not be here:
+ * they are everywhere, and a run of them that reads as one line is `textRuns`' job.
+ */
+test('block-level body text is protected', () => {
+    for (const tag of ['p', 'li', 'blockquote', 'figcaption', 'dd', 'dt']) {
+        assert.equal(TEXT_TAGS.has(tag), true, tag);
+        assert.deepEqual(textRects([rect(tag, 0, 0, 400, 100)]).map((r) => r.tag), [tag], tag);
+    }
+});
+
+test('inline and interactive elements are still not protected', () => {
+    for (const tag of ['span', 'a', 'button', 'td', 'div', 'section']) {
         assert.deepEqual(textRects([rect(tag, 0, 0, 400, 100)]), [], tag);
         assert.equal(TEXT_TAGS.has(tag), false, tag);
     }
+});
+
+/**
+ * The regression that forced the original narrowing, asserted directly so that widening
+ * the population again cannot quietly bring it back. A full-width copyright line whose
+ * ink is a short sentence at the left must not veto a cut on the right.
+ */
+test('a full-width line of small print does not veto the whole axis', () => {
+    const line = rect('p', 0, 0, 1315, 20, '(c) 2026 Example Limited. All rights reserved.');
+    const [protectedRect] = textRects([line]);
+
+    assert.ok(protectedRect, 'it is protected');
+    assert.equal(protectedRect.w, 1315, 'as a BOX it still spans the page — inkBounds is what narrows it');
 });
 
 test('an empty heading protects nothing', () => {

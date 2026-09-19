@@ -59,7 +59,14 @@ const oneLine = ({gap = 17, containerHeight = 77, secondInkTop = 214} = {}) => {
     const rects = [
         // Wide enough that the line box is never what refuses a pair: each test should
         // fail for the reason it is testing and no other.
-        rect('p', 320, 200, 1000, containerHeight, 'Lead with Strategy & Insight'),
+        //
+        // A `div`, NOT a `p`, and that is load-bearing. This rect is here to be the LINE
+        // BOX the two spans sit in, nothing else. Body text joined TEXT_TAGS, so as a
+        // `<p>` it would be protected in its own right, and the control below — the one
+        // that proves the page is still cut when runs are switched off — would pass for
+        // the wrong reason and prove nothing. A line-box wrapper is a div on the pages
+        // this stands for anyway.
+        rect('div', 320, 200, 1000, containerHeight, 'Lead with Strategy & Insight'),
         rect('span', aLeft, 200, aRight - aLeft, 77, 'Lead with'),
         rect('span', bLeft, secondInkTop - 14, bRight - bLeft, 77, 'Strategy & Insight'),
     ];

@@ -891,7 +891,40 @@ export function onLandmarkBoundary(landmarks, rect, at, horizontal) {
  * test for the other — but what happens to a cut landing inside either is identical, so
  * the rejection is written once and both feed it.
  */
-export const TEXT_TAGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
+/**
+ * Tags that hold words directly.
+ *
+ * BODY TEXT IS IN HERE AND FOR A WHILE IT WAS NOT, which is worth the paragraph because
+ * the reason it was excluded stopped being true and nobody noticed.
+ *
+ * Protecting every text element was tried early and reverted: four footer columns merged
+ * into one, because a 1315px copyright line spanned the whole page and vetoed the axis.
+ * The narrowing to headings was the right call AT THE TIME. What has changed since is
+ * that a protected rect is no longer its box — `inkBounds` shrinks it to the pixels that
+ * are actually drawn, and `inkClusters` splits that into the groups the ink falls in — so
+ * a copyright line now protects the width of its own sentence and nothing else.
+ *
+ * Leaving `<p>` out cost three pages in the corpus a cut straight through a paragraph.
+ * altum is the clearest: its `<h2>` at 46,1028 is protected and shrunk to 706px of ink,
+ * the `<p>` beneath it at 46,1092 sized 1337x72 is in no population at all, and cuts land
+ * at x=805, 1073 and 1248 — clear of the heading, through the middle of the sentence. A
+ * reader sees one paragraph; the segmenter saw an unprotected region with quiet columns
+ * between the words. milk has the same defect vertically, hettich horizontally.
+ *
+ * Re-measured before widening, and the old regression does not come back: both fixtures
+ * are unmoved (retail 17 leaves, jonleverrier 12) even though retail's protected-text
+ * population goes from 14 rects to 52, and the four sites in the corpus with real
+ * multi-column footers — whitepaper, vaiie, jtc, natwest — keep their columns. The three
+ * defect pages lose only the cuts that were through their prose: altum 27 to 24, milk 29
+ * to 27, hettich 30 to 26.
+ *
+ * `<span>` and `<a>` stay out deliberately. They are inline and everywhere, and the runs
+ * they form are already handled by `textRuns`, which joins what reads as one line.
+ */
+export const TEXT_TAGS = new Set([
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'p', 'li', 'blockquote', 'figcaption', 'dd', 'dt',
+]);
 
 /**
  * Elements that carry words. A cut may not pass THROUGH one.
