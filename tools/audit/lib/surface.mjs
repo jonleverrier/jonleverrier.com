@@ -31,8 +31,14 @@
  */
 import {leaves} from './blocks.mjs';
 
-/** The order a report prints them in: the four that are being asked about, then the rest. */
-const CATEGORY_ORDER = ['brand', 'navigation', 'routing', 'promotion', 'other', 'unclassified'];
+/**
+ * The order a report prints them in: roughly top-of-page to bottom-of-page, so the table
+ * reads like the page it describes, with the refusal last.
+ */
+const CATEGORY_ORDER = [
+    'navigation', 'hero', 'brand', 'promotion', 'trust', 'routing', 'editorial', 'footer',
+    'unclassified',
+];
 
 /**
  * NULL WHERE IT WAS NOT MEASURED, NEVER 1. A leaf with no coverage recorded is one the ink

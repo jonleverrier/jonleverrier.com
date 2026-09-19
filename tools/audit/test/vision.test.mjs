@@ -53,7 +53,13 @@ test('a block outside the tile is an error, not clamped', () => {
 });
 
 test('an unknown category becomes unclassified rather than being trusted', () => {
-    const {blocks} = parseTileReply('[{"y0":0,"y1":100,"cols":1,"what":"x","category":"trust","confidence":0.8}]', tile);
+    const {blocks} = parseTileReply('[{"y0":0,"y1":100,"cols":1,"what":"x","category":"vibes","confidence":0.8}]', tile);
+    assert.equal(blocks[0].category, 'unclassified');
+});
+
+/** `other` was a real category once and is not one now; it must not sneak back in. */
+test('the retired other category is no longer accepted', () => {
+    const {blocks} = parseTileReply('[{"y0":0,"y1":100,"cols":1,"what":"x","category":"other","confidence":0.9}]', tile);
     assert.equal(blocks[0].category, 'unclassified');
 });
 
@@ -78,8 +84,10 @@ test('an empty array is an error rather than a page with no blocks', () => {
 });
 
 test('the categories are the ones the report promises', () => {
-    assert.deepEqual(CATEGORIES,
-        ['brand', 'navigation', 'routing', 'promotion', 'other', 'unclassified']);
+    assert.deepEqual(CATEGORIES, [
+        'brand', 'navigation', 'hero', 'promotion', 'trust', 'routing', 'editorial', 'footer',
+        'unclassified',
+    ]);
 });
 
 test('the prompt tells the model to answer in this tile only', () => {
@@ -87,12 +95,21 @@ test('the prompt tells the model to answer in this tile only', () => {
     assert.match(TILE_PROMPT, /Do not add any offset/);
 });
 
-/** The precedence from the spec's Judgement call 1, which settles the named edge cases. */
-test('the prompt carries the category definitions and their precedence', () => {
-    for (const c of ['promotion', 'routing', 'navigation', 'brand', 'other', 'unclassified']) {
+/** Every category has to be DEFINED in the prompt, or the model is guessing at the word. */
+test('the prompt carries a definition for every category', () => {
+    for (const c of CATEGORIES) {
         assert.match(TILE_PROMPT, new RegExp(`"${c}"`), c);
     }
-    assert.match(TILE_PROMPT, /first match wins/);
+});
+
+test('the prompt is explicit that one block takes one category, first fit', () => {
+    assert.match(TILE_PROMPT, /take the FIRST that fits/);
+});
+
+/** The two cases that could legitimately take more than one label. */
+test('the prompt settles article cards and client logos', () => {
+    assert.match(TILE_PROMPT, /is "routing", not "editorial"/);
+    assert.match(TILE_PROMPT, /are "trust", not "brand"/);
 });
 
 /* -------------------------------------------------------------------------- the key */

@@ -32,11 +32,25 @@ export const MAX_TOKENS = 4000;
 /**
  * The closed set.
  *
- * `unclassified` is a real answer and is reported as itself — never redistributed into the
- * others, because a percentage that absorbs our own uncertainty is the confident wrong
- * number this tool exists to avoid.
+ * EIGHT, AND `other` IS GONE. The first six were brand, navigation, routing, promotion,
+ * other and unclassified, and the corpus showed `other` doing too much work: 37% of
+ * natwest.com fell into it — Security in our DNA, Supporting 18 million customers, service
+ * quality survey results — so the headline described a minority of the page. A bucket that
+ * large is not a category, it is a failure to have one.
+ *
+ * `footer` and `hero` are first-class because a reader thinks of them that way and the
+ * numbers were wrong without them. whitepaper.co.uk read as 53.7% navigation purely
+ * because its footer's link columns were counted as wayfinding chrome; split out, the
+ * footer is the footer and navigation is the nav.
+ *
+ * `unclassified` is NOT a ninth category. It is the model declining to guess, reported as
+ * itself and never redistributed — because a percentage that absorbs our own uncertainty
+ * is the confident wrong number this tool exists to avoid.
  */
-export const CATEGORIES = ['brand', 'navigation', 'routing', 'promotion', 'other', 'unclassified'];
+export const CATEGORIES = [
+    'brand', 'navigation', 'hero', 'promotion', 'trust', 'routing', 'editorial', 'footer',
+    'unclassified',
+];
 
 /**
  * The definitions and their precedence are the spec's, copied rather than paraphrased.
@@ -70,13 +84,32 @@ What forces TWO blocks:
 - A change of background colour or image.
 - Side-by-side regions carrying different kinds of content.
 
-Give each block a category. These are the definitions, and the precedence is first match wins:
-- "promotion"  - asks the visitor to act now: an offer, urgency, a price, or a capture form.
-- "routing"    - points at specific internal destinations: a product grid, a card row, in-page links.
-- "navigation" - persistent wayfinding chrome that would appear on any page of this site.
-- "brand"      - identity with no offer and no destination: a logo, a positioning line, hero imagery.
-- "other"      - the page's own substantive content, and structural whitespace.
-- "unclassified" - you are not confident which of the above it is. Say so rather than guessing.
+Give each block ONE category. Work down this list and take the FIRST that fits:
+
+- "footer"     - it is in the page's footer. Anything at all: links, legal text, social
+                 icons, a newsletter box, payment marks. Position decides this, not content.
+- "navigation" - persistent wayfinding chrome OUTSIDE the footer, which would appear on any
+                 page of this site: the header bar, a utility strip, a mega-menu.
+- "hero"       - the elevator pitch. What this company does and why you would care. The big
+                 statement at the top, and ALSO any later section whose job is to explain
+                 the offering: a value-proposition row, a "how it works", a feature
+                 explanation. Judged by what it says, not by where it sits.
+- "promotion"  - asks the visitor to act now: an offer, a price, urgency, a competition, a
+                 download push, a demo request, a signup or capture form.
+- "trust"      - evidence that the claim is true: testimonials, client logos, awards,
+                 ratings, certifications, accreditations, statistics about the company,
+                 security and compliance reassurance, survey results.
+- "routing"    - points at specific internal destinations: a product grid, a case-study
+                 row, a card list, a set of in-page links into the site's own inventory.
+- "editorial"  - the page's own published writing, read on the page rather than linked to:
+                 an article, a long explanatory passage, a news item in full.
+- "unclassified" - you are not confident which of the above it is. Say so rather than
+                 guessing. This is a real answer and is better than a wrong one.
+
+Two rules where blocks could take more than one:
+- A card row of articles or blog posts is "routing", not "editorial": its job on a homepage
+  is to send the reader somewhere.
+- Client logos are "trust", not "brand": they are evidence, not this company's identity.
 
 COORDINATES. Answer in THIS IMAGE's pixels: 0 is the top of THIS image, not of the page.
 Do not add any offset and do not rescale. Cover this image top to bottom with no gaps and

@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import {snapBoundaries, mergeSeams, buildTree, SNAP_REACH} from '../lib/bands.mjs';
 import {assertPartition, leaves, totalArea} from '../lib/blocks.mjs';
 
-const b = (y0, y1, category = 'other', what = 'x', cols = 1) => ({y0, y1, category, what, cols, confidence: 0.9});
+const b = (y0, y1, category = 'editorial', what = 'x', cols = 1) => ({y0, y1, category, what, cols, confidence: 0.9});
 
 test('a boundary within reach moves to the element edge', () => {
     assert.deepEqual(snapBoundaries([118], [0, 120, 400]), [120]);

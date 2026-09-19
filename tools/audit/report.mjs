@@ -42,12 +42,12 @@ export function reportFor(doc, viewportHeight) {
         caveats.push(c.message);
     }
 
-    // The four the prospect is being told about. `other` and `unclassified` are in the
-    // table but not in the headline, because neither is a finding.
-    const named = full.filter((s) => s.category !== 'other' && s.category !== 'unclassified');
+    // Everything the prospect is being told about. `unclassified` is in the table but not
+    // in the headline, because it is a refusal rather than a finding.
+    const named = full.filter((s) => s.category !== 'unclassified');
     const headline = named.length
         ? named.map((s) => `${s.category} ${pct(s.share)}`).join(', ')
-        : 'nothing on this page classified as brand, navigation, routing or promotion';
+        : 'nothing on this page could be classified';
 
     return {url: doc.url ?? null, full, firstViewport, coverage, unmeasured, caveats, headline};
 }

@@ -23,31 +23,31 @@ const doc = (children, notes = {metaRead: true, conditions: {}}) => ({
     tree: {x: 0, y: 0, w: 1440, h: children.reduce((a, c) => a + c.h, 0), depth: 0, children},
 });
 
-test('the headline names the four categories and their shares', () => {
+test('the headline names every category and its share', () => {
     const r = reportFor(doc([leaf(0, 900, 'brand'), leaf(900, 900, 'navigation'),
         leaf(1800, 900, 'routing'), leaf(2700, 900, 'promotion')]), 900);
     assert.match(r.headline, /brand/);
     assert.match(r.headline, /25\.0%/);
 });
 
-/** `other` is the page's own content and is not a finding, so it stays out of the headline. */
-test('the headline leaves out other and unclassified', () => {
-    const r = reportFor(doc([leaf(0, 500, 'brand'), leaf(500, 500, 'other'), leaf(1000, 500, 'unclassified')]), 900);
+/** `unclassified` is a refusal, not a finding, so it stays out of the headline. */
+test('the headline leaves out unclassified', () => {
+    const r = reportFor(doc([leaf(0, 500, 'brand'), leaf(500, 500, 'trust'), leaf(1000, 500, 'unclassified')]), 900);
     assert.match(r.headline, /brand/);
-    assert.equal(/other/.test(r.headline), false);
+    assert.match(r.headline, /trust/);
     assert.equal(/unclassified/.test(r.headline), false);
 });
 
-test('a page with nothing in the four categories says so rather than printing an empty line', () => {
-    const r = reportFor(doc([leaf(0, 900, 'other')]), 900);
-    assert.match(r.headline, /nothing on this page classified/);
+test('a page nothing could be classified on says so rather than printing an empty line', () => {
+    const r = reportFor(doc([leaf(0, 900, 'unclassified')]), 900);
+    assert.match(r.headline, /nothing on this page could be classified/);
 });
 
 test('every note with a message becomes a caveat a reader sees', () => {
     const notes = {metaRead: true, conditions: {
         webglBlind: {effect: 'unmeasured', message: 'a canvas could not be read', facts: {}},
     }};
-    const r = reportFor(doc([leaf(0, 900, 'other')], notes), 900);
+    const r = reportFor(doc([leaf(0, 900, 'editorial')], notes), 900);
     assert.equal(r.caveats.length, 1);
     assert.match(r.caveats[0], /canvas could not be read/);
 });
@@ -56,7 +56,7 @@ test('a capture whose provenance could not be read says so first', () => {
     const notes = {metaRead: false, conditions: {
         webglBlind: {effect: 'unmeasured', message: 'a canvas could not be read', facts: {}},
     }};
-    const r = reportFor(doc([leaf(0, 900, 'other')], notes), 900);
+    const r = reportFor(doc([leaf(0, 900, 'editorial')], notes), 900);
     assert.match(r.caveats[0], /could not be checked/);
 });
 
@@ -72,7 +72,7 @@ test('a sparse block is reported with its coverage, not as solid content', () =>
 });
 
 test('the first viewport is reported separately from the whole page', () => {
-    const r = reportFor(doc([leaf(0, 900, 'promotion'), leaf(900, 2700, 'other')]), 900);
+    const r = reportFor(doc([leaf(0, 900, 'promotion'), leaf(900, 2700, 'editorial')]), 900);
     assert.equal(r.full.find((s) => s.category === 'promotion').share, 0.25);
     assert.equal(r.firstViewport.find((s) => s.category === 'promotion').share, 1);
 });

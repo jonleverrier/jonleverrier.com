@@ -7,7 +7,7 @@
  *
  * Two things are asserted hardest here, because both are ways a percentage can be wrong
  * while looking right: that the shares sum to one over the area actually measured, and
- * that `unclassified` is reported as itself rather than shared out among the four
+ * that `unclassified` is reported as itself rather than shared out among the eight
  * categories a prospect is reading about.
  */
 import {test} from 'node:test';
@@ -34,15 +34,18 @@ test('blocks of the same category are added together', () => {
     assert.equal(full.find((s) => s.category === 'routing').share, 0.375);
 });
 
+/** Roughly top-of-page to bottom-of-page, so the table reads like the page it describes. */
 test('categories come back in the order the report prints them', () => {
-    const {full} = surfaceArea(tree([leaf(0, 100, 'other'), leaf(100, 100, 'brand'), leaf(200, 100, 'promotion')]), 900);
-    assert.deepEqual(full.map((s) => s.category), ['brand', 'promotion', 'other']);
+    const {full} = surfaceArea(tree([
+        leaf(0, 100, 'footer'), leaf(100, 100, 'hero'), leaf(200, 100, 'navigation'), leaf(300, 100, 'trust'),
+    ]), 900);
+    assert.deepEqual(full.map((s) => s.category), ['navigation', 'hero', 'trust', 'footer']);
 });
 
 /* ------------------------------------------------------------- above the fold */
 
 test('the first viewport is measured separately and over its own area', () => {
-    const {firstViewport} = surfaceArea(tree([leaf(0, 450, 'brand'), leaf(450, 1350, 'other')]), 900);
+    const {firstViewport} = surfaceArea(tree([leaf(0, 450, 'brand'), leaf(450, 1350, 'editorial')]), 900);
     assert.equal(firstViewport.find((s) => s.category === 'brand').share, 0.5);
 });
 
@@ -67,12 +70,12 @@ test('unclassified is reported, never shared out', () => {
 
 /** The user's ruling: space is a measure across blocks, not a kind of block. */
 test('each category carries how much of its area actually has ink', () => {
-    const {full} = surfaceArea(tree([leaf(0, 500, 'routing', 0.04), leaf(500, 500, 'other', 0.6)]), 900);
+    const {full} = surfaceArea(tree([leaf(0, 500, 'routing', 0.04), leaf(500, 500, 'editorial', 0.6)]), 900);
     assert.equal(full.find((s) => s.category === 'routing').coverage, 0.04);
 });
 
 test('coverage across categories is area-weighted, not averaged', () => {
-    const {coverage} = surfaceArea(tree([leaf(0, 900, 'routing', 0.1), leaf(900, 100, 'other', 0.9)]), 900);
+    const {coverage} = surfaceArea(tree([leaf(0, 900, 'routing', 0.1), leaf(900, 100, 'editorial', 0.9)]), 900);
     assert.ok(Math.abs(coverage - 0.18) < 1e-9, `got ${coverage}`);
 });
 
