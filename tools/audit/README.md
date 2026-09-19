@@ -111,6 +111,22 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   containers on switch.je. Two rects sharing one box cancel out, because each contains
   the other — M&S wraps its `<nav>` in a `<div>` of identical size and neither is
   protected.
+- **A line of text is one thing, not one thing per element.** A heading is protected from
+  being cut through, using its ink rather than its box — but only element by element, and
+  a line is often several elements. tpagency.com pins a panel across two viewports
+  showing "Lead with Strategy & Insight" as two `<span>`s with an 18px space between
+  their ink; that space is a full-height run of quiet pixels, so a vertical cut went down
+  it and a 900px panel of black came back as five columns cut between the words. So parts
+  of a line are merged into one protected **run** (`TEXT_RUN` in `lib/xycut.mjs`), and a
+  run needs three things to be true, not two. Pixels alone cannot finish it: tpagency's
+  word space is 0.47 of its line's ink height and natwest.com's footer — three accordion
+  headings that must stay in three columns — is 0.48, and no threshold fits between them.
+  The DOM does know: one pair shares a 77px line box, the other is two columns of a 380px
+  wrapper. Both run-mates must also LOOK like lines (ink at least 4× as wide as tall), or
+  a row of 437×246 case-study cards on switch.je reads as one line with 24px word spaces.
+  **Only runs are protected, never a lone line** — protecting every text element was tried
+  and is worse than useless, because jonleverrier's 1315px copyright line then vetoes every
+  cut on its axis and merges the four footer columns into one block.
 - **The rule that draws a boundary is what hid it.** A divider under a header is one row
   of content, so it splits the whitespace into two gutters and stands between them along
   with the edge everyone can see: hsbc.co.uk's `<nav>` ends at y=118 with gutters at

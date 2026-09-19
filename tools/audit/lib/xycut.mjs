@@ -16,13 +16,15 @@
  * boundary is at the EDGE of the whitespace, where an element actually stops, so
  * `opts.rects` (phase 1's DOM rects) snaps each cut onto a real element edge inside
  * the run. The same rects also say where NOT to cut: some things are ONE visual module
- * however the pixels look, and a cut may not land strictly inside one. Two populations
- * earn that, chosen by different rules and rejected by the same one — a full-bleed
- * `<video>`, `<img>` or `<canvas>` whose interior is only noise (FULL_BLEED), and a
- * module container: a card, a header, a testimonial box, whose interior gaps are its
- * own padding (MODULE_AREA). See protectedRects and cutsInsideProtected. Rects are
- * OPTIONAL throughout — without them every cut falls back to the gutter midpoint,
- * nothing is protected, and the pure-pixel path still works exactly as it did.
+ * however the pixels look, and a cut may not land strictly inside one. Several
+ * populations earn that, chosen by different rules and rejected by the same one — a
+ * full-bleed `<video>`, `<img>` or `<canvas>` whose interior is only noise (FULL_BLEED);
+ * a module container: a card, a header, a testimonial box, whose interior gaps are its
+ * own padding (MODULE_AREA); a heading, shrunk to its ink (inkedTextRects); and a RUN OF
+ * TEXT, which is a line assembled from several elements (TEXT_RUN). See protectedRects,
+ * textRuns and cutsInsideProtected. Rects are OPTIONAL throughout — without them every
+ * cut falls back to the gutter midpoint, nothing is protected, and the pure-pixel path
+ * still works exactly as it did.
  *
  * `segment` is the reason this file exists: the block tree it produces is a TRUE
  * PARTITION at every level. See segment's own doc comment for why that is the
@@ -536,6 +538,182 @@ export function inkedTextRects(edges, width, height, rects) {
         .filter(Boolean);
 }
 
+/**
+ * A RUN OF TEXT ON ONE LINE IS ONE THING, and `inkedTextRects` cannot see that, because
+ * it protects each element separately.
+ *
+ * tpagency.com pins a panel across two viewports and each one shows a single line —
+ * "Lead with Strategy & Insight" — built from two <span>s. Their ink is 389-611 and
+ * 629-1041 with an 18px space between, which is a perfectly legal gutter, so a vertical
+ * cut went down it and the 900px-tall pinned region came out as five columns of black
+ * cut between the words. Every rule in this file was working as written; the premise was
+ * wrong. A reader sees one line. The segmenter saw four.
+ *
+ * So merge the parts of a line into one span and protect that. What follows is the
+ * evidence for each threshold, measured over the 27 captured pages in the review sweep
+ * plus both committed fixtures. `must merge` is tpagency's headline; `must not` is every
+ * grid, card row and footer whose columns are real boundaries.
+ */
+export const TEXT_RUN = {
+    /**
+     * A LINE, NOT A BLOCK: the ink is at least this many times as wide as it is tall.
+     *
+     * The gap thresholds below are fractions of the ink's height, and that only means
+     * anything if the ink is one line of type. A card's text block is ink too: switch.je
+     * stacks three 437x246 case-study cards whose gaps are 24px, which against 246px of
+     * "line height" is 0.10 and merges the whole row into one span — killing the three
+     * column cuts that are right there in the debug image. Requiring a line shape is what
+     * keeps the normaliser honest.
+     *
+     * Measured: the squattest run-mate that MUST merge is tpagency's "Lead with" at
+     * 222x38, or 5.8:1. The flattest block that must NOT is dept's article-card summary
+     * at 329x84, 3.9:1; every other offender is flatter still (milk 2.0:1, gcsc 1.5:1,
+     * hett 1.0:1). 4 sits between them.
+     *
+     * The cost is real and worth stating: a single short word is not 4:1, so kohde's
+     * "Kohde builds businesses with design" — each word its own <span> — does not merge.
+     * That is a miss, not a wrong answer: nothing is protected that should not be.
+     */
+    lineAspect: 4,
+    /**
+     * ONE LINE BOX HOLDS BOTH, at most this many times the taller ink's height.
+     *
+     * Pixel geometry alone cannot finish this job, and the measurement says so plainly.
+     * tpagency's gap is 18px against 38px of ink — 0.47 — and natwest's footer, three
+     * accordion headings that MUST stay in three columns, is 27px against 56px: 0.48.
+     * There is no threshold between 0.47 and 0.48. altum's four-column footer is the
+     * same shape at 0.68. So ask the DOM instead: the smallest rect containing both
+     * run-mates is a line box (tpagency's <p>, 77px tall against 63px of ink, 1.22) or it
+     * is a column wrapper (natwest 380px against 56px, 6.2; altum 6.2; switch.je 4.0).
+     *
+     * 2 is "not tall enough to hold a second line". The margin around it is the whole
+     * range 1.22 to 6.23 — nothing in the corpus lands between.
+     */
+    lineBox: 2,
+    /**
+     * THE SAME LINE: vertical ink overlap, as a fraction of the shorter ink's height.
+     *
+     * Overlapping vertically is not enough on its own — a headline wrapped onto two
+     * lines overlaps itself, and two cards of different heights overlap each other. The
+     * distribution is sharply bimodal: of 3,652 horizontally-near pairs across the
+     * corpus, 3,380 do not overlap at all and 241 overlap by 0.95 or more. The 31 in
+     * between are all pairs of DIFFERENT things at different heights — milk's two card
+     * blurbs at 0.62, dept's section heading against its "view all" link at 0.82,
+     * jerseyfinance's headline against a nav label at 0.89 — and the highest of them is
+     * 0.93. Above 0.95 the shorter span's ink lies inside the taller's, which is what
+     * a superscript, a currency mark or a descender-free word does.
+     */
+    sameLine: 0.95,
+    /**
+     * CLOSE ENOUGH TO READ AS CONTINUOUS: the gap, as a fraction of the shorter ink's
+     * height. A word space scales with the type, so this cannot be a pixel count.
+     *
+     * Measured: tpagency's word space is 18px against 38px of ink, 0.47. M&S's product
+     * grid — the case that breaks if this is generous — puts two card titles 17px apart
+     * against 15px of ink, 1.13, and its footer link columns run from 8.9 to 18.7. Its
+     * legal-link row is 1.07. 0.75 sits between 0.47 and 1.07 with room either side.
+     */
+    gap: 0.75,
+};
+
+/**
+ * The lines of text in `rects`, each shrunk to its ink.
+ *
+ * INNERMOST ONLY. A rect's `text` is its descendants' too — see lib/capture.mjs — so a
+ * <p> holding two <span>s reports the whole line and each <span> reports its own part.
+ * Protecting all three would be harmless but merging them would not: the <p> already
+ * spans the gap, and a run built from it would say nothing. The parts are what carry the
+ * evidence, so keep only rects that contain no smaller text-bearing rect.
+ */
+export function lineSpans(edges, width, height, rects, opts = TEXT_RUN) {
+    if (!rects || rects.length === 0) return [];
+    const {lineAspect} = {...TEXT_RUN, ...opts};
+
+    const bearing = rects.filter((r) => (r.text || '').trim().length > 0 && isContentRect(r));
+    const spans = [];
+    for (let i = 0; i < bearing.length; i++) {
+        const r = bearing[i];
+        if (bearing.some((n, j) => j !== i && containsRect(r, n) && n.w * n.h < r.w * r.h)) continue;
+        const ink = inkBounds(edges, width, height, r);
+        if (!ink || ink.w < lineAspect * ink.h) continue;
+        spans.push({...ink, box: r});
+    }
+
+    return spans;
+}
+
+/**
+ * Runs of text: the lines of `rects`, with the parts of each line merged into one span.
+ *
+ * ONLY RUNS COME BACK, never a lone line, and that restraint is deliberate. Protecting
+ * every text element was tried before and is worse than useless — see
+ * test/headings.test.mjs, where jonleverrier's 1315px copyright line vetoed every cut on
+ * its axis and merged the four footer columns into one block. The new fact here is
+ * narrow: a gap BETWEEN two parts of one line is not a boundary. Everything else about
+ * what is protected stays exactly as it was.
+ */
+export function textRuns(edges, width, height, rects, opts = TEXT_RUN) {
+    const {lineBox, sameLine, gap} = {...TEXT_RUN, ...opts};
+    const spans = lineSpans(edges, width, height, rects, opts);
+    if (spans.length < 2) return [];
+    spans.sort((a, b) => a.x - b.x || a.y - b.y);
+
+    // The smallest rect holding both runs of WORDS, or null. Pairs that get this far are
+    // few: they have already passed the shape, band and gap tests.
+    //
+    // The ink, not the boxes, and that is not a preference. tpagency's last pinned
+    // headline has its <p> at y=5621 h=77 and the <span> inside it at y=5622 h=77 — the
+    // child ends one pixel BELOW its own parent, because the browser rounded them apart.
+    // Asked about boxes, no element in the census holds that line, and it stayed cut
+    // between "Lead" and "with" while its four identical siblings were fixed. The ink is
+    // measured from the pixels and has no rounding to disagree about.
+    const lineBoxOf = (a, b) => {
+        let held = null;
+        for (const c of rects) {
+            if (c === a.box || c === b.box) continue;
+            if (!containsRect(c, a) || !containsRect(c, b)) continue;
+            if (!held || c.w * c.h < held.w * held.h) held = c;
+        }
+
+        return held;
+    };
+
+    // Merge by chaining: a, b, c on one line with a-b and b-c both close is one run. The
+    // union is taken over ink, so the run is the words and not the boxes around them.
+    const runs = [];
+    const joined = new Array(spans.length).fill(false);
+    for (let i = 0; i < spans.length; i++) {
+        if (joined[i]) continue;
+        let run = null;
+        let last = spans[i];
+        for (let j = i + 1; j < spans.length; j++) {
+            if (joined[j]) continue;
+            const next = spans[j];
+            const shorter = Math.min(last.h, next.h);
+            const between = next.x - (last.x + last.w);
+            if (between < 0 || between > gap * shorter) continue;
+            const over = Math.min(last.y + last.h, next.y + next.h) - Math.max(last.y, next.y);
+            if (over < sameLine * shorter) continue;
+            const box = lineBoxOf(last, next);
+            if (!box || box.h > lineBox * Math.max(last.h, next.h)) continue;
+            const seed = run ?? {x: last.x, y: last.y, w: last.w, h: last.h};
+            const x0 = Math.min(seed.x, next.x);
+            const y0 = Math.min(seed.y, next.y);
+            run = {
+                x: x0,
+                y: y0,
+                w: Math.max(seed.x + seed.w, next.x + next.w) - x0,
+                h: Math.max(seed.y + seed.h, next.y + next.h) - y0,
+            };
+            joined[j] = true;
+            last = next;
+        }
+        if (run) runs.push({...run, tag: 'run', text: 'text run'});
+    }
+
+    return runs;
+}
+
 export function protectedRects(rects, width, pageHeight) {
     return [...fullBleedMedia(rects, width), ...moduleContainers(rects, width, pageHeight)];
 }
@@ -619,7 +797,7 @@ export const SEGMENT_DEFAULTS = {maxDepth: 4, minAreaFraction: 0.02, minSide: 12
  * partition, depth changes which labels get applied and never the arithmetic.
  */
 export function segment(edges, width, height, opts = {}) {
-    const {maxDepth, minAreaFraction, minSide, moduleBridge, rects, pageHeight} = {...SEGMENT_DEFAULTS, ...opts};
+    const {maxDepth, minAreaFraction, minSide, moduleBridge, rects, pageHeight, textRun} = {...SEGMENT_DEFAULTS, ...opts};
     const minArea = width * height * minAreaFraction;
     const yCandidates = edgeCandidates(rects, true);
     const xCandidates = edgeCandidates(rects, false);
@@ -630,7 +808,12 @@ export function segment(edges, width, height, opts = {}) {
     // are a veto on cutting through words, not a statement about module boundaries.
     // Shrunk to their ink: a heading box is as wide as its column and the words rarely
     // fill it, so the box would veto the gutter beside the heading. See inkBounds.
-    const keepIntact = inkedTextRects(edges, width, height, rects);
+    // A line assembled from several elements is one span too, or the space between two
+    // words is a legal gutter and a headline gets cut between them. See textRuns.
+    const keepIntact = [
+        ...inkedTextRects(edges, width, height, rects),
+        ...textRuns(edges, width, height, rects, textRun),
+    ];
     // The coordinates a snap should reach for when the gutter offers a choice.
     const moduleEdgeY = new Set(keepWhole.flatMap((m) => [m.y, m.y + m.h]));
     const moduleEdgeX = new Set(keepWhole.flatMap((m) => [m.x, m.x + m.w]));
@@ -875,8 +1058,12 @@ export function segmentTall(edges, width, height, opts = {}) {
     const keepWhole = protectedRects(opts.rects, width, height);
     // BOTH of `segment`'s rejection populations, because a harvested line is judged
     // against the whole page and a heading is no more cuttable here than there. Ink, not
-    // boxes, for the same reason segment uses ink — see inkBounds.
-    const keepIntact = inkedTextRects(edges, width, height, opts.rects);
+    // boxes, for the same reason segment uses ink — see inkBounds. Runs of text as well,
+    // for the same reason both populations are here: this is the same rule, promoted.
+    const keepIntact = [
+        ...inkedTextRects(edges, width, height, opts.rects),
+        ...textRuns(edges, width, height, opts.rects, opts.textRun),
+    ];
     const page = {x: 0, y: 0, w: width, h: height};
     for (let top = 0; top < height; top += step) {
         const h = Math.min(TILE_HEIGHT, height - top);
