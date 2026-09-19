@@ -45,6 +45,7 @@
  */
 import {webglWarning} from './webgl.mjs';
 import {shotTruncationWarning, unrenderedWarning, paintLimitWarning, PAINT_LIMIT_PX} from './unrendered.mjs';
+import {MAX_IMAGE_HEIGHT} from './edges.mjs';
 import {printable} from './printable.mjs';
 import {overlayWarning} from './overlay.mjs';
 import {sameUrl} from './sameurl.mjs';
@@ -82,7 +83,7 @@ export const LOW_CONFIDENCE_SHARE = 0.2;
  * honest answer — not a claim that nothing was wrong.
  */
 export function runNotes(meta, reason = 'missing', rects = null, unpainted = null, blank = null,
-    transparent = null, overlays = null, leaves = null) {
+    transparent = null, overlays = null, leaves = null, inkSkipped = false) {
     const conditions = {};
     const add = (code, effect, message, facts = {}) => {
         conditions[code] = {effect, message, facts};
@@ -283,6 +284,26 @@ export function runNotes(meta, reason = 'missing', rects = null, unpainted = nul
             contentBottom: meta.heightGap?.contentBottom ?? null,
             likelyCause: meta.heightGap?.likelyCause ?? null,
         });
+    }
+
+    // THE COVERAGE PASS DECLINED THIS IMAGE. lib/painted.mjs decodes the whole PNG into
+    // raw pixels to measure ink, and refuses above MAX_IMAGE_HEIGHT because a 1440px-wide
+    // image that tall is about 70MB of RGB. visionarygrid.studio is 24,746px.
+    //
+    // THE BLOCKS ARE STILL SOUND — the model read the page in slices and the partition is
+    // exact. What is missing is how much of each block is actually drawn on, so the
+    // report's coverage column is the one thing that cannot be trusted here. Saying that
+    // is better than refusing a page we could otherwise measure.
+    if (inkSkipped) {
+        add(
+            'coverageUnmeasured',
+            'unknown',
+            `this image is ${meta.image?.height ?? 0}px tall, past the ${MAX_IMAGE_HEIGHT}px an ink `
+                + 'measurement decodes in one go, so how much of each block is drawn on was not '
+                + 'measured. The blocks and their categories are unaffected; the coverage figures are '
+                + 'not available rather than zero',
+            {imageHeight: meta.image?.height ?? null, limit: MAX_IMAGE_HEIGHT},
+        );
     }
 
     // WHAT THE MODEL WAS UNSURE ABOUT. Every other condition here is about the capture;

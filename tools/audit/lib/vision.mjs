@@ -187,34 +187,85 @@ export function parseTileReply(text, tile) {
     return {blocks};
 }
 
-/** One tile, one request. */
+/**
+ * How many times a tile is attempted before the page is given up on, and how long the
+ * pause between attempts grows.
+ *
+ * A TRANSIENT SOCKET ERROR MUST NOT COST THE WHOLE PAGE. A tall page is a dozen or more
+ * sequential requests, and `fetch` rejects with a bare "fetch failed" when a connection is
+ * reset — which is what happened to visionarygrid.studio at 18 tiles and boondmanager.com
+ * at 12 in the first full sweep. Both pages were abandoned entirely because one request in
+ * the run died, throwing away every tile that had already succeeded.
+ *
+ * Only the CONNECTION and the 429/5xx responses are retried. A 400 is a request this code
+ * built wrongly and will build wrongly again; retrying it would turn a clear error into
+ * three slow ones.
+ */
+export const TILE_ATTEMPTS = 3;
+export const RETRY_BACKOFF_MS = 1500;
+
+/** Is this worth another go, or is it the same answer every time? */
+export function worthRetrying(status) {
+    return status === null || status === 429 || (status >= 500 && status < 600);
+}
+
+const pause = (ms) => new Promise((resolve) => {
+    setTimeout(resolve, ms);
+});
+
+/** One tile, one request — retried when the failure is the kind that might not recur. */
 export async function askTile(tile, pageSize, opts = {}) {
     const key = opts.key ?? apiKey(opts.envPath);
+    const attempts = opts.attempts ?? TILE_ATTEMPTS;
     const started = Date.now();
-    const res = await fetch(API, {
-        method: 'POST',
-        headers: {'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01'},
-        body: JSON.stringify({
-            model: opts.model ?? MODEL,
-            max_tokens: MAX_TOKENS,
-            thinking: {type: 'adaptive'},
-            messages: [{
-                role: 'user',
-                content: [
-                    {type: 'image', source: {type: 'base64', media_type: 'image/png', data: tile.b64}},
-                    {
-                        type: 'text',
-                        text: `This slice is ${Math.round(pageSize.width * tile.scale)}x`
-                            + `${Math.round(tile.height * tile.scale)} pixels.`
-                            + `${carryOver(opts.previous)}\n\n${TILE_PROMPT}`,
-                    },
-                ],
-            }],
-        }),
+    const body = JSON.stringify({
+        model: opts.model ?? MODEL,
+        max_tokens: MAX_TOKENS,
+        thinking: {type: 'adaptive'},
+        messages: [{
+            role: 'user',
+            content: [
+                {type: 'image', source: {type: 'base64', media_type: 'image/png', data: tile.b64}},
+                {
+                    type: 'text',
+                    text: `This slice is ${Math.round(pageSize.width * tile.scale)}x`
+                        + `${Math.round(tile.height * tile.scale)} pixels.`
+                        + `${carryOver(opts.previous)}\n\n${TILE_PROMPT}`,
+                },
+            ],
+        }],
     });
-    const json = await res.json();
-    if (!res.ok) {
-        return {error: `API ${res.status}: ${JSON.stringify(json).slice(0, 200)}`};
+
+    let res = null;
+    let json = null;
+    let lastError = 'no attempt was made';
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        let status = null;
+        try {
+            res = await fetch(API, {
+                method: 'POST',
+                headers: {'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01'},
+                body,
+            });
+            status = res.status;
+            json = await res.json();
+            if (res.ok) {
+                lastError = null;
+                break;
+            }
+            lastError = `API ${status}: ${JSON.stringify(json).slice(0, 200)}`;
+        } catch (e) {
+            // A rejected fetch is the connection, not the service: "fetch failed", a reset
+            // socket, a DNS blip. There is no status to reason about.
+            lastError = `the connection failed: ${e.message.slice(0, 120)}`;
+        }
+        if (!worthRetrying(status) || attempt === attempts) {
+            break;
+        }
+        await pause(RETRY_BACKOFF_MS * attempt);
+    }
+    if (lastError) {
+        return {error: `tile ${tile.index}: ${lastError}`};
     }
     // A truncated array can still parse — the regex would find a shorter one — so this is
     // checked before the text is read, not after.

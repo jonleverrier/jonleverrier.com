@@ -24,38 +24,51 @@
  * name.
  *
  * The limitation worth knowing: `coverage` needs each leaf to carry one, measured from the
- * pixels by lib/painted.mjs. A leaf without it counts as fully covered, which flatters a
- * sparse block — analyse.mjs sets it on every leaf, so that is only reachable by a caller
- * building a tree by hand.
+ * pixels by lib/painted.mjs, and on a page too tall for that pass to decode there is none.
+ * It is then NULL rather than 1, and the report prints a dash — because "we did not
+ * measure this" and "all of it is drawn on" are different answers, and only one of them is
+ * true of a 24,746px page.
  */
 import {leaves} from './blocks.mjs';
 
 /** The order a report prints them in: the four that are being asked about, then the rest. */
 const CATEGORY_ORDER = ['brand', 'navigation', 'routing', 'promotion', 'other', 'unclassified'];
 
-const inkOf = (l) => l.area * (typeof l.coverage === 'number' ? l.coverage : 1);
+/**
+ * NULL WHERE IT WAS NOT MEASURED, NEVER 1. A leaf with no coverage recorded is one the ink
+ * pass never reached — visionarygrid.studio is 24,746px and past the budget that decodes a
+ * PNG in one go. Defaulting it to "fully covered" printed `100.0% ink` for every category
+ * of that page, which is a confident wrong number sitting directly beneath a note saying
+ * the figure was not available.
+ */
+const inkOf = (l) => (typeof l.coverage === 'number' ? l.area * l.coverage : null);
 
 const tally = (ls, total) => {
     const byCategory = new Map();
     for (const l of ls) {
         if (l.area <= 0) continue;
         const key = l.label?.category ?? 'unclassified';
-        const held = byCategory.get(key) ?? {area: 0, inked: 0};
+        const held = byCategory.get(key) ?? {area: 0, inked: 0, measured: 0};
         held.area += l.area;
-        held.inked += inkOf(l);
+        const ink = inkOf(l);
+        if (ink !== null) {
+            held.inked += ink;
+            held.measured += l.area;
+        }
         byCategory.set(key, held);
     }
 
     return CATEGORY_ORDER
         .filter((c) => byCategory.has(c))
         .map((category) => {
-            const {area, inked} = byCategory.get(category);
+            const {area, inked, measured} = byCategory.get(category);
 
             return {
                 category,
                 area,
                 share: total > 0 ? area / total : 0,
-                coverage: area > 0 ? inked / area : 0,
+                // Over the area actually measured, and null when none of it was.
+                coverage: measured > 0 ? inked / measured : null,
             };
         });
 };
@@ -83,7 +96,12 @@ export function surfaceArea(root, viewportHeight) {
     return {
         full,
         firstViewport: tally(above, aboveTotal),
-        coverage: total > 0 ? whole.reduce((a, l) => a + inkOf(l), 0) / total : 0,
+        coverage: (() => {
+            const measured = whole.filter((l) => typeof l.coverage === 'number');
+            const area = measured.reduce((a, l) => a + l.area, 0);
+
+            return area > 0 ? measured.reduce((a, l) => a + inkOf(l), 0) / area : null;
+        })(),
         unmeasured: full.find((s) => s.category === 'unclassified')?.share ?? 0,
     };
 }

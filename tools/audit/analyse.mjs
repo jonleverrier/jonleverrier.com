@@ -41,6 +41,7 @@ import {printable} from './lib/printable.mjs';
 import {renderDebug} from './lib/debug.mjs';
 import {overlaysInPng} from './lib/overlay.mjs';
 import {pageSignature, signatureFacts} from './lib/signature.mjs';
+import {MAX_IMAGE_HEIGHT} from './lib/edges.mjs';
 import {blankRegions, inkFraction, inkPrefix, pixelsFromPng, transparentBlocks, unpaintedBlocks} from './lib/painted.mjs';
 
 const outDir = process.argv[2];
@@ -131,7 +132,11 @@ try {
     let unpainted = null;
     let blank = null;
     let transparent = null;
-    if (rects.length) {
+    // The ink pass decodes the whole PNG at once and refuses an image past its memory
+    // budget. That must cost the coverage figures, not the page: the blocks came from the
+    // model reading slices, and they are sound either way. See notes.mjs coverageUnmeasured.
+    const inkSkipped = height > MAX_IMAGE_HEIGHT;
+    if (rects.length && !inkSkipped) {
         const raw = await pixelsFromPng(png);
         const measured = inkPrefix(raw.pixels, raw.width, raw.height);
         unpainted = unpaintedBlocks(measured, ls, rects);
@@ -150,7 +155,7 @@ try {
     const overlays = meta.capture?.mode === 'stitched'
         ? await overlaysInPng(png, meta.capture.viewportHeight ?? 900)
         : [];
-    const notes = runNotes(meta, 'present', rects, unpainted, blank, transparent, overlays, ls);
+    const notes = runNotes(meta, 'present', rects, unpainted, blank, transparent, overlays, ls, inkSkipped);
 
     // debug.png first: if rendering throws there is then no blocks.json beside it claiming
     // the run succeeded.

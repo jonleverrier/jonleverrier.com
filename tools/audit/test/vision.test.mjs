@@ -12,7 +12,7 @@
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {parseTileReply, CATEGORIES, TILE_PROMPT, apiKey, carryOver} from '../lib/vision.mjs';
+import {parseTileReply, CATEGORIES, TILE_PROMPT, apiKey, carryOver, worthRetrying, TILE_ATTEMPTS} from '../lib/vision.mjs';
 
 const tile = {index: 2, top: 2800, height: 1400, scale: 0.75};
 
@@ -159,4 +159,36 @@ test('a slice is told what the one above it ended with', () => {
 test('the first slice is told nothing, because nothing came before it', () => {
     assert.equal(carryOver(undefined), '');
     assert.equal(carryOver(null), '');
+});
+
+/* ----------------------------------------------------------------------- retrying */
+
+/**
+ * A tall page is a dozen or more sequential requests, and one reset connection used to
+ * throw away every tile that had already succeeded: visionarygrid.studio at 18 tiles and
+ * boondmanager.com at 12 were both abandoned entirely in the first full sweep, with the
+ * bare message "fetch failed".
+ *
+ * Only failures that might not recur are worth another go. A 400 is a request this code
+ * built wrongly and will build wrongly again.
+ */
+test('a dead connection is worth retrying', () => {
+    assert.equal(worthRetrying(null), true);
+});
+
+test('a rate limit and a server error are worth retrying', () => {
+    assert.equal(worthRetrying(429), true);
+    assert.equal(worthRetrying(500), true);
+    assert.equal(worthRetrying(503), true);
+});
+
+test('a request we built wrongly is not', () => {
+    assert.equal(worthRetrying(400), false);
+    assert.equal(worthRetrying(401), false);
+    assert.equal(worthRetrying(404), false);
+    assert.equal(worthRetrying(413), false);
+});
+
+test('three attempts, because one retry is a coin toss and ten is a hang', () => {
+    assert.equal(TILE_ATTEMPTS, 3);
 });

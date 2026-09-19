@@ -25,7 +25,8 @@ import {pathToFileURL} from 'node:url';
 import {surfaceArea} from './lib/surface.mjs';
 import {printable} from './lib/printable.mjs';
 
-const pct = (n) => `${(n * 100).toFixed(1)}%`;
+// A measurement we did not take prints as a dash, never as a number. See lib/surface.mjs.
+const pct = (n) => (typeof n === 'number' ? `${(n * 100).toFixed(1)}%` : '—');
 
 export function reportFor(doc, viewportHeight) {
     const {notes, tree} = doc;
@@ -63,7 +64,8 @@ if (isCommand && outDir) {
 
         console.log(`\n${printable(meta.url)}`);
         console.log(`captured ${meta.capturedAt}`);
-        console.log(`${meta.image.width}x${meta.image.height}, ${pct(r.coverage)} of it drawn on\n`);
+        console.log(`${meta.image.width}x${meta.image.height}, `
+            + `${r.coverage === null ? 'coverage not measured' : `${pct(r.coverage)} of it drawn on`}\n`);
         console.log('                    whole page             first viewport');
         for (const s of r.full) {
             const fv = r.firstViewport.find((f) => f.category === s.category);

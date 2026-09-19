@@ -76,9 +76,28 @@ test('coverage across categories is area-weighted, not averaged', () => {
     assert.ok(Math.abs(coverage - 0.18) < 1e-9, `got ${coverage}`);
 });
 
-test('a leaf with no coverage recorded counts as fully covered', () => {
-    const bare = {x: 0, y: 0, w: 1000, h: 900, depth: 1, children: [], label: {category: 'brand', what: 'x', cols: 1, confidence: 1}};
-    assert.equal(surfaceArea(tree([bare]), 900).coverage, 1);
+/**
+ * THIS TEST USED TO ASSERT THE OPPOSITE, and it encoded a bug. Treating "no coverage
+ * recorded" as "fully covered" printed `100.0% ink` for every category of
+ * visionarygrid.studio — a 24,746px page the ink pass declines on its memory budget —
+ * directly beneath a note saying the figure was not available. A measurement we did not
+ * take is null, and the report prints a dash.
+ */
+test('a leaf with no coverage recorded is unmeasured, not fully covered', () => {
+    const bare = {x: 0, y: 0, w: 1000, h: 900, depth: 1, children: [],
+        label: {category: 'brand', what: 'x', cols: 1, confidence: 1}};
+    const {full, coverage} = surfaceArea(tree([bare]), 900);
+    assert.equal(coverage, null);
+    assert.equal(full.find((s) => s.category === 'brand').coverage, null);
+});
+
+test('a category measured in part reports coverage over the part that was measured', () => {
+    const measured = {x: 0, y: 0, w: 1000, h: 500, depth: 1, children: [], coverage: 0.4,
+        label: {category: 'brand', what: 'x', cols: 1, confidence: 1}};
+    const not = {x: 0, y: 500, w: 1000, h: 500, depth: 1, children: [],
+        label: {category: 'brand', what: 'y', cols: 1, confidence: 1}};
+    const {full} = surfaceArea(tree([measured, not]), 900);
+    assert.equal(full.find((s) => s.category === 'brand').coverage, 0.4);
 });
 
 test('a tree with no leaves does not divide by zero', () => {
