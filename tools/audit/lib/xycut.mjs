@@ -150,47 +150,14 @@ export function findGutters(density, opts = GUTTER) {
     return runs;
 }
 
-/**
- * A rect worth snapping to: an element that carries content, not the page scaffolding
- * around it. Page-level wrappers span the whole document, so their edges coincide with
- * the page's own extremes and with every tile's frame — left in, they are by far the
- * most numerous candidates near a cut and they mark nothing. Hairlines and icons are
- * excluded for the opposite reason: too many of them, too small to be a section break.
- *
- * These are the same thresholds the cut-accuracy metric scores against, deliberately:
- * snapping to a population the metric does not count would be marking its own homework.
- */
-export const CONTENT_RECT = {maxH: 700, minW: 60, minH: 12};
-
-export function isContentRect(r) {
-    return r.h < CONTENT_RECT.maxH && r.w >= CONTENT_RECT.minW && r.h >= CONTENT_RECT.minH;
-}
-
-/**
- * Candidate cut coordinates on one axis: every content rect's leading and trailing
- * edge, sorted ascending and de-duplicated.
- *
- * Sorted is not cosmetic. `snapToEdge` scans in order and keeps the first of an equal
- * pair, which is what makes a tie resolve to the smaller coordinate no matter what
- * order rects.json happened to list its elements in.
- */
-export function edgeCandidates(rects, horizontal) {
-    if (!rects || rects.length === 0) return [];
-
-    const seen = new Set();
-    for (const r of rects) {
-        if (!isContentRect(r)) continue;
-        if (horizontal) {
-            seen.add(r.y);
-            seen.add(r.y + r.h);
-        } else {
-            seen.add(r.x);
-            seen.add(r.x + r.w);
-        }
-    }
-
-    return [...seen].sort((a, b) => a - b);
-}
+// MOVED TO lib/candidates.mjs, which outlives this file. They answer "where does an
+// element stop", which is a fact about the page rather than part of the cutting, and the
+// vision path needs them to snap its boundaries. Imported as well as re-exported, because
+// this file's own rules use them — REPEAT.minSide is CONTENT_RECT.minH, and half a dozen
+// populations filter on isContentRect. Re-exported so the segmenter's tests keep working
+// until this file is retired — see the plan's Task 8.
+export {CONTENT_RECT, isContentRect, edgeCandidates} from './candidates.mjs';
+import {CONTENT_RECT, isContentRect, edgeCandidates} from './candidates.mjs';
 
 /**
  * How far outside a gutter a MODULE BOUNDARY may sit and still be reachable, in pixels.
