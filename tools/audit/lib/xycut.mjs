@@ -19,10 +19,16 @@
  * however the pixels look, and a cut may not land strictly inside one. Several
  * populations earn that, chosen by different rules and rejected by the same one — a
  * full-bleed `<video>`, `<img>` or `<canvas>` whose interior is only noise (FULL_BLEED);
- * a module container: a card, a header, a testimonial box, whose interior gaps are its
- * own padding (MODULE_AREA); a heading, shrunk to the groups of ink it holds
- * (inkedTextRects, inkClusters); and a RUN OF TEXT, which is a line assembled from
- * several elements (TEXT_RUN). See protectedRects, textRuns and cutsInsideProtected.
+ * ANY media element big enough for a cut to land in, for that same reason at a smaller
+ * size (mediaModules); a module container: a card, a header, a testimonial box, whose
+ * interior gaps are its own padding (MODULE_AREA); a RUN OF REPEATED SIBLINGS — a card
+ * grid, a nav bar, a list of links — because every member of one takes the same label, so
+ * cutting them apart changes no answer (REPEAT); a heading,
+ * shrunk to the groups of ink it holds (inkedTextRects, inkClusters); and a RUN OF TEXT,
+ * which is a line assembled from several elements (TEXT_RUN). See protectedRects, textRuns
+ * and cutsInsideProtected. One thing is excluded from all of it: an element that leaves
+ * the page in both directions at once is the page's BACKDROP rather than a module on it,
+ * whatever its tag or its size says (isBackdrop).
  * Rects are OPTIONAL throughout — without them every cut falls back to the gutter
  * midpoint, nothing is protected, and the pure-pixel path still works exactly as it did.
  *
@@ -384,6 +390,92 @@ export function fullBleedMedia(rects, width, opts = FULL_BLEED) {
 }
 
 /**
+ * A MEDIA ELEMENT IS ONE MODULE AT ANY SIZE A CUT COULD LAND IN, because its interior is
+ * not layout.
+ *
+ * FULL_BLEED answers this for a hero — something spanning the page is one thing — and says
+ * nothing about the same photograph at a third of the width. dept.agency puts a 571x714
+ * soft-focus photograph beside a paragraph; the blurred colour fires the edge map
+ * irregularly, `adaptiveMaxDensity` reads the quiet patches as gutters, and that one
+ * picture came back as THIRTEEN blocks, not one of which is a thing on the page. Phase 3
+ * would then be asked to label the same photograph thirteen times.
+ *
+ * A CARD'S INTERIOR IS CONTENT WITH REAL GAPS; A PHOTOGRAPH'S IS NOISE — and the tag is
+ * the measurement of that, not a proxy for it. `img`, `video`, `canvas` and `picture` hold
+ * pixels and nothing else, so a quiet run found inside one is by construction not a
+ * boundary between two modules: there is nothing in there to be on either side of it. The
+ * populations either side of this one are selected by evidence that only makes sense for a
+ * container — `boxed`, a semantic tag, a containment test — and none of that evidence
+ * exists for a picture.
+ *
+ * SIZED BY THE SAME BAND AS EVERY OTHER MODULE, deliberately, rather than a fourth number.
+ * MODULE_AREA already says how big a thing has to be before it is a module here and how
+ * big is too big to be one. dept's photograph is 2.08% of its page, comfortably inside it.
+ * Below the floor a media element is an icon or an avatar and no cut can land inside it
+ * anyway — `minSide` is 120px. Above the ceiling it is the page's own backdrop, which
+ * FULL_BLEED and `isBackdrop` are the rules for. The cost is stated rather than hidden: a
+ * picture between 12% of the page and 90% of its width gets nothing from any of the three.
+ *
+ * WHAT THIS DELIBERATELY DOES NOT DO is stop a grid being cut into cards. A cut on a
+ * protected element's own EDGE is always legal — see cutsInsideProtected — and a product
+ * grid's gutters run between its photographs, never through one. The 400px product photo
+ * FULL_BLEED's comment promises to leave cuttable is still cuttable in the only sense that
+ * mattered: the grid around it still cuts.
+ */
+export function mediaModules(rects, width, pageHeight, opts = MODULE_AREA) {
+    if (!rects || rects.length === 0) return [];
+    const {min, max} = {...MODULE_AREA, ...opts};
+    const pageArea = width * pageHeight;
+
+    return rects.filter((r) => {
+        if (!MEDIA_TAGS.has(r.tag)) return false;
+        const a = r.w * r.h;
+
+        return a >= min * pageArea && a <= max * pageArea;
+    });
+}
+
+/**
+ * AN ELEMENT THAT LEAVES THE PAGE IN BOTH DIRECTIONS AT ONCE IS A BACKDROP, NOT A MODULE.
+ *
+ * A module is inside the page. A backdrop is the thing the page is drawn on, and the
+ * difference is structural rather than a matter of size: no threshold is involved and none
+ * is wanted. gcsc.gg is the page that found it. It stacks six decorative `<img>` elements
+ * at -319,-274 1606x1569, 192,-394 1492x1457 and four more of the same shape — each larger
+ * than the viewport, each hanging off the top and one side — and every one of them passes
+ * the full-bleed test. Between them they blanket the top 1,482px, `cutsInsideProtected`
+ * refuses every cut underneath, and the header, the hero and the featured area arrived as
+ * ONE block. Three of the four things this tool exists to measure were in it.
+ *
+ * HORIZONTALLY AND VERTICALLY, not merely on two sides, and the difference is a real page
+ * rather than pedantry. Overflowing on one side is ordinary: a hero cropped by
+ * `overflow: hidden`, a sticky panel hanging off the bottom, an off-canvas menu to the
+ * left of everything. Overflowing on BOTH HORIZONTAL sides is just as ordinary and is the
+ * commonest full-bleed hero there is — a 1600px image centred in a 1440px page starts at
+ * x=-80 and ends at 1520, and calling that a backdrop would strip the protection
+ * FULL_BLEED exists to give it. What no laid-out module does is leave the page in both
+ * directions at once. Measured over the 30 captured pages and both fixtures: 27 protected
+ * rects overflow on exactly one side and are untouched; eight overflow both horizontally
+ * and vertically; and all eight are decoration — gcsc's six backdrop images, and
+ * andybudd's two 306x306 dot patches at -115,-101 and -299,-101.
+ *
+ * `offsetY` IS NOT OPTIONAL POLISH. The test is meaningless in a tile's coordinate space,
+ * where every element above the tile has a negative y and the page's own bottom is 900px
+ * down, so `segment` is told where the slice it was handed sits in the page. Get it wrong
+ * and a full-width hero becomes a backdrop in every tile below it, silently.
+ *
+ * IT DOES NOT REPLACE THE `svg` EXCLUSION IN MEDIA_TAGS, and the measurement says so
+ * plainly: switch.je's decorative curve — the page that exclusion exists for — is
+ * 0,-76 1440x810, which leaves the page on exactly ONE side. Two different shapes of
+ * decoration, two rules, and neither subsumes the other.
+ */
+export function isBackdrop(r, width, pageHeight, offsetY = 0) {
+    const top = r.y + offsetY;
+
+    return (r.x < 0 || r.x + r.w > width) && (top < 0 || top + r.h > pageHeight);
+}
+
+/**
  * A MODULE CONTAINER IS ONE BLOCK, and the gaps inside it are its own padding.
  *
  * The segmenter cuts on whitespace, and the gap between a quote and its attribution
@@ -470,6 +562,227 @@ export function moduleContainers(rects, width, pageHeight, opts = MODULE_AREA) {
     // is rects.json's, so this is deterministic, and it survives shiftRects handing us
     // fresh objects for every tile.
     return distinct.filter((outer, i) => !distinct.some((inner, j) => j !== i && containsRect(outer, inner)));
+}
+
+/**
+ * A RUN OF REPEATED SIBLINGS IS ONE BLOCK. A product grid, a navigation bar and a list of
+ * links are the same thing seen three ways.
+ *
+ * This is the plan's own ruling rather than a new opinion: recurse while it changes an
+ * answer, stop when it only changes the arithmetic. Every card in a product grid takes the
+ * same label, every item in a nav takes the same label, every link in a footer list takes
+ * the same label — so cutting them apart changes no answer. It only multiplies the work and
+ * gives phase 3 a dozen chances to label one thing a dozen different ways. Three pages
+ * found it, at three scales and on two axes:
+ *
+ *   pola.co.jp       seven four-up product carousels, a block per CARD — 132 leaves
+ *   clearleft.com    the primary nav cut per ITEM: Services | Work | Thinking | Events
+ *   whitepaper.co.uk the footer's "Current Topics" list cut per LINK
+ *
+ * NOTHING IS MALFUNCTIONING in any of them. The cards are real modules with real gutters
+ * between them and the segmenter is doing exactly what it was told, at a granularity the
+ * ruling says is too fine. So the question is not how to suppress a cut but how a run is
+ * RECOGNISED, and the answer is that a run announces itself in the geometry: FOUR OR MORE
+ * elements sharing one edge, of one size across the run, laid at EVEN intervals. Its
+ * bounding box is then one module and the ordinary rejection does the rest.
+ *
+ * BOTH AXES, and the vertical one is not an afterthought. A row of cards repeats across,
+ * a list of links repeats down, and whichever way it goes the members share a label. Only
+ * the cross-axis measurement differs: a row's members share a `y` and a height and may be
+ * any width (a nav's labels are words of different lengths — clearleft's are 59, 37, 60,
+ * 46, 43 and 58 pixels wide at gaps of 40, 39, 40, 40, 40); a column's members share an `x`
+ * and a width and may be any height.
+ *
+ * FOUR, AND THE LINE IS DRAWN THERE ON PURPOSE. Three side by side is a composition — the
+ * three-up feature row every agency site has, three DIFFERENT things saying three different
+ * things, each with its own destination and its own call to action. Cutting those apart is
+ * right, it cost work to achieve in `dfbf10d`, and this rule must not reach it:
+ * andybudd.com's Coaching / Educating / Speaking is a run of 3 (`figure` 286x286 at
+ * x=192, 632, 1072) and does not qualify. Four is where a layout stops being a composition
+ * and becomes a LIST. The corpus bears it out: at four and above every run this finds is a
+ * collection of one kind of thing — pola's product cards, clearleft's nav items,
+ * whitepaper's topic links, natwest's four account categories, altum's footer columns,
+ * andybudd's four client logos; at three, the population is feature rows.
+ *
+ * WHETHER THAT LINE IS RIGHT IS NOT SOMETHING GEOMETRY CAN SETTLE, and it should be said
+ * plainly. Six nav links and three feature columns differ in what they MEAN, not in how
+ * they are laid out: both are evenly-spaced siblings of one size. Four is where the corpus
+ * splits, which is evidence, but it is a count and not a mechanism, and a page with four
+ * feature columns would be cut the wrong way by it. The distinction that would always hold
+ * is "do these take the same label", and that is phase 3's question, not this file's.
+ *
+ * EVEN, MEASURED, AND THE MARGIN IS ENORMOUS. The spread between the widest and narrowest
+ * gap in a run is 0 or 1 pixel for every genuine one in the corpus — 1 because the browser
+ * rounds subpixel positions apart — and 38, 64, 70, 141, 193, 244, 304, 469, 480, 543, 695,
+ * 727, 890, 953, 1114, 1188, 1221, 1449 or 4,986 for every false one. Those false ones are
+ * what the gate is for: atkearney has fifteen 920x50 paragraphs down its page and
+ * boondmanager scatters four 96x96 logos across 1,382px. Both are repeated siblings of one
+ * size; neither is a run. Nothing in the corpus sits between 1 and 38.
+ *
+ * AND THEY MAY NOT OVERLAP, which is a definition rather than a threshold: siblings laid
+ * side by side do not sit on each other. jerseyfinance stacks twelve 322x34 dropdown labels
+ * at one x, evenly offset by 34px and each overlapping the last; vaiie and atkearney do the
+ * same. Every one of them passes the evenness test and none is a list.
+ *
+ * AND THEY MUST BE NEXT TO EACH OTHER, which is the gate that stops this rule blanketing a
+ * page. Evenness says nothing about scale: one button repeated once per section, or one
+ * decorative mark repeated once per panel, is as evenly spaced as any grid and its
+ * bounding box is the whole page. kohde.agency repeats a 56x56 button six times down the
+ * page at 844px intervals — a 56x4556 strip that vetoes every full-width band boundary it
+ * crosses, and the page collapsed from 18 leaves to 4. alchemy draws four 46x15 marks at
+ * 885px intervals, four more page-tall strips, and lost 45 leaves the same way. So each
+ * gap must be no more than REPEAT.adjacency times the SHORTER of the two members it
+ * separates — the same normaliser TEXT_RUN and inkClusters use, for the same reason.
+ *
+ * 1.4, MEASURED, AND THE THINNEST MARGIN IN THIS FILE — stated as such rather than dressed
+ * up. Over the 30 captured pages and both fixtures, 126 runs pass every other gate. Their
+ * gap ratios climb continuously to 1.38 and every one of them is a real list: clearleft's
+ * nav, the case this rule exists for, is 1.08; its footer list 1.10; bakerandpartners'
+ * footer column 1.25; jerseyfinance's service icons 1.26; hett's menu 1.33 and 1.38. The
+ * first false one is at 1.50 and above it the population is entirely false: 2.00, 2.35,
+ * 2.38, 3.86, 9.32 for dept's five "Learn More" buttons 453px apart, 15.07 for kohde,
+ * 17.00 for natwest's chat button.
+ *
+ * WHAT SITS AT 1.50 IS WORTH NAMING, because it is not a list at all and no geometric
+ * threshold should have to tell. alchemy.je and kohde.agency pin a panel for one viewport
+ * at a time, so the stitched capture carries the same element once per 900px slice —
+ * alchemy's `<g>` at x=188 appears at y=2945, 3845, 4745, 5645 and 6545, a pitch of
+ * exactly 900, and so does kohde's button and natwest's chat widget. They are one thing
+ * repeated by the capture, not four things in a column, and the gap ratio only separates
+ * them by accident. If this threshold ever has to move, that is the reason to look at
+ * instead: it belongs with the pinned-chrome work in lib/pinned.mjs, not here.
+ *
+ * A ROW'S CELL IS A BOX, NOT A LINE, and without that gate this destroys a footer. Four
+ * columns of links are four columns — but every horizontal slice through them is a run of
+ * four `<li>`s of one height at one y, evenly spaced, and there are a dozen such slices
+ * stacked up. Protecting each one vetoes the column cuts that are the real structure, and
+ * the segmenter then does the only thing left to it and cuts the footer into full-width
+ * strips one line of text tall: the retail fixture went from four footer columns to six
+ * 42px bands, which is not a worse answer so much as a meaningless one. So a row's members
+ * must not be line-shaped, at TEXT_RUN.lineAspect — the question "is this a line or a
+ * block?" already asked and already measured elsewhere in this file, asked here about a box
+ * instead of about ink. Measured on the corpus: the flattest cell in a genuine ROW is
+ * altum's 233x66 at 3.5:1 and clearleft's nav labels are 1.8:1 to 2.9:1, while every column
+ * slice is 6.8:1 or flatter (retail's footer links 7.4:1, jerseyfinance's captions 7.3:1,
+ * hett's nav items 11.3:1). 4 sits in the gap, as it does for ink.
+ *
+ * A COLUMN'S CELLS GET NO SUCH GATE, and that asymmetry is the point rather than an
+ * oversight: a stack of lines IS a list, and it is exactly what whitepaper's topic links
+ * and clearleft's footer are. The cost is a horizontal row of line-shaped items — a legal
+ * link row along the bottom of a page — which this will not recognise. That is a miss, not
+ * a wrong answer.
+ *
+ * AND A COLUMN ONLY FORBIDS THE CUT THAT WOULD SEPARATE IT. Every other protected
+ * population in this file is uncuttable on both axes, and a column of links must not be,
+ * because a line's box is mostly padding: retail's footer links are 312px boxes holding
+ * about 200px of ink, so the four column gutters a reader sees at x=296, 642 and 1016 are
+ * all strictly INSIDE a link's own box. Vetoing them merged the fixture's four footer
+ * columns into one block and broke the test that guards them. A row is different and keeps
+ * the ordinary both-axis veto: its members are boxes by the gate above, a horizontal cut
+ * slices every one of them through real content, and that is how pola's cards were coming
+ * out in halves.
+ *
+ * A CEILING BUT NO FLOOR. MODULE_AREA.max stops a run claiming the page; weightmans' four
+ * 301x440 columns are 22% of a short page and get nothing from this. There is deliberately
+ * no lower bound, because the floor in MODULE_AREA answers "is this a module or a chip?"
+ * and four repeated siblings have already answered it: clearleft's whole primary nav is
+ * 502x21, which is 0.15% of a 4,904px page and is still the navigation. A small run box
+ * costs nothing because a run is a veto and nothing else — see protectedRects.
+ *
+ * THE LIMITATION WORTH KNOWING: one row, or one column, at a time. A 3-wide, 3-deep grid is
+ * nine cards that should be one block, and this finds three runs of 3 and rejects all of
+ * them. Merging adjacent parallel runs was measured and NOT taken: pola's y=2132 and y=2853
+ * carousels are identical 259x475 runs 246px apart — closer together than one card is tall
+ * — with a section heading between them, so every adjacency test cheap enough to write here
+ * swallows the heading.
+ */
+export const REPEAT = {minMembers: 4, spacing: 1, adjacency: 1.4, minSide: CONTENT_RECT.minH};
+
+/**
+ * The bounding box of each repeated run in `rects`, rows first, in the order phase 1
+ * listed them.
+ */
+export function repeatedRuns(rects, width, pageHeight, opts = REPEAT, areaOpts = MODULE_AREA, runOpts = TEXT_RUN) {
+    if (!rects || rects.length === 0) return [];
+    const {minMembers, spacing, adjacency, minSide} = {...REPEAT, ...opts};
+    const {max} = {...MODULE_AREA, ...areaOpts};
+    const {lineAspect} = {...TEXT_RUN, ...runOpts};
+    const ceiling = max * width * pageHeight;
+
+    const out = [];
+    for (const row of [true, false]) {
+        // One shared edge, one cross-axis size. A Map keyed on both collects the
+        // candidates, and its insertion order is rects.json's, so nothing here depends on
+        // anything else.
+        const groups = new Map();
+        for (const r of rects) {
+            if (r.w < minSide || r.h < minSide) continue;
+            // A row's cell is a box, not a line. A column's may be either. See above.
+            if (row && r.w >= lineAspect * r.h) continue;
+            const key = row ? `${r.y}|${r.h}` : `${r.x}|${r.w}`;
+            const held = groups.get(key);
+            if (held) held.push(r); else groups.set(key, [r]);
+        }
+        for (const [key, all] of groups) {
+            // Coincident geometry is one member: a `<picture>` and the `<img>` inside it,
+            // or clearleft's `<li>` and the `<a>` filling it, are one thing, and counting
+            // both would turn a pair into a run of four.
+            const seen = new Set();
+            const distinct = all.filter((r) => {
+                const at = row ? `${r.x}|${r.w}` : `${r.y}|${r.h}`;
+                if (seen.has(at)) return false;
+                seen.add(at);
+
+                return true;
+            }).sort((p, q) => (row ? p.x - q.x : p.y - q.y));
+            // A CONTAINER IS NOT A SIBLING OF WHAT IS INSIDE IT, the same innermost rule
+            // moduleContainers already applies and for a sharper reason here: a column
+            // layout gives a list, its wrapper and every item the SAME x and the same
+            // width, so whitepaper's nine footer links arrive in one group along with the
+            // `<div>`, the `<p>` heading and the `<ul>` around them. Left in, the wrapper
+            // overlaps every item, the gaps come out negative and the list is refused.
+            const members = distinct.filter((m, i) => !distinct.some((n, j) => j !== i && containsRect(m, n)));
+            if (members.length < minMembers) continue;
+
+            // MAXIMAL RUNS, NOT THE WHOLE GROUP, because a list rarely arrives alone: a
+            // heading sits 17px above whitepaper's nine links, which are 0 or 1px apart,
+            // and asking the whole group to be evenly spaced throws away the list because
+            // of the heading. So walk the group and take the longest stretch that holds
+            // together, then start again from whatever broke it.
+            const at = (r) => (row ? r.x : r.y);
+            const along = (r) => (row ? r.w : r.h);
+            const [fixed, size] = key.split('|').map(Number);
+            let i = 0;
+            while (i < members.length - 1) {
+                let pitch = null;
+                let j = i;
+                while (j + 1 < members.length) {
+                    const gap = at(members[j + 1]) - (at(members[j]) + along(members[j]));
+                    // Side by side, not stacked on each other; and next to each other, not
+                    // merely repeated down a page; and evenly, not merely repeatedly.
+                    if (gap < 0) break;
+                    if (gap > adjacency * Math.min(along(members[j]), along(members[j + 1]))) break;
+                    if (pitch === null) pitch = gap;
+                    else if (Math.abs(gap - pitch) > spacing) break;
+                    j++;
+                }
+                if (j - i + 1 >= minMembers) {
+                    const first = members[i];
+                    const last = members[j];
+                    // `stacked` says the members are one above another, so only a
+                    // horizontal cut separates them. See above.
+                    const box = row
+                        ? {x: first.x, y: fixed, w: last.x + last.w - first.x, h: size, tag: 'run', text: 'repeated row', stacked: false}
+                        : {x: fixed, y: first.y, w: size, h: last.y + last.h - first.y, tag: 'run', text: 'repeated column', stacked: true};
+                    if (box.w * box.h <= ceiling) out.push(box);
+                }
+                // Whatever broke the stretch may begin the next one.
+                i = j > i ? j : i + 1;
+            }
+        }
+    }
+
+    return out;
 }
 
 /**
@@ -952,8 +1265,58 @@ export function textRuns(edges, width, height, rects, opts = TEXT_RUN, inkOpts =
     return runs;
 }
 
-export function protectedRects(rects, width, pageHeight) {
-    return [...fullBleedMedia(rects, width), ...moduleContainers(rects, width, pageHeight)];
+/**
+ * The MODULES a cut may not pass through, in one list.
+ *
+ * THREE POPULATIONS, ONE REJECTION, selected by three unrelated kinds of evidence: a tag
+ * and a page-width for a hero (fullBleedMedia), a tag and an area for a picture
+ * (mediaModules), a drawn box and a containment test for a card (moduleContainers). What
+ * happens to a cut landing inside any of them is identical, so the rejection is written
+ * once — see cutsInsideProtected — and all three feed it.
+ *
+ * A REPEATED RUN IS NOT HERE, and neither list below holds one: a run is a region this
+ * file inferred rather than something the page declared, its outer edge is already an
+ * ordinary candidate because its members are content rects, and licensing a cut there
+ * produced a 63px sliver on the jonleverrier fixture. It is a veto and nothing else, so
+ * `segment` puts it with the other vetoes.
+ *
+ * `offsetY` says where the slice these rects were shifted into sits in the page; without
+ * it the backdrop test cannot be asked at all. See isBackdrop.
+ */
+export function protectedRects(rects, width, pageHeight, offsetY = 0) {
+    return [
+        ...fullBleedMedia(rects, width),
+        ...mediaModules(rects, width, pageHeight),
+        ...moduleContainers(rects, width, pageHeight),
+    ].filter((r) => !isBackdrop(r, width, pageHeight, offsetY));
+}
+
+/**
+ * The subset of `protectedRects` whose own EDGES are boundaries.
+ *
+ * Being uncuttable and being a boundary are two different claims, and only one of them
+ * follows from being a picture. A full-bleed element spans the page, so its top and bottom
+ * ARE where one band of the page stops and the next starts; a module container is a card,
+ * a header or a figure, and its edge is where that module stops. A 311x404 product
+ * photograph inside a grid is neither. Its interior must not be cut — that is what
+ * mediaModules is for — but its side edge is one element edge among the hundreds
+ * `edgeCandidates` already offers, and promoting it to a module boundary gives it three
+ * privileges it has not earned: a snap prefers it over a nearer edge, `isASeam` may bridge
+ * out of a gutter to reach it, and a cut landing on it waives the size floor.
+ *
+ * MEASURED ON THE RETAIL FIXTURE, which is why the distinction exists at all. Its five
+ * product photographs have their side edges at x=335, 650, 965, 969 and 1280; promoted to
+ * boundaries, those outranked the element edges that the FOOTER's own column gutters
+ * offered 1,700 pixels below, and all three footer column cuts moved. The cuts were still
+ * inside their gutters and the footer still came out in four columns — but the coordinate
+ * was chosen by a photograph that is nowhere near it, which is the file's coordinate-only
+ * limitation being made worse rather than a new answer.
+ */
+export function boundingRects(rects, width, pageHeight, offsetY = 0) {
+    return [
+        ...fullBleedMedia(rects, width),
+        ...moduleContainers(rects, width, pageHeight),
+    ].filter((r) => !isBackdrop(r, width, pageHeight, offsetY));
 }
 
 /**
@@ -1017,6 +1380,10 @@ export const SEGMENT_DEFAULTS = {
     minSide: 120,
     moduleBridge: MODULE_BRIDGE,
     landmarkRule: LANDMARK_RULE,
+    // Where the top of this slice sits in the whole page. 0 unless segmentTall is cutting
+    // a tile or a band, and it says so. Only `isBackdrop` reads it — see there for why a
+    // page-relative question cannot be asked in a tile's own coordinates.
+    pageOffsetY: 0,
 };
 
 /**
@@ -1044,36 +1411,50 @@ export const SEGMENT_DEFAULTS = {
  * partition, depth changes which labels get applied and never the arithmetic.
  */
 export function segment(edges, width, height, opts = {}) {
-    const {maxDepth, minAreaFraction, minSide, moduleBridge, landmarkRule, rects, pageHeight, textRun, inkCluster} = {...SEGMENT_DEFAULTS, ...opts};
+    const {maxDepth, minAreaFraction, minSide, moduleBridge, landmarkRule, rects, pageHeight, pageOffsetY, textRun, inkCluster} = {...SEGMENT_DEFAULTS, ...opts};
     const minArea = width * height * minAreaFraction;
     const yCandidates = edgeCandidates(rects, true);
     const xCandidates = edgeCandidates(rects, false);
     // `height` is this slice's height; the whole page's is only different when segmentTall
     // called us for a tile or a band, and it says so.
-    const keepWhole = protectedRects(rects, width, pageHeight ?? height);
+    const keepWhole = protectedRects(rects, width, pageHeight ?? height, pageOffsetY);
+    // The subset whose own edges are boundaries. A picture's edge is not one — see
+    // boundingRects — so it steers no snap, bridges no seam and waives no size floor.
+    const bounds = boundingRects(rects, width, pageHeight ?? height, pageOffsetY);
     // Rejection only. These never steer a snap and never excuse the size floor — they
     // are a veto on cutting through words, not a statement about module boundaries.
     // Shrunk to their ink: a heading box is as wide as its column and the words rarely
     // fill it, so the box would veto the gutter beside the heading. See inkBounds.
     // A line assembled from several elements is one span too, or the space between two
     // words is a legal gutter and a headline gets cut between them. See textRuns.
+    // A REPEATED RUN IS A VETO AND NOTHING ELSE, which is why it sits here rather than in
+    // `keepWhole`: every member of a run takes the same label, so the gutters between them
+    // are not boundaries worth having — but the run is not a module the page declared, so
+    // it may not steer a snap or waive the size floor. See REPEAT and protectedRects.
+    const runs = repeatedRuns(rects, width, pageHeight ?? height);
     const keepIntact = [
         ...inkedTextRects(edges, width, height, rects, inkCluster),
         ...textRuns(edges, width, height, rects, textRun, inkCluster),
+        ...runs.filter((r) => !r.stacked),
     ];
+    // A column of repeated siblings forbids only the cut that would separate it, which is
+    // the horizontal one. See REPEAT: a line's box is mostly padding, and the vertical
+    // gutter a reader sees between two columns of links is strictly inside both.
+    const keepStacked = runs.filter((r) => r.stacked);
     // The page's own header and footer. A boundary in their own right, on terms the
     // module population does not get — see pageLandmarks. Their top and bottom edges
     // only: the side edges are the page margin.
     const landmarks = pageLandmarks(rects, width);
     const landmarkY = new Set(landmarks.flatMap((l) => [l.y, l.y + l.h]));
-    // The coordinates a snap should reach for when the gutter offers a choice.
-    const moduleEdgeY = new Set(keepWhole.flatMap((m) => [m.y, m.y + m.h]));
-    const moduleEdgeX = new Set(keepWhole.flatMap((m) => [m.x, m.x + m.w]));
+    // The coordinates a snap should reach for when the gutter offers a choice. Taken from
+    // `bounds`, never from `keepWhole`: see boundingRects.
+    const moduleEdgeY = new Set(bounds.flatMap((m) => [m.y, m.y + m.h]));
+    const moduleEdgeX = new Set(bounds.flatMap((m) => [m.x, m.x + m.w]));
     // The same edges, each keeping the module it belongs to, so a snap can ask whether
     // the gutter it is bridging out of is that module's own whitespace. See
     // MODULE_BRIDGE: the edge alone is not enough to tell a hairline from a margin.
-    const moduleSpanY = edgeSpans(keepWhole, true);
-    const moduleSpanX = edgeSpans(keepWhole, false);
+    const moduleSpanY = edgeSpans(bounds, true);
+    const moduleSpanX = edgeSpans(bounds, false);
     const tooSmall = (r) => r.w * r.h < minArea || Math.min(r.w, r.h) < minSide;
 
     const cut = (rect) => {
@@ -1193,6 +1574,7 @@ export function segment(edges, width, height, opts = {}) {
             const landmarkHere = onLandmarkBoundary(landmarks, rect, here, horizontal);
             if (!landmarkHere && cutsInsideProtected(keepWhole, rect, here, horizontal)) continue;
             if (cutsInsideProtected(keepIntact, rect, here, horizontal)) continue;
+            if (horizontal && cutsInsideProtected(keepStacked, rect, here, true)) continue;
             const a = horizontal
                 ? {x: rect.x, y: rect.y, w: rect.w, h: at, depth: rect.depth + 1, children: []}
                 : {x: rect.x, y: rect.y, w: at, h: rect.h, depth: rect.depth + 1, children: []};
@@ -1226,7 +1608,7 @@ export function segment(edges, width, height, opts = {}) {
             // written: a header strip is a real block. jtcgroup.com's is 94px tall and
             // jerseyfinance.com's is 58px, both under the 120px floor, and both are
             // exactly the block this tool is trying to measure.
-            const onModuleEdge = landmarkHere || keepWhole.some((m) => (horizontal
+            const onModuleEdge = landmarkHere || bounds.some((m) => (horizontal
                 ? (here === m.y || here === m.y + m.h)
                     && m.x < rect.x + rect.w && rect.x < m.x + m.w
                 : (here === m.x || here === m.x + m.w)
@@ -1394,9 +1776,12 @@ export function segmentTall(edges, width, height, opts = {}) {
     // against the whole page and a heading is no more cuttable here than there. Ink, not
     // boxes, for the same reason segment uses ink — see inkBounds. Runs of text as well,
     // for the same reason both populations are here: this is the same rule, promoted.
+    // A harvested line is always horizontal, so both kinds of repeated run apply to it and
+    // there is nothing to separate here. See REPEAT.
     const keepIntact = [
         ...inkedTextRects(edges, width, height, opts.rects, opts.inkCluster),
         ...textRuns(edges, width, height, opts.rects, opts.textRun, opts.inkCluster),
+        ...repeatedRuns(opts.rects, width, height),
     ];
     // Page coordinates too. A harvested line on a landmark's own edge is exempt from the
     // module rejection for the same reason it is inside `segment` — see pageLandmarks —
@@ -1410,7 +1795,7 @@ export function segmentTall(edges, width, height, opts = {}) {
         if (h <= 0) break;
         // Segment the tile in its own coordinate space, rects and all, then translate up.
         const slice = edges.subarray(top * width, (top + h) * width);
-        const sub = segment(slice, width, h, {...opts, pageHeight: height, rects: shiftRects(opts.rects, -top)});
+        const sub = segment(slice, width, h, {...opts, pageHeight: height, pageOffsetY: top, rects: shiftRects(opts.rects, -top)});
         for (const l of leaves(sub)) {
             for (const line of [l.y + top, l.y + l.h + top]) {
                 // This tile's own frame is not evidence of a boundary.
@@ -1458,7 +1843,7 @@ export function segmentTall(edges, width, height, opts = {}) {
         // so vertical structure inside the band survives the stitch. The band slice
         // spans the full width, so translating by (0, y) is enough to place it.
         const bandSlice = edges.subarray(y * width, (y + h) * width);
-        const bandRoot = segment(bandSlice, width, h, {...opts, pageHeight: height, rects: shiftRects(opts.rects, -y)});
+        const bandRoot = segment(bandSlice, width, h, {...opts, pageHeight: height, pageOffsetY: y, rects: shiftRects(opts.rects, -y)});
         children.push(translate(bandRoot, 0, y, 1));
     }
 

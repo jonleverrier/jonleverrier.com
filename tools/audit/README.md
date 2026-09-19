@@ -112,6 +112,54 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   containers on switch.je. Two rects sharing one box cancel out, because each contains
   the other — M&S wraps its `<nav>` in a `<div>` of identical size and neither is
   protected.
+- **A photograph is one module at any size a cut could land in.** The full-bleed rule above
+  answers this for a hero and says nothing about the same picture at a third of the width.
+  dept.agency puts a 571×714 soft-focus photograph beside a paragraph; the blurred colour
+  fires the edge map irregularly, the adaptive threshold reads the quiet patches as gutters,
+  and that one picture came back as **thirteen blocks**. So any `img`/`video`/`canvas`/
+  `picture` inside the same 0.5–12% band as a module container is uncuttable
+  (`mediaModules`). An `<img>` holds pixels and nothing else, so a quiet run inside one is
+  by construction not a boundary — there is nothing in there to be either side of it. The
+  cost, stated rather than hidden: a picture between 12% of the page and 90% of its width
+  gets nothing from any of the three rules. **Its EDGE is not a boundary**, unlike a
+  full-bleed element's or a card's — see `boundingRects`. Promoting a product photo's side
+  edge to a module boundary moved all three of the retail fixture's footer column cuts,
+  chosen by a photograph 1,700px away.
+- **An element that leaves the page in both directions at once is a backdrop, not a module.** A
+  module is inside the page; a backdrop is the thing the page is drawn on, and no threshold
+  is involved. gcsc.gg stacks six decorative `<img>` elements at `-319,-274 1606x1569` and
+  similar — each larger than the viewport, each hanging off the top and one side — and every
+  one passes the full-bleed test, so `cutsInsideProtected` refused every cut underneath and
+  the header, hero and featured area arrived as **one 1,482px block**. HORIZONTALLY AND
+  VERTICALLY, not merely on two sides: a hero cropped by `overflow: hidden`, a sticky panel
+  off the bottom and an off-canvas menu each leave on one side, and the commonest full-bleed
+  hero there is — a 1600px image centred in a 1440px page — leaves on BOTH horizontal sides
+  and must keep its protection. Measured over 30 pages and both fixtures: 27 protected rects
+  overflow on exactly one side and are untouched, eight overflow in both directions, and all
+  eight are decoration (gcsc's six, andybudd's two dot patches). **It does not replace the `svg` exclusion in
+  `MEDIA_TAGS`** — switch.je's decorative curve is `0,-76 1440x810`, which leaves the page on
+  exactly one side. **And it does not explain bakerandpartners**, whose fused block is caused
+  by an in-canvas `boxed` div; see PROGRESS #17. `segment` is told the page offset of the
+  slice it was handed (`pageOffsetY`), because the test is meaningless in a tile's own
+  coordinates.
+- **A run of repeated siblings is one block.** A product grid, a nav bar and a list of links
+  are the same thing seen three ways, and every member of one takes the same label — so by
+  the depth ruling, cutting them apart changes no answer. pola.co.jp gave a block per
+  product CARD (132 leaves), clearleft.com a block per nav ITEM, whitepaper.co.uk a block
+  per footer LINK. A run is **four or more** elements sharing one edge, of one size across
+  the run, at EVEN intervals, not overlapping and next to each other (`REPEAT`). Four is the
+  line and it is a count, not a mechanism: three side by side is a composition — andybudd's
+  Coaching / Educating / Speaking, which must stay cut and does. The gap between members may
+  be at most 1.4× the shorter of the two, which is the thinnest margin in the file (1.38
+  genuine, 1.50 false) and is standing in for a different problem — alchemy and kohde pin a
+  panel per viewport, so the capture carries the same element once per 900px slice.
+  A ROW's members must not be line-shaped, or every horizontal slice through four footer
+  columns reads as a row and the footer comes out in strips one line tall. A COLUMN's may
+  be, because a stack of lines IS a list — **and a column forbids only the horizontal cut**,
+  because a link's box is mostly padding and the vertical gutter a reader sees between two
+  columns is strictly inside both. A run is a **veto only**: it never steers a snap and
+  never waives the size floor, because it is a region inferred here rather than one the page
+  declared. Known limit: one row or one column at a time, so a 3-wide 3-deep grid is missed.
 - **A line of text is one thing, not one thing per element.** A heading is protected from
   being cut through, using its ink rather than its box — but only element by element, and
   a line is often several elements. tpagency.com pins a panel across two viewports

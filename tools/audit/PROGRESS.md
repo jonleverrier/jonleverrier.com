@@ -36,9 +36,6 @@ bakerandpartners.com is no longer on that list. It hung for 14 minutes, then fai
 
 | # | Defect | Site | State |
 |---|---|---|---|
-| 4 | Product grid cut one block per card; the depth ruling says a grid is one block | pola | in progress |
-| 5 | A 295px soft-focus photograph shredded into ~15 fragments | dept.agency | in progress |
-| 6 | Three oversized part-off-canvas `<img>` treated as modules, fusing header + hero + featured across the top 1,482px | gcsc | in progress |
 | 8 | `shotTruncated` fires on a 3px difference — true statement, noisy threshold | liquidlight | not started |
 | — | Whitespace reported as coverage per block, not as a category of block (user's ruling) | all | phase 3/4 |
 | — | `webglBlind`: canvas content the edge map cannot read | 8 sites | accepted, declared in notes |
@@ -50,21 +47,24 @@ which is a better guide to what to fix next than how bad any single instance loo
 
 | # | Defect | Sites | Cause |
 |---|---|---|---|
-| 9 | **Repeating siblings cut one block per item** — nav rows, footer link lists, logo strips, card grids, step lists. Every member takes the same label, so by the depth ruling the cut changes no answer | pola, whitepaper, clearleft, liquidlight, natwest, milk, klark, switch, gcsc, hettich — **10** | the geometry cannot tell a repeating run from distinct sections. Same defect as #4 at three scales (row, list, 2D grid) |
 | 10 | **A cut runs through a paragraph** — vertically between its words on altum and milk, horizontally between its lines on hettich | altum, milk, hettich — **3** | **measured**: `TEXT_TAGS` is h1–h6 only, so a `<p>` is in no protected population. On altum the `<h2>` at 46,1028 is protected and shrunk to 706px of ink while the `<p>` at 46,1092 sized 1337x72 is not, and cuts land at x=805, 1073, 1248 — clear of the heading, through the paragraph |
-| 11 | **Display type shredded** — a headline cut between words and in places between letters. alchemy loses ~19 of its 91 blocks to one headline | alchemy, kohde, dept — **3** | task 16 merges runs of separate ELEMENTS on a line; this is one element whose letter and word spacing at display size opens gutters wider than the threshold |
+| 11 | **Display type shredded** — a headline cut between words and in places between letters. alchemy loses ~19 of its 91 blocks to one headline | alchemy, kohde, dept — **3** | task 16 merges runs of separate ELEMENTS on a line; this is one element whose letter and word spacing at display size opens gutters wider than the threshold. **Measured on kohde (task 19): "Launch." is not text at all.** It is drawn as SVG `<g>`/`<path>` with no `textContent`, so `TEXT_TAGS`, `inkedTextRects` and `textRuns` can never reach it and the fix is not in ink clustering. Unchanged by task 19: kohde 18 → 18 leaves, alchemy 89 → 86 |
 | 12 | **Whitespace given its own blocks** — empty background strips either side of centred content | klark, milk, liquidlight, hettich — **4** | relates to the ruling that space is a coverage measure across blocks, not a kind of block |
 | 13 | **Slivers holding a single `>` chevron** | hsbc, hettich — **2** | a link's arrow is a separate element with a gutter each side |
 | 14 | Header still fused into the hero; task 17's landmark rule did not reach it | kohde — **1** | unknown; likely no `<header>` landmark, or not edge to edge |
 | 15 | Footer columns not separated | vaiie — **1** | unknown |
 | 16 | An undismissed late banner is kept from slice 0 rather than from first sighting, so "present and measured once" is not literally true | — | queued by task 18, costs an image change on every site with chrome that fades in |
+| 17 | **A decorative blob INSIDE the canvas fuses four sections** — one block y=740–2228 | bakerandpartners — **1** | **measured (task 19), and it is NOT the backdrop defect**: nothing on this page leaves the canvas on more than one side. `div 0,978 380x760` is `boxed` and 2.5% of the page, so it is a module container; it is 760px tall so `CONTENT_RECT` (maxH 700) keeps its own top edge out of the snap candidates; the 79px gutter at 949–1028 therefore snaps to 1028, inside it, and is refused. `section 0,1788 1440x440` refuses the other three |
+| 18 | A repeated run of exactly THREE is still cut per item — whitepaper's "Legal" and "Quick Links" lists | whitepaper — **1** | `REPEAT.minMembers` is 4 and stops there by design; separating three nav links from three feature columns needs the label, not the geometry. See the report for task 19 |
+| 19 | The hero's decorative gradient is cut into about five slices | gcsc — **1** | **introduced by the fix to #6**: the six backdrop images that used to blanket the top are no longer protected, so the edge map finds gutters in the gradient. A smaller defect than the fusion it replaced, and it is decoration rather than content |
 
 **Two sites confirm defects the user reported on one site each**, which matters because a
 one-site defect can be special pleading and a two-site defect cannot:
 
-- bakerandpartners carries gcsc's backdrop defect — one block spans y≈754–2216 holding four
-  distinct sections, behind oversized graphics that run off the canvas both sides.
-- milk carries dept.agency's shredded-photograph defect.
+- ~~bakerandpartners carries gcsc's backdrop defect~~ — **measured and wrong** (task 19).
+  The block is real but the cause is not: its orange graphics run off the canvas on ONE
+  side each, so the backdrop rule neither does nor should touch them. See open #17.
+- milk carries dept.agency's shredded-photograph defect. Both are fixed.
 
 switch.je shows the backdrop problem in its other direction: its decorative pink swoosh
 fragments the hero into six blocks rather than fusing it.
@@ -77,6 +77,9 @@ Each row is a defect that was visible in a debug image and is not any more.
 
 | Defect | Found on | Fixed by | Evidence |
 |---|---|---|---|
+| Repeating siblings cut one block per item — a grid per card, a nav per item, a link list per link (#4, #9) | pola, clearleft, whitepaper, jersey.com, milk, altum, natwest, hettich, switch | `%%SHA%%` | pola 132 → 60 leaves with each carousel one block; clearleft's nav one block with the logo beside it; whitepaper's nine-link list one block with its three columns still separate; milk's logo grid 9 → 1; altum's stat row 11 → 2; jersey.com's season grid 4 → 1. **andybudd's three feature columns stay cut, 17 leaves.** Every one cropped |
+| A 571x714 soft-focus photograph shredded into 13 fragments (#5) | dept.agency, milk | `%%SHA%%` | dept 81 → 49 leaves; the photograph at `21,2434 571x714` is one block. Cropped |
+| Oversized part-off-canvas `<img>` treated as modules, fusing header + hero + featured across the top 1,482px (#6) | gcsc | `%%SHA%%` | the top 1,362px was ONE block; it is now a top strip, a hero band and three featured blocks. Cropped. Cost: open #19 |
 | A capture blocked for 14 minutes, then failed at the deadline — the site was unauditable | bakerandpartners | `02f5b47` | 30.5s, 36 blocks, `notes: none`. Cause: a frame whose URL is the empty string, on which `frame.evaluate` never returns |
 | Consent card in a shadow root, repeating 12×, `consentBannerSeen` false | boondmanager | `02f5b47` | dismissed after the scroll pass; cropped y=2400 and the card is gone from all twelve places |
 | A widget painted once per slice with `notes: none` — one element counted four times | natwest | `a8a7b1e` | the condition reached the phase 1 terminal only; now in blocks.json |
@@ -106,7 +109,7 @@ Source is 5,681 lines. Useful to know which parts are load-bearing if the approa
 - **painted, notes, unrendered, errorpage (~1,050)** — the honesty layer. "Unmeasured"
   versus "empty", refusals, soft error pages. This is what stops a confident wrong number
   reaching a prospect.
-- **xycut (~1,218)** — the cutting. The partition invariant and `segmentTall` are
+- **xycut (~1,530)** — the cutting. The partition invariant and `segmentTall` are
   structural; the gutter heuristics on top are the part with the long tail, and the part
   most exposed if grouping ever moves to a model.
 
