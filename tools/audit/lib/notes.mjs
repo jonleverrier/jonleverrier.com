@@ -184,6 +184,36 @@ export function runNotes(meta, reason = 'missing', rects = null, unpainted = nul
         );
     }
 
+    // A THIRD CONDITION THAT REACHED A TERMINAL AND NOTHING ELSE, which is the mistake
+    // the two above were written to correct and which was made again for late arrivals.
+    // The phase 1 CLI prints "N MORE ARRIVED AFTER THE DECISION AND MAY REPEAT" to its
+    // own stdout; the Craft job imports lib/ and never sees it, and blocks.json says
+    // nothing. natwest.com is the page that shows what that costs: its pinned census
+    // found 13 candidates early, decided NONE of them, and recorded 15 arrivals after
+    // the decision — and its "Chat to Cora" widget is painted four times down the
+    // stitched image, once per slice it was present for, while `notes` reads `none`.
+    //
+    // UNMEASURED RATHER THAN INCLUDED, and the distinction is the whole point. A consent
+    // wall we failed to dismiss is real surface area seen once, so it is `included`. This
+    // is one element counted several times, which is not a measurement of anything: the
+    // repeats inflate whatever category the widget lands in, by a factor nobody can see.
+    const late = meta.capture?.pinned?.lateArrivals ?? 0;
+    if (late > 0) {
+        add(
+            'lateArrivals',
+            'unmeasured',
+            `${late} element${late === 1 ? '' : 's'} appeared after the capture had decided which pinned `
+                + 'elements to hide, so any of them that holds the viewport is painted once per slice it '
+                + 'was present for. Where that happens a single element is counted several times',
+            {
+                lateArrivals: late,
+                decided: meta.capture.pinned.decided ?? null,
+                earlyPinned: meta.capture.pinned.earlyPinned ?? null,
+                slices: meta.capture.slices ?? null,
+            },
+        );
+    }
+
     const blind = webglWarning(meta.webgl);
     if (blind) {
         add('webglBlind', 'unmeasured', blind, {

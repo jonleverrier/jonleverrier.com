@@ -203,3 +203,34 @@ test("no status recorded is not an error", () => {
     assert.equal("httpError" in runNotes(clean({httpStatus: null})).conditions, false);
     assert.equal("httpError" in runNotes(clean({})).conditions, false);
 });
+
+/* --------------------------------------------------- elements that arrived too late */
+
+/**
+ * natwest.com's pinned census found 13 candidates in its early probe, DECIDED NONE of
+ * them, and recorded 15 arrivals after the decision. Its "Chat to Cora" widget is painted
+ * four times down the stitched image and `notes` read `none` — the condition reached the
+ * phase 1 CLI's stdout and nothing that blocks.json or the Craft job can see, which is
+ * the mistake scrollCapHit and consentNotDismissed were written to correct.
+ */
+test('a capture that decided nothing and saw late arrivals says so', () => {
+    const notes = runNotes(clean({
+        capture: {mode: 'stitched', slices: 9, pinned: {earlyPinned: 13, decided: 0, lateArrivals: 15}},
+    }));
+
+    assert.ok('lateArrivals' in notes.conditions, 'the condition must reach blocks.json, not only a terminal');
+    assert.equal(notes.conditions.lateArrivals.effect, 'unmeasured');
+    assert.equal(notes.conditions.lateArrivals.facts.lateArrivals, 15);
+});
+
+test('a capture with nothing arriving late stays quiet about it', () => {
+    const notes = runNotes(clean({
+        capture: {mode: 'stitched', slices: 6, pinned: {earlyPinned: 203, decided: 4, lateArrivals: 0}},
+    }));
+
+    assert.equal('lateArrivals' in notes.conditions, false);
+});
+
+test('a capture with no pinned census at all does not invent the condition', () => {
+    assert.equal('lateArrivals' in runNotes(clean({})).conditions, false);
+});
