@@ -1428,6 +1428,84 @@ export function listContainers(rects, width, pageHeight, opts = MODULE_AREA) {
     return out;
 }
 
+/** How far two children's sizes may differ and still read as the same tile. */
+export const GROUP_TOLERANCE = 2;
+
+/**
+ * A container holding nothing but repeats of one tile.
+ *
+ * `repeatedRuns` reads a run along ONE axis — a row of cards, a column of links — so a
+ * grid two deep falls through both tests. jtcgroup.com is the case: four identical
+ * 244x136 `<div>`s at (78,5370), (378,5370), (78,5562) and (378,5562), a clean two by
+ * two, inside a parent `<div> 78,5370 544x328` that holds exactly them. Neither row nor
+ * column reaches `REPEAT.minMembers`, so each tile became its own block and the page
+ * carried four where a reader sees one group.
+ *
+ * The parent is the answer and the page already drew it. Rather than teach the run rule a
+ * second dimension and a second threshold, ask whether some element contains two or more
+ * children OF THE SAME SIZE and essentially nothing else. That is a grid however it is
+ * arranged, at any depth, and it needs no adjacency or spacing constant — only a tolerance
+ * for the pixel the browser rounds.
+ *
+ * A VETO, LIKE A LIST, and never stacked: every member takes the same label, so neither
+ * the gutters between columns nor those between rows are boundaries worth having.
+ *
+ * The limitation worth knowing: "contains" is geometric, because phase 1 reports rects and
+ * not the DOM tree, so a container is any rect that encloses the tiles. The innermost one
+ * wins, which is what makes the answer the tiles' own parent rather than the section
+ * around it.
+ */
+export function repeatedGroups(rects, width, pageHeight, opts = MODULE_AREA) {
+    if (!rects || rects.length === 0) return [];
+    const {max} = {...MODULE_AREA, ...opts};
+    const pageArea = width * pageHeight;
+    const tiles = rects.filter(isContentRect);
+    const out = [];
+
+    for (const parent of rects) {
+        if (parent.w * parent.h > max * pageArea) continue;
+        const held = tiles.filter((t) => t !== parent
+            && t.x >= parent.x && t.y >= parent.y
+            && t.x + t.w <= parent.x + parent.w && t.y + t.h <= parent.y + parent.h
+            && !(t.w === parent.w && t.h === parent.h));
+        if (held.length < 2) continue;
+
+        // The largest child decides the tile; everything the same size is a member.
+        const tile = held.reduce((big, t) => (t.w * t.h > big.w * big.h ? t : big), held[0]);
+        const same = (t) => Math.abs(t.w - tile.w) <= GROUP_TOLERANCE && Math.abs(t.h - tile.h) <= GROUP_TOLERANCE;
+        const members = held.filter(same);
+        if (members.length < 2) continue;
+        // Nothing substantial inside that is NOT a member or a member's own content: the
+        // container must be the group and not a section that happens to hold one.
+        const strangers = held.filter((t) => !same(t)
+            && !members.some((m) => t.x >= m.x && t.y >= m.y && t.x + t.w <= m.x + m.w && t.y + t.h <= m.y + m.h));
+        if (strangers.length) continue;
+        // …and the tiles have to account for the container, or it is a wrapper with room
+        // for much else besides.
+        const covered = members.reduce((a, m) => a + m.w * m.h, 0);
+        if (covered < 0.5 * parent.w * parent.h) continue;
+
+        out.push({...parent, stacked: false, members: members.length});
+    }
+
+    // COINCIDENT BOXES ARE ONE BOX, for the same reason `moduleContainers` says so: a
+    // grid wrapped in a div of exactly its own size is ordinary markup, and under a plain
+    // innermost test the pair survives as two identical vetoes — or, with a strict
+    // smaller-than comparison, neither is eliminated at all.
+    const byGeometry = new Map();
+    for (const g of out) {
+        const key = `${g.x},${g.y},${g.w},${g.h}`;
+        if (!byGeometry.has(key)) byGeometry.set(key, g);
+    }
+    const distinct = [...byGeometry.values()];
+
+    // The innermost container for any given group, so the veto is the tiles' own parent.
+    return distinct.filter((g) => !distinct.some((other) => other !== g
+        && other.x >= g.x && other.y >= g.y
+        && other.x + other.w <= g.x + g.w && other.y + other.h <= g.y + g.h
+        && other.w * other.h < g.w * g.h));
+}
+
 export function protectedRects(rects, width, pageHeight, offsetY = 0) {
     return [
         ...fullBleedMedia(rects, width),
@@ -1612,7 +1690,16 @@ export function segment(edges, width, height, opts = {}) {
         && l.x + l.w <= run.x + run.w && l.y + l.h <= run.y + run.h;
     const inferred = repeatedRuns(rects, width, pageHeight ?? height)
         .filter((run) => declared.filter((l) => holds(run, l)).length < 2);
-    const runs = [...inferred, ...declared];
+    // And the same claim for a grid, which a run along one axis cannot see. See
+    // repeatedGroups: the container the page drew around its tiles.
+    // A `<ul>` full of identical `<li>`s is a grid by this test as well as a list by the
+    // one above, and the two disagree about the axis: a list of links forbids only the
+    // horizontal cut, a grid forbids both. The list is the better answer because the page
+    // made the claim itself, so anything already declared is left to it.
+    const grouped = repeatedGroups(rects, width, pageHeight ?? height)
+        .filter((g) => declared.filter((l) => holds(g, l)).length < 2)
+        .filter((g) => !declared.some((l) => l.x === g.x && l.y === g.y && l.w === g.w && l.h === g.h));
+    const runs = [...inferred, ...grouped, ...declared];
     const keepIntact = [
         ...inkedTextRects(edges, width, height, rects, inkCluster),
         ...textRuns(edges, width, height, rects, textRun, inkCluster),

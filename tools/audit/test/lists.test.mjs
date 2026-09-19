@@ -27,7 +27,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {listContainers, LIST_MIN_ITEMS, segmentTall} from '../lib/xycut.mjs';
+import {listContainers, LIST_MIN_ITEMS, segmentTall, repeatedGroups, GROUP_TOLERANCE} from '../lib/xycut.mjs';
 import {edgeMapFromPng} from '../lib/edges.mjs';
 import {leaves} from '../lib/blocks.mjs';
 
@@ -157,4 +157,90 @@ test('a run holding a single list is left alone', () => {
 
     assert.equal(one.filter((l) => holds(run, l)).length < 2, true, 'one list: the run stands');
     assert.equal(two.filter((l) => holds(run, l)).length < 2, false, 'two lists: the run goes');
+});
+
+/* ---------------------------------------------------------------- a grid, not a run */
+
+/**
+ * `repeatedRuns` reads a run along ONE axis, so a grid two deep falls through both
+ * tests. jtcgroup.com is the case: four identical 244x136 `<div>`s at (78,5370),
+ * (378,5370), (78,5562) and (378,5562) — a clean two by two inside a parent
+ * `<div> 78,5370 544x328` holding exactly them. Neither row nor column reaches
+ * `REPEAT.minMembers`, so each tile became its own block.
+ *
+ * The container the page already drew is the answer, and it needs no adjacency or
+ * spacing constant — only a tolerance for the pixel a browser rounds.
+ */
+const tile = (x, y, w = 244, h = 136) => ({x, y, w, h, tag: 'div', boxed: false, text: 'stat'});
+
+test('a two-by-two of identical tiles is one group', () => {
+    const rects = [
+        {x: 78, y: 5370, w: 544, h: 328, tag: 'div', boxed: false, text: 'stats'},
+        tile(78, 5370), tile(378, 5370), tile(78, 5562), tile(378, 5562),
+    ];
+    const [group] = repeatedGroups(rects, 1440, 9061);
+
+    assert.ok(group, 'the parent should be found');
+    assert.equal(group.w, 544);
+    assert.equal(group.members, 4);
+    assert.equal(group.stacked, false, 'a grid forbids both axes: rows and columns alike');
+});
+
+test('two tiles are enough, and one is not', () => {
+    const two = [{x: 0, y: 0, w: 500, h: 140, tag: 'div', boxed: false, text: ''}, tile(0, 0), tile(250, 0)];
+    const one = [{x: 0, y: 0, w: 250, h: 140, tag: 'div', boxed: false, text: ''}, tile(0, 0)];
+
+    assert.equal(repeatedGroups(two, 1440, 9061).length, 1);
+    assert.deepEqual(repeatedGroups(one, 1440, 9061), []);
+});
+
+test('tiles of different sizes are not a group', () => {
+    const rects = [
+        {x: 0, y: 0, w: 600, h: 140, tag: 'div', boxed: false, text: ''},
+        tile(0, 0), tile(300, 0, 300, 90),
+    ];
+    assert.deepEqual(repeatedGroups(rects, 1440, 9061), []);
+});
+
+/** A rounding pixel is not a different tile; a visibly different box is. */
+test('the tolerance is a rounding pixel, not a design decision', () => {
+    const near = [{x: 0, y: 0, w: 500, h: 140, tag: 'div', boxed: false, text: ''},
+        tile(0, 0), tile(250, 0, 244 + GROUP_TOLERANCE, 136)];
+    const far = [{x: 0, y: 0, w: 500, h: 140, tag: 'div', boxed: false, text: ''},
+        tile(0, 0), tile(250, 0, 244 + GROUP_TOLERANCE + 8, 136)];
+
+    assert.equal(repeatedGroups(near, 1440, 9061).length, 1);
+    assert.deepEqual(repeatedGroups(far, 1440, 9061), []);
+});
+
+/**
+ * The container has to BE the group. A section that holds a grid and a headline besides
+ * is not itself a grid, or a heading would be swallowed with the tiles it introduces.
+ */
+test('a container holding something other than its tiles is not a group', () => {
+    const rects = [
+        {x: 0, y: 0, w: 600, h: 400, tag: 'section', boxed: false, text: ''},
+        {x: 0, y: 0, w: 600, h: 60, tag: 'h2', boxed: false, text: 'Why JTC Stands Apart'},
+        tile(0, 100), tile(300, 100),
+    ];
+    assert.deepEqual(repeatedGroups(rects, 1440, 9061), []);
+});
+
+test('the tiles must account for the container they are found in', () => {
+    // Two small tiles adrift in a large wrapper: the wrapper is not the group.
+    const rects = [
+        {x: 0, y: 0, w: 1200, h: 800, tag: 'div', boxed: false, text: ''},
+        tile(0, 0), tile(250, 0),
+    ];
+    assert.deepEqual(repeatedGroups(rects, 1440, 9061), []);
+});
+
+test('the innermost container wins, so the group is the tiles own parent', () => {
+    const rects = [
+        {x: 0, y: 0, w: 544, h: 328, tag: 'section', boxed: false, text: ''},
+        {x: 0, y: 0, w: 544, h: 328, tag: 'div', boxed: false, text: ''},
+        tile(0, 0), tile(300, 0), tile(0, 180), tile(300, 180),
+    ];
+    const found = repeatedGroups(rects, 1440, 9061);
+    assert.equal(found.length, 1, 'one group, not one per wrapper');
 });
