@@ -90,15 +90,17 @@ Give each block ONE category. Work down this list and take the FIRST that fits:
                  icons, a newsletter box, payment marks. Position decides this, not content.
 - "navigation" - persistent wayfinding chrome OUTSIDE the footer, which would appear on any
                  page of this site: the header bar, a utility strip, a mega-menu.
-- "hero"       - the elevator pitch. What this company does and why you would care. The big
-                 statement at the top, and ALSO any later section whose job is to explain
-                 the offering: a value-proposition row, a "how it works", a feature
-                 explanation. Judged by what it says, not by where it sits.
+- "hero"       - the elevator pitch: THE COMPANY'S OWN CLAIM about what it does and why you
+                 would care. The big statement at the top, and ALSO any later section doing
+                 the same job — a row of USPs or value propositions, a "why choose us", a
+                 "how it works", a feature explanation. Judged by what it says, not by
+                 where it sits.
 - "promotion"  - asks the visitor to act now: an offer, a price, urgency, a competition, a
                  download push, a demo request, a signup or capture form.
-- "trust"      - evidence that the claim is true: testimonials, client logos, awards,
-                 ratings, certifications, accreditations, statistics about the company,
-                 security and compliance reassurance, survey results.
+- "trust"      - EVIDENCE FROM OUTSIDE THE COMPANY that the claim is true: testimonials in
+                 someone else's words, client logos, awards, ratings, certifications,
+                 accreditations, audited or published statistics, survey results,
+                 regulatory or security accreditation.
 - "routing"    - points at specific internal destinations: a product grid, a case-study
                  row, a card list, a set of in-page links into the site's own inventory.
 - "editorial"  - the page's own published writing, read on the page rather than linked to:
@@ -106,10 +108,14 @@ Give each block ONE category. Work down this list and take the FIRST that fits:
 - "unclassified" - you are not confident which of the above it is. Say so rather than
                  guessing. This is a real answer and is better than a wrong one.
 
-Two rules where blocks could take more than one:
+Three rules where blocks could take more than one:
 - A card row of articles or blog posts is "routing", not "editorial": its job on a homepage
   is to send the reader somewhere.
 - Client logos are "trust", not "brand": they are evidence, not this company's identity.
+- A row of USPs or value propositions is "hero", not "trust". Ask WHOSE WORD IT IS: a
+  company saying "fast, secure, always on" is making its own claim, so it is the pitch. It
+  only becomes trust when somebody else is vouching for it, or it is a figure that could be
+  checked.
 
 COORDINATES. Answer in THIS IMAGE's pixels: 0 is the top of THIS image, not of the page.
 Do not add any offset and do not rescale. Cover this image top to bottom with no gaps and

@@ -106,10 +106,22 @@ test('the prompt is explicit that one block takes one category, first fit', () =
     assert.match(TILE_PROMPT, /take the FIRST that fits/);
 });
 
-/** The two cases that could legitimately take more than one label. */
-test('the prompt settles article cards and client logos', () => {
+/** The three cases that could legitimately take more than one label. */
+test('the prompt settles article cards, client logos and USP rows', () => {
     assert.match(TILE_PROMPT, /is "routing", not "editorial"/);
     assert.match(TILE_PROMPT, /are "trust", not "brand"/);
+    assert.match(TILE_PROMPT, /is "hero", not "trust"/);
+});
+
+/**
+ * The discriminator between a pitch and its proof, which a reader supplied after seeing
+ * whitepaper.co.uk's three USP columns come back as `trust`. The model had read "we are
+ * good at X" as evidence rather than as a claim.
+ */
+test('the prompt asks whose word it is', () => {
+    assert.match(TILE_PROMPT, /WHOSE WORD IT IS/);
+    assert.match(TILE_PROMPT, /EVIDENCE FROM OUTSIDE THE COMPANY/);
+    assert.match(TILE_PROMPT, /THE COMPANY'S OWN CLAIM/);
 });
 
 /* -------------------------------------------------------------------------- the key */
