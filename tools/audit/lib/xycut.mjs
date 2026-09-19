@@ -1492,14 +1492,32 @@ export const SEGMENT_DEFAULTS = {
 export function segment(edges, width, height, opts = {}) {
     const {maxDepth, minAreaFraction, minSide, moduleBridge, landmarkRule, rects, pageHeight, pageOffsetY, textRun, inkCluster} = {...SEGMENT_DEFAULTS, ...opts};
     const minArea = width * height * minAreaFraction;
-    const yCandidates = edgeCandidates(rects, true);
-    const xCandidates = edgeCandidates(rects, false);
+    const contentY = edgeCandidates(rects, true);
+    const contentX = edgeCandidates(rects, false);
     // `height` is this slice's height; the whole page's is only different when segmentTall
     // called us for a tile or a band, and it says so.
     const keepWhole = protectedRects(rects, width, pageHeight ?? height, pageOffsetY);
     // The subset whose own edges are boundaries. A picture's edge is not one — see
     // boundingRects — so it steers no snap, bridges no seam and waives no size floor.
     const bounds = boundingRects(rects, width, pageHeight ?? height, pageOffsetY);
+    // A BOUNDARY MUST BE REACHABLE, OR PROTECTION BECOMES A TRAP. `edgeCandidates` filters
+    // through `isContentRect`, whose 700px height ceiling exists to keep page-level
+    // wrappers out of a list they would otherwise dominate. A tall module is neither a
+    // wrapper nor unreachable-by-design: it is a thing no cut may land inside, so the one
+    // place a cut CAN legally go is its own edge — and that edge was being filtered out.
+    //
+    // bakerandpartners.com is the page. `div 0,978 380x760` is a decorative blob, `boxed`
+    // and 2.5% of the page, so it is a module container and refuses cuts inside itself. At
+    // 760px tall its own top edge is not a candidate, so the 79px gutter at 949-1028 snaps
+    // to 1028 — inside the blob — and the cut is refused. Four distinct sections came back
+    // as one block spanning y=740 to 2228.
+    //
+    // `bounds`, not `keepWhole`: this is precisely the population whose edges are already
+    // declared to be boundaries, backdrops excluded. A protected heading or a repeated run
+    // still steers nothing, because neither is a module the page drew.
+    const boundEdge = (h) => bounds.flatMap((b) => (h ? [b.y, b.y + b.h] : [b.x, b.x + b.w]));
+    const yCandidates = [...new Set([...contentY, ...boundEdge(true)])].sort((a, b) => a - b);
+    const xCandidates = [...new Set([...contentX, ...boundEdge(false)])].sort((a, b) => a - b);
     // Rejection only. These never steer a snap and never excuse the size floor — they
     // are a veto on cutting through words, not a statement about module boundaries.
     // Shrunk to their ink: a heading box is as wide as its column and the words rarely
