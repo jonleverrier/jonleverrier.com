@@ -12,7 +12,7 @@
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {parseTileReply, CATEGORIES, TILE_PROMPT, apiKey} from '../lib/vision.mjs';
+import {parseTileReply, CATEGORIES, TILE_PROMPT, apiKey, carryOver} from '../lib/vision.mjs';
 
 const tile = {index: 2, top: 2800, height: 1400, scale: 0.75};
 
@@ -121,4 +121,42 @@ test('an unreadable file says so, and says where it looked', () => {
     } finally {
         if (held !== undefined) process.env.KEY_ANTHROPIC_API = held;
     }
+});
+
+/* ----------------------------------------------------------------- the granularity */
+
+/**
+ * The rules a reader asked for after looking at real output. kohde.agency returned its
+ * light case-study panel as three blocks — a whitespace strip, the card, and the artwork
+ * — and natwest.com split its app section from its own eligibility disclaimer. Both are
+ * one section to anybody reading the page.
+ *
+ * The whitespace rule is the user's ruling from phase 2, now stated where the model can
+ * act on it: space is a measure across blocks, not a kind of block.
+ */
+test('the prompt tells the model to be coarse', () => {
+    assert.match(TILE_PROMPT, /BE COARSE/);
+    assert.match(TILE_PROMPT, /it is part of the one above it/);
+});
+
+test('the prompt forbids a block that is only empty space', () => {
+    assert.match(TILE_PROMPT, /NEVER RETURN A BLOCK THAT IS ONLY EMPTY SPACE/);
+    assert.match(TILE_PROMPT, /not a kind of block/);
+});
+
+test('the prompt keeps a section whole, small print and all', () => {
+    assert.match(TILE_PROMPT, /its small print and its disclaimer/);
+    assert.match(TILE_PROMPT, /Do not split a\s+section into those parts/);
+});
+
+/** The seam carry-over, which is what stops one section being read as two. */
+test('a slice is told what the one above it ended with', () => {
+    const text = carryOver({what: 'prize draw promotion', category: 'promotion'});
+    assert.match(text, /prize draw promotion/);
+    assert.match(text, /same category/);
+});
+
+test('the first slice is told nothing, because nothing came before it', () => {
+    assert.equal(carryOver(undefined), '');
+    assert.equal(carryOver(null), '');
 });

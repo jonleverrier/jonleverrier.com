@@ -49,12 +49,22 @@ export const TILE_PROMPT = `You are shown ONE horizontal slice of a homepage scr
 Identify the LAYOUT BLOCKS visible in this slice: the regions a designer would say are
 distinct parts of the page.
 
+BE COARSE. A homepage has sections, not parts of sections. If you are unsure whether
+something is its own block or part of the one above it, it is part of the one above it.
+
 What counts as ONE block:
 - A header, a hero, a section, a footer are each one block.
+- A section includes EVERYTHING that belongs to it: its padding, its heading, its body
+  copy, its buttons, its imagery, its small print and its disclaimer. Do not split a
+  section into those parts.
 - A grid or carousel of cards is ONE block, not one per card.
 - A list of links is ONE block, however many links.
-- A heading and the body copy that belongs to it are ONE block.
 - Side-by-side columns carrying the same KIND of content are one block; say how many in "cols".
+
+NEVER RETURN A BLOCK THAT IS ONLY EMPTY SPACE. Whitespace belongs to the section it sits
+in — extend that section's block to cover it. Padding above a heading is part of that
+heading's section; a gap between two sections belongs to one of them. Empty space is
+measured separately and is not a kind of block.
 
 What forces TWO blocks:
 - A change of background colour or image.
