@@ -40,6 +40,7 @@ import {loadRects} from './lib/rects.mjs';
 import {printable} from './lib/printable.mjs';
 import {renderDebug} from './lib/debug.mjs';
 import {overlaysInPng} from './lib/overlay.mjs';
+import {pageSignature, signatureFacts} from './lib/signature.mjs';
 import {blankRegions, inkFraction, inkPrefix, pixelsFromPng, transparentBlocks, unpaintedBlocks} from './lib/painted.mjs';
 
 const outDir = process.argv[2];
@@ -57,6 +58,8 @@ process.stderr.write(`analysing ${printable(png)}\n`);
 try {
     rmSync(blocksPath, {force: true});
     rmSync(debugPath, {force: true});
+    // vision.json is NOT removed here: it is the stored answer, and reading it is the
+    // whole point of the cache below.
 
     const metaPath = join(outDir, 'meta.json');
     if (!existsSync(metaPath)) {
@@ -74,7 +77,25 @@ try {
     }
 
     const {width, height} = meta.image;
-    const answer = await askPage(png, meta, {});
+
+    // THE CACHE, AND IT IS THE DETERMINISM PROMISE. A model does not answer the same way
+    // twice — three runs of one image gave the largest block as 19.2%, 21.1% and 17.7% —
+    // so a page is audited ONCE and every report served from that answer. It is re-audited
+    // only when its structural signature moves: the page's height, its element count, what
+    // those elements say and where they sit. A carousel showing a different photograph is
+    // not a change. `--force` overrides it. See lib/signature.mjs.
+    const signature = pageSignature(meta, rects);
+    const force = process.argv.includes('--force');
+    const cached = !force && existsSync(visionPath)
+        ? JSON.parse(readFileSync(visionPath, 'utf8'))
+        : null;
+    let answer;
+    if (cached && cached.signature === signature) {
+        process.stderr.write(`page unchanged since ${cached.askedAt} — reusing the stored answer\n`);
+        answer = {blocks: cached.blocks, usage: cached.usage ?? {}, secs: 0, tiles: cached.tiles, reused: true};
+    } else {
+        answer = await askPage(png, meta, {});
+    }
     if (answer.error) {
         throw new Error(`the model could not read this capture: ${answer.error}`);
     }
@@ -135,8 +156,9 @@ try {
     // the run succeeded.
     await renderDebug(png, root, debugPath);
     writeFileSync(visionPath, JSON.stringify({
-        model: answer.model ?? null,
-        askedAt: new Date().toISOString(),
+        signature,
+        facts: signatureFacts(meta, rects),
+        askedAt: answer.reused ? cached.askedAt : new Date().toISOString(),
         blocks: answer.blocks,
         usage: answer.usage,
         tiles: answer.tiles,
@@ -150,6 +172,7 @@ try {
     console.log('area check   conserved');
     console.log(`tokens       ${answer.usage.input_tokens} in, ${answer.usage.output_tokens} out`);
     console.log(`seconds      ${answer.secs.toFixed(1)}`);
+    console.log(`answer       ${answer.reused ? 'reused — page unchanged' : 'fresh'}`);
     console.log(`debug image  ${printable(debugPath)}`);
 
     const codes = noteCodes(notes);
