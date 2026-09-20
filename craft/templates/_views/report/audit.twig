@@ -36,9 +36,37 @@
     <meta charset="utf-8">
     <title>{{ report.url }} — homepage audit</title>
     <style>
+        /* THE SITE'S OWN TYPE, resolved through craft.vite.asset so the content hash in the
+           built filename is never written down here — a rebuild changes it, and a
+           hardcoded path would fail by silently falling back to a system font, which on a
+           PDF nobody would notice until a prospect had one.
+
+           Declared here rather than by pulling in the whole site stylesheet: this page has
+           its own layout and does not want the site's, and a print document that inherits
+           a nav's rules is a document fighting its own CSS. */
+        @font-face {
+            font-family: 'JonSonMono';
+            src: url('{{ craft.vite.asset('build/fonts/soehne-mono-leicht.woff2') }}') format('woff2');
+            font-weight: 500;
+            font-style: normal;
+            /* `block`, not `swap`: this is printed, not read while it loads, and a swap
+               means Chromium can print the fallback if the font lands a moment late. */
+            font-display: block;
+        }
+        @font-face {
+            font-family: 'JonSonMono';
+            src: url('{{ craft.vite.asset('build/fonts/soehne-mono-halbfett.woff2') }}') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+            font-display: block;
+        }
+
+        /* Matches $g-font-secondary in build/scss/theme/_setup.scss. */
+        :root { --r-mono: 'JonSonMono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+
         @page { size: A4; margin: 45px; }
         * { box-sizing: border-box; }
-        body { margin: 0; font: 11px/1.55 -apple-system, system-ui, sans-serif; color: #111; }
+        body { margin: 0; font: 500 11px/1.55 var(--r-mono); color: #111; }
 
         /* On screen, stand the sheets on a grey field so the printed page is visible while
            it is being designed. Neither rule survives into the PDF. */
@@ -49,10 +77,12 @@
         }
         @media print { .r-sheet { break-after: page; padding: 0; } .r-sheet:last-child { break-after: auto; } }
 
-        h1 { font-size: 22px; margin: 0 0 2px; }
+        h1 { font-size: 22px; font-weight: 600; margin: 0 0 2px; letter-spacing: -0.01em; }
+        h2 { font-size: 12px; font-weight: 600; margin: 0 0 8px; }
         .r-meta { color: #666; margin-bottom: 22px; }
         table { border-collapse: collapse; width: 100%; }
         th { text-align: left; font-weight: 600; border-bottom: 1px solid #111; padding: 5px 0; }
+        /* Mono is already tabular, but saying so stops a fallback ruining the column. */
         td { padding: 5px 0; border-bottom: 1px solid #eee; }
         .r-n { text-align: right; font-variant-numeric: tabular-nums; }
         .r-facts { margin: 20px 0; color: #333; }
