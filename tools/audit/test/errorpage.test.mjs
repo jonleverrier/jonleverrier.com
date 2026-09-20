@@ -22,6 +22,7 @@ import {tmpdir} from 'node:os';
 import {errorPageEvidence, errorPageWarning, SPARSE_RECTS, ERROR_PHRASES} from '../lib/errorpage.mjs';
 import {runNotes} from '../lib/notes.mjs';
 import {loadRects} from '../lib/rects.mjs';
+import {pageSignature} from '../lib/signature.mjs';
 
 const run = promisify(execFile);
 
@@ -140,19 +141,33 @@ test('without rects the condition simply does not fire', () => {
 // A NOTE, NOT A REFUSAL — the distinction the whole decision rests on. `httpError` makes
 // the CLI exit 1 and write nothing; this one must produce a tree, a debug image and a
 // blocks.json carrying the warning.
+//
+// THE ANSWER IS SEEDED SO NO NETWORK IS TOUCHED. A stored answer whose signature matches
+// is reused verbatim — see lib/signature.mjs — which is what lets the CLI be exercised end
+// to end here without paying a model to describe a fixture.
 test('the CLI measures the page and says what it is', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'audit-error-'));
-    copyFileSync('tools/audit/fixtures/jonleverrier.png', join(dir, 'fullpage.png'));
-    writeFileSync(join(dir, 'rects.json'), JSON.stringify(page(65, LLOYDS)));
-    writeFileSync(join(dir, 'meta.json'), JSON.stringify({
+    const rects = page(65, LLOYDS);
+    const meta = {
         url: 'https://www.lloydsbank.com', capturedUrl: 'https://www.lloydsbank.com/', httpStatus: 200,
         fullHeight: 1296, image: {width: 1440, height: 1296}, consentDismissed: true,
         consentBannerSeen: false, scrollCapHit: false,
+    };
+    copyFileSync('tools/audit/fixtures/jonleverrier.png', join(dir, 'fullpage.png'));
+    writeFileSync(join(dir, 'rects.json'), JSON.stringify(rects));
+    writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta));
+    writeFileSync(join(dir, 'vision.json'), JSON.stringify({
+        signature: pageSignature(meta, rects),
+        askedAt: '2026-09-20T00:00:00.000Z',
+        blocks: [{y0: 0, y1: 1296, cols: 1, what: 'error message', category: 'unclassified', confidence: 0.2}],
+        usage: {},
+        tiles: 1,
     }));
 
-    const {stdout, stderr} = await run('node', ['tools/audit/segment.mjs', dir]);
+    const {stdout, stderr} = await run('node', ['tools/audit/analyse.mjs', dir]);
     const written = JSON.parse(readFileSync(join(dir, 'blocks.json'), 'utf8'));
 
+    assert.match(stderr, /reusing the stored answer/, 'the seed must be what was used');
     assert.ok(existsSync(join(dir, 'debug.png')), 'a noted page is still measured');
     assert.match(stdout, /errorPageLikely/);
     assert.match(stderr, /error page rather than the homepage/);

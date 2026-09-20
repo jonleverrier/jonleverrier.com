@@ -8,16 +8,19 @@ their homepage is brand, navigation, routing and promotion. The number is read b
 person whose site it is, who may disagree with it, so every block must be inspectable and
 every category defensible in one sentence.
 
-**Where we are:** phases 1 and 2 (capture, and cut into blocks) are built and green.
-Phase 3 (classify) and phase 4 (report and email) do not exist yet.
+**Where we are:** phases 1, 2 and 3 are built and green — capture, cut, classify — and
+`report.mjs` prints the percentages with the caveats that apply. What does not exist is
+phase 4's delivery: the Craft queue job and the email a prospect receives.
 
 ---
 
 ## Where to pick up
 
-**The plan:** `docs/superpowers/plans/2026-09-19-homepage-audit-vision.md`. Tasks 1-7, 9,
-10 and 11 are done; Task 8 (delete `lib/xycut.mjs`) is deliberately last and is waiting on
-a human judgement of the cuts.
+**The plan:** `docs/superpowers/plans/2026-09-19-homepage-audit-vision.md`. ALL ELEVEN
+TASKS ARE DONE. Task 8 was deliberately last and closed on 2026-09-20 once the cuts had
+been reviewed by eye across the whole corpus: `lib/xycut.mjs` and `segment.mjs` are gone,
+2,344 lines, with 14 test files and 222 tests. The suite is 401 tests and the same eight
+categories come out the other end.
 
 **Run it:**
 
@@ -41,11 +44,19 @@ reviewed by eye.
    defined it, so the only thing the model was ever told about brand was that client logos
    are not it. Defined as identity with no claim, no ask and nothing to click,
    atkinsonsca's three decorative photo bands read `brand` at 0.86, 0.7 and 0.9.
-2. **Delete `lib/xycut.mjs`?** 2,130 lines, and a leaf — only `segment.mjs` imports it.
+2. ~~**Delete `lib/xycut.mjs`?**~~ **SETTLED 2026-09-20: deleted.** With `segment.mjs`,
+   its 14 test files and the two mutants — 2,344 lines of source. `painted.test.mjs` and
+   `errorpage.test.mjs` borrowed it and now seed a cached answer instead, so both exercise
+   `analyse.mjs` end to end without touching the network.
 3. **Merge?** Nothing is pushed. The branch wants renaming off `worktree-audit-tool`.
-4. **Phase 4 needs three product answers** before it can be built: what a prospect sees
-   when their CDN blocks the crawler (3 of 27 sites answered 403); whether the caveats
-   reach them or only the headline number; and who pays for a re-audit.
+4. **Phase 4's delivery needs product answers.** One is settled: the report shows the
+   headline plus the caveats that affect that page, not everything and not nothing. Still
+   open, and deliberately deferred — what a prospect sees when their CDN blocks the crawler
+   (3 of 27 answered 403, lloydsbank serves a 200 error page), and who pays for a re-audit.
+   Neither blocks phases 1-3: every capture already records WHY it failed, with a
+   machine-readable `effect`, so a queue job can branch on it. The decision only bites when
+   an email is composed. The trap already spotted: validating the URL at form-submit time
+   loses the lead, because a prospect who sees an error leaves without giving an address.
 
 ### Known and open
 
@@ -169,9 +180,12 @@ Source is 5,681 lines. Useful to know which parts are load-bearing if the approa
 - **painted, notes, unrendered, errorpage (~1,050)** — the honesty layer. "Unmeasured"
   versus "empty", refusals, soft error pages. This is what stops a confident wrong number
   reaching a prospect.
-- **xycut (~1,530)** — the cutting. The partition invariant and `segmentTall` are
-  structural; the gutter heuristics on top are the part with the long tail, and the part
-  most exposed if grouping ever moves to a model.
+- ~~**xycut (~1,530)** — the cutting.~~ Written on the guess that the gutter heuristics
+  were "the part most exposed if grouping ever moves to a model". They were, and it did.
+  Deleted 2026-09-20. What survived the move is exactly what this list called structural:
+  the partition invariant, and the element edges a boundary snaps to — now in
+  `lib/candidates.mjs`, because "where does an element stop" is a fact about the page and
+  outlives whatever decides where the blocks are.
 
 ---
 

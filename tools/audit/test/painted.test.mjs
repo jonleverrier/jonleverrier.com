@@ -23,13 +23,29 @@ import {
     inkPrefix, inkFraction, inkCount, contentRects, unpaintedBlocks, unpaintedWarning, UNPAINTED,
     blankRegions, blankRegionWarning, BLANK_REGION, transparentBlocks, transparentWarning,
 } from '../lib/painted.mjs';
-import {edgeMapFromPng} from '../lib/edges.mjs';
-import {segmentTall} from '../lib/xycut.mjs';
+import {buildTree} from '../lib/bands.mjs';
 import {leaves} from '../lib/blocks.mjs';
 import {loadRects} from '../lib/rects.mjs';
 import {runNotes} from '../lib/notes.mjs';
+import {pageSignature} from '../lib/signature.mjs';
 
 const run = promisify(execFile);
+
+/**
+ * A page cut into full-width bands — the shape lib/bands.mjs builds, and all these
+ * detectors ever see. Deliberately not a segmenter: what is under test is whether a
+ * correctly rendered page trips a threshold, and borrowing a segmenter to find out makes
+ * the answer depend on how that segmenter happens to cut today.
+ */
+const bands = (width, height, n = 6) => {
+    const step = Math.ceil(height / n);
+    const blocks = [];
+    for (let y = 0; y < height; y += step) {
+        blocks.push({y0: y, y1: Math.min(height, y + step), category: 'hero', what: 'band', cols: 1, confidence: 0.9});
+    }
+
+    return leaves(buildTree(blocks, width, height));
+};
 const WIDTH = 400;
 const HEIGHT = 600;
 
@@ -193,10 +209,9 @@ for (const fixture of ['jonleverrier', 'retail']) {
     test(`the ${fixture} fixture has nothing unpainted`, async () => {
         const png = `tools/audit/fixtures/${fixture}.png`;
         const {rects} = loadRects(`tools/audit/fixtures/${fixture}.rects.json`);
-        const {edges, width, height} = await edgeMapFromPng(png);
-        const ls = leaves(segmentTall(edges, width, height, {maxDepth: 4, rects}));
         const raw = await sharp(png).removeAlpha().raw().toBuffer({resolveWithObject: true});
         const measured = inkPrefix(raw.data, raw.info.width, raw.info.height);
+        const ls = bands(raw.info.width, raw.info.height);
 
         assert.deepEqual(unpaintedBlocks(measured, ls, rects), [], 'a correctly rendered page is never flagged');
     });
@@ -323,15 +338,31 @@ test('the CLI writes the condition into blocks.json', async () => {
         })),
         ...elements(24, 400),
     ];
-    writeFileSync(join(dir, 'rects.json'), JSON.stringify(rects));
-    writeFileSync(join(dir, 'meta.json'), JSON.stringify({
+    const meta = {
         url: 'https://a.com', capturedUrl: 'https://a.com/', httpStatus: 200, fullHeight: height,
         image: {width, height}, consentDismissed: true, consentBannerSeen: false, scrollCapHit: false,
+    };
+    writeFileSync(join(dir, 'rects.json'), JSON.stringify(rects));
+    writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta));
+
+    // Seeded so no network is touched: a stored answer whose signature matches is reused
+    // verbatim. One band per 400px, which is what the model returns for a page like this.
+    writeFileSync(join(dir, 'vision.json'), JSON.stringify({
+        signature: pageSignature(meta, rects),
+        askedAt: '2026-09-20T00:00:00.000Z',
+        blocks: [
+            {y0: 0, y1: 400, cols: 1, what: 'header strip', category: 'navigation', confidence: 0.9},
+            {y0: 400, y1: height, cols: 1, what: 'lower region', category: 'hero', confidence: 0.9},
+        ],
+        usage: {},
+        tiles: 1,
     }));
 
-    const {stdout, stderr} = await run('node', ['tools/audit/segment.mjs', dir]);
+    const {stdout, stderr} = await run('node', ['tools/audit/analyse.mjs', dir]);
     const written = JSON.parse(readFileSync(join(dir, 'blocks.json'), 'utf8'));
     const condition = written.notes.conditions.contentNotPainted;
+
+    assert.match(stderr, /reusing the stored answer/, 'the seed must be what was used');
 
     assert.match(stdout, /contentNotPainted/);
     assert.match(stderr, /never painted/);
@@ -385,10 +416,9 @@ for (const fixture of ['jonleverrier', 'retail']) {
     test(`the ${fixture} fixture has no blank region`, async () => {
         const png = `tools/audit/fixtures/${fixture}.png`;
         const {rects} = loadRects(`tools/audit/fixtures/${fixture}.rects.json`);
-        const {edges, width, height} = await edgeMapFromPng(png);
-        const ls = leaves(segmentTall(edges, width, height, {maxDepth: 4, rects}));
         const raw = await sharp(png).removeAlpha().raw().toBuffer({resolveWithObject: true});
         const measured = inkPrefix(raw.data, raw.info.width, raw.info.height);
+        const ls = bands(raw.info.width, raw.info.height);
 
         assert.deepEqual(blankRegions(measured, ls), []);
     });

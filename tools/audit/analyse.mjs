@@ -8,8 +8,9 @@
  * where the blocks are and what each one is, snaps the boundaries onto real element edges,
  * and writes blocks.json, vision.json and debug.png.
  *
- * blocks.json is `{notes, tree}` — the SAME SHAPE segment.mjs wrote, deliberately, so that
- * everything downstream of it is unchanged by the rewrite. What is new is that every leaf
+ * blocks.json is `{notes, tree}` — the SAME SHAPE the XY-cut segment.mjs wrote before it
+ * was deleted, deliberately, so that everything downstream of it was unchanged by the
+ * rewrite. What is new is that every leaf
  * carries a `label`: what the block is, which category it falls in, how confident the model
  * was, and how many columns it holds.
  *

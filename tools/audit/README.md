@@ -1,21 +1,29 @@
 # Homepage surface-area audit
 
-What proportion of a homepage is spent on brand, navigation, routing and promotion.
-Phases 1 and 2 only: capture a page and cut it into blocks. Classification and
-reporting are not built yet.
+What proportion of a homepage is spent on brand, navigation, hero, promotion, trust,
+routing, editorial and footer. Capture, cut, classify and total; the email a prospect
+receives is not built yet.
 
 | file | what |
 |---|---|
 | `capture.mjs` | Phase 1 CLI. Loads a URL at 1440×900 and writes the screenshots, DOM rects and meta. |
-| `segment.mjs` | Phase 2 CLI. Turns a screenshot (plus `rects.json`, if present) into `{notes, tree}` and a debug image. |
+| `analyse.mjs` | Phases 2+3 CLI. Asks the model where the sections are, and writes `{notes, tree}` plus a debug image. |
+| `report.mjs` | Phase 4 CLI. The percentages, whole page and first viewport, with the caveats that apply. |
+| `sweep.mjs` | Every URL in a file, captured and analysed, one row each. The regression check. |
 | `lib/capture.mjs` | `capturePage()` — the Playwright run. The Craft job will import this, not the CLI. |
 | `lib/pinned.mjs` | Which elements hold the viewport, and which of those draw the same thing every time. |
 | `lib/unrendered.mjs` | Regions that exist for a visitor and are missing from the capture. |
 | `lib/webgl.mjs` | Whether this browser could render a WebGL hero, and whether the page wanted one. |
 | `lib/consent.mjs` | The cookie-banner selectors, and the two attempts at dismissing one. |
 | `lib/shadow.mjs` | One walk of the page that does not stop at a web component's boundary. |
+| `lib/tiles.mjs` | The page cut into non-overlapping tiles the model is shown one at a time. |
+| `lib/vision.mjs` | The prompt, the API call, and the parse — where every repair is a refusal or a downgrade. |
+| `lib/bands.mjs` | The model's boundaries, snapped to real element edges and built into a true partition. |
+| `lib/candidates.mjs` | Which element edges a boundary may snap to. |
+| `lib/signature.mjs` | Whether the stored answer still describes the page. A page is audited once. |
+| `lib/surface.mjs` | The percentages, whole page and first viewport. |
+| `lib/overlay.mjs` | Chrome the DOM census cannot reach, found in the pixels. |
 | `lib/edges.mjs` | Greyscale → Sobel → non-max suppression → hysteresis. A Canny edge map. |
-| `lib/xycut.mjs` | Density profiles, gutter finding, the recursive partition, and tall-page tiling. |
 | `lib/blocks.mjs` | The `Block` shape and `assertPartition()` — the invariant everything rests on. |
 | `lib/notes.mjs` | Every condition that applies to a run, in the shape `blocks.json` carries. |
 | `lib/errorpage.mjs` | Whether the page says it failed, on a page with nothing on it. |
@@ -23,15 +31,17 @@ reporting are not built yet.
 | `lib/rects.mjs` | Loads and repairs `rects.json`. The only place a rects file is judged. |
 | `lib/printable.mjs` | Page text on its way to a terminal. Everything printed about a page goes through it. |
 | `lib/debug.mjs` | The screenshot with every block outlined. The review gate. |
-| `fixtures/` | Committed captures the segmentation tests run against. See its own README. |
+| `fixtures/` | Committed captures the tests run against. See its own README. |
 | `test/` | `node --test tools/audit/test/*.mjs` |
 
 ```sh
+export KEY_ANTHROPIC_API=$(grep -m1 '^KEY_ANTHROPIC_API' craft/.env | sed 's/^[^=]*=//; s/"//g')
 node tools/audit/capture.mjs https://example.com /tmp/audit   # phase 1
-node tools/audit/segment.mjs /tmp/audit                       # phase 2, depth 4
-node tools/audit/segment.mjs /tmp/audit --depth=6             # cut further
-node --test tools/audit/test/*.mjs                             # unit + fixture tests
-AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the network smoke test
+node tools/audit/analyse.mjs /tmp/audit                       # phases 2+3 (--force to re-ask)
+node tools/audit/report.mjs /tmp/audit                        # phase 4
+node tools/audit/sweep.mjs urls.txt /tmp/out                  # the whole corpus
+node --test tools/audit/test/*.test.mjs                        # unit + fixture tests
+AUDIT_LIVE=1 node --test tools/audit/test/*.test.mjs           # plus the network smoke test
 ```
 
 ## Gotchas
@@ -73,7 +83,7 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   artefacts. Measured on that site afterwards: it fails at 3:00 with "dismissing a consent
   banner did not finish within 175945ms", which also names the step that hangs, and it is
   not one of the five the queue suspected.
-- **Phase 2 writes nothing unless the tree passed.** `assertPartition` runs in the CLI —
+- **Nothing is written unless the tree passed.** `assertPartition` runs in the CLI —
   containment, pairwise overlap and exact area equality at every node, not just the
   leaf-area total — and a failure exits 1. Previous artefacts are removed at the start of
   every run, so `blocks.json` is always this run's or absent. It used to print
@@ -94,161 +104,29 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
   "snapping cuts to 3 DOM rects" while snapping to nothing; a file containing `null` was
   reported as "no rects.json in `<dir>`" with the file right there; and `{"y": null}`
   moved a cut by 50px in silence.
-- **A full-bleed `<video>`, `<img>` or `<canvas>` is one module, and rects are the only
-  way to know it.** A photograph or a blurred video has no gutters, only noise, so the
-  pixels alone will happily slice a hero into arbitrary pieces — and phase 3 can then
-  give one module four different labels. With `rects.json`, a cut may not land strictly
-  inside media at least 90% of the page width and 200px tall; its own edges stay valid.
-  Narrower or shorter media is ordinary content and is left alone.
-- **A card is one block, and so is a header.** The gap between a quote and its
-  attribution looks exactly like the gap between two modules, so switch.je's testimonial
-  card came out with its quote split across two blocks. A rect is a **module container**
-  when it draws its own box (`boxed` in `rects.json`) or is a `header`/`nav`/`article`/
-  `figure`, is between 0.5% and 12% of the page, and contains no other such rect — the
-  innermost box is the module, not the section holding two of them. A cut may not land
-  strictly inside one; its own edges stay valid. Whitespace inside a module is that
-  module's padding, and counting it as space between modules is what makes the number
-  wrong. The band is wide on purpose: 0.5–15%, 0.5–10% and 1–12% pick the same seven
-  containers on switch.je. Two rects sharing one box cancel out, because each contains
-  the other — M&S wraps its `<nav>` in a `<div>` of identical size and neither is
-  protected.
-- **A photograph is one module at any size a cut could land in.** The full-bleed rule above
-  answers this for a hero and says nothing about the same picture at a third of the width.
-  dept.agency puts a 571×714 soft-focus photograph beside a paragraph; the blurred colour
-  fires the edge map irregularly, the adaptive threshold reads the quiet patches as gutters,
-  and that one picture came back as **thirteen blocks**. So any `img`/`video`/`canvas`/
-  `picture` inside the same 0.5–12% band as a module container is uncuttable
-  (`mediaModules`). An `<img>` holds pixels and nothing else, so a quiet run inside one is
-  by construction not a boundary — there is nothing in there to be either side of it. The
-  cost, stated rather than hidden: a picture between 12% of the page and 90% of its width
-  gets nothing from any of the three rules. **Its EDGE is not a boundary**, unlike a
-  full-bleed element's or a card's — see `boundingRects`. Promoting a product photo's side
-  edge to a module boundary moved all three of the retail fixture's footer column cuts,
-  chosen by a photograph 1,700px away.
-- **An element that leaves the page in both directions at once is a backdrop, not a module.** A
-  module is inside the page; a backdrop is the thing the page is drawn on, and no threshold
-  is involved. gcsc.gg stacks six decorative `<img>` elements at `-319,-274 1606x1569` and
-  similar — each larger than the viewport, each hanging off the top and one side — and every
-  one passes the full-bleed test, so `cutsInsideProtected` refused every cut underneath and
-  the header, hero and featured area arrived as **one 1,482px block**. HORIZONTALLY AND
-  VERTICALLY, not merely on two sides: a hero cropped by `overflow: hidden`, a sticky panel
-  off the bottom and an off-canvas menu each leave on one side, and the commonest full-bleed
-  hero there is — a 1600px image centred in a 1440px page — leaves on BOTH horizontal sides
-  and must keep its protection. Measured over 30 pages and both fixtures: 27 protected rects
-  overflow on exactly one side and are untouched, eight overflow in both directions, and all
-  eight are decoration (gcsc's six, andybudd's two dot patches). **It does not replace the `svg` exclusion in
-  `MEDIA_TAGS`** — switch.je's decorative curve is `0,-76 1440x810`, which leaves the page on
-  exactly one side. **And it does not explain bakerandpartners**, whose fused block is caused
-  by an in-canvas `boxed` div; see PROGRESS #17. `segment` is told the page offset of the
-  slice it was handed (`pageOffsetY`), because the test is meaningless in a tile's own
-  coordinates.
-- **A run of repeated siblings is one block.** A product grid, a nav bar and a list of links
-  are the same thing seen three ways, and every member of one takes the same label — so by
-  the depth ruling, cutting them apart changes no answer. pola.co.jp gave a block per
-  product CARD (132 leaves), clearleft.com a block per nav ITEM, whitepaper.co.uk a block
-  per footer LINK. A run is **four or more** elements sharing one edge, of one size across
-  the run, at EVEN intervals, not overlapping and next to each other (`REPEAT`). Four is the
-  line and it is a count, not a mechanism: three side by side is a composition — andybudd's
-  Coaching / Educating / Speaking, which must stay cut and does. The gap between members may
-  be at most 1.4× the shorter of the two, which is the thinnest margin in the file (1.38
-  genuine, 1.50 false) and is standing in for a different problem — alchemy and kohde pin a
-  panel per viewport, so the capture carries the same element once per 900px slice.
-  A ROW's members must not be line-shaped, or every horizontal slice through four footer
-  columns reads as a row and the footer comes out in strips one line tall. A COLUMN's may
-  be, because a stack of lines IS a list — **and a column forbids only the horizontal cut**,
-  because a link's box is mostly padding and the vertical gutter a reader sees between two
-  columns is strictly inside both. A run is a **veto only**: it never steers a snap and
-  never waives the size floor, because it is a region inferred here rather than one the page
-  declared. Known limit: one row or one column at a time, so a 3-wide 3-deep grid is missed.
-- **A line of text is one thing, not one thing per element.** A heading is protected from
-  being cut through, using its ink rather than its box — but only element by element, and
-  a line is often several elements. tpagency.com pins a panel across two viewports
-  showing "Lead with Strategy & Insight" as two `<span>`s with an 18px space between
-  their ink; that space is a full-height run of quiet pixels, so a vertical cut went down
-  it and a 900px panel of black came back as five columns cut between the words. So parts
-  of a line are merged into one protected **run** (`TEXT_RUN` in `lib/xycut.mjs`), and a
-  run needs three things to be true, not two. Pixels alone cannot finish it: tpagency's
-  word space is 0.47 of its line's ink height and natwest.com's footer — three accordion
-  headings that must stay in three columns — is 0.48, and no threshold fits between them.
-  The DOM does know: one pair shares a 77px line box, the other is two columns of a 380px
-  wrapper. Both run-mates must also LOOK like lines (ink at least 4× as wide as tall), or
-  a row of 437×246 case-study cards on switch.je reads as one line with 24px word spaces.
-  **Only runs are protected, never a lone line** — protecting every text element was tried
-  and is worse than useless, because jonleverrier's 1315px copyright line then vetoes every
-  cut on its axis and merges the four footer columns into one block.
-- **The rule that draws a boundary is what hid it.** A divider under a header is one row
-  of content, so it splits the whitespace into two gutters and stands between them along
-  with the edge everyone can see: hsbc.co.uk's `<nav>` ends at y=118 with gutters at
-  98–117 and 121–139, and the header, nav and hero came back as one 767px block.
-  natwest.com is the same a pixel tighter, and kohde.agency stacks two full-bleed
-  1440×900 videos whose seam is a colour step rather than a border, and jtcgroup.com
-  leaves a one-pixel gap between two 86px gutters where its `<section>`s meet. So a cut
-  may reach up to `MODULE_BRIDGE` (2px) outside its gutter — but only to a **seam**, where one
-  protected module ends, the next begins, and the gutter is the whitespace of one of
-  them. Both halves are load-bearing: reaching for any module edge near any gutter turned
-  the page margins beside jonleverrier's header into blocks (12 leaves to 17), and
-  dropping the "two modules meet" half took two more strips off the retail fixture. Ten
-  pages segment identically at every tolerance from 1 to 24px — the seam condition is
-  what bounds this, not the distance — so nothing is balanced on the number.
-  **Only a seam BELOW or ABOVE a gutter is reached, never a lone outer edge** — a module
-  edge with nothing on the other side of it is a page margin.
-- **A page landmark's own boundary is a boundary, whatever else is drawn there.** Brand
-  and navigation are two of the four categories this tool measures and both live in the
-  `<header>`, so a page whose header is fused into its hero cannot be measured at all —
-  and four of the 29 captured pages came back that way, each blocked by a different rule
-  that is right about the population it was written for. Nothing BEGINS where a header
-  ends, so the seam above cannot reach it (jtcgroup y=94, jerseyfinance y=58); a
-  full-bleed hero drawn UNDER a header is not that header's interior (jersey.com y=134);
-  and a 94px header is not a sliver (`minSide`). So a `<header>` or `<footer>` spanning
-  the page **edge to edge** (`pageLandmarks`) gets three things the module population does
-  not: its boundary is bridgeable from either side, it overrides the protected-element
-  veto, and it waives the size floor. **Horizontal only** — a landmark's side edges are
-  the page margin, and reaching for those cut two 17px slivers off the jonleverrier
-  fixture's header band. **Edge to edge, not merely wide** — an inset landmark is a card,
-  and admitting one at 0.9 of the width moved the same fixture from 12 leaves to 9.
-  `<nav>` and `<main>` are excluded: a full-width nav is a strip inside the header, and
-  main's edges are the page's own. It never overrides the word vetoes.
-- **A drawn boundary is evidence too, and it is the last resort.** andybudd.com has no
-  gutter near its header edge at all — a decorative dot matrix holds every row from y=10
-  down at 0.017–0.025 against a 0.0128 threshold — but a rule covering 89% of the width
-  is drawn along it. So a landmark boundary with ink along it is considered as a cut
-  **after every gutter the pixels found has been tried and refused**, which is the one
-  cut in the segmenter that whitespace does not justify. `LANDMARK_RULE` (0.05) sits in a
-  gap the corpus measures plainly: of the 51 landmark edges across 29 pages and both
-  fixtures, 30 score 0.131 or more and 21 score 0.023 or less, with nothing in between.
-  Lowering the gutter threshold instead was measured and is the wrong tool by a wide
-  margin — at the lowest setting that finds andybudd's rows, switch.je gains 8 leaves,
-  liquidlight 11, dept 9, and the jonleverrier fixture moves.
-- **A box can hold ink in more than one piece.** `inkBounds` shrinks a heading to the
-  leftmost and rightmost lit pixel in its box, which is the right answer only while the
-  ink is one piece. andybudd.com's `<h4>` "Popular articles" is a 1276×27 box whose words
-  occupy x=82–285, with a decorative dot matrix clipping through BOTH ENDS — so the
-  shrink returned the full 1276px, did nothing at all, and that one element vetoed every
-  vertical cut in its region, leaving three columns with 42px gutters in one 1440×1219
-  block. Any textured, noisy or photographic backdrop behind a heading does this,
-  silently. `inkClusters` takes the ink as it lies — runs of inked columns, merged where
-  the gap reads as a word space — and protects each group. The tolerance is the one
-  `TEXT_RUN.gap` already measured for the same question between elements (0.75 of the
-  shorter ink's height): of 359 multi-piece headings in the corpus 336 are untouched, the
-  largest genuine word space is 0.53, and jonleverrier's "How can" — the gap this
-  population exists to protect — is 0.11.
-- **A line of ink is not a set of columns.** Columns are two-dimensional; a region whose
-  ink lies in one or two rows holds a rule, and any vertical cut through it is an accident
-  of how that rule dithers. tpagency.com's 1440×150 strip above its footer is blank apart
-  from the 1px line bounding it, whose ~700 scattered pixels each scored 1/150 against the
-  0.005 density floor — 32 column runs, and the empty strip came out cut into eight
-  columns of nothing. Six more pages had the same thing somewhere. No density threshold
-  can answer it (the region's median is 0, so every threshold is the floor, and lowering
-  the floor makes it worse); counting how many rows carry any ink answers it in one
-  number, against `GUTTER.minRun`.
-- **The stitch is a second place a cut is decided.** `segmentTall` rebuilds a tall page
-  from full-width bands, so a cut that was legal inside one column becomes a line across
-  the whole page. EVERY protection rule is applied to the harvested line as well as inside
-  `segment`, or a stat card's top edge in the right-hand column saws through the
-  testimonial beside it — which is exactly what it did. The lesson has had to be learned
-  twice: module containers reached the stitch when the rule arrived, headings did not, and
-  a band boundary taken from a right-hand column's whitespace went on slicing left-hand
-  headlines. A new population of protected rects is not finished until it is in both.
+- **The blocks are the model's, the arithmetic is ours, and the boundary is the DOM's.**
+  Phase 3 shows the page to a vision model a tile at a time and asks where the sections
+  are; `lib/bands.mjs` then snaps each boundary onto a real element edge from `rects.json`
+  and builds the tree FROM THE BOUNDARIES rather than from the returned blocks, so gaps and
+  overlaps are impossible rather than merely unlikely. The model never does arithmetic: it
+  answers in the tile's own pixels and `parseTileReply` applies the offset. Every repair is
+  a refusal or a downgrade — an unknown category becomes `unclassified`, a missing
+  confidence becomes 0, and a block outside its own tile fails the tile.
+- **A section taller than one tile comes back as two blocks, and they have to be rejoined.**
+  They meet exactly at the seam and carry the same category. NOT the same wording: the
+  model sees two halves and describes them as two halves. A block at a seam that is short
+  (under 200px) or unsure (0.5 or less) is a fragment the seam created, and it adopts the
+  section it abuts. Confidence alone was the first rule and it was a coin toss — hsbc's
+  Trustpilot panel merged at 0.5/0.5 on one run and split at 0.55/0.6 on the next, the same
+  pixels either way.
+- **A page is audited ONCE and the answer stored.** A vision model does not return the same
+  answer twice: three runs of one image gave block counts of 10, 11 and 11 and the largest
+  block at 19.2%, 21.1% and 17.7%. Snapping recovers some of that and not all of it, so the
+  number a prospect reads must not move underneath them. `lib/signature.mjs` re-asks only
+  when the page's STRUCTURE moves — its height, its element count, what those elements say
+  and where they sit — never when its pixels do, because a rotating hero photograph changes
+  those on every load. The prompt is hashed in beside them: editing what we ask is as much
+  a change as editing the page.
 - **A page can decline to draw its own hero, and nothing will look wrong.** WebGL itself
   works here — headless Chromium renders it through SwiftShader, verified, and
   pola.co.jp draws a full WebGL scene in 1089 calls with no GPU at all. But a site with a
@@ -453,14 +331,19 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.mjs                # plus the networ
 
 ## The rule this tool defends
 
-**A block's children exactly tile it.** A split lands on one coordinate inside the
-gutter — a real element edge from `rects.json` when there is one, the gutter midpoint
-otherwise — and every pixel goes to one child or the other, so total leaf area equals
-image area at every depth.
+**A block's children exactly tile it.** Every pixel of the page belongs to exactly one
+block, so total leaf area equals image area, always. `assertPartition` checks containment,
+pairwise overlap and exact integer area at every node, and a failure exits 1 rather than
+writing a file.
 
-That is the measurement, not tidiness. Trim blocks to their content instead and the
-gutters fall out of every leaf, so cutting a nine-card grid into nine blocks quietly
-shrinks the measured area of that grid and inflates the unassigned residual — the
-headline percentage would then move with `--depth`, which is indefensible in a report
-somebody is reading about their own site. With a true partition, depth changes which
+That is the measurement, not tidiness. Trim blocks to their content instead and the gutters
+fall out of every leaf, so cutting a nine-card grid into nine blocks quietly shrinks the
+measured area of that grid and inflates the unassigned residual — the headline percentage
+would then move with how finely the page was cut, which is indefensible in a report
+somebody is reading about their own site. With a true partition, granularity changes which
 labels get applied and never the arithmetic.
+
+It is also why the model's answer is advisory and the tree is not. `lib/bands.mjs` builds
+from the BOUNDARIES rather than from the returned blocks: a block that overlapped another
+loses the part it did not own, and a gap becomes a band nobody labelled, reported as
+`unclassified` and never silently absorbed into whichever neighbour happens to be nearer.

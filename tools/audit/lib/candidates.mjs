@@ -12,10 +12,10 @@
  * number: on andybudd.com two runs whose raw boundaries differed reached 8 of 8 identical
  * after snapping, and 0.0px of drift.
  *
- * These three lived in lib/xycut.mjs, where they were the snap targets for an XY-cut. They
- * were moved out before that file was retired because they are not part of the cutting:
- * they answer "where does an element stop", which is a fact about the page and outlives
- * whatever decides where the blocks are.
+ * These three lived in lib/xycut.mjs, deleted 2026-09-20, where they were the snap targets
+ * for an XY-cut. They were moved out before that file was retired because they are not part
+ * of the cutting: they answer "where does an element stop", which is a fact about the page
+ * and outlives whatever decides where the blocks are.
  *
  * The limitation worth knowing: snapping cannot rescue a boundary the model genuinely
  * placed somewhere else. kohde.agency returns 10 blocks on one run and 11 on the next,
