@@ -1,0 +1,273 @@
+<?php
+
+namespace modules\leadgenerator\audit\services;
+
+use Craft;
+use craft\elements\Asset;
+use craft\elements\Entry;
+use craft\helpers\Assets as AssetsHelper;
+use craft\helpers\FileHelper;
+use yii\base\Component;
+
+/**
+ * AUDIT
+ *
+ * Runs the tool in tools/audit against a URL and puts the result on an entry.
+ *
+ * A THIN WRAPPER OVER THE CLIs ON PURPOSE. Everything that decides anything — where the
+ * blocks are, what a category means, what counts as unmeasured — lives in Node, has 459
+ * tests, and is exercised by a person running it against real sites. Reimplementing any of
+ * that here would give the same answers a second way and let the two drift. This starts
+ * processes, reads what they wrote, and moves a status.
+ *
+ * THE WORK DIRECTORY HAS TO BE INSIDE THE PROJECT. In development the tool runs inside
+ * ddev, where only the project is mounted: /tmp in the container is not /tmp on the host,
+ * so a scratch directory anywhere else is invisible to the very process that has to write
+ * to it. craft/storage is gitignored, writable and present in both places.
+ *
+ * IT IS ALSO THE ARCHIVE. Everything in there is reproducible from a fresh capture except
+ * vision.json — the model's answer, non-deterministic and the only part that cost money.
+ * Re-running a six-month-old audit gives a different answer about a page that has itself
+ * moved, so what was actually sent to somebody is worth keeping.
+ *
+ * NOTHING HERE THROWS AT THE QUEUE. Every failure is a returned reason, because a failed
+ * audit is a state a human looks at rather than an exception in a log nobody reads.
+ */
+class Audit extends Component
+{
+    /** The volume subpath the field already points at. */
+    public string $reportSubpath = 'lead-generator/audit';
+
+    /**
+     * How long the whole thing may take. The capture has its own three-minute budget and
+     * the model call is usually under two; this is the outer bound for all of it.
+     */
+    public int $timeoutSeconds = 600;
+
+    /**
+     * The project root — the directory `tools/` lives in — found by looking for it.
+     *
+     * NOT AN ALIAS, because the obvious one is wrong here and wrong in a way that reads as
+     * right. `@root` is the Craft base path, which in this project is `craft/`, so
+     * `@root . '/tools/audit/capture.mjs'` resolves to a file that has never existed and
+     * node reports it as a missing module. Counting `dirname()` calls would work until the
+     * layout moved.
+     *
+     * Walking up from this file until `tools/audit` appears is self-locating: it is correct
+     * now, correct if the module moves, and it fails by saying which directories it looked
+     * in rather than by handing node a path to not find.
+     */
+    public function projectRoot(): string
+    {
+        $dir = __DIR__;
+        for ($up = 0; $up < 8; $up++) {
+            if (is_file($dir . '/tools/audit/capture.mjs')) {
+                return $dir;
+            }
+            $parent = dirname($dir);
+            if ($parent === $dir) {
+                break;
+            }
+            $dir = $parent;
+        }
+
+        throw new \RuntimeException('could not find tools/audit above ' . __DIR__);
+    }
+
+    /**
+     * The directory this entry's artefacts live in, made if it is not there.
+     *
+     * Craft's own storage path rather than an alias: it is the one Craft itself writes to,
+     * so it is right in ddev, right on Forge, and right if either ever moves.
+     */
+    public function workDir(int $entryId): string
+    {
+        $dir = Craft::$app->getPath()->getStoragePath() . '/audits/' . $entryId;
+        FileHelper::createDirectory($dir);
+
+        return $dir;
+    }
+
+    /**
+     * Capture, analyse and print. Returns `['ok' => bool, 'why' => ?string, 'pdf' => ?string]`.
+     *
+     * THREE PROCESSES AND NOT ONE, because they fail differently and the reason has to
+     * survive to the entry. A 403 is a capture failure and there is nothing to analyse; a
+     * model that cannot read the image is an analysis failure with a capture worth keeping;
+     * a PDF that will not render is neither, and leaves a measurement that could still be
+     * sent by hand.
+     */
+    public function run(string $url, int $entryId): array
+    {
+        $dir = $this->workDir($entryId);
+
+        foreach ([
+            ['capture', ['tools/audit/capture.mjs', $url, $dir]],
+            ['analyse', ['tools/audit/analyse.mjs', $dir]],
+            ['report', ['tools/audit/pdf.mjs', $dir]],
+        ] as [$step, $args]) {
+            $result = $this->node($args);
+            if (!$result['ok']) {
+                return ['ok' => false, 'why' => $step . ': ' . $result['why'], 'pdf' => null];
+            }
+        }
+
+        $pdf = $dir . '/report.pdf';
+
+        return file_exists($pdf)
+            ? ['ok' => true, 'why' => null, 'pdf' => $pdf]
+            : ['ok' => false, 'why' => 'report: the PDF was not written', 'pdf' => null];
+    }
+
+    /**
+     * One node process, with the environment it needs and a bound on how long it may take.
+     *
+     * THE KEYS COME FROM THE ENVIRONMENT, not from the tool reading craft/.env itself. On
+     * Forge the queue worker has them; a worktree does not have the file at all. See
+     * lib/vision.mjs, which prefers the environment for exactly this reason.
+     */
+    private function node(array $args): array
+    {
+        $root = $this->projectRoot();
+        $cmd = array_merge(['node'], $args);
+        $env = [
+            'KEY_ANTHROPIC_API' => Craft::parseEnv('$KEY_ANTHROPIC_API') ?: '',
+            'GOOGLE_CLOUD_KEY' => Craft::parseEnv('$GOOGLE_CLOUD_KEY') ?: '',
+            // Without a HOME the Playwright browser cache cannot be found, and the capture
+            // fails with a message about a missing executable rather than a missing HOME.
+            'HOME' => getenv('HOME') ?: '/home/forge',
+            'PATH' => getenv('PATH') ?: '/usr/local/bin:/usr/bin:/bin',
+        ];
+
+        $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+        $process = proc_open($cmd, $descriptors, $pipes, $root, $env);
+        if (!is_resource($process)) {
+            return ['ok' => false, 'why' => 'node could not be started'];
+        }
+
+        // Non-blocking, so a chatty step cannot fill a pipe and deadlock the worker while
+        // we wait for an exit that will never come.
+        stream_set_blocking($pipes[1], false);
+        stream_set_blocking($pipes[2], false);
+        $out = '';
+        $err = '';
+        $deadline = time() + $this->timeoutSeconds;
+        while (true) {
+            $out .= (string) stream_get_contents($pipes[1]);
+            $err .= (string) stream_get_contents($pipes[2]);
+            $status = proc_get_status($process);
+            if (!$status['running']) {
+                break;
+            }
+            if (time() > $deadline) {
+                proc_terminate($process, 9);
+
+                return ['ok' => false, 'why' => "gave up after {$this->timeoutSeconds}s"];
+            }
+            usleep(200000);
+        }
+        $out .= (string) stream_get_contents($pipes[1]);
+        $err .= (string) stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $code = proc_close($process);
+
+        if ($code !== 0) {
+            // The CLIs put their reason on stderr and their numbers on stdout, so the
+            // failure line is the one worth keeping — trimmed, because a stack trace in a
+            // CP field helps nobody.
+            $reason = trim($err) !== '' ? trim($err) : trim($out);
+
+            return ['ok' => false, 'why' => $this->lastLine($reason)];
+        }
+
+        return ['ok' => true, 'why' => null, 'out' => $out];
+    }
+
+    /**
+     * The line that says what went wrong.
+     *
+     * NOT SIMPLY THE LAST ONE, which is what this did first and it cost an afternoon. When
+     * node itself crashes, the last line of its output is the version banner — so a real
+     * module-resolution failure was written onto an entry as "Node.js v22.23.2", which is
+     * true, useless, and looks like the tool working.
+     *
+     * The CLIs all say `<step> failed: <reason>` when they refuse, so that wins. Otherwise
+     * the FIRST meaningful line is the error and everything after it is the trace.
+     */
+    private function lastLine(string $text): string
+    {
+        $lines = array_values(array_filter(array_map('trim', explode("\n", $text)), static fn ($l) => $l !== ''));
+        if (!$lines) {
+            return 'no reason given';
+        }
+        foreach ($lines as $line) {
+            if (preg_match('/\b(failed|error|cannot|refus)/i', $line)) {
+                return $this->tidy($line);
+            }
+        }
+
+        return $this->tidy($lines[0]);
+    }
+
+    /**
+     * A reason fit for a field a person reads.
+     *
+     * Playwright appends its own call log to a navigation failure — "Call log: navigating
+     * to …, waiting until load" — which is the right thing in a terminal and noise beside
+     * a lead. The sentence before it already says what happened.
+     */
+    private function tidy(string $line): string
+    {
+        $line = (string) preg_replace('/\s*Call log:.*$/s', '', $line);
+        $line = (string) preg_replace('/\s+/', ' ', $line);
+
+        return mb_substr(trim($line), 0, 500);
+    }
+
+    /**
+     * The finished PDF, as an asset in the volume the field points at, related to the entry.
+     *
+     * THE FILENAME CARRIES A RANDOM SUFFIX AND THAT IS NOT DECORATION. The volume is public
+     * and has to be — the email links to it, and a link behind auth breaks the moment a
+     * prospect forwards the report to their boss, which is the best outcome available. What
+     * a public URL must not be is GUESSABLE: `kohde-agency.pdf` lets anyone walk the list
+     * of who has been audited, which publishes the lead list. Eight random characters make
+     * the URL knowable only to somebody who was sent it.
+     */
+    public function attachReport(Entry $entry, string $pdfPath): ?Asset
+    {
+        $field = Craft::$app->getFields()->getFieldByHandle('auditReport');
+        $volumeUid = $field?->getSettings()['defaultUploadLocationSource'] ?? '';
+        $volume = Craft::$app->getVolumes()->getVolumeByUid((string) str_replace('volume:', '', $volumeUid));
+        if (!$volume) {
+            return null;
+        }
+        $folder = Craft::$app->getAssets()->ensureFolderByFullPathAndVolume($this->reportSubpath . '/', $volume);
+
+        $asset = new Asset();
+        $asset->tempFilePath = $pdfPath;
+        $asset->setFilename(AssetsHelper::prepareAssetName($this->reportName($entry)));
+        $asset->newFolderId = $folder->id;
+        $asset->setVolumeId($volume->id);
+        $asset->avoidFilenameConflicts = true;
+        $asset->setScenario(Asset::SCENARIO_CREATE);
+
+        if (!Craft::$app->getElements()->saveElement($asset)) {
+            Craft::error('[leadgenerator] asset save failed: ' . json_encode($asset->getErrors()), __METHOD__);
+
+            return null;
+        }
+
+        return $asset;
+    }
+
+    /** `example-com-4f9c2e11.pdf` — the site, so it is recognisable, and eight bytes so it is not. */
+    public function reportName(Entry $entry): string
+    {
+        $host = (string) parse_url((string) $entry->auditUrl, PHP_URL_HOST) ?: 'homepage';
+        $slug = strtolower((string) preg_replace('/[^a-z0-9]+/i', '-', $host));
+
+        return trim($slug, '-') . '-' . bin2hex(random_bytes(4)) . '.pdf';
+    }
+}

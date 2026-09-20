@@ -27,8 +27,9 @@ return [
         'modules' => [
             'jonson' => \modules\jonson\Jonson::class,
             'frontend' => \modules\frontend\FrontEnd::class,
+            'leadgenerator' => \modules\leadgenerator\LeadGenerator::class,
         ],
-        'bootstrap' => ['jonson', 'frontend'],
+        'bootstrap' => ['jonson', 'frontend', 'leadgenerator'],
         'components' => [
             // Only there to set two AVIF encoder options Craft doesn't expose;
             // everything else is Craft's own service.
