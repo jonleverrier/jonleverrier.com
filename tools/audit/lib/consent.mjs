@@ -60,10 +60,11 @@
  *     the document, so on a page with no banner at all an ordinary `<a>OK</a>` in the
  *     footer was a candidate. Clicking it navigated, every artefact was then of the other
  *     page, and the run reported `dismissed via text "OK"` and exited 0. A stranger
- *     submitting a URL could steer the audit anywhere they liked. "Banner-shaped" is a
- *     fixed or sticky ancestor, or a dialog role — the two ways a banner is actually
- *     built. A consent bar laid out in normal document flow is therefore never clicked;
- *     it stays on the page and counts as surface area, which is the right answer anyway.
+ *     submitting a URL could steer the audit anywhere they liked. "Banner-shaped" is an
+ *     ancestor taken out of the flow so it can sit over the page (see OVERLAY_POSITIONS),
+ *     or a dialog role. A consent bar laid out in normal document flow is therefore never
+ *     clicked; it stays on the page and counts as surface area, which is the right answer
+ *     anyway.
  *   - A NAVIGATION IS A FAILURE, NEVER A SUCCESS. A dismissed banner detaches, and a
  *     detached handle is also exactly what navigating away looks like from here, so the
  *     two were indistinguishable and the wrong one was assumed. Now the URL is compared
@@ -210,10 +211,30 @@ export const DENY_TEXT = new RegExp(
 export const CLICKABLE = 'button, [role="button"], input[type="button"], input[type="submit"]';
 
 /**
+ * The `position` values that take an element out of the flow so it can sit over the page.
+ *
+ * ONE LIST BECAUSE THERE WERE THREE, and they drifted. IS_BANNER_SHAPED, IS_CONSENT_BANNER
+ * and FIND_BANNER each enumerated `fixed` and `sticky` separately, each describing the
+ * principle as "taken out of the flow so it can sit over the page" — which `absolute` also
+ * satisfies, and which all three then failed to say. visionarygrid.studio is the page that
+ * found it: a Finsweet consent bar whose wrapper is `position: absolute`, sized to exactly
+ * one viewport at the top of a 24,746px page. Its Accept control is an `<a role="button">`
+ * and matched CLICKABLE perfectly; every one of the three gates then rejected it on the
+ * position of its container, so the capture recorded `consentBannerSeen: false` about a
+ * banner sitting in plain sight in its own screenshot.
+ *
+ * WIDENING THIS IS SAFE BECAUSE NOTHING HERE DECIDES ANYTHING ALONE. Every caller also
+ * requires consent WORDING in the same ancestor, or an accept LABEL on the control itself.
+ * `absolute` is common; an absolutely-positioned box that also says it is about cookies,
+ * or that contains a visible control labelled "Accept", is not.
+ */
+export const OVERLAY_POSITIONS = ['fixed', 'sticky', 'absolute'];
+
+/**
  * Is this control inside something shaped like a banner? Runs IN the page.
  *
  * The ways a consent banner is actually built: taken out of the flow so it can sit over
- * the page (fixed, or sticky), announced as a dialog — or simply HELD in the viewport by
+ * the page (see OVERLAY_POSITIONS), announced as a dialog — or simply HELD in the viewport by
  * script while computing `position: relative`, which is what boondmanager.com's consent
  * card does and which no reading of the stylesheet can see. `__auditPinned` is the mark
  * lib/pinned.mjs leaves on an element it MEASURED holding its viewport box while the page
@@ -235,7 +256,7 @@ export const CLICKABLE = 'button, [role="button"], input[type="button"], input[t
  * elements inside an open shadow root; the `position: fixed` overlay that makes it a banner
  * is in the same shadow tree, and the walk never reached it. See lib/shadow.mjs.
  */
-export const IS_BANNER_SHAPED = (el) => {
+export const IS_BANNER_SHAPED = (el, positions) => {
     const deep = window.__auditDeep;
     const above = deep ? deep.parent : (node) => node.parentElement;
     for (let a = el; a; a = above(a)) {
@@ -243,8 +264,7 @@ export const IS_BANNER_SHAPED = (el) => {
         const role = a.getAttribute ? a.getAttribute('role') : null;
         if (role === 'dialog' || role === 'alertdialog') return true;
         if (a.getAttribute && a.getAttribute('aria-modal') === 'true') return true;
-        const cs = getComputedStyle(a);
-        if (cs.position === 'fixed' || cs.position === 'sticky') return true;
+        if (positions.includes(getComputedStyle(a).position)) return true;
     }
 
     return false;
@@ -266,7 +286,7 @@ export const IS_BANNER_SHAPED = (el) => {
  * whatever its accept control happens to be labelled. The wording of the button is
  * isAcceptLabel's job and has already been applied by the time this runs.
  */
-export const IS_CONSENT_BANNER = (el, subjectSource) => {
+export const IS_CONSENT_BANNER = (el, {subjectSource, positions}) => {
     const subject = new RegExp(subjectSource, 'i');
     const deep = window.__auditDeep;
     const above = deep ? deep.parent : (node) => node.parentElement;
@@ -275,7 +295,7 @@ export const IS_CONSENT_BANNER = (el, subjectSource) => {
         const shaped = a.__auditPinned === true
             || role === 'dialog' || role === 'alertdialog'
             || (a.getAttribute && a.getAttribute('aria-modal') === 'true')
-            || ['fixed', 'sticky'].includes(getComputedStyle(a).position);
+            || positions.includes(getComputedStyle(a).position);
         if (shaped && subject.test((a.textContent || '').slice(0, 400))) return true;
     }
 
@@ -453,7 +473,7 @@ async function frameIsBanner(page, frame) {
     return ask(async () => {
         const owner = await frame.frameElement();
 
-        return owner ? await owner.evaluate(IS_BANNER_SHAPED) : false;
+        return owner ? await owner.evaluate(IS_BANNER_SHAPED, OVERLAY_POSITIONS) : false;
     }, false);
 }
 
@@ -607,7 +627,7 @@ const SUBJECT_SAMPLE = 400;
  * 1440x0 wrappers, dropped them for being too small, and said `false` again for a different
  * reason. See lib/shadow.mjs.
  */
-export const FIND_BANNER = (subjectSource) => {
+export const FIND_BANNER = ({subjectSource, positions}) => {
     const subject = new RegExp(subjectSource, 'i');
     const deep = window.__auditDeep;
     const candidates = deep
@@ -615,7 +635,7 @@ export const FIND_BANNER = (subjectSource) => {
         : document.querySelectorAll('div, section, aside, dialog, form');
     for (const el of candidates) {
         const cs = getComputedStyle(el);
-        const positioned = cs.position === 'fixed' || cs.position === 'sticky' || el.__auditPinned === true;
+        const positioned = positions.includes(cs.position) || el.__auditPinned === true;
         const role = el.getAttribute('role');
         if (!positioned && role !== 'dialog' && role !== 'alertdialog' && el.ariaModal !== 'true') continue;
         if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
@@ -734,8 +754,12 @@ const everyFrame = (page) => [page, ...page.frames().filter((f) => f !== page.ma
  * differ: `wholeFrame` is the shortcut that lets a CMP's iframe vouch for its own controls,
  * and it is only sound while the parent document is the one the page loaded with.
  */
-const AT_LOAD = {test: IS_BANNER_SHAPED, arg: null, wholeFrame: true};
-const AFTER_SCROLLING = {test: IS_CONSENT_BANNER, arg: CONSENT_SUBJECT.source, wholeFrame: false};
+const AT_LOAD = {test: IS_BANNER_SHAPED, arg: OVERLAY_POSITIONS, wholeFrame: true};
+const AFTER_SCROLLING = {
+    test: IS_CONSENT_BANNER,
+    arg: {subjectSource: CONSENT_SUBJECT.source, positions: OVERLAY_POSITIONS},
+    wholeFrame: false,
+};
 
 /**
  * The two passes, in order, over every frame. Shared by both attempts.
@@ -783,7 +807,7 @@ async function attempt(page, frames, timeoutMs, gate) {
  */
 async function lookForBanner(frames) {
     for (const frame of frames) {
-        if (await ask(() => frame.evaluate(FIND_BANNER, CONSENT_SUBJECT.source), false)) {
+        if (await ask(() => frame.evaluate(FIND_BANNER, {subjectSource: CONSENT_SUBJECT.source, positions: OVERLAY_POSITIONS}), false)) {
             return true;
         }
     }

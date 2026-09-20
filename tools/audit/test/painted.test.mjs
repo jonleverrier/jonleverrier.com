@@ -406,3 +406,49 @@ test('the void note is unmeasured and carries the blocks', () => {
     assert.deepEqual(notes.conditions.blankRegion.facts.blocks, found);
     assert.equal('blankRegion' in runNotes(meta).conditions, false, 'and it needs the measurement');
 });
+
+// ---------------------------------------------------------------------------
+// A SHARE OF THE PAGE IS NOT A SIZE. The 15% gate was calibrated on ~4,000px pages and
+// fires on nothing across all 27 sites: the corpus holds exactly two blocks at or under
+// 0.1% ink and they are 10.9% and 10.4% of their pages. Both are real voids.
+// ---------------------------------------------------------------------------
+
+/**
+ * visionarygrid.studio. A `<section>` 1440x3600 carrying a case study — "Flag & Frontier,
+ * a category design consultancy" — photographed as flat yellow, on a 24,746px page. At
+ * 10.9% it sat under the share gate, so the one detector that could have contradicted the
+ * model's "empty yellow background section" said nothing.
+ */
+test('a void of a whole viewport is flagged however tall the page is', () => {
+    const height = 24746;
+    const measured = page(painted(WIDTH, height, [250, 220, 0]));
+    const block = {x: 0, y: 7931, w: WIDTH, h: 2698};
+    const found = blankRegions(measured, [block]);
+
+    assert.ok((block.w * block.h) / (WIDTH * height) < BLANK_REGION.minShare, 'under the share gate');
+    assert.ok(block.h >= BLANK_REGION.minHeight, 'and over the height one');
+    assert.equal(found.length, 1);
+    assert.match(blankRegionWarning(found), /nothing painted/);
+});
+
+test('a band shorter than a viewport on a tall page is still ordinary design', () => {
+    const height = 24746;
+    const measured = page(painted(WIDTH, height, [250, 250, 250]));
+    const band = {x: 0, y: 1000, w: WIDTH, h: BLANK_REGION.minHeight - 1};
+
+    assert.deepEqual(blankRegions(measured, [band]), []);
+});
+
+/**
+ * hettich.co.uk's logo row is the tallest legitimate near-blank block in the corpus at
+ * 813px, and it carries 0.86% ink — eight times the gate. Height alone never convicts.
+ */
+test('a tall block with ink in it is not a void', () => {
+    const height = 12000;
+    const marks = [{x: 40, y: 2100, w: 300, h: 200, colour: [0, 0, 0]}];
+    const measured = page(painted(WIDTH, height, [255, 255, 255], marks));
+    const block = {x: 0, y: 2000, w: WIDTH, h: 1000};
+
+    assert.ok(inkFraction(measured, block) > BLANK_REGION.maxInk);
+    assert.deepEqual(blankRegions(measured, [block]), []);
+});

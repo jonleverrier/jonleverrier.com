@@ -93,6 +93,15 @@ const URLS = {
         `${HOME}<button onclick="this.remove()">Accept all cookies</button>`,
     ),
     fixedBanner: page$('fixed-banner.html', HOME + WATCH + BANNER(`<button onclick="${REMOVE}">Accept all cookies</button>`)),
+    // visionarygrid.studio. A Finsweet bar whose wrapper is `position: absolute`, sized to
+    // one viewport, with an `<a role="button">` accept — matched CLICKABLE perfectly and was
+    // refused by all three banner gates on the position of its container.
+    absoluteBanner: page$(
+        'absolute-banner.html',
+        `${HOME}<div id="banner" style="position:absolute;top:0;left:0;width:100%;height:900px">`
+            + '<p>By clicking Accept you agree to the storing of cookies on your device.</p>'
+            + `<a href="#" role="button" onclick="${REMOVE};return false">Accept</a></div>`,
+    ),
     // A dialog that is not positioned at all: the role is the only evidence it is a banner.
     dialogBanner: page$(
         'dialog-banner.html',
@@ -340,6 +349,20 @@ test('a fixed banner is still dismissed', async () => {
 
 // FINDING 11. The label is the page's text and `via` is printed by capture.mjs, so a
 // crafted button label used to reach the operator's terminal with its escapes intact.
+/**
+ * visionarygrid.studio. Its consent bar is `position: absolute`, and all three banner
+ * gates enumerated `fixed` and `sticky` while each describing the principle as "taken out
+ * of the flow so it can sit over the page" — which absolute also satisfies. The capture
+ * recorded `consentBannerSeen: false` about a banner sitting in its own screenshot.
+ */
+test('an absolutely positioned banner is seen and dismissed', async () => {
+    const {consent, state} = await attempt(URLS.absoluteBanner);
+    assert.equal(consent.bannerSeen, true, 'it must at minimum be reported as there');
+    assert.equal(consent.dismissed, true);
+    assert.equal(state.bannerStillThere, false);
+    assert.equal(state.url, URLS.absoluteBanner, 'dismissing must not move the page');
+});
+
 test('a banner label made of escape characters is dismissed and reported harmlessly', async () => {
     const {consent, state} = await attempt(URLS.ansiBanner);
     assert.equal(consent.dismissed, true, 'the banner is still a banner and still goes');

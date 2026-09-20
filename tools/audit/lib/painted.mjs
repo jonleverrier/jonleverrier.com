@@ -408,17 +408,38 @@ export function transparentBlocks(page, blocks, rects, opts = UNPAINTED) {
  * 15% sits between 6.3% and 45.3% with roughly a factor of three either side. The ink
  * gate is not the delicate one: the two voids measure 0.003% and 0.007%.
  *
- * The limitation worth knowing: this is per block, so a void split across several blocks
- * of 14% each is missed. Blocks are a partition and their boundaries are arbitrary, so
- * summing them would be the more robust rule; it is not taken here because every void
- * measured came out as one block and a rule with no failing example is a rule nobody has
- * tested.
+ * A SHARE OF THE PAGE IS NOT A SIZE, and on a tall page it is barely a signal. Those
+ * numbers were measured against the XY-cut segmenter on pages around 4,000px. Re-measured
+ * across all 27 sites under the vision segmenter, the 15% gate fires on NOTHING: the whole
+ * corpus contains exactly two blocks at or under 0.1% ink, and they are 10.9% and 10.4% of
+ * their pages. Both are real voids. visionarygrid.studio's is a `<section>` 1440x3600
+ * carrying a case study — "Flag & Frontier, a category design consultancy" — photographed
+ * as flat yellow; jersey.com's 1,694px is the footer the pinned census was hiding. A gate
+ * that admits neither of the only two things it exists to catch is not calibrated, it is
+ * closed.
+ *
+ * SO HEIGHT IS THE OTHER WAY IN, and one viewport is what it means to a reader: a whole
+ * screen of nothing. Measured, the separation is not close. Widening the ink window
+ * twentyfold to 2% brings 20 more blocks into view and the tallest is 813px — hettich's
+ * logo row, at 0.86% ink, eight times the gate. The two voids are 1,694 and 2,698px at
+ * 0.00000. A block has to clear a full viewport AND be under a thousandth ink, and nothing
+ * legitimate on any of the 27 sites is within a factor of two of both.
+ *
+ * `minShare` is kept as the other half of an OR rather than replaced, because on a short
+ * page 15% can be well under 900px and that calibration was sound for the pages it was
+ * taken on.
+ *
+ * The limitation worth knowing: this is per block, so a void split across several blocks,
+ * each under a viewport and under 15%, is missed. Blocks are a partition and their
+ * boundaries are arbitrary, so summing adjacent ones would be the more robust rule; it is
+ * not taken here because every void measured came out as one block and a rule with no
+ * failing example is a rule nobody has tested.
  */
-export const BLANK_REGION = {maxInk: 0.001, minShare: 0.15};
+export const BLANK_REGION = {maxInk: 0.001, minShare: 0.15, minHeight: 900};
 
-/** The blocks that are a large share of the page and have nothing painted in them. */
+/** The blocks big enough to matter that have nothing painted in them. */
 export function blankRegions(page, blocks, opts = BLANK_REGION) {
-    const {maxInk, minShare} = {...BLANK_REGION, ...opts};
+    const {maxInk, minShare, minHeight} = {...BLANK_REGION, ...opts};
     if (!page || !Array.isArray(blocks)) {
         return [];
     }
@@ -426,7 +447,7 @@ export function blankRegions(page, blocks, opts = BLANK_REGION) {
     const found = [];
     for (const block of blocks) {
         const share = (block.w * block.h) / pageArea;
-        if (share < minShare) continue;
+        if (share < minShare && block.h < minHeight) continue;
         const ink = inkFraction(page, block);
         if (ink > maxInk) continue;
         found.push({
