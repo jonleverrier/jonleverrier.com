@@ -17,11 +17,7 @@
  * twenty, two shapes of email, and a conditional in every piece of copy written about it.
  * Lab was complete on BOTH sites — all seven metrics, big and small alike — so taking lab
  * alone buys one report, one shape, and a number that is there every time.
- *
- * WHAT IS OWED IN EXCHANGE is that the report never implies these figures are what
- * visitors experienced. They are a simulation on hardware nobody owns, said plainly and
- * said for every site, because a caveat that applies to all of them needs no condition
- * either.
+
  *
  * DESKTOP, BECAUSE THE CAPTURE IS DESKTOP. PSI defaults to mobile, which is the right
  * default for Google and the wrong one here: a mobile speed score printed beside a

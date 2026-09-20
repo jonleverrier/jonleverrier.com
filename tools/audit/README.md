@@ -68,10 +68,7 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.test.mjs           # plus the networ
   origin; kohde.agency has neither, and kohde is what almost every prospect for this tool
   looks like. Carrying it would mean a section that appears for perhaps one site in twenty,
   two shapes of email, and a conditional in every piece of copy. Lab was complete for BOTH,
-  so lab alone buys one report, one shape, and a number that is there every time. What is
-  owed in exchange is one unconditional line saying these figures are a simulation and not
-  what visitors experienced — unconditional because a caveat true of every site needs no
-  branch either.
+  so lab alone buys one report, one shape, and a number that is there every time.
 - **PageSpeed runs beside the capture, not before it.** It took 21.5s and 27.5s on the two
   probes and the browser work takes longer than that on any page worth measuring, so they
   overlap and the audit pays nothing for it. It still lands before anything is segmented,

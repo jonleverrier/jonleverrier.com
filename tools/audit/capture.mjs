@@ -142,11 +142,6 @@ try {
     } else {
         writeFileSync(join(outDir, 'psi.json'), JSON.stringify(psi, null, 1));
         console.log(`pagespeed    ${psi.score}/100 desktop — LCP ${psi.lab.lcpMs}ms, TBT ${psi.lab.tbtMs}ms, CLS ${psi.lab.cls}`);
-        // UNCONDITIONAL, which is the point of taking lab only: every site gets the same
-        // line, so there is no branch here and none in the report either. It is owed
-        // because the numbers above are a simulation on hardware nobody owns, and a reader
-        // who took them for what their visitors experienced would have been misled by us.
-        console.log('             (a Lighthouse simulation, not what real visitors experienced)');
     }
 
     console.log(`artefacts    ${printable(outDir)}`);
