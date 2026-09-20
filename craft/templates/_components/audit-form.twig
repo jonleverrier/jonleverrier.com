@@ -1,0 +1,134 @@
+{#
+  Homepage audit form — posts to modules/leadgenerator/controllers/AuditController.
+  Standard POST + redirect, no JS required. Repopulates from the flashed values on a
+  validation error, exactly as the contact form does.
+
+  IT BORROWS c-form WHOLESALE rather than bringing its own styling. The two forms do the
+  same job and there is nothing yet to say they should look different; a second set of
+  classes would be a second thing to keep in step for no answered question. If this ever
+  needs its own look it gets a modifier, not a copy.
+
+  THE URL IS ASKED FOR FIRST, and that is a decision about conversion rather than markup.
+  Somebody who has typed their domain and watched something start is likelier to give an
+  address than somebody asked for one up front. It also sidesteps the trap in checking a
+  URL before accepting the lead: a prospect whose site refuses our crawler would see an
+  error and leave, and their address would go with them. So this accepts, queues, and lets
+  a failure become an entry a human looks at.
+#}
+{% set old = craft.app.session.getFlash('auditForm') ?? {} %}
+{% set error = craft.app.session.getFlash('error') %}
+{% set fieldErrors = craft.app.session.getFlash('auditErrors') ?? {} %}
+
+{% macro errorMessage(message) %}
+    <span class="c-form__error" role="alert">{{ message }}</span>
+{% endmacro %}
+
+{# Inlined rather than the icon() sprite so its currentColor takes the red set in CSS —
+   same reason as the contact form's. #}
+{% macro errorIcon() %}
+    <svg class="c-form__input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
+        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+    </svg>
+{% endmacro %}
+{% import _self as f %}
+
+{% if craft.app.session.get('auditSubmitted') %}
+    {# THE WAIT IS STATED, because it is minutes rather than seconds and nothing about a
+       submitted form shows that. A person told "shortly" refreshes; a person told what is
+       happening does not. #}
+    <div class="c-form c-form--done" role="status">
+        <p class="c-form__thanks">Measuring your homepage</p>
+        <p class="c-form__thanks-sub">It takes a few minutes — we photograph the whole page,
+            not just the first screen. The report lands in your inbox when it is ready.</p>
+    </div>
+{% elseif craft.app.session.getFlash('auditBlocked') %}
+    {# Rate limited or filled implausibly fast. A one-time notice rather than a banner they
+       can retry against, and deliberately not an explanation of which rule they tripped. #}
+    <div class="c-form c-form--done" role="status">
+        <p class="c-form__thanks">Not submitted</p>
+        <p class="c-form__thanks-sub">Please get in touch directly and I will run it for you</p>
+    </div>
+{% else %}
+<form class="c-form" method="post" accept-charset="UTF-8" data-audit-form>
+    {{ csrfInput() }}
+    {# A VIP visitor already has their details on their entry (modules/jonson/services/Vip),
+       so they are not asked twice. A failed submit's own values always win: what somebody
+       typed is what they meant, even where it differs from what we hold. #}
+    {% set vip = craft.app.getModule('jonson').vip.current() %}
+    <input type="hidden" name="action" value="leadgenerator/audit/submit">
+    {{ redirectInput(craft.app.request.pathInfo) }}
+
+    {# Signed render time — the controller refuses a form completed implausibly fast.
+       Hashed, so the client's clock and the client's honesty are both beside the point. #}
+    <input type="hidden" name="ts" value="{{ craft.app.security.hashData(now|date('U')) }}">
+    {# The page this was sent from. Kept only when it is one of ours — see
+       FormGuard::ownReferrer. #}
+    <input type="hidden" name="referrerUrl" value="{{ craft.app.request.absoluteUrl }}">
+
+    {# Honeypot — hidden from people, tempting to bots. A filled one succeeds silently. #}
+    <div class="c-form__hp" aria-hidden="true">
+        <label>Leave this blank
+            <input type="text" name="website" tabindex="-1" autocomplete="off">
+        </label>
+    </div>
+
+    {% if error %}
+        <p class="c-form__flash c-form__flash--error" role="alert">{{ error }}</p>
+    {% endif %}
+
+    <label class="c-form__field{{ fieldErrors.auditUrl is defined ? ' c-form__field--error' }}">
+        <span class="c-form__label">
+            <span class="c-form__label-text">Your homepage</span>
+            {% if fieldErrors.auditUrl is defined %}{{ f.errorMessage(fieldErrors.auditUrl) }}{% endif %}
+        </span>
+        <span class="c-form__control">
+            {# `type="url"` is deliberately NOT used: it demands a scheme, and nobody types
+               one. The controller adds https to a bare domain and refuses anything that is
+               not http(s), which is the check that actually matters. #}
+            <input class="c-form__input" type="text" name="auditUrl" inputmode="url"
+                autocomplete="url" autocapitalize="off" autocorrect="off" spellcheck="false"
+                value="{{ old.auditUrl ?? '' }}" placeholder="example.com" required>
+            {% if fieldErrors.auditUrl is defined %}{{ f.errorIcon() }}{% endif %}
+        </span>
+    </label>
+
+    <div class="c-form__row">
+        <label class="c-form__field{{ fieldErrors.firstName is defined ? ' c-form__field--error' }}">
+            <span class="c-form__label">
+                <span class="c-form__label-text">First Name</span>
+                {% if fieldErrors.firstName is defined %}{{ f.errorMessage(fieldErrors.firstName) }}{% endif %}
+            </span>
+            <span class="c-form__control">
+                <input class="c-form__input" type="text" name="firstName" autocomplete="given-name"
+                    value="{{ old.firstName ?? vip.firstName ?? '' }}" placeholder="Henri" required>
+                {% if fieldErrors.firstName is defined %}{{ f.errorIcon() }}{% endif %}
+            </span>
+        </label>
+        <label class="c-form__field">
+            <span class="c-form__label">
+                <span class="c-form__label-text">Surname <span class="c-form__optional">(optional)</span></span>
+            </span>
+            <span class="c-form__control">
+                <input class="c-form__input" type="text" name="surname" autocomplete="family-name"
+                    value="{{ old.surname ?? vip.surname ?? '' }}" placeholder="Cartier-Bresson">
+            </span>
+        </label>
+    </div>
+
+    <label class="c-form__field{{ fieldErrors.email is defined ? ' c-form__field--error' }}">
+        <span class="c-form__label">
+            <span class="c-form__label-text">Email</span>
+            {% if fieldErrors.email is defined %}{{ f.errorMessage(fieldErrors.email) }}{% endif %}
+        </span>
+        <span class="c-form__control">
+            <input class="c-form__input" type="email" name="email" autocomplete="email"
+                value="{{ old.email ?? vip.email ?? '' }}" placeholder="thedecisivemoment@example.com" required>
+            {% if fieldErrors.email is defined %}{{ f.errorIcon() }}{% endif %}
+        </span>
+    </label>
+
+    {% include '_components/button.twig' with { label: 'Measure my homepage', type: 'submit', size: 'sm' } only %}
+</form>
+{% endif %}
