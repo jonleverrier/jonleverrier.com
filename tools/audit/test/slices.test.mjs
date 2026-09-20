@@ -42,10 +42,23 @@ test('a budget reports what is left and refuses a step once it is spent', () => 
 test('a step that never finishes is given up on rather than waited for', async () => {
     // The whole reason the budget exists: page.evaluate has no timeout of its own, and a
     // page that never returns from one held a capture for fourteen minutes.
+    //
+    // THE STUCK PROMISE IS RELEASED AFTERWARDS, and it has to be. `new Promise(() => {})`
+    // is pending for ever, and node 22's test runner treats a permanently pending promise
+    // as a drained event loop: it cancelled every test after this one with "Promise
+    // resolution is still pending but the event loop has already resolved". Node 24
+    // tolerates it, so this passed on the host and cancelled 35 tests inside ddev — which
+    // is the version the queue job will actually run. Releasing it costs the test nothing:
+    // the deadline has already fired and been asserted on by then.
+    let release;
+    const stuck = new Promise((resolve) => {
+        release = resolve;
+    });
     await assert.rejects(
-        withDeadline(new Promise(() => {}), 10, 'a step that never returns'),
+        withDeadline(stuck, 10, 'a step that never returns'),
         /a step that never returns did not finish within 10ms/,
     );
+    release();
 });
 
 test('a step that finishes in time is simply its own value', async () => {
