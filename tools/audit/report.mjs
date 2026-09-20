@@ -66,11 +66,23 @@ if (isCommand && outDir) {
         console.log(`captured ${meta.capturedAt}`);
         console.log(`${meta.image.width}x${meta.image.height}, `
             + `${r.coverage === null ? 'coverage not measured' : `${pct(r.coverage)} of it drawn on`}\n`);
-        console.log('                    whole page             first viewport');
+        // TWO NUMBERS ANSWERING TWO QUESTIONS, and the header has to say which is which.
+        // It read `45.5% at 12.5% ink`, and the first person shown it asked what the second
+        // number was. `ink` is this tool's word for "pixels differing from their row's own
+        // background" and it is a fine name inside lib/painted.mjs; on a page somebody reads
+        // about their own site it names nothing. The first column is the section against the
+        // PAGE, the second is its content against ITS OWN SPACE — so a section that takes a
+        // lot of room and a section that has a lot in it stop looking identical.
+        // The header is built from the SAME widths as the rows, so the two cannot drift apart.
+        const COL = {label: 16, share: 12, content: 14, fold: 11};
+        const head = (a, b, c) => ' '.repeat(COL.label)
+            + a.padStart(COL.share) + b.padStart(COL.content) + c.padStart(COL.fold);
+        console.log(head('share', 'content to', 'first'));
+        console.log(head('of page', 'space', 'viewport'));
         for (const s of r.full) {
             const fv = r.firstViewport.find((f) => f.category === s.category);
-            console.log(`  ${s.category.padEnd(14)}${pct(s.share).padStart(7)} at ${pct(s.coverage).padStart(6)} ink`
-                + `   ${fv ? pct(fv.share).padStart(7) : '      -'}`);
+            console.log(`  ${s.category.padEnd(COL.label - 2)}${pct(s.share).padStart(COL.share)}`
+                + `${pct(s.coverage).padStart(COL.content)}${(fv ? pct(fv.share) : '-').padStart(COL.fold)}`);
         }
         console.log(`\n  ${r.headline}`);
         if (r.caveats.length) {
