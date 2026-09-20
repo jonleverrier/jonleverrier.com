@@ -13,6 +13,54 @@ Phase 3 (classify) and phase 4 (report and email) do not exist yet.
 
 ---
 
+## Where to pick up
+
+**The plan:** `docs/superpowers/plans/2026-09-19-homepage-audit-vision.md`. Tasks 1-7, 9,
+10 and 11 are done; Task 8 (delete `lib/xycut.mjs`) is deliberately last and is waiting on
+a human judgement of the cuts.
+
+**Run it:**
+
+```sh
+export KEY_ANTHROPIC_API=$(grep -m1 '^KEY_ANTHROPIC_API' ../../craft/.env | sed 's/^[^=]*=//; s/"//g')
+node tools/audit/capture.mjs https://example.com /tmp/one   # phase 1
+node tools/audit/analyse.mjs /tmp/one                       # phases 2+3, --force to re-ask
+node tools/audit/report.mjs /tmp/one                        # phase 4
+node tools/audit/sweep.mjs /tmp/audit-urls.txt /tmp/out     # the whole corpus
+```
+
+**The evaluation set is `~/audit-corpus/`** — 27 captured and analysed sites, each with
+`debug.png`, `blocks.json`, `vision.json` and the capture. It was on /tmp, which macOS
+clears. Every future change is measured against it, because those images have been
+reviewed by eye.
+
+### Decisions outstanding, all the user's
+
+1. **Drop `brand`?** It scored 0% on all 27 sites, twice. With `hero` defined functionally
+   and `navigation` owning the header logo, nothing can reach it. A permanent `brand 0%`
+   in a report invites the wrong question from a prospect.
+2. **Delete `lib/xycut.mjs`?** 2,130 lines, and a leaf — only `segment.mjs` imports it.
+3. **Merge?** Nothing is pushed. The branch wants renaming off `worktree-audit-tool`.
+4. **Phase 4 needs three product answers** before it can be built: what a prospect sees
+   when their CDN blocks the crawler (3 of 27 sites answered 403); whether the caveats
+   reach them or only the headline number; and who pays for a re-audit.
+
+### Known and open
+
+- **visionarygrid.studio's consent banner is not detected at all** — `consentBannerSeen`
+  is false on a page that visibly has one, so this is a detection miss rather than a
+  failure to dismiss. Reported by the user, not yet diagnosed.
+- **The honesty layer's thresholds did not catch visionarygrid's unpainted case study**
+  even once the ink pass ran: the region is 10.9% of the page against `BLANK_REGION`'s 15%
+  floor, and holds 5 DOM elements against `UNPAINTED`'s minimum of 6. The pass is no longer
+  skipped — see `inkPrefixFromPng` — but the thresholds are tuned for shorter pages.
+- **`unclassified` above zero on three sites**: visionarygrid 11%, jersey.com 10%,
+  atkinsonsca 8%. Everything else is 0%.
+- lloydsbank reports 84% `unclassified` and carries `errorPageLikely`. Reviewed and
+  accepted: it really is an error page, and declining to categorise it is the right answer.
+
+---
+
 ## The corpus
 
 29 real homepages, captured and segmented, at `scratchpad/review/<slug>/`. Debug images
