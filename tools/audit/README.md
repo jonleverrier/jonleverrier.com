@@ -69,10 +69,15 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.test.mjs           # plus the networ
   looks like. Carrying it would mean a section that appears for perhaps one site in twenty,
   two shapes of email, and a conditional in every piece of copy. Lab was complete for BOTH,
   so lab alone buys one report, one shape, and a number that is there every time.
-- **PageSpeed runs beside the capture, not before it.** It took 21.5s and 27.5s on the two
-  probes and the browser work takes longer than that on any page worth measuring, so they
-  overlap and the audit pays nothing for it. It still lands before anything is segmented,
-  which is the ordering that matters.
+- **PageSpeed runs beside the capture, not before it, and lands in `meta.json`.** It took
+  21.5s and 27.5s on the two probes and the browser work takes longer than that on any page
+  worth measuring, so the two overlap and the audit pays nothing for it. It still lands
+  before anything is segmented, which is the ordering that matters. It is fetched inside
+  `capturePage`, not in the CLI, because the Craft job imports `lib/` and never the
+  wrappers — a PSI that lived in `capture.mjs` would never have reached production.
+  `meta.psi` is `{error}` rather than absent when it could not be had, so a reader can tell
+  "we did not ask" from "we asked and it failed". It is not asked for at all on a localhost
+  URL, which PageSpeed cannot reach: that is every test driving a real capture.
 - **A consent banner we fail to dismiss is not a failure.** It is part of that page's
   surface area and should be measured as such. `meta.json` records which happened.
 - **The text pass only looks inside something banner-shaped, and a navigation is never a

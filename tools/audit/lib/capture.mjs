@@ -78,6 +78,7 @@ import {SHADOW_CENSUS, SHADOW_INIT} from './shadow.mjs';
 import {WEBGL_PROBE_INIT, probeWebgl} from './webgl.mjs';
 import {COLLECT_PINNED, heightGap} from './unrendered.mjs';
 import {countBytes} from './bytes.mjs';
+import {fetchPsi} from './psi.mjs';
 import {
     BEGIN_PIN, HIDE_PINNED, MARK_PINNED, MEASURE_BOXES, RESTORE_HIDDEN,
     decideChrome, markEarlyPinned, newCensus, recordStep,
@@ -556,6 +557,18 @@ export async function capturePage(url, outDir, opts = {}) {
     const clock = budget(opts.budgetMs ?? CAPTURE_BUDGET_MS);
     mkdirSync(outDir, {recursive: true});
 
+    // STARTED BEFORE THE BROWSER AND READ AT THE END, so it costs the capture nothing. PSI
+    // took 21.5s and 27.5s on the two probes and the browser work takes longer than that on
+    // any page worth measuring, so the two overlap. It is NOT inside `step()`: the capture
+    // budget is for in-page work that can hang, and this has a timeout of its own.
+    //
+    // NOT FOR A LOCAL URL. PageSpeed runs on Google's infrastructure and cannot reach
+    // localhost, so asking costs a guaranteed failure and a wait — which is every test that
+    // drives this function against the local page in test/slices.test.mjs.
+    const askPsi = opts.psi === false || /^https?:\/\/(localhost|127\.|\[::1\])/i.test(url)
+        ? null
+        : (opts.fetchPsi ?? fetchPsi)(url).catch((e) => ({error: e.message}));
+
     const browser = await chromium.launch();
     try {
         const context = await browser.newContext({
@@ -814,6 +827,12 @@ export async function capturePage(url, outDir, opts = {}) {
             // above. Never PageSpeed's number — see lib/bytes.mjs for why they differ and
             // why two page weights in one report is worse than one.
             bytes: bytes ? bytes.result() : {measured: false, why: 'the census never attached'},
+            // Speed, from Lighthouse. Folded in here rather than written beside meta.json
+            // because the Craft job imports this function and never the CLI, so a PSI that
+            // lived only in the wrapper would never reach production at all. `{error}` when
+            // it could not be had — never absent, so a reader can tell "we did not ask"
+            // from "we asked and it failed".
+            psi: askPsi ? await askPsi : {error: 'not requested'},
             httpStatus,
             consentDismissed: consent.dismissed,
             consentBannerSeen: consent.bannerSeen === true,
