@@ -17,3 +17,18 @@ Sitemap: {{ alias('@web') }}/sitemap.xml
 # llms.txt: {{ alias('@web') }}/llms.txt
 
 User-agent: *
+
+{# THE REPORTS. Each one is an analysis of a stranger's homepage, produced because they
+   gave us their email address, and it lives on a public URL because the email has to link
+   to something a prospect can forward to their boss — which is the best outcome available
+   and which a login would break.
+
+   The filenames carry eight random characters so the list cannot be walked, but that only
+   stops enumeration. It does not stop a link leaking: somebody pastes theirs into a public
+   thread, a crawler follows it, and another person's audit is in search results. This
+   asks crawlers not to.
+
+   A REQUEST AND NOT A CONTROL. robots.txt is obeyed by the crawlers that choose to; it is
+   not access control and must never be relied on as any. What keeps these private is that
+   nobody can guess the address. #}
+Disallow: /assets/lead-generator/
