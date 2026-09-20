@@ -15,7 +15,7 @@ receives is not built yet.
 | `lib/unrendered.mjs` | Regions that exist for a visitor and are missing from the capture. |
 | `lib/webgl.mjs` | Whether this browser could render a WebGL hero, and whether the page wanted one. |
 | `lib/bytes.mjs` | What the page shipped, counted on the load and scroll that made the image. |
-| `lib/psi.mjs` | How fast it is, from Lighthouse via PageSpeed Insights. Lab metrics; CrUX when it exists. |
+| `lib/psi.mjs` | How fast it is, from Lighthouse via PageSpeed Insights. Lab metrics only. |
 | `lib/consent.mjs` | The cookie-banner selectors, and the two attempts at dismissing one. |
 | `lib/shadow.mjs` | One walk of the page that does not stop at a web component's boundary. |
 | `lib/tiles.mjs` | The page cut into non-overlapping tiles the model is shown one at a time. |
@@ -62,12 +62,16 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.test.mjs           # plus the networ
   from CDP, free, on the load we were doing anyway. Speed goes the other way: our own
   timings would be unthrottled, measured from wherever this runs, and would flatter every
   page on earth. That has to come from Lighthouse, so it does.
-- **Most sites have no CrUX data, and the report must say so rather than fill the gap.**
-  Field data needs enough traffic to report: natwest.com has it for both page and origin,
-  kohde.agency has neither, and the second is what most prospects look like. Lab metrics
-  were complete for both, so lab is the signal and `field.available` is a declared fact.
-  A lab figure presented as though real visitors had lived it is the confident wrong number
-  in a new costume.
+- **Lab data only, and CrUX is deliberately not collected.** Field data — real Chrome
+  visitors over a rolling 28 days — is unarguably the better number, and it needs enough
+  traffic before Google reports on a site at all. natwest.com has it for both page and
+  origin; kohde.agency has neither, and kohde is what almost every prospect for this tool
+  looks like. Carrying it would mean a section that appears for perhaps one site in twenty,
+  two shapes of email, and a conditional in every piece of copy. Lab was complete for BOTH,
+  so lab alone buys one report, one shape, and a number that is there every time. What is
+  owed in exchange is one unconditional line saying these figures are a simulation and not
+  what visitors experienced — unconditional because a caveat true of every site needs no
+  branch either.
 - **PageSpeed runs beside the capture, not before it.** It took 21.5s and 27.5s on the two
   probes and the browser work takes longer than that on any page worth measuring, so they
   overlap and the audit pays nothing for it. It still lands before anything is segmented,

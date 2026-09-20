@@ -3,17 +3,16 @@
  *
  *   node --test tools/audit/test/psi.test.mjs
  *
- * No network. The two fixtures are REAL responses, reduced to the fields parsePsi reads —
- * natwest.com, which has CrUX data, and kohde.agency, which does not. That pair is the
- * whole reason this module is shaped the way it is: most of this tool's prospects are the
- * second kind, and a lab figure dressed up as real-user data would be the confident wrong
- * number the tool exists to avoid.
+ * No network. The two fixtures are REAL responses — natwest.com, a bank, and kohde.agency,
+ * a small agency with too little traffic for Google to report on at all. That pair is the
+ * evidence for taking lab data and only lab data: the big site has CrUX and the small one
+ * has none, while LAB WAS COMPLETE FOR BOTH. One report, one shape, a number every time.
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
-    ENDPOINT, STRATEGY, fetchPsi, fieldMetrics, labMetrics, parsePsi, psiKey, worthRetrying,
+    ENDPOINT, STRATEGY, fetchPsi, labMetrics, parsePsi, psiKey, worthRetrying,
 } from '../lib/psi.mjs';
 
 const fixture = (name) => JSON.parse(readFileSync(`tools/audit/fixtures/psi-${name}.fixture.json`, 'utf8'));
@@ -57,41 +56,6 @@ test('a metric that is absent is null, never zero', () => {
     assert.equal(labMetrics({'largest-contentful-paint': {}}).lcpMs, null);
 });
 
-/* ---------------------------------------------------------------- the field run */
-
-test('CrUX is reported when it is there, and named as the page rather than the origin', () => {
-    const field = fieldMetrics(natwest);
-    assert.equal(field.available, true);
-    assert.equal(field.scope, 'page');
-    assert.equal(field.overall, 'FAST');
-    assert.deepEqual(field.metrics.lcp, {percentile: 1780, category: 'FAST'});
-    assert.equal(field.metrics.inp.percentile, 61);
-});
-
-/**
- * The case that shaped the module. A lab number presented as though real people had lived
- * it is the confident wrong number in a new costume, so the absence is a declared fact and
- * not something a reader infers from a row of nulls.
- */
-test('a site with no CrUX says so, and invents nothing', () => {
-    const field = fieldMetrics(kohde);
-    assert.equal(field.available, false);
-    assert.equal(field.scope, null);
-    assert.equal(field.overall, null);
-    assert.deepEqual(field.metrics, {});
-});
-
-test('the origin is used when the page itself has no data, and says which', () => {
-    const field = fieldMetrics({
-        originLoadingExperience: {overall_category: 'AVERAGE', metrics: {
-            LARGEST_CONTENTFUL_PAINT_MS: {percentile: 3100, category: 'AVERAGE'},
-        }},
-    });
-    assert.equal(field.available, true);
-    assert.equal(field.scope, 'origin');
-    assert.equal(field.metrics.lcp.percentile, 3100);
-});
-
 /* ---------------------------------------------------------------------- parsing */
 
 test('a real response reduces to the fields a report needs', () => {
@@ -101,7 +65,16 @@ test('a real response reduces to the fields a report needs', () => {
     assert.equal(got.finalUrl, 'https://www.natwest.com/');
     assert.equal(got.lighthouseVersion, '13.4.1');
     assert.equal(got.lab.lcpMs, 2262);
-    assert.equal(got.field.available, true);
+});
+
+/**
+ * CrUX is real visitors and it is the better number, and it is deliberately not collected:
+ * it exists for natwest and not for kohde, and kohde is what almost every prospect looks
+ * like. A section that appears for one site in twenty is two reports, not one.
+ */
+test('field data is not carried, even when the response has it', () => {
+    assert.ok(natwest.loadingExperience?.metrics, 'the fixture really does have CrUX');
+    assert.equal('field' in parsePsi(natwest), false);
 });
 
 /**

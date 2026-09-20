@@ -5,15 +5,23 @@
  *
  *   node --test tools/audit/test/psi.test.mjs
  *
- * LAB ONLY, AS THE SIGNAL. PSI answers twice over: a LAB run Lighthouse performs on
- * Google's own infrastructure under simulated throttling, and FIELD data from the Chrome
- * UX Report, which is what real visitors actually experienced. Field is the better number
- * and most of this tool's prospects will never have it — CrUX needs enough traffic to
- * report, and a professional-services firm does not have it. Measured: natwest.com has
- * field data for both the page and the origin; kohde.agency has neither. Lab was complete
- * for both. So lab is what the report is built on, and field is recorded when it exists
- * and shown only then. A lab figure presented as though real people had lived it would be
- * the confident wrong number this tool exists to avoid, wearing a new costume.
+ * LAB ONLY, AND FIELD DATA IS DELIBERATELY NOT COLLECTED. PSI can answer twice over: a
+ * LAB run Lighthouse performs under simulated throttling, and FIELD data from the Chrome
+ * UX Report — real Chrome visitors over a rolling 28 days, which is unarguably the better
+ * number. It is not here, and the reason is the client base rather than the metric.
+ *
+ * CrUX needs enough traffic before Google will report on a site at all. Measured on the
+ * two probes: natwest.com has field data for both page and origin; kohde.agency has
+ * neither, and kohde is what almost every prospect for this tool looks like. Carrying
+ * field data would mean a report with a section that exists for perhaps one site in
+ * twenty, two shapes of email, and a conditional in every piece of copy written about it.
+ * Lab was complete on BOTH sites — all seven metrics, big and small alike — so taking lab
+ * alone buys one report, one shape, and a number that is there every time.
+ *
+ * WHAT IS OWED IN EXCHANGE is that the report never implies these figures are what
+ * visitors experienced. They are a simulation on hardware nobody owns, said plainly and
+ * said for every site, because a caveat that applies to all of them needs no condition
+ * either.
  *
  * DESKTOP, BECAUSE THE CAPTURE IS DESKTOP. PSI defaults to mobile, which is the right
  * default for Google and the wrong one here: a mobile speed score printed beside a
@@ -96,41 +104,6 @@ export function labMetrics(audits = {}) {
 }
 
 /**
- * CrUX, or a declared absence. Never inferred, never filled in from the lab run.
- *
- * `available` is a field rather than something a reader works out from nulls, because the
- * whole point is that the report can ask one question and get a straight answer. The page
- * is preferred over the origin — a homepage's own experience beats the average of every
- * page on the domain — and `scope` says which was used.
- */
-export function fieldMetrics(payload = {}) {
-    const page = payload.loadingExperience?.metrics ? payload.loadingExperience : null;
-    const origin = payload.originLoadingExperience?.metrics ? payload.originLoadingExperience : null;
-    const use = page ?? origin;
-    if (!use) {
-        return {available: false, scope: null, overall: null, metrics: {}};
-    }
-    const take = (name) => {
-        const m = use.metrics?.[name];
-
-        return m ? {percentile: m.percentile, category: m.category} : null;
-    };
-
-    return {
-        available: true,
-        scope: page ? 'page' : 'origin',
-        overall: use.overall_category ?? null,
-        metrics: {
-            lcp: take('LARGEST_CONTENTFUL_PAINT_MS'),
-            cls: take('CUMULATIVE_LAYOUT_SHIFT_SCORE'),
-            inp: take('INTERACTION_TO_NEXT_PAINT'),
-            fcp: take('FIRST_CONTENTFUL_PAINT_MS'),
-            ttfb: take('EXPERIMENTAL_TIME_TO_FIRST_BYTE'),
-        },
-    };
-}
-
-/**
  * A PSI payload reduced to what a report needs, or an error with a reason.
  *
  * `finalUrl` IS KEPT FOR THE SAME REASON meta.landedUrl is: PSI follows redirects too, and
@@ -159,7 +132,6 @@ export function parsePsi(payload) {
         fetchedAt: lh.fetchTime ?? null,
         score: Math.round(score * 100),
         lab: labMetrics(lh.audits),
-        field: fieldMetrics(payload),
     };
 }
 
