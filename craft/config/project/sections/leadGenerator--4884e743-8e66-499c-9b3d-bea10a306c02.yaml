@@ -1,0 +1,22 @@
+defaultPlacement: end
+enableVersioning: true
+entryTypes:
+  -
+    uid: 919d677c-b107-4ca3-a622-1c8cd7361763 # Audit Entry
+handle: leadGenerator
+maxAuthors: 1
+minAuthors: 1
+name: 'Lead Generator'
+previewTargets:
+  -
+    label: 'Primary entry page'
+    refresh: '1'
+    urlFormat: '{url}'
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: true
+    template: _routers/channel.twig
+    uriFormat: 'lead-generator/{slug}'
+type: channel

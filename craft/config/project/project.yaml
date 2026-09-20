@@ -1,4 +1,4 @@
-dateModified: 1789737930
+dateModified: 1789925742
 elementSources:
   craft\elements\Entry:
     -
@@ -267,12 +267,14 @@ meta:
     16eff64f-e755-49ec-9bac-66c60032a09d: Strapline # Strapline
     23d5ad16-5f00-488c-8d54-ec6a454aa3ef: 'Job Titles' # Job Titles
     24d25123-4314-4ccb-a64f-a450d200cb1d: URL # URL
+    26c8a621-4825-4302-adb0-d8db3b9c2d76: Status # Status
     27e9120b-2988-4328-b1a1-00f9aea77134: 'Lottie JSON' # Lottie JSON
     29e777f6-69e7-4f1e-85bc-2b9cda1d9f2f: Purpose # Purpose
     34ff84d5-a7af-4a84-b293-3ad3aadbb438: Page # Page
     38c53f0d-1602-478d-87f7-ad35b7b0211f: Personality # Personality
     48a345a5-15fa-438d-9106-72cc3204d789: 'Profile Image' # Profile Image
     53bb207c-9913-45d4-acf8-9f4cca3d76e2: Skills # Skills
+    53c0ee62-c7e2-4c5b-b882-5234e7190fb0: Report # Report
     58bd7782-6a62-4253-8045-4bd40e0bf7a3: 'Meta Description' # Meta Description
     64ce95c1-a716-4888-acc6-4e2127de1543: JonSon # JonSon
     76c638b1-cf43-42a7-9c63-56cb5ffa05b5: Summary # Summary
@@ -291,9 +293,11 @@ meta:
     0645b09a-c1c3-42ca-9969-106bcb09eb89: Notes # Notes
     646b88d9-49a2-4e1c-8109-b1eafd61a34c: '2UP Image Primary' # 2UP Image Primary
     898a8b56-b457-4eb4-8f86-d807e8521a2c: Contact # Contact
+    919d677c-b107-4ca3-a622-1c8cd7361763: 'Audit Entry' # Audit Entry
     994d5070-7163-4d97-8082-568fdabea3f5: Email # Email
     2264f1d9-274a-40ca-88c3-d257e97831a3: 'Large Image' # Large Image
     4833f177-88ca-45a3-9945-0bc2baaa2b0f: Method # Method
+    4884e743-8e66-499c-9b3d-bea10a306c02: 'Lead Generator' # Lead Generator
     8636ff44-3f6d-40e6-bf55-09775e0e6a6d: CRM # CRM
     09805ad9-ad12-4f9b-b458-0644d283c8e3: Prompts # Prompts
     12005ccd-8100-4692-a304-298b71ca8e50: Global # Global
@@ -302,6 +306,7 @@ meta:
     56248dc5-d5bc-4930-84e1-33a86621fb8c: Topics # Topics
     85738cb0-617b-45ba-9842-28cb680b4591: Company # Company
     534287de-d8ca-48b9-ac50-33adaece4775: Pages # Pages
+    940942e6-c0be-4ab0-a02d-4f3a0a88571b: 'Failure Reason' # Failure Reason
     02125299-2fff-497a-b65d-fc5688b73020: Slug # Slug
     3126289e-aa51-4063-8ac8-7a3fa6f80dc6: 'Has breakout?' # Has breakout?
     20283626-153e-4279-aec4-3b29e5285338: 'Loop Animation?' # Loop Animation?
@@ -311,6 +316,7 @@ meta:
     94386123-8a64-4a2b-913e-0c19f1ef56a8: Job # Job
     a2d93e99-dee0-49f1-aa28-d8274699d05c: Logo # Logo
     a5c0ac83-e6a8-4ac9-93c4-b24a085711cf: about # about
+    a6c69d03-c8c3-43ef-ba5a-2aa8f61c70b1: 'Audit URL' # Audit URL
     a62bda5a-4156-4df3-978e-898f4573c2da: Suggestions # Suggestions
     a68efc3b-2b23-40b8-9c1e-7090c9713dd4: 'Case Study' # Case Study
     a2722a42-13ad-403c-a2f5-26906a00c47d: Location # Location
@@ -318,10 +324,12 @@ meta:
     aa85c7c1-9789-4e1e-8c17-73f94dc0470e: 'Job Title' # Job Title
     ac207a17-88ae-482b-b0b5-dfbf6ca6a970: 'How I can help' # How I can help
     acad981a-e3ae-417d-ac6f-df5be8f2c1f1: 'Case Studies' # Case Studies
+    af88df6e-0d0e-418d-83df-2b2b9796b36a: Data # Data
     b1d9fee8-8250-4688-b6f7-b8e7bffa0569: 'Client Long Title' # Client Long Title
     b7cbdaa4-0dca-4396-ac30-8a87d96757d7: Tags # Tags
     ba6e18f9-ba13-4201-8c29-03a1ebd3ad4e: Video # Video
     bb8f9d67-a41f-4ece-a83f-9bf12de5011e: 'Hide entries from index?' # Hide entries from index?
+    bb31f87f-b8c8-4ecb-836c-0e2ac29c740b: Note # Note
     bf05dd31-0643-4d5f-985c-90849d0e4ebc: 'Case Study' # Case Study
     bfb56d7d-fee2-4410-9f56-4f8c6ec62176: Testimonial # Testimonial
     bfce2a98-eed7-4c67-b3a4-39e5122ec983: 'Role Item' # Role Item
