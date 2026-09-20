@@ -26,6 +26,8 @@
               on the measure below that. See .c-content__aside.
     whisper — the small uppercase line at the top.
     body    — trusted HTML for the prose (paragraphs).
+    form    — true for the contact form, or a template path for another one (the
+              homepage audit passes '_components/audit-form').
     ctas    — a list of CTA Matrix blocks ({ title, ctaUrl }) rendered as boxes
               below the prose.
     clients — a list of { name, logo, summary } maps → a "Brands I have worked with"
@@ -158,7 +160,14 @@
                         {% if body %}{{ body|raw }}{% endif %}
                         {% if form or ctas %}
                             <div class="c-content__form-cols">
-                                {% if form %}{% include '_components/form' %}{% endif %}
+                                {# WHICH form, not whether. `form: true` is the contact form and
+                                   stays that, so every page already passing it is unchanged;
+                                   a string is the template to include instead, which is how
+                                   the homepage audit gets this page's whole treatment —
+                                   whisper, title, reveal, CTA columns — without a second copy
+                                   of it. Strict comparison because a non-empty string is
+                                   loosely equal to true and would resolve to the wrong form. #}
+                                {% if form %}{% include form is same as(true) ? '_components/form' : form %}{% endif %}
                                 {% include '_components/ctas' with { ctas: ctas, heading: ctasHeading ?? null } only %}
                             </div>
                         {% endif %}
