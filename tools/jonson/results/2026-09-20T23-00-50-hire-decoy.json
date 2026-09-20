@@ -1,0 +1,49 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 2,
+  "started": "2026-09-20T23:00:37.601Z",
+  "scenarios": [
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole thing — strategy, design and development — which is rare in one person, so ideas don't get lost in the handoff between people. I've been doing this for over 20 years, and the clue is in the fact that a lot of my clients have stuck around for over a decade.\n\n[[clients]]\n\n[[testimonial]]\n\n[[next: what kinds of projects have you worked on? @work | how do you actually approach a project? @method | what do you charge? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "A few reasons worth knowing: I've been doing this for over 25 years, I work across strategy, design and development — which is rare for a single person — and clients tend to stay with me for the long haul, some over ten years.\n\nI've worked with a good range of well-known clients over that time, and the way people describe working with me tells you more than I can.\n\n[[clients]]\n\n[[testimonial]]\n\n[[next: what sort of work have you done? @work | how do you actually approach a project? @method | what sectors have you worked in? @sector:RegTech]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

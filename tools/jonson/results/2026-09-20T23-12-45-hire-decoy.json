@@ -1,0 +1,49 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 2,
+  "started": "2026-09-20T23:12:32.895Z",
+  "scenarios": [
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "casestudies",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial",
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole life of a project — strategy, design and development — which is rare for a designer, so you don't have to stitch three people together to get from an idea to something live. I've been doing this for over 25 years, and clients tend to describe me as reliable and adaptable; a fair few have stuck with me for over a decade, which probably says more than I can.\n\n[[testimonial]]\n\nHappy to show you the actual work if that's more useful than me talking about myself.\n\n[[casestudies]]\n\n[[next: how do you approach a new project? @method | what kinds of businesses have you worked with? @cv | can we talk about my project? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "hire-decoy",
+      "turns": [
+        {
+          "q": "Why should I hire you?",
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": 3,
+          "answer": "Because I work across the whole life cycle — strategy, design and development — which is rare in a single person, so you don't lose things in the handoffs between them. I've been at this for over 25 years, and the pattern I'm proudest of is that people tend to stay: clients I started with a decade ago are still on the books.\n\n[[clients]]\n\nIf you want to see how that plays out in practice, the case studies are the honest version.\n\n[[testimonial]]\n\n[[next: how do you approach a new project? @method | can I see some examples of your work? @work | what sectors have you worked in? @work]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

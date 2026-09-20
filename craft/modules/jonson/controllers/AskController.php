@@ -652,8 +652,10 @@ class AskController extends Controller
                 $clean = $this->stripMarkers($answer);
                 $ctx = Jonson::getInstance()->findContext;
                 $registry = $this->surfaceRegistry();
-                $marks = $this->markersIn($answer);
                 $inventory = array_column($ctx->inventory(), 'label', 'handle'); // handle => label
+                // The photo handles go in so they never claim a framing paragraph: they
+                // all feed one rail, which renders once. See markersIn.
+                $marks = $this->markersIn($answer, array_keys($inventory));
 
                 foreach ($registry as $surface) {
                     $handle = $surface['handle'];
@@ -2551,24 +2553,50 @@ class AskController extends Controller
      * that paragraph, which is the frame the visitor reads it against (the
      * client places it there). Unframed is a marker before any prose at all, and
      * that one is dropped rather than rendered above the first line.
+     *
+     * A PARAGRAPH FRAMES ONE PANEL, and it took a reader to notice it did not. Asked
+     * "why should I hire you?", the model answered in one paragraph and then wrote
+     * `[[clients]]` and `[[testimonial]]` on lines of their own beneath it. Both were
+     * framed — prose HAD been seen — so the logos rendered under the paragraph and the
+     * quote rendered under the LOGOS, with no words above it at all. The directive asks
+     * for a marker at the end of the sentence that introduces its thing, or straight
+     * after that paragraph; it is one introducing paragraph EACH, and nothing was
+     * enforcing the each.
+     *
+     * So a prose paragraph is a frame that gets claimed. The first panel to want it
+     * takes it; a second riding on the same prose is unframed and drops, exactly as a
+     * marker before any prose does.
+     *
+     * PHOTO HANDLES NEVER CLAIM, because they are not panels. Every photo marker in an
+     * answer feeds ONE rail that renders once, so several in a paragraph are one
+     * surface, not a stack — making them compete for the frame would silently cut the
+     * rail down to its first picture.
      */
-    private function markersIn(string $answer): array
+    private function markersIn(string $answer, array $photoHandles = []): array
     {
+        $photos = array_flip(array_map('strtolower', $photoHandles));
         $marks = [];
         $order = 0;
-        $proseSeen = false;
+        // A prose paragraph nobody has used to introduce a panel yet.
+        $frameFree = false;
         foreach (preg_split('/\n{2,}/', $answer) ?: [] as $paragraph) {
             $hasProse = trim($this->stripMarkers($paragraph)) !== '';
             if (!preg_match_all('/\[\[([a-z0-9][a-z0-9-]*)(?::([a-z0-9-]+))?\]\]/i', $paragraph, $m, PREG_SET_ORDER)) {
-                $proseSeen = $proseSeen || $hasProse;
+                $frameFree = $frameFree || $hasProse;
                 continue;
             }
-            $framed = $hasProse || $proseSeen;
-            $proseSeen = $proseSeen || $hasProse;
+            // Its own prose reframes: a paragraph that says something can introduce a
+            // panel whether or not an earlier one already has.
+            $frameFree = $frameFree || $hasProse;
             foreach ($m as $match) {
                 $handle = strtolower($match[1]);
                 if ($handle === 'next') {
                     continue;
+                }
+                $isPhoto = isset($photos[$handle]);
+                $framed = $isPhoto ? ($frameFree || $hasProse) : $frameFree;
+                if (!$isPhoto && $framed) {
+                    $frameFree = false; // this panel has taken the paragraph
                 }
                 if (isset($marks[$handle])) {
                     $marks[$handle]['framed'] = $marks[$handle]['framed'] || $framed;
