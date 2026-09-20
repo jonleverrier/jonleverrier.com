@@ -1,0 +1,27 @@
+{#
+  The homepage audit form, on a page of its own.
+
+  A ROUTE RATHER THAN A SINGLE, and only for now. Everything else on this site is an
+  element with its own address, so the copy around it can be written in the control panel
+  rather than in a template. This is here so the form can be seen and submitted while the
+  page it eventually lives on is still being decided — the words below are placeholders
+  and are meant to be replaced by fields on a single, not edited here.
+
+  See craft/config/routes.php for the pattern that reaches it.
+#}
+{% extends '_layouts/page.twig' %}
+
+{# Every view here sets this; _includes/page/head.twig reads it to work out which page
+   it is rendering. #}
+{% set tplPath = _self %}
+
+{% block siteContent %}
+    <div class="b-container">
+        <h1>What does your homepage spend its space on?</h1>
+        <p>We photograph the whole page — not just the first screen — cut it where your own
+            markup changes, and measure what share of it goes to each of eight things.
+            You get the number and the annotated screenshot it came from.</p>
+
+        {% include '_components/audit-form.twig' %}
+    </div>
+{% endblock %}

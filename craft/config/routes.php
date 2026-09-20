@@ -16,6 +16,12 @@ return [
     // "feed" would otherwise shadow it.
     'notes.rss' => ['template' => '_views/feeds/notes'],
 
+    // The homepage audit form. A ROUTE AND NOT A SINGLE, and only until the page it
+    // belongs on is decided: everything else here is an element with its own address so
+    // its copy can be written in the control panel. This exists so the form can be seen
+    // and submitted meanwhile. See _views/page/audit.twig.
+    'audit' => ['template' => '_views/page/audit'],
+
     // llms.txt — the site described in markdown for a language model, per
     // llmstxt.org. Generated from the CMS rather than kept as a file at the webroot,
     // so it cannot drift out of step with what is actually published.
