@@ -127,11 +127,19 @@ try {
         : `${psi.score}/100 desktop — LCP ${psi.lab.lcpMs}ms, TBT ${psi.lab.tbtMs}ms, CLS ${psi.lab.cls}`}`);
 
     // Colours and typefaces, as the page renders them.
+    //
+    // THE PALETTE AND NOT THE GROUPING. This printed how many colours were within dE of
+    // one another, and went on printing it after that grouping moved to report time —
+    // where it belongs, being a judgement at a threshold rather than a measurement. The
+    // field it read simply stopped existing, and a capture that had done all its work
+    // died on the last line before writing anything. `node tools/audit/data.mjs <dir>`
+    // is where the grouping lives now.
     const st = meta.styles ?? {};
     if (st.measured) {
-        const drift = st.colours.sameColour;
+        const palette = st.colours?.palette ?? [];
+        const top = palette.slice(0, 3).map((c) => c.colour).join(', ');
         console.log(`colours      ${st.colours.total} on the page`
-            + `${drift.length ? `, ${drift.length} pair(s) within dE ${st.colours.deltaE}: ${printable(drift.map((g) => g.join(' ~ ')).join('; '), 140)}` : ''}`);
+            + `${top ? `, most of it ${printable(top, 120)}` : ''}`);
         console.log(`fonts        ${st.fonts.declared} declared, ${st.fonts.loaded} loaded, `
             + `${st.fonts.rendered.length} rendered: ${printable(st.fonts.rendered.map((f) => f.family).join(', '), 120)}`);
     } else {
