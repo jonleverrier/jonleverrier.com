@@ -167,3 +167,46 @@ test('two uncertain blocks at a seam do not invent a category between them', () 
 
     assert.equal(got[0].category, 'unclassified');
 });
+
+/* ------------------------------------------- a short block at a seam is the seam's doing */
+
+/**
+ * hsbc.co.uk. Its Trustpilot panel straddles the seam at 1400. One run returned confidence
+ * 0.5 either side and merged; the next returned 0.55 and 0.6 and did not — the same page,
+ * split or whole on a five-hundredth of a point. Height is the signal that does not wander:
+ * the lower half was 93px, and a 93px section beginning exactly at an arbitrary 1400px grid
+ * line is the seam's doing, not the page's.
+ */
+test('a short block at a seam adopts its neighbour however confident it sounds', () => {
+    const panel = {y0: 993, y1: 1400, category: 'trust', what: 'Trustpilot rating and cards', cols: 3, confidence: 0.55};
+    const tail = {y0: 1400, y1: 1493, category: 'hero', what: 'tail of banking pitch text', cols: 1, confidence: 0.6};
+    const got = mergeSeams([panel, tail], [1400]);
+
+    assert.equal(got.length, 1, 'one panel, cut by the tile grid, put back');
+    assert.equal(got[0].category, 'trust', 'the 93px tail adopts the 407px section');
+    assert.equal(got[0].y1, 1493);
+});
+
+test('two full-height confident sections at a seam still stand apart', () => {
+    const a = {y0: 0, y1: 1400, category: 'trust', what: 'logos', cols: 1, confidence: 0.9};
+    const b = {y0: 1400, y1: 2000, category: 'hero', what: 'pitch', cols: 1, confidence: 0.9};
+
+    assert.equal(mergeSeams([a, b], [1400]).length, 2);
+});
+
+test('a short block away from a seam is left alone', () => {
+    const short = {y0: 1200, y1: 1290, category: 'hero', what: 'strapline', cols: 1, confidence: 0.9};
+    const section = {y0: 1290, y1: 1900, category: 'trust', what: 'awards', cols: 1, confidence: 0.9};
+
+    assert.equal(mergeSeams([short, section], [1400]).length, 2);
+});
+
+test('the longer side is the one that keeps its name', () => {
+    const tail = {y0: 1310, y1: 1400, category: 'editorial', what: 'end of copy', cols: 1, confidence: 0.8};
+    const section = {y0: 1400, y1: 2400, category: 'routing', what: 'case study cards', cols: 3, confidence: 0.8};
+    const got = mergeSeams([tail, section], [1400]);
+
+    assert.equal(got.length, 1);
+    assert.equal(got[0].category, 'routing');
+    assert.equal(got[0].y0, 1310);
+});

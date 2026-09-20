@@ -73,7 +73,7 @@ export function snapBoundaries(edges, candidates, reach = SNAP_REACH) {
  */
 /**
  * Below this, a block at a seam is a fragment the model could not identify, and it takes
- * the category of the confident section it abuts.
+ * the category of the section it abuts.
  *
  * A slice boundary falls at an arbitrary 1400px grid, so a section can start a hundred
  * pixels before one. The slice above then sees a sliver and says so — masonbreese.com
@@ -81,14 +81,49 @@ export function snapBoundaries(edges, candidates, reach = SNAP_REACH) {
  * "grey section begins", while the slice below named the whole thing confidently. Leaving
  * that sliver unclassified reports as unmeasured something we did in fact measure.
  *
- * ONLY AT A SEAM, and only when at least one end is unsure. Two CONFIDENT blocks that
- * differ are two sections and neither gives way; but where either is a fragment, the more
- * confident label wins and they join. visionarygrid.studio is why the test is "either"
- * rather than "one above and one below": its hero came back as 0.45 and 0.50 either side
- * of the seam at 1400 — both guesses at one section, and a rule needing one side ABOVE the
- * line left them as two categories over a hair's difference.
+ * ONLY AT A SEAM. Two whole, confident blocks that differ are two sections and neither
+ * gives way; but where one of them is a fragment, the fragment adopts the other's label
+ * and they join. visionarygrid.studio is why either side may be the fragment rather than
+ * only the upper one: its hero came back as 0.45 and 0.50 either side of the seam at 1400
+ * — both guesses at one section, and a rule needing one side ABOVE the line left them as
+ * two categories over a hair's difference.
  */
 export const FRAGMENT_MAX_CONFIDENCE = 0.5;
+
+/**
+ * …and above this height, a block at a seam is a section rather than a leftover.
+ *
+ * CONFIDENCE ALONE WAS THE WRONG TEST, and hsbc.co.uk proved it twice in one afternoon.
+ * Its Trustpilot panel straddles the seam at 1400; one run returned 0.5 either side and
+ * merged, the next returned 0.55 and 0.6 and did not — the same page, the same pixels,
+ * split or whole on a five-hundredth of a point. A threshold the model wanders across is
+ * not a rule, it is a coin toss with a constant in it.
+ *
+ * SIZE IS THE HONEST SIGNAL, because the seam is what made the sliver. hsbc's lower half
+ * was 93px; masonbreese's upper half was 133px. A genuine section 200px tall that also
+ * begins or ends at an arbitrary 1400px grid line is a coincidence; a 200px leftover at
+ * one is the mechanism working as designed. So a fragment is short OR unsure, and what a
+ * fragment is short RELATIVE TO is the tile that cut it: a seventh of one.
+ *
+ * 200 RATHER THAN 150, decided by looking rather than by fitting. Replaying all 27 stored
+ * answers, six sites joined a pair and every join was at a seam: slivers of 87, 87, 93,
+ * 111, 133, 171 and 196px. The 196 is natwest.com and was the one worth arguing about — a
+ * `trust` block reading "Supporting 18 million customers" absorbed into a `hero`. Opening
+ * the screenshot ends the argument: it is the HEADLINE of the app-pitch section, on the
+ * same lavender panel as "And, of course, you.", the store buttons and the phone. The seam
+ * at 5600 fell between a heading and its own body. A threshold tuned to keep that one
+ * separate would have been fitted to a defect.
+ *
+ * What it costs, stated: a real 200px band — a slim promo strip, a breadcrumb rail — that
+ * happens to sit exactly on a seam is absorbed into its neighbour and loses its own label.
+ * It is bounded at 200px of a page measured in thousands, and on the corpus every
+ * absorption was a repair rather than a loss.
+ */
+export const SEAM_FRAGMENT_MAX_HEIGHT = 200;
+
+/** Shaped by the seam rather than by the page: too short to be a section, or a guess. */
+const isFragment = (b) => (b.y1 - b.y0) <= SEAM_FRAGMENT_MAX_HEIGHT
+    || (b.confidence ?? 1) <= FRAGMENT_MAX_CONFIDENCE;
 
 export function mergeSeams(blocks, seams) {
     const at = new Set(seams);
@@ -96,12 +131,13 @@ export function mergeSeams(blocks, seams) {
     for (const b of blocks) {
         const last = out[out.length - 1];
         const meets = last && last.y1 === b.y0 && at.has(b.y0);
-        // A fragment the slice above could not identify, abutting a section the slice
-        // below could: adopt the confident answer rather than keep the guess.
-        const unsure = Math.min(last?.confidence ?? 1, b.confidence ?? 1) <= FRAGMENT_MAX_CONFIDENCE;
-        if (meets && last.category !== b.category && unsure) {
-            // The more confident of two views of the same place.
-            if ((b.confidence ?? 0) > (last.confidence ?? 0)) {
+        if (meets && last.category !== b.category && (isFragment(last) || isFragment(b))) {
+            // The fragment adopts the section. Where both are fragments — two guesses at
+            // one place — the more confident of the two views wins.
+            const adopt = isFragment(last) && isFragment(b)
+                ? (b.confidence ?? 0) > (last.confidence ?? 0)
+                : isFragment(last);
+            if (adopt) {
                 last.category = b.category;
                 last.what = b.what;
             } else {
