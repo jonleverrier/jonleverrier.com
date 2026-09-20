@@ -34,12 +34,39 @@ test('blocks of the same category are added together', () => {
     assert.equal(full.find((s) => s.category === 'routing').share, 0.375);
 });
 
-/** Roughly top-of-page to bottom-of-page, so the table reads like the page it describes. */
-test('categories come back in the order the report prints them', () => {
+/**
+ * BIGGEST FIRST, because the first row is the answer. natwest.com spends 36.3% of its page
+ * on promotion and it sat fourth under the old top-of-page-to-bottom order, which is the
+ * right order for reading 27 reports side by side and the wrong one for the person reading
+ * the one about their own site.
+ */
+test('the biggest category comes first', () => {
+    const {full} = surfaceArea(tree([
+        leaf(0, 100, 'navigation'), leaf(100, 400, 'promotion'), leaf(500, 250, 'hero'), leaf(750, 150, 'footer'),
+    ]), 900);
+    assert.deepEqual(full.map((s) => s.category), ['promotion', 'hero', 'footer', 'navigation']);
+});
+
+/** Equal shares must not reorder between runs: blocks.json has to be byte-identical. */
+test('a tie breaks on the fixed order, so the same page prints the same table', () => {
     const {full} = surfaceArea(tree([
         leaf(0, 100, 'footer'), leaf(100, 100, 'hero'), leaf(200, 100, 'navigation'), leaf(300, 100, 'trust'),
     ]), 900);
     assert.deepEqual(full.map((s) => s.category), ['navigation', 'hero', 'trust', 'footer']);
+});
+
+/**
+ * lloydsbank.com is 84.1% unclassified because it served an error page. Sorted by size that
+ * refusal is the first row, which reads as the page's largest feature — a confident wrong
+ * headline of exactly the kind this tool exists to avoid. It is the tool declining to
+ * answer, so it goes last whatever its size.
+ */
+test('unclassified is pinned last however large it is', () => {
+    const {full} = surfaceArea(tree([
+        leaf(0, 800, 'unclassified'), leaf(800, 60, 'navigation'), leaf(860, 40, 'footer'),
+    ]), 900);
+    assert.deepEqual(full.map((s) => s.category), ['navigation', 'footer', 'unclassified']);
+    assert.ok(full.at(-1).share > full[0].share, 'and it really was the biggest');
 });
 
 /* ------------------------------------------------------------- above the fold */

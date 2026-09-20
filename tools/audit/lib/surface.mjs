@@ -32,12 +32,33 @@
 import {leaves} from './blocks.mjs';
 
 /**
- * The order a report prints them in: roughly top-of-page to bottom-of-page, so the table
- * reads like the page it describes, with the refusal last.
+ * BIGGEST FIRST, because the first row is the answer.
+ *
+ * This was top-of-page to bottom-of-page, so the table read like the page it describes.
+ * That is the better order for reading 27 of them side by side — the rows line up and a
+ * column can be scanned — and the wrong one for the person the report is FOR, who is
+ * reading one page, theirs, and wants to know what it spends the most space on. On
+ * natwest.com that is promotion at 36.3%, and it sat fourth.
+ *
+ * `unclassified` is pinned last whatever its size. It is the tool declining to answer, not
+ * a finding, and a refusal at the top of the table reads as the page's largest feature —
+ * which on lloydsbank.com, 84% unclassified because it served an error page, would be a
+ * confident wrong headline of exactly the kind this tool exists to avoid.
+ *
+ * The sweep and the leaderboard sort their own rows; this is the per-page order only.
  */
 const CATEGORY_ORDER = [
     'navigation', 'hero', 'brand', 'promotion', 'trust', 'routing', 'editorial', 'footer',
     'unclassified',
+];
+
+/** Ties break on the fixed order above, so the same page always prints the same table. */
+const bySize = (a, b) => (b.share - a.share)
+    || (CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category));
+
+const biggestFirst = (rows) => [
+    ...rows.filter((r) => r.category !== 'unclassified').sort(bySize),
+    ...rows.filter((r) => r.category === 'unclassified'),
 ];
 
 /**
@@ -64,7 +85,7 @@ const tally = (ls, total) => {
         byCategory.set(key, held);
     }
 
-    return CATEGORY_ORDER
+    const rows = CATEGORY_ORDER
         .filter((c) => byCategory.has(c))
         .map((category) => {
             const {area, inked, measured} = byCategory.get(category);
@@ -77,6 +98,8 @@ const tally = (ls, total) => {
                 coverage: measured > 0 ? inked / measured : null,
             };
         });
+
+    return biggestFirst(rows);
 };
 
 export function surfaceArea(root, viewportHeight) {
