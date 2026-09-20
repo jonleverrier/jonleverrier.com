@@ -25,13 +25,20 @@
  * invisible, 2.3 is the just-noticeable difference, and under 5 is two colours a person
  * would call the same one.
  *
- * WHAT THIS SIGNAL IS WORTH, measured rather than assumed. Across kohde.agency,
- * natwest.com, hsbc.co.uk and whitepaper.co.uk: 11, 14, 11 and 11 colours, and once alpha
- * was collapsed, ONE genuine drift between them — hsbc's rgb(64,64,64) beside
- * rgb(68,68,68). Two more on kohde were near-whites layered on purpose. A bank, a small
- * agency and a one-person site all landed in the same band, so neither the count nor the
- * drift separated them on that sample. The clusters are recorded because they are cheap
- * and because four sites is not a corpus; nothing here decides what they mean.
+ * WHAT THIS SIGNAL IS WORTH, and the first answer was wrong because the measurement was.
+ * An early survey of four sites found one genuine drift between them and concluded the
+ * signal was thin. That survey read colours with the naive parser described under
+ * `channels` below, which mangles `color(srgb ...)`, so some of what it compared was not
+ * the colour the page painted.
+ *
+ * Measured again with the canvas normalisation, on five sites: jersey.com has three
+ * near-blacks at rgb(26,26,26), rgb(27,27,27) and rgb(28,28,28); visionarygrid.studio
+ * declares its brand yellow twice, as rgb(255,211,0) and rgb(255,210,2); boondmanager.com
+ * carries four drifted pairs including rgb(236,240,252) beside rgb(235,239,251). Those are
+ * one-point differences nobody chose and nobody can see — a design token entered twice.
+ *
+ * Still recorded and not judged: what a drift means is the report's to decide, and a page
+ * may layer near-whites deliberately.
  *
  * FONTS ARE TWO QUESTIONS WEARING ONE WORD. `document.fonts` says which faces the browser
  * loaded — one family at six weights is six downloads and one typeface — and computed
@@ -50,11 +57,32 @@
 /** Two colours closer than this are the same colour twice. See the header. */
 export const SAME_COLOUR_DE = 5;
 
-/** A transparent background is the absence of a colour choice, not a colour. */
-const TRANSPARENT = /^rgba\(0,\s*0,\s*0,\s*0\)$/;
+/**
+ * The three channels out of an `rgb()` or `rgba()` string.
+ *
+ * SAFE ONLY BECAUSE COLLECT_STYLES NORMALISES FIRST. getComputedStyle does not always
+ * answer in `rgb()` — boondmanager.com returns `color(srgb 0.156863 0.172549 0.196078)`
+ * and visionarygrid.studio `color(srgb 1 1 0.835)` — and taking the first three numbers out
+ * of those gives 0-1 values read as 0-255, which turns white into near-black. It did: white
+ * was grouped with a dark grey as the same colour twice. Every value is now painted to a
+ * canvas and read back in sRGB before it reaches here, so this only ever sees `rgb()` or
+ * `rgba()`.
+ *
+ * THE GUARD IS ON THE SYNTAX, NOT THE RANGE, and the first attempt at it got that wrong.
+ * `color(srgb 1 1 0.835)` yields 1, 1 and 0.835 — every one of them inside 0-255, so a
+ * range check waves it through as an almost-black. What actually separates the two is the
+ * function name: anything that is not `rgb()` or `rgba()` is a colour space this cannot
+ * read, and is refused rather than mangled.
+ */
+export const channels = (value) => {
+    const text = String(value).trim();
+    if (!/^rgba?\(/i.test(text)) {
+        return [];
+    }
+    const found = (text.match(/\d+(\.\d+)?/g) ?? []).slice(0, 3).map(Number);
 
-/** The numbers out of an `rgb()` or `rgba()` string, which is all getComputedStyle returns. */
-export const channels = (value) => (String(value).match(/\d+(\.\d+)?/g) ?? []).slice(0, 3).map(Number);
+    return found.length === 3 && found.every((c) => c >= 0 && c <= 255) ? found : [];
+};
 
 /**
  * sRGB to CIELAB, through linear RGB and XYZ at D65.
@@ -128,6 +156,44 @@ export const COLLECT_STYLES = () => {
     const deep = window.__auditDeep;
     const all = deep ? deep.all(document.body) : document.querySelectorAll('body *');
 
+    // EVERY COLOUR IS PAINTED AND READ BACK, because getComputedStyle does not always
+    // answer in `rgb()`. Modern syntax survives into the computed value — boondmanager.com
+    // returns `color(srgb 0.156863 0.172549 0.196078)` and visionarygrid.studio
+    // `color(srgb 1 1 0.835)` — and anything that pulls the first three numbers out of
+    // those and calls them channels reads white as near-black. Which it did: white was
+    // grouped with a dark grey as "the same colour twice".
+    //
+    // A 1x1 canvas settles it for every syntax there is, current and future: the browser
+    // does the conversion it would do to paint the pixel, and the pixel is read back in
+    // sRGB. Cached, because a page has tens of distinct colours and thousands of elements.
+    const paint = document.createElement('canvas').getContext('2d', {willReadFrequently: true});
+    const known = new Map();
+    const srgb = (value) => {
+        if (known.has(value)) return known.get(value);
+        let answer = null;
+        try {
+            paint.clearRect(0, 0, 1, 1);
+            paint.fillStyle = '#000';
+            paint.fillStyle = value;
+            paint.fillRect(0, 0, 1, 1);
+            const [r, g, b, a] = paint.getImageData(0, 0, 1, 1).data;
+            // ALPHA IS PRESERVED RATHER THAN BAKED OUT. getImageData is unpremultiplied,
+            // so the channels are the colour and `a` is its opacity, and keeping them
+            // apart is what lets the record say how many colour VALUES a page used against
+            // how many colours — natwest.com's eighteen against fourteen. Collapsing them
+            // here would answer one question and lose the other. Fully transparent is the
+            // absence of a colour choice, not a colour.
+            answer = a === 0
+                ? null
+                : (a === 255 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`);
+        } catch {
+            answer = null;
+        }
+        known.set(value, answer);
+
+        return answer;
+    };
+
     const area = new Map();
     const sizes = new Map();
     const rendered = new Map();
@@ -140,12 +206,12 @@ export const COLLECT_STYLES = () => {
         if (r.width < 1 || r.height < 1) continue;
         const px = r.width * r.height;
 
-        if (cs.backgroundColor && !/^rgba\(0,\s*0,\s*0,\s*0\)$/.test(cs.backgroundColor)) {
-            add(area, cs.backgroundColor, px);
-        }
+        const bg = srgb(cs.backgroundColor);
+        if (bg) add(area, bg, px);
         const writes = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim() !== '');
         if (writes) {
-            if (cs.color) add(area, cs.color, px);
+            const ink = srgb(cs.color);
+            if (ink) add(area, ink, px);
             add(sizes, cs.fontSize, 1);
             add(rendered, cs.fontFamily.split(',')[0].trim().replace(/['"]/g, ''), px);
         }

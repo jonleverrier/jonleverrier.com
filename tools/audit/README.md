@@ -73,9 +73,19 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.test.mjs           # plus the networ
   values were exactly that, and counting them separately reports a drift where there is a
   deliberate choice. Once alpha is collapsed, two colours are "the same colour twice" when
   they are within dE 5 in Lab — not in RGB, where twenty points of green is nearly twice
-  the perceived distance of twenty points of red. Measured across four sites the drift
-  signal is thin: 11, 14, 11 and 11 colours, and one genuine drift between them
-  (hsbc.co.uk's `rgb(64,64,64)` beside `rgb(68,68,68)`).
+  the perceived distance of twenty points of red. The drift is real and common:
+  jersey.com paints three near-blacks at `rgb(26,26,26)`, `rgb(27,27,27)` and
+  `rgb(28,28,28)`; visionarygrid.studio declares its brand yellow twice as
+  `rgb(255,211,0)` and `rgb(255,210,2)`. One-point differences nobody chose and nobody can
+  see — a design token entered twice.
+- **Colour values are normalised through a canvas, and this is not optional.**
+  `getComputedStyle` does not always answer in `rgb()`: boondmanager.com returns
+  `color(srgb 0.156863 0.172549 0.196078)` and visionarygrid.studio
+  `color(srgb 1 1 0.835)`. Reading the first three numbers out of those treats 0-1 values
+  as 0-255, so white arrives as near-black — which it did, and white was reported as "the
+  same colour" as a dark grey. Painting each value to a 1x1 canvas and reading the pixel
+  back is correct for every colour syntax, current and future. An early survey concluded
+  the drift signal was thin; it had been run through the broken parser.
 - **Fonts are three numbers, not one.** Declared is the `@font-face` rules the page has;
   loaded is the faces the browser actually fetched, because a face is only `loaded` once
   something needs it; rendered is the families that actually paint text. kohde.agency is

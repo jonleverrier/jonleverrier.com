@@ -171,3 +171,21 @@ test('a page with no colours at all does not throw', () => {
     assert.deepEqual(got.colours.sameColour, []);
     assert.equal(got.fonts.declared, 0);
 });
+
+/**
+ * THE BUG A SMOKE TEST FOUND, and it was visible in the output before it was visible in a
+ * test. getComputedStyle does not always answer in `rgb()`: boondmanager.com returns
+ * `color(srgb 0.156863 0.172549 0.196078)` and visionarygrid.studio `color(srgb 1 1 0.835)`.
+ * Taking the first three numbers out of those reads 0-1 values as 0-255, so white arrived
+ * as near-black and was clustered with a dark grey as "the same colour twice".
+ *
+ * COLLECT_STYLES now paints every value to a canvas and reads the pixel back, so this
+ * function only ever sees sRGB. The guard is the second line of defence: a value it cannot
+ * read is refused rather than silently mangled.
+ */
+test('a colour outside sRGB range is refused, not mangled into a dark one', () => {
+    assert.deepEqual(channels('color(srgb 1 1 0.835)'), [], 'fractional channels are not 0-255');
+    assert.deepEqual(channels('color(srgb 0.156863 0.172549 0.196078)'), []);
+    assert.deepEqual(channels('rgb(300, 0, 0)'), [], 'and nor is anything over 255');
+    assert.deepEqual(channels('rgb(255, 255, 255)'), [255, 255, 255], 'a real one still reads');
+});
