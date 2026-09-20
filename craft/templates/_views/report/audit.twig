@@ -96,6 +96,7 @@
         .r-chip-share { margin-left: auto; font-variant-numeric: tabular-nums; }
         .r-swatch--head { border-bottom: 1px solid #111; padding-bottom: 5px; font-weight: 600; }
         .r-chip--blank { border-color: transparent; }
+        .r-swatch--rest .r-chip-label { color: #666; }
         .r-drift b { font-weight: 600; opacity: .5; }
         .r-caveats { margin-top: 22px; padding: 12px; background: #f6f6f6; }
         .r-caveats li { margin-bottom: 6px; }
@@ -169,7 +170,12 @@
            Over it is elements nesting, where a panel and the box inside it both count
            their own area. Saying "of the page" and letting the column fall where it does
            beats a tidy 100% of something unmeasurable. #}
+        {# A CEILING THAT DECLARES ITSELF. This listed eight and said eleven above it, and
+           a reader counted. Whatever is cut has to be named and has to carry its share,
+           or the list quietly disagrees with the count beside it. #}
         {% set pageArea = report.width * report.height %}
+        {% set shown = report.styles.colours.palette|slice(0, 12) %}
+        {% set rest = report.styles.colours.palette|slice(12) %}
         <h2>The colours on the page</h2>
         <ul class="r-swatches">
             <li class="r-swatch r-swatch--head">
@@ -177,13 +183,21 @@
                 <span class="r-chip-label">&nbsp;</span>
                 <span class="r-chip-share">share of page</span>
             </li>
-            {% for c in report.styles.colours.palette|slice(0, 8) %}
+            {% for c in shown %}
                 <li class="r-swatch">
                     <span class="r-chip" style="background: {{ c.colour }}"></span>
                     <span class="r-chip-label">{{ c.colour }}</span>
                     <span class="r-chip-share">{{ r.pc(pageArea ? c.area / pageArea : null) }}</span>
                 </li>
             {% endfor %}
+            {% if rest|length %}
+                {% set restArea = rest|reduce((sum, c) => sum + c.area, 0) %}
+                <li class="r-swatch r-swatch--rest">
+                    <span class="r-chip r-chip--blank"></span>
+                    <span class="r-chip-label">and {{ rest|length }} more</span>
+                    <span class="r-chip-share">{{ r.pc(pageArea ? restArea / pageArea : null) }}</span>
+                </li>
+            {% endif %}
         </ul>
     {% endif %}
 
