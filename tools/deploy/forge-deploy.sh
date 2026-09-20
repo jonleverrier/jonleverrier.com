@@ -33,6 +33,20 @@ composer install --no-dev --no-interaction --optimize-autoloader --no-progress
 echo "==> front end"
 cd "$APP"
 npm ci --no-audit --no-fund
+
+# The audit tool drives a browser, and Playwright brings its OWN rather than using the
+# one the critical-CSS step has. They are different caches and different binaries:
+# ~/.cache/puppeteer holds Chrome for Testing, ~/.cache/ms-playwright holds Playwright's
+# build, and neither can stand in for the other.
+#
+# OUTSIDE THE RELEASE DIRECTORY, which is the point — the cache lives in the home
+# directory, so it survives every deploy and this line is a no-op (a second or two)
+# except when the Playwright version actually moves. About 115MB when it does download.
+#
+# NOT FATAL. A release must not fail over a browser for a lead magnet: without it the
+# site serves fine and the audit queue job is the only thing that cannot run, which it
+# reports as a failed audit rather than as a broken deploy.
+npx playwright install chromium || echo "WARNING: playwright chromium not installed — audits will fail until it is"
 # NO SKIP_CRITICAL HERE. It was set during the server migration, when jonleverrier.com
 # still resolved to the old box and the critical step would have measured the wrong site.
 # DNS has moved, and leaving it set cost more than the whole JS budget: with no critical

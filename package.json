@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": "^20 || ^22"
+    "node": "^20 || ^22 || ^24"
   },
   "scripts": {
     "dev": "NODE_ENV=dev URL=https://jonleverrier2.local/ vite",

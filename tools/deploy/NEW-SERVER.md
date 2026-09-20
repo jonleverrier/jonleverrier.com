@@ -215,6 +215,27 @@ release, which matters because 24.04 renamed many of them (`libasound2` →
 Those exist in `.ddev/config.yaml` only because Chrome for Testing has no linux-arm64
 build and cannot exec on Apple Silicon. An x86 server downloads its own Chrome happily.
 
+### A second browser, for the audit tool
+
+`tools/audit` drives Playwright, and Playwright brings its own browser rather than using
+the one above. They are different caches and different binaries — `~/.cache/puppeteer`
+holds Chrome for Testing, `~/.cache/ms-playwright` holds Playwright's build — and neither
+stands in for the other. The deploy installs it:
+
+```bash
+npx playwright install chromium
+```
+
+It lives in the home directory, not the release, so it survives every deploy and costs a
+second or two except when the Playwright version moves, when it fetches about 115MB. The
+deploy does not fail if it cannot: a release must not die over a browser for a lead
+magnet, and without it the audit queue job is the only thing that stops working.
+
+The shared libraries are the same ones the critical-CSS step already needs, so a server
+that renders critical CSS can already run this. Playwright is also the one that works on
+Apple Silicon, which is why the local container uses it where Puppeteer needs a system
+Chromium pointed at by hand.
+
 ## 10. PHP tuning
 
 Forge's defaults are not what this site runs on. As root:
