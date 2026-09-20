@@ -7,6 +7,11 @@ handle: leadGenerator
 maxAuthors: 1
 minAuthors: 1
 name: 'Lead Generator'
+previewTargets:
+  -
+    label: Report
+    refresh: '1'
+    urlFormat: 'actions/leadgenerator/report/view?entry={id}'
 propagationMethod: all
 siteSettings:
   6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
