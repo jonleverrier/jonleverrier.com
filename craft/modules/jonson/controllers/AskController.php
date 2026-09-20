@@ -2262,14 +2262,35 @@ class AskController extends Controller
      * Trailing punctuation AFTER the citation ("… @cv?") is the model finishing the
      * sentence out of habit; it used to take the whole prompt down with it, so it is
      * tolerated and discarded.
+     *
+     * EVERY TRAILING CITATION IS PEELED, not just the last one, and a reader found out
+     * why: a chip arrived reading "…? @work" because the model had written TWO citations
+     * on one prompt — "How do we start working together? @work @contact". The pattern is
+     * anchored to the end of the segment, so it matched `@contact`, and `@work` was left
+     * sitting in the text as part of the visible label.
+     *
+     * THE LAST ONE WINS, because it is the one the model wrote nearest the prompt and
+     * because the alternative is dropping a chip over a formatting slip. Both citations
+     * in that example name real topics, so either would have grounded it honestly; what
+     * was never defensible was printing one of them on a button.
      */
     private function splitCitation(string $segment): ?array
     {
-        if (!preg_match('/^(.*?)\s*@([a-z]+)(?::\s*([^@]+?))?[\s?.!,;:]*$/iu', $segment, $m)) {
+        $pattern = '/^(.*?)\s*@([a-z]+)(?::\s*([^@]+?))?[\s?.!,;:]*$/iu';
+        if (!preg_match($pattern, $segment, $m)) {
             return null;
         }
+        $kind = strtolower($m[2]);
+        $id = isset($m[3]) ? $this->topicSlug($m[3]) : '';
 
-        return [trim($m[1]), strtolower($m[2]), isset($m[3]) ? $this->topicSlug($m[3]) : ''];
+        // Keep peeling while the remaining text still ends in a citation of its own.
+        // Bounded, because a segment made only of citations would otherwise loop.
+        $text = trim($m[1]);
+        for ($peeled = 0; $peeled < 8 && preg_match($pattern, $text, $more); $peeled++) {
+            $text = trim($more[1]);
+        }
+
+        return [$text, $kind, $id];
     }
 
     /**
