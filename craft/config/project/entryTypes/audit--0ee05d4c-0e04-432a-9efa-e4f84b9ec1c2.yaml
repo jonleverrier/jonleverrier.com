@@ -107,6 +107,29 @@ fieldLayouts:
         name: Content
         uid: 818a315d-f70d-42c5-b516-a3dde7db51c8
         userCondition: null
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-09-20T22:49:55+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: c086bc81-8c0a-4abb-bd0d-4d8b7ff54040 # Exclude from sitemap?
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 26d6a026-96cc-42ec-aee8-880e91c650d8
+            userCondition: null
+            warning: null
+            width: 100
+        name: SEO
+        uid: f8eba20a-7751-4298-92b1-424cf56d56a7
+        userCondition: null
     thumbFieldKey: null
 handle: audit
 hasTitleField: true
