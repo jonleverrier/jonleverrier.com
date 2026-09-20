@@ -19,7 +19,21 @@
   reported as unmeasured, and a report that quietly drops that is not this tool's report.
 #}
 {% set pct = { } %}
-{% macro pc(n) %}{% if n is null %}—{% else %}{{ (n * 100)|number_format(1) }}%{% endif %}{% endmacro %}
+{#
+  A percentage, or an em dash where there is nothing to say.
+
+  `<0.1%` AND NOT `0.0%` for anything present but smaller than the rounding can show.
+  kohde.agency paints rgb(220,220,226) across 288 pixels — about seventeen square — which
+  is 0.0033% of its page and rounded to a flat nought. A colour in a list of colours on the
+  page cannot be none of the page, and a reader asked why it was there. Rounding a real
+  measurement down to zero is the same fault as reporting an unmeasured region as empty.
+#}
+{% macro pc(n) %}
+    {%- if n is null -%}—
+    {%- elseif n > 0 and n * 100 < 0.05 -%}&lt;0.1%
+    {%- else -%}{{ (n * 100)|number_format(1) }}%
+    {%- endif -%}
+{% endmacro %}
 {% import _self as r %}
 
 {# A4 at 96dpi less the margin — the box an image has to fit in. Kept in step with
