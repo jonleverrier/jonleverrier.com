@@ -820,14 +820,15 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     // beat the reveal, land on a region that is not there yet, and cancel the very
     // thing it was reaching for. A moment's hold gave that move somewhere to land.
     //
-    // NOW HALF A SECOND, which is a different intention on top of the same mechanism:
-    // leaving the band should not dismiss it. At 140ms the band was gone before you
-    // could look away and back, or round a corner to reach a chip, and the whole thing
-    // read as something you had to keep hold of. Two seconds overshot — a band that
-    // outstays the pointer that long stops reading as patient and starts reading as
-    // stuck. A second was the first answer to that and still sat a shade long; 500ms
-    // holds the corner-cutting move without the band hanging about once you have
-    // plainly gone. The hold is the same length as the drawer's own grace period
+    // NOW 375ms, which is a different intention on top of the same mechanism: leaving
+    // the band should not dismiss it. At 140ms the band was gone before you could look
+    // away and back, or round a corner to reach a chip, and the whole thing read as
+    // something you had to keep hold of. Two seconds overshot — a band that outstays
+    // the pointer that long stops reading as patient and starts reading as stuck. A
+    // second was the first correction, 500ms the second, and both still left the band
+    // sitting there after you had plainly gone. 375ms is the shortest hold that still
+    // covers the corner-cutting move. The hold is the same length as the drawer's own
+    // grace period
     // (LEAVE_GRACE_MS in lost-for-words.js) — the band and the drawer
     // inside it are one object to a visitor, and they should not expire at different
     // times, so the two move together.
@@ -836,7 +837,7 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     // animate INSIDE a band that is still on screen, so holding them back would stall
     // the drawer's own close rather than the band's.
     transition:
-        clip-path 260ms cubic-bezier(0.16, 1, 0.3, 1) 500ms,
+        clip-path 260ms cubic-bezier(0.16, 1, 0.3, 1) 375ms,
         grid-template-rows 340ms cubic-bezier(0.16, 1, 0.3, 1),
         background-color 200ms ease;
 

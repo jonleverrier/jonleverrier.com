@@ -42,17 +42,17 @@ const TUCK_MS = 260;
 // It used to go on the instant of pointerleave, which punished the obvious gesture:
 // the chips sit in a band ABOVE the field, so reaching one means travelling up and
 // often clipping the edge of the box on the way — and the drawer shut under the
-// pointer that was going for it. Half a second is long enough to cross that gap or
-// come back after a glance, short enough that a drawer left behind still closes
-// itself. (Two was tried and overshot — it read as stuck rather than patient; a
-// second was the correction to that and still sat a shade long.)
+// pointer that was going for it. 375ms is long enough to cross that gap or come back
+// after a glance, short enough that a drawer left behind still closes itself. (Two
+// seconds was tried and overshot — it read as stuck rather than patient; a second was
+// the correction to that, 500ms the next, and both still sat a shade long.)
 //
 // KEEP IN STEP with the band's own hide delay on .c-jonson__band (_jonson.scss). The
 // band and the drawer inside it are one object to a visitor; if these two differ, one
 // expires under the other and it reads as a glitch rather than a choice.
 //
 // Cancelled on re-entry, so coming back inside is not merely forgiven but forgotten.
-const LEAVE_GRACE_MS = 500;
+const LEAVE_GRACE_MS = 375;
 
 // Private mode and blocked storage throw on both read and write, and neither is worth
 // losing the button over — a failed read is "no uses yet", a failed write just means
