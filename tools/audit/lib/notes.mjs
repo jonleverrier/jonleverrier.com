@@ -131,13 +131,38 @@ export function runNotes(meta, reason = 'missing', rects = null, unpainted = nul
 
     // WHICH PAGE THIS IS A MEASUREMENT OF comes next: a percentage attributed to the
     // wrong domain is wrong in a way no other note here can make up for.
+    //
+    // BUT A REDIRECT IS NOT A HIJACK, and one note said both. dept.agency is a rebranded
+    // company: ask for it and the server answers with dept.global, which IS its homepage
+    // and is exactly the page a prospect typing dept.agency would see. The measurement was
+    // correct and the sweep called it `wrongPage` — "these blocks are of another site" —
+    // which is the kind of false alarm that teaches a reader to skip the real one.
+    //
+    // `landedUrl` is where the site itself put us, read after load and before we touched
+    // anything, so the two events separate cleanly: the site moved us, or something we did
+    // moved the page afterwards. Both still report, because a report about dept.global
+    // must say so when dept.agency was asked for; they differ in what they claim, and only
+    // one of them says the number describes the wrong thing.
     if (meta.capturedUrl && meta.url && !sameUrl(meta.capturedUrl, meta.url)) {
-        add(
-            'wrongPage',
-            'attribution',
-            `these blocks are of ${printable(meta.capturedUrl)}, not the ${printable(meta.url)} that was requested`,
-            {requested: meta.url, captured: meta.capturedUrl},
-        );
+        const siteRedirected = meta.landedUrl && sameUrl(meta.capturedUrl, meta.landedUrl);
+        if (siteRedirected) {
+            add(
+                'redirected',
+                'attribution',
+                `${printable(meta.url)} redirects to ${printable(meta.capturedUrl)}, and these blocks are of `
+                    + 'that page — which is the homepage a visitor typing the requested address would land on',
+                {requested: meta.url, captured: meta.capturedUrl, landed: meta.landedUrl},
+            );
+        } else {
+            add(
+                'wrongPage',
+                'attribution',
+                `these blocks are of ${printable(meta.capturedUrl)}, not the ${printable(meta.url)} that was `
+                    + `requested, and the page was still on ${printable(meta.landedUrl ?? 'the requested address')} `
+                    + 'when it finished loading — so something during the capture moved it',
+                {requested: meta.url, captured: meta.capturedUrl, landed: meta.landedUrl ?? null},
+            );
+        }
     }
 
     const truncated = shotTruncationWarning(meta);

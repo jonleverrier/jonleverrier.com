@@ -283,3 +283,57 @@ test('no leaves at all does not invent either condition', () => {
     assert.equal('lowConfidence' in notes.conditions, false);
     assert.equal('unlabelledRegion' in notes.conditions, false);
 });
+
+/* ------------------------------------------ a redirect is not a hijack, and was called one */
+
+/**
+ * dept.agency is a rebranded company: ask for it and the server answers with dept.global,
+ * which IS its homepage and is what a prospect typing dept.agency would see. The sweep
+ * reported `wrongPage` — "these blocks are of another site" — about a correct measurement.
+ */
+test('a redirect the site itself performed is reported as a redirect, not a wrong page', () => {
+    const notes = runNotes(clean({
+        url: 'https://dept.agency',
+        capturedUrl: 'https://www.dept.global/',
+        landedUrl: 'https://www.dept.global/',
+    }));
+
+    assert.ok('redirected' in notes.conditions, 'it still has to be said');
+    assert.ok(!('wrongPage' in notes.conditions), 'but not as a measurement of the wrong thing');
+    assert.equal(notes.conditions.redirected.effect, 'attribution');
+    assert.equal(notes.conditions.redirected.facts.requested, 'https://dept.agency');
+    assert.equal(notes.conditions.redirected.facts.captured, 'https://www.dept.global/');
+});
+
+/** The case the check was built for: the page was where it should be, then moved. */
+test('a page that moved after it finished loading is still a wrong page', () => {
+    const notes = runNotes(clean({
+        capturedUrl: 'https://elsewhere.example/',
+        landedUrl: 'https://example.com/',
+    }));
+
+    assert.ok('wrongPage' in notes.conditions);
+    assert.ok(!('redirected' in notes.conditions));
+    assert.match(notes.conditions.wrongPage.message, /something during the capture moved it/);
+    assert.equal(notes.conditions.wrongPage.facts.landed, 'https://example.com/');
+});
+
+/** An old capture has no landedUrl at all, and the cautious branch is the right default. */
+test('with no record of where the site put us, the stronger claim is not made', () => {
+    const notes = runNotes(clean({capturedUrl: 'https://elsewhere.example/'}));
+
+    assert.ok('wrongPage' in notes.conditions);
+    assert.equal(notes.conditions.wrongPage.facts.landed, null);
+});
+
+/** A canonical redirect is forgiven upstream, so neither note fires. See lib/sameurl.mjs. */
+test('an ordinary www redirect says nothing at all', () => {
+    const notes = runNotes(clean({
+        url: 'http://example.com',
+        capturedUrl: 'https://www.example.com/',
+        landedUrl: 'https://www.example.com/',
+    }));
+
+    assert.ok(!('redirected' in notes.conditions));
+    assert.ok(!('wrongPage' in notes.conditions));
+});

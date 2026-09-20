@@ -21,11 +21,28 @@ import {sameUrl} from './lib/sameurl.mjs';
  * whatever a stranger submitted, and this line is read in a terminal. The comparison
  * is made on the RAW values first — a sanitised URL must never be able to match one
  * that differs only in a character this strips.
+ *
+ * TWO EVENTS, ONE FACE, and `landedUrl` is what tells them apart: the site redirected us
+ * at load, or something during the capture moved the page. Both are worth saying, because
+ * either way the percentages belong to the URL at the end and not the one submitted. Only
+ * one of them means the measurement is of something nobody asked to measure. See
+ * lib/notes.mjs, which carries the same distinction in a shape a report can branch on.
  */
-const wrongPageWarning = (meta) => (meta.capturedUrl && !sameUrl(meta.capturedUrl, meta.url)
-    ? `the capture ended on ${printable(meta.capturedUrl)}, not ${printable(meta.url)}. Every artefact in this`
-        + ' directory is of that page, so any percentage from it belongs to that page too'
-    : null);
+const wrongPageWarning = (meta) => {
+    if (!meta.capturedUrl || sameUrl(meta.capturedUrl, meta.url)) {
+        return null;
+    }
+    const attribution = `Every artefact in this directory is of that page, so any percentage`
+        + ' from it belongs to that page too';
+    if (meta.landedUrl && sameUrl(meta.capturedUrl, meta.landedUrl)) {
+        return `${printable(meta.url)} redirects to ${printable(meta.capturedUrl)} — which is the homepage a`
+            + ` visitor typing the requested address would land on. ${attribution}`;
+    }
+
+    return `the capture ended on ${printable(meta.capturedUrl)}, not ${printable(meta.url)}, and the page was`
+        + ` still on ${printable(meta.landedUrl ?? 'the requested address')} when it finished loading — so`
+        + ` something during the capture moved it. ${attribution}`;
+};
 
 const url = process.argv[2];
 const outDir = process.argv[3] || '/tmp/audit';
@@ -41,7 +58,13 @@ try {
     // stranger submitted, so all of it goes through printable() on the way out. See
     // lib/printable.mjs: an ESC here is an ANSI sequence and a newline forges a line.
     console.log(`url          ${printable(meta.url)}`);
-    console.log(`captured     ${printable(meta.capturedUrl)}${sameUrl(meta.capturedUrl, meta.url) ? '' : '   <-- NOT THE URL REQUESTED'}`);
+    // A redirect the SITE performed is not the alarm; a page that moved after it loaded is.
+    // See lib/notes.mjs for why the two used to read the same.
+    const landedHere = meta.landedUrl && sameUrl(meta.capturedUrl, meta.landedUrl);
+    const moved = sameUrl(meta.capturedUrl, meta.url)
+        ? ''
+        : landedHere ? '   <-- redirected here by the site' : '   <-- NOT THE URL REQUESTED';
+    console.log(`captured     ${printable(meta.capturedUrl)}${moved}`);
     const ok = meta.httpStatus === null || (meta.httpStatus >= 200 && meta.httpStatus < 300);
     console.log(`http         ${meta.httpStatus ?? 'no response (same-document)'}${ok ? '' : '   <-- NOT A PAGE'}`);
     console.log(`full height  ${meta.fullHeight}px`);

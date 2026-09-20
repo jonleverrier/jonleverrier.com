@@ -593,6 +593,15 @@ export async function capturePage(url, outDir, opts = {}) {
             timeout: Math.min(20000, clock.check('the network to go quiet')),
         }).catch(() => {});
 
+        // WHERE THE SITE ITSELF PUT US, read before we have touched anything. A capture
+        // ending on a different URL is two entirely different events wearing one face: the
+        // site redirected us, or one of our own clicks carried the page away. dept.agency
+        // is the first: it is a rebranded company and answers with dept.global, which IS
+        // its homepage and is the right thing to measure. Without this line the only
+        // record was the final URL, so both events read as `wrongPage` — "these blocks are
+        // of another site" — about a perfectly correct measurement. See lib/notes.mjs.
+        const landedUrl = page.url();
+
         // SMOOTH SCROLLING IS A SOURCE OF VARIANCE, and this pass scrolls a great deal. A
         // page with `scroll-behavior: smooth` animates every scrollTo below, so a shot can
         // land part way through one. Not fatal if the page refuses the style — a CSP can —
@@ -773,6 +782,7 @@ export async function capturePage(url, outDir, opts = {}) {
             // walk the capture onto another page entirely with nothing recording it.
             // Kept separate from `url` so the two can be compared rather than conflated.
             capturedUrl: page.url(),
+            landedUrl,
             capturedAt: new Date().toISOString(),
             viewport: VIEWPORT,
             fullHeight,
