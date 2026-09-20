@@ -41,8 +41,7 @@ import {printable} from './lib/printable.mjs';
 import {renderDebug} from './lib/debug.mjs';
 import {overlaysInPng} from './lib/overlay.mjs';
 import {pageSignature, signatureFacts} from './lib/signature.mjs';
-import {MAX_IMAGE_HEIGHT} from './lib/edges.mjs';
-import {blankRegions, inkFraction, inkPrefix, pixelsFromPng, transparentBlocks, unpaintedBlocks} from './lib/painted.mjs';
+import {blankRegions, inkFraction, inkPrefixFromPng, transparentBlocks, unpaintedBlocks} from './lib/painted.mjs';
 
 const outDir = process.argv[2];
 if (!outDir) {
@@ -132,13 +131,14 @@ try {
     let unpainted = null;
     let blank = null;
     let transparent = null;
-    // The ink pass decodes the whole PNG at once and refuses an image past its memory
-    // budget. That must cost the coverage figures, not the page: the blocks came from the
-    // model reading slices, and they are sound either way. See notes.mjs coverageUnmeasured.
-    const inkSkipped = height > MAX_IMAGE_HEIGHT;
-    if (rects.length && !inkSkipped) {
-        const raw = await pixelsFromPng(png);
-        const measured = inkPrefix(raw.pixels, raw.width, raw.height);
+    // DECODED A STRIP AT A TIME, so a tall page keeps its honesty layer. Skipping this on
+    // anything over MAX_IMAGE_HEIGHT took contentNotPainted, blankRegion and
+    // transparentBlocks with it — on exactly the pages most likely to need them.
+    // visionarygrid.studio has a 3,600px case-study section the capture photographed as
+    // empty yellow, and nothing was left to contradict the model calling it empty.
+    const inkSkipped = false;
+    if (rects.length) {
+        const measured = await inkPrefixFromPng(png);
         unpainted = unpaintedBlocks(measured, ls, rects);
         transparent = transparentBlocks(measured, ls, rects);
         blank = blankRegions(measured, ls);

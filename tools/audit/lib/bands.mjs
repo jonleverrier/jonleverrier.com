@@ -81,8 +81,12 @@ export function snapBoundaries(edges, candidates, reach = SNAP_REACH) {
  * "grey section begins", while the slice below named the whole thing confidently. Leaving
  * that sliver unclassified reports as unmeasured something we did in fact measure.
  *
- * ONLY AT A SEAM, and only when the two ends disagree in confidence. Two confident blocks
- * that differ are two sections, and neither gives way.
+ * ONLY AT A SEAM, and only when at least one end is unsure. Two CONFIDENT blocks that
+ * differ are two sections and neither gives way; but where either is a fragment, the more
+ * confident label wins and they join. visionarygrid.studio is why the test is "either"
+ * rather than "one above and one below": its hero came back as 0.45 and 0.50 either side
+ * of the seam at 1400 — both guesses at one section, and a rule needing one side ABOVE the
+ * line left them as two categories over a hair's difference.
  */
 export const FRAGMENT_MAX_CONFIDENCE = 0.5;
 
@@ -94,11 +98,15 @@ export function mergeSeams(blocks, seams) {
         const meets = last && last.y1 === b.y0 && at.has(b.y0);
         // A fragment the slice above could not identify, abutting a section the slice
         // below could: adopt the confident answer rather than keep the guess.
-        if (meets && last.category !== b.category
-            && (last.confidence ?? 0) <= FRAGMENT_MAX_CONFIDENCE
-            && (b.confidence ?? 0) > FRAGMENT_MAX_CONFIDENCE) {
-            last.category = b.category;
-            last.what = b.what;
+        const unsure = Math.min(last?.confidence ?? 1, b.confidence ?? 1) <= FRAGMENT_MAX_CONFIDENCE;
+        if (meets && last.category !== b.category && unsure) {
+            // The more confident of two views of the same place.
+            if ((b.confidence ?? 0) > (last.confidence ?? 0)) {
+                last.category = b.category;
+                last.what = b.what;
+            } else {
+                b.category = last.category;
+            }
         }
         const joins = meets && last.category === b.category;
         if (joins) {

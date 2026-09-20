@@ -71,6 +71,9 @@ const MEDIA_TAGS = new Set(['img', 'video', 'canvas', 'picture', 'svg', 'iframe'
  */
 export const INK_TOLERANCE = 16;
 
+/** How many rows are decoded at once. Small enough that the RGB never gets large. */
+export const STRIP_HEIGHT = 2048;
+
 /** Colours are bucketed 16 to a channel, so a background survives dithering. */
 const BUCKET_SHIFT = 4;
 const BUCKETS = (256 >> BUCKET_SHIFT) ** 3;
@@ -105,9 +108,16 @@ export async function pixelsFromPng(path) {
  * THE BACKGROUND IS THE ROW'S OWN COMMONEST COLOUR. See the header for why it is per row
  * rather than per page or per block, and what that costs.
  */
-export function inkPrefix(pixels, width, height) {
+/**
+ * Fill `rows` of an existing prefix from one strip of raw pixels, starting at `rowOffset`.
+ *
+ * EVERY ROW IS INDEPENDENT — its modal colour comes from that row alone — which is what
+ * makes the whole measurement strippable. A page can then be decoded a few thousand rows
+ * at a time instead of all at once, and the 107MB of RGB that MAX_IMAGE_HEIGHT was
+ * protecting against never exists.
+ */
+export function fillInkPrefix(prefix, pixels, width, height, rowOffset = 0) {
     const stride = width + 1;
-    const prefix = new Int32Array(stride * height);
     const counts = new Int32Array(BUCKETS);
     const sumR = new Float64Array(BUCKETS);
     const sumG = new Float64Array(BUCKETS);
@@ -142,7 +152,7 @@ export function inkPrefix(pixels, width, height) {
         const mg = sumG[modal] / n;
         const mb = sumB[modal] / n;
 
-        const row = y * stride;
+        const row = (rowOffset + y) * stride;
         p = y * width * 3;
         let total = 0;
         for (let x = 0; x < width; x++, p += 3) {
@@ -162,6 +172,44 @@ export function inkPrefix(pixels, width, height) {
             sumG[bucket] = 0;
             sumB[bucket] = 0;
         }
+    }
+
+    return prefix;
+}
+
+/** The whole image at once. Fine for a page that fits in memory comfortably. */
+export function inkPrefix(pixels, width, height) {
+    const prefix = new Int32Array((width + 1) * height);
+    fillInkPrefix(prefix, pixels, width, height, 0);
+
+    return {prefix, width, height};
+}
+
+/**
+ * The same measurement, taken a strip at a time, so a tall page can have one.
+ *
+ * WHY THIS EXISTS. visionarygrid.studio is 24,746px, past the budget that decodes a PNG in
+ * one go, and skipping the ink pass took the whole DOM-versus-pixels honesty layer with
+ * it — `contentNotPainted`, `blankRegion` and `transparentBlocks` all stopped running on
+ * exactly the pages most likely to need them. That page has a `<section>` at y=7930
+ * carrying a case study, 3,600px of it, which the capture photographed as empty yellow;
+ * the model duly called it "empty yellow background section" and nothing could contradict
+ * it. A silent wrong answer on the largest page in the corpus.
+ *
+ * The prefix itself is still proportional to the page — about 143MB for that one — but the
+ * raw RGB never is, and it was the larger of the two.
+ */
+export async function inkPrefixFromPng(path, stripHeight = STRIP_HEIGHT) {
+    const {width, height} = await sharp(path).metadata();
+    const prefix = new Int32Array((width + 1) * height);
+    for (let top = 0; top < height; top += stripHeight) {
+        const h = Math.min(stripHeight, height - top);
+        const {data} = await sharp(path)
+            .extract({left: 0, top, width, height: h})
+            .removeAlpha()
+            .raw()
+            .toBuffer({resolveWithObject: true});
+        fillInkPrefix(prefix, data, width, h, top);
     }
 
     return {prefix, width, height};
