@@ -397,8 +397,8 @@
                 {# A caller that built an "on this page" nav passes the block's HTML
                    back with ids on its h2s (anchoredHtml, keyed by block id — see
                    craft.frontend.headingAnchors); otherwise the field's own. #}
-                {% set prose = (anchoredHtml ?? {})[block.id ?? ''] ?? (block.content ?? '') %}
-                {% if prose|trim %}
+                {% set prose = craft.frontend.richText((anchoredHtml ?? {})[block.id ?? ''] ?? (block.content ?? '')) %}
+                {% if prose %}
                     <div class="c-case-content__text">{{ prose|raw }}</div>
                 {% endif %}
                 {% set leading = false %}

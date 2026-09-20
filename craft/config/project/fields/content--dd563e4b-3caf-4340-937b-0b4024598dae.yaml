@@ -8,13 +8,14 @@ settings:
     - target
     - download
   availableTransforms: ''
-  availableVolumes: ''
+  availableVolumes:
+    - 3e9036d0-de1a-4b49-a1fe-85cded2c7b73 # Local
   characterLimit: null
   css: null
   cssFile: null
   defaultTransform: null
   defaultUploadLocationSubpath: null
-  defaultUploadLocationVolume: null
+  defaultUploadLocationVolume: 3e9036d0-de1a-4b49-a1fe-85cded2c7b73 # Local
   fullGraphqlData: true
   headingLevels:
     - '2'
@@ -76,6 +77,7 @@ settings:
     - bulletedList
     - numberedList
     - codeBlock
+    - insertTable
     - code
     - sourceEditing
   wordLimit: null

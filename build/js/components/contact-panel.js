@@ -24,6 +24,17 @@ import {setupMarquee, teardownMarquee} from './clients-marquee.js';
 // (the exit is shorter than the enter, on purpose).
 const SLIDE_MS = 260;
 
+// CAL.COM. Two hosts, and the difference matters: cal.com/<user>/<event> is the human
+// link the CMS holds and the one the CTA still points at everywhere outside the panel,
+// while app.cal.com is where the embed script and the booking frame actually come from.
+// app.cal.com is therefore the origin the CSP names in script-src and frame-src (see
+// craft/modules/frontend/FrontEnd.php) and the one worth preconnecting.
+const CAL_ORIGIN = 'https://app.cal.com';
+const CAL_EMBED_JS = `${CAL_ORIGIN}/embed/embed.js`;
+// The namespace Cal files this embed under. One booking surface here, so one namespace,
+// named for the CTA it belongs to.
+const CAL_NS = 'callback';
+
 export function mountContactPanel() {
     const panel = document.querySelector('[data-contact-panel]');
     if (!panel || typeof panel.showModal !== 'function') return () => {};
@@ -83,38 +94,30 @@ export function mountContactPanel() {
     const onPointerDown = () => { byPointer = true; };
     const onKeyDown = () => { byPointer = false; };
 
-    // Warm the connection to the booking host the moment the panel opens, so the frame
-    // has a live socket waiting if "request a call back" is pressed.
+    // Warm the connection to Cal the moment the panel opens, so their embed script has a
+    // live socket waiting if "request a call back" is pressed.
     //
     // PRECONNECT, NOT PREFETCH, and the distinction is the whole point: preconnect does
     // the DNS lookup, the TCP handshake and the TLS negotiation and then stops. It
-    // fetches nothing, so Calendly's page — and its cookies — still arrive only if the
-    // visitor actually asks for them. Prefetching the document would load a third party
-    // on behalf of someone who may never press the button.
+    // fetches nothing, so Cal's script — and its frame, and its cookies — still arrive
+    // only if the visitor actually asks for them. Prefetching the document would load a
+    // third party on behalf of someone who may never press the button.
     //
-    // NO `crossorigin` attribute. An iframe navigation is a plain document request, not
-    // a CORS one, and the two use different connection pools — a crossorigin preconnect
-    // would warm the pool this never draws from and the handshake would be paid twice.
+    // NO `crossorigin` attribute. Both things this warms — a <script src> from app.cal.com
+    // and the frame Cal then opens on it — are plain, non-CORS requests, and CORS and
+    // non-CORS use different connection pools: a crossorigin preconnect would warm the
+    // pool this never draws from and the handshake would be paid twice.
     //
-    // The origin comes from the CTA's own href, so the host lives in the CMS with the
-    // link rather than being written out a second time here. Once per page: `warmed`
-    // is set on the first open and the tag is left in the head after that.
+    // Only when there is a booking CTA on the panel to open, and only once per page:
+    // `warmed` is set on the first open and the tag is left in the head after that.
     let warmed = false;
     const warmBooking = () => {
         if (warmed || !bookingFrame) return;
-        const a = panel.querySelector('a[data-cta-kind="callback"][href]');
-        if (!a) return;
-        let origin;
-        try {
-            origin = new URL(a.getAttribute('href'), location.href).origin;
-        } catch {
-            return;
-        }
-        if (!origin || origin === location.origin) return; // nothing to warm for our own host
+        if (!panel.querySelector('a[data-cta-kind="callback"][href]')) return;
         warmed = true;
         const link = document.createElement('link');
         link.rel = 'preconnect';
-        link.href = origin;
+        link.href = CAL_ORIGIN;
         document.head.appendChild(link);
     };
 
@@ -147,10 +150,17 @@ export function mountContactPanel() {
         const done = () => {
             if (panel.open) panel.close();
             root.classList.remove('has-contact-panel');
-            // Back to the first step for next time: the button returns, the form
-            // goes (its transition is off while hidden, so the reset is unseen).
-            // Anything typed stays in the fields — a half-written message
-            // shouldn't vanish because the panel was closed.
+            // Back to the first step for next time: the button returns, the form and
+            // the booking step go (their transition is off while hidden, so the reset
+            // is unseen). Nothing is thrown away — `hidden` is display:none, so a
+            // half-written message stays in its fields and Cal's frame stays mounted
+            // with whatever the visitor had picked.
+            //
+            // BOTH second steps have to go, not just the one that was showing. The
+            // stage is a flex row and its height is the tallest step in it, so a
+            // booking step left visible keeps the stage at the embed's height — around
+            // 820px — even with the ways in back on screen. The panel then opens on a
+            // column of empty space with the brands strip pushed below the fold.
             clearTimeout(stepTimer);
             if (steps) {
                 steps.classList.add('is-settled');
@@ -158,6 +168,7 @@ export function mountContactPanel() {
             }
             if (sent && writeWrap) writeWrap.remove(); // the button goes; nothing takes its place
             if (formWrap) formWrap.hidden = true;
+            if (bookingWrap) bookingWrap.hidden = true;
             if (waysWrap) waysWrap.hidden = false;
             if (steps) requestAnimationFrame(() => requestAnimationFrame(() => steps.classList.remove('is-settled')));
             if (trigger && trigger.isConnected) trigger.focus({preventScroll: true});
@@ -177,8 +188,17 @@ export function mountContactPanel() {
 
     // Slide the stage to a second step. Written once and used by both — the message
     // form and the booking frame are the same move, and the only differences are which
-    // panel comes in and what gets focus when it lands.
-    const showStep = (wrap, focusTarget) => {
+    // panel comes in, what gets focus when it lands, and whether that focus is allowed
+    // to scroll the panel to it.
+    //
+    // THAT LAST ONE IS NOT A DETAIL. The panel is its own scroller, and focusing an
+    // element the browser thinks is out of view makes it scroll there. For the form
+    // that is the point: the first field can genuinely sit below the fold. For the
+    // booking step it is a bug — the step arrives at the top of the panel with nothing
+    // above it to scroll past, but the embed is taller than the panel, so the browser
+    // scrolls anyway trying to fit it and drags the panel's title out under the top
+    // edge. A dozen pixels, on a press that should not move anything.
+    const showStep = (wrap, focusTarget, preventScroll = false) => {
         if (!wrap || !steps) return;
         clearTimeout(stepTimer);
         wrap.hidden = false;
@@ -190,7 +210,7 @@ export function mountContactPanel() {
             steps.classList.remove('is-form');
             requestAnimationFrame(() => requestAnimationFrame(() => steps.classList.remove('is-settled')));
             const el = typeof focusTarget === 'function' ? focusTarget() : focusTarget;
-            if (el) el.focus({preventScroll: false});
+            if (el) el.focus({preventScroll});
         }, reduced ? 0 : FORM_MS);
     };
 
@@ -199,45 +219,98 @@ export function mountContactPanel() {
         () => formWrap && formWrap.querySelector('input:not([type="hidden"]):not([tabindex="-1"]), textarea'),
     );
 
-    // Calendly's own embed parameters, added to the plain booking link from the CMS.
+    // The event as Cal names it — "jonleverrier/callback" — read off the CTA's own href
+    // so the booking link lives in the CMS and nowhere else. Both spellings reduce to
+    // the same thing: cal.com/x/y is what Jon pastes, app.cal.com/x/y is what the embed
+    // serves, and Cal wants neither host, just the path.
     //
-    // Without them their script does not know it is embedded: it reaches for the parent
-    // window directly and the browser refuses it cross-origin — "Blocked a frame with
-    // origin https://calendly.com from accessing a frame with origin …". embed_domain
-    // tells it which host it is inside, and embed_type=Inline puts it in the mode that
-    // talks to the parent by postMessage instead, which is the one thing that works
-    // across origins.
-    //
-    // Only for Calendly. These are their parameters, not a standard — cal.com and
-    // anything else Jon points the CTA at gets the URL exactly as the CMS holds it,
-    // rather than query junk it never asked for.
-    //
-    // Anything unparseable falls through to the original string: a link that might work
-    // beats one this function decided to drop.
-    const embedUrl = (href) => {
+    // Anything that is not a Cal link gets an empty string, and the caller leaves the
+    // click alone: a CTA pointed somewhere else stays an ordinary link to somewhere
+    // else, rather than being forced into an embed that cannot render it.
+    const calLink = (href) => {
         let url;
         try {
             url = new URL(href, location.href);
         } catch {
-            return href;
+            return '';
         }
-        if (!/(^|\.)calendly\.com$/i.test(url.hostname)) return href;
-        url.searchParams.set('embed_domain', location.hostname);
-        url.searchParams.set('embed_type', 'Inline');
+        if (!/(^|\.)cal\.com$/i.test(url.hostname)) return '';
 
-        return url.toString();
+        return url.pathname.replace(/^\/+|\/+$/g, '');
     };
 
-    // "Request a call back" opens in place rather than leaving the site. The src is set
-    // from the LINK's own href — the URL lives in the CMS, so changing it there changes
-    // this — and only on the first press: setting it again on a later press would
-    // reload the embed and throw away a booking half-filled in.
+    // Cal's embed, mounted into the booking step's empty box.
+    //
+    // The block below is Cal's own loader, from the snippet their dashboard hands out,
+    // reproduced rather than re-invented: it defines a stub `Cal()` that queues every
+    // call made before embed.js has landed, appends the script, and lets embed.js replay
+    // the queue when it arrives. Rewriting that handshake would be rewriting their API.
+    //
+    // What IS ours is when it runs. The snippet is meant for the <head> of a page that
+    // shows a calendar; here it runs on the first press of "request a call back", so a
+    // visitor who never opens the booking step never fetches a byte of Cal's — and the
+    // event comes from the link rather than being hard-coded, so the CMS stays the one
+    // place the booking URL is written.
+    //
+    // Once only. A second press must not re-mount: that would tear down the frame and
+    // throw away a booking half-filled in.
+    let calMounted = false;
+    const mountCal = (link) => {
+        if (calMounted) return;
+        calMounted = true;
+
+        const queue = (api, args) => { api.q.push(args); };
+        window.Cal = window.Cal || function () {
+            const cal = window.Cal;
+            const args = arguments;
+            if (!cal.loaded) {
+                cal.ns = {};
+                cal.q = cal.q || [];
+                document.head.appendChild(document.createElement('script')).src = CAL_EMBED_JS;
+                cal.loaded = true;
+            }
+            if (args[0] === 'init') {
+                const api = function () { queue(api, arguments); };
+                const namespace = args[1];
+                api.q = api.q || [];
+                if (typeof namespace === 'string') {
+                    cal.ns[namespace] = cal.ns[namespace] || api;
+                    queue(cal.ns[namespace], args);
+                    queue(cal, ['initNamespace', namespace]);
+                } else {
+                    queue(cal, args);
+                }
+
+                return;
+            }
+            queue(cal, args);
+        };
+
+        const Cal = window.Cal;
+        Cal('init', CAL_NS, {origin: CAL_ORIGIN});
+        // Carries ?utm_… and any prefill on the current URL through to the booking, so a
+        // visit that arrived tagged is still tagged by the time it books.
+        Cal.config = Cal.config || {};
+        Cal.config.forwardQueryParams = true;
+
+        Cal.ns[CAL_NS]('inline', {
+            elementOrSelector: bookingFrame,
+            calLink: link,
+            // month_view because the panel is a tall, narrow column and the month grid is
+            // the layout that fits one; useSlotsViewOnSmallScreen drops it to the times
+            // list on a phone, where the grid has no room to be a grid.
+            config: {layout: 'month_view', useSlotsViewOnSmallScreen: 'true'},
+        });
+        Cal.ns[CAL_NS]('ui', {hideEventTypeDetails: false, layout: 'month_view'});
+    };
+
+    // "Request a call back" opens in place rather than leaving the site.
     const onBooking = (a) => {
         if (!bookingWrap || !bookingFrame) return false;
-        const href = a.getAttribute('href');
-        if (!href) return false;
-        if (!bookingFrame.getAttribute('src')) bookingFrame.setAttribute('src', embedUrl(href));
-        showStep(bookingWrap, bookingFrame);
+        const link = calLink(a.getAttribute('href') || '');
+        if (!link) return false; // not a Cal link — let it navigate as the CMS wrote it
+        mountCal(link);
+        showStep(bookingWrap, bookingFrame, true);
 
         return true;
     };
