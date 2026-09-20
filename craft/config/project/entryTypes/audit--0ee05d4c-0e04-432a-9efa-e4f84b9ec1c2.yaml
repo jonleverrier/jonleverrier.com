@@ -70,6 +70,40 @@ fieldLayouts:
             userCondition: null
             warning: null
             width: 100
+          -
+            dateAdded: '2026-09-20T20:05:12+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: d5e9ab69-1c2c-40bb-8b06-87c1490f7ef6 # Message sent title
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: bc2137c5-c8b9-42d2-827d-a38892ec34f8
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-20T20:05:12+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: dff7c4ca-a181-4f0f-814b-c0deb6d03aa6 # Message sent text
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 326679d5-28f8-4517-8fbd-d67d9fe80d19
+            userCondition: null
+            warning: null
+            width: 100
         name: Content
         uid: 818a315d-f70d-42c5-b516-a3dde7db51c8
         userCondition: null
