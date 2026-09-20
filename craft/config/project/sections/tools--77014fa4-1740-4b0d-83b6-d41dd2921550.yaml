@@ -1,0 +1,25 @@
+defaultPlacement: end
+enableVersioning: false
+entryTypes:
+  -
+    uid: 0ee05d4c-0e04-432a-9efa-e4f84b9ec1c2 # Audit
+handle: tools
+maxAuthors: 1
+minAuthors: 1
+name: Tools
+previewTargets:
+  -
+    label: 'Primary entry page'
+    refresh: '1'
+    urlFormat: '{url}'
+propagationMethod: all
+siteSettings:
+  6a0c33fd-98e1-48b8-a4d0-24e7132d1623: # Jon Leverrier
+    enabledByDefault: true
+    hasUrls: true
+    template: _routers/structure.twig
+    uriFormat: 'tools/{slug}'
+structure:
+  maxLevels: 1
+  uid: 48839aef-57af-493b-a80b-a2cb29374f40
+type: structure
