@@ -215,6 +215,45 @@ export function pixelChange(a, b, was, now, width, height) {
 export const samePixels = (change) => change !== null && change.fraction <= SAME_PIXELS_MAX;
 
 /**
+ * Chrome, content, or neither — from the pixel comparison and the two viewport boxes.
+ *
+ * `change` is `pixelChange`'s answer (null when the two shots share no region); `was` and
+ * `now` are the element's viewport boxes, `[x, y, w, h]`, or null where it could not be
+ * described. Returns `{verdict, why}` where verdict is `chrome`, `content` or `undecided`,
+ * and ONLY `chrome` is hidden from the capture.
+ *
+ * THE TWO WAYS TO SHARE NO REGION ARE NOT THE SAME THING, and treating them alike deleted
+ * a footer. An element the page has scrolled PAST shows nothing at the second offset
+ * because it has gone — jerseyfinance.com's header retracts on scroll down and is 58px
+ * above the viewport once the page has moved 900, so no two offsets ever show the same
+ * part of it. Left undecided it painted the few pixels it had not finished retracting into
+ * the middle of a paragraph, so it is convicted.
+ *
+ * An element still sitting BELOW the viewport at both offsets has not gone anywhere. The
+ * scroll never reached it, both shots contain nothing of it, and the comparison learned
+ * nothing whatsoever. jersey.com is the case: its <footer>, 1440x821 at page y=15464, was
+ * sampled at 12,600 and 13,500 and sat 1,064px below the fold at both. Convicted as chrome
+ * it was hidden for every slice, and the capture came back with 1,694px of white where a
+ * footer is — a deletion the page never made, invisible in meta.json unless you read the
+ * hidden count. An element nobody could see is one nobody may convict.
+ */
+export function chromeVerdict(change, was, now, viewportHeight) {
+    if (!was || !now) return {verdict: 'undecided', why: 'not measurable'};
+    if (change) {
+        return samePixels(change)
+            ? {verdict: 'chrome', why: 'pixels'}
+            : {verdict: 'content', why: 'pixels'};
+    }
+
+    const belowFold = (b) => b.box[1] >= viewportHeight;
+    if (belowFold(was) && belowFold(now)) {
+        return {verdict: 'undecided', why: 'below the fold at both offsets'};
+    }
+
+    return {verdict: 'chrome', why: 'off screen at one of the two offsets'};
+}
+
+/**
  * Which pairs of offsets would rather be used to decide a candidate.
  *
  * NOT THE ONE STARTING AT THE TOP OF THE PAGE, when there is any other. At scroll 0 a page
@@ -734,24 +773,15 @@ export async function decideChrome(page, census, {step, settleMs, viewport, shoo
                         shots[0][g].pixels, shots[1][g].pixels, was.box, now.box, viewport.width, viewport.height,
                     )
                     : null;
-                // AN ELEMENT WITH NO PART ON SCREEN AT ONE OF THE TWO OFFSETS SHOWS NOTHING
-                // THERE, and it was measured holding the viewport, so it is not a panel
-                // spending that viewport on content — it is chrome that has slid out of
-                // view. jerseyfinance.com's header is the case: it hides itself on scroll
-                // down and is 58px above the viewport by the time the page has moved 900,
-                // so there are never two offsets showing the same part of it. Left as
-                // undecided it kept painting the few pixels it had not finished retracting
-                // — a white band and a hairline across the middle of a paragraph — and
-                // handing the segmenter a <header> boundary where the page has none.
-                //
-                // WHAT IT COSTS, stated rather than hidden: an element that is genuinely
-                // content and genuinely leaves the viewport between two offsets — a sticky
-                // list heading pushed off by the next one — is hidden from the slice it was
-                // last on screen in. It is bounded by the element's own height, and both the
-                // alternative and the behaviour before this task lose it too.
-                const offScreen = change === null && Boolean(was && now);
-                const same = samePixels(change) || offScreen;
-                if (change === null && !offScreen) record.undecided++;
+                // WHAT A CONVICTION COSTS, stated rather than hidden: an element that is
+                // genuinely content and genuinely leaves the viewport between two offsets —
+                // a sticky list heading pushed off by the next one — is hidden from the
+                // slice it was last on screen in. It is bounded by the element's own height,
+                // and both the alternative and the behaviour before this task lose it too.
+                // See chromeVerdict for which silences convict and which do not.
+                const {verdict, why} = chromeVerdict(change, was, now, viewport.height);
+                const same = verdict === 'chrome';
+                if (verdict === 'undecided') record.undecided++;
                 else record.decided++;
                 if (same) {
                     chrome.push(groups[g][k]);
@@ -765,8 +795,8 @@ export async function decideChrome(page, census, {step, settleMs, viewport, shoo
                     at: offsets,
                     compared: change ? change.compared : 0,
                     changed: change ? Number(change.fraction.toFixed(5)) : null,
-                    why: change ? 'pixels' : (offScreen ? 'off screen at one of the two offsets' : 'not measurable'),
-                    verdict: (change === null && !offScreen) ? 'undecided' : (same ? 'chrome' : 'content'),
+                    why,
+                    verdict,
                 });
             }
         }

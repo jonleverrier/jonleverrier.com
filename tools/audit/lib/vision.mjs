@@ -46,6 +46,15 @@ export const MAX_TOKENS = 4000;
  * `unclassified` is NOT a ninth category. It is the model declining to guess, reported as
  * itself and never redistributed — because a percentage that absorbs our own uncertainty
  * is the confident wrong number this tool exists to avoid.
+ *
+ * `brand` READ 0% ON ALL 27 SITES AND WAS NEARLY DELETED FOR IT. The cause was not that
+ * pages have no brand; it was that this list named the category and the prompt below never
+ * defined it, so the only thing the model was ever told about brand was that client logos
+ * are not it. A category with no definition cannot be chosen. atkinsonsca.co.uk is the case
+ * that found it: three full-width decorative photo bands, no text and nothing to click,
+ * came back `unclassified` twice and `hero` once at confidence 0.4 — a page saying nothing
+ * cannot be making a claim. Before deleting a category that reads zero, check it is
+ * reachable.
  */
 export const CATEGORIES = [
     'brand', 'navigation', 'hero', 'promotion', 'trust', 'routing', 'editorial', 'footer',
@@ -105,10 +114,14 @@ Give each block ONE category. Work down this list and take the FIRST that fits:
                  row, a card list, a set of in-page links into the site's own inventory.
 - "editorial"  - the page's own published writing, read on the page rather than linked to:
                  an article, a long explanatory passage, a news item in full.
+- "brand"      - identity or atmosphere and NOTHING ELSE: a full-width decorative photo
+                 band, a mood image, a logo panel. It makes no claim, asks for nothing and
+                 links nowhere. Remove it and a visitor can still do everything they came
+                 to do; the page just feels anonymous.
 - "unclassified" - you are not confident which of the above it is. Say so rather than
                  guessing. This is a real answer and is better than a wrong one.
 
-Three rules where blocks could take more than one:
+Four rules where blocks could take more than one:
 - A card row of articles or blog posts is "routing", not "editorial": its job on a homepage
   is to send the reader somewhere.
 - Client logos are "trust", not "brand": they are evidence, not this company's identity.
@@ -116,13 +129,16 @@ Three rules where blocks could take more than one:
   company saying "fast, secure, always on" is making its own claim, so it is the pitch. It
   only becomes trust when somebody else is vouching for it, or it is a figure that could be
   checked.
+- A photograph with no words on it and nothing to click is "brand", not "hero" and not
+  "unclassified". A picture makes no claim. It becomes "hero" only when words beside it say
+  what the company does.
 
 COORDINATES. Answer in THIS IMAGE's pixels: 0 is the top of THIS image, not of the page.
 Do not add any offset and do not rescale. Cover this image top to bottom with no gaps and
 no overlaps.
 
 Return ONLY a JSON array, no prose and no code fence:
-[{"y0": <int>, "y1": <int>, "cols": <int>, "what": "<3-5 words>", "category": "<one of the six>", "confidence": <0 to 1>}]`;
+[{"y0": <int>, "y1": <int>, "cols": <int>, "what": "<3-5 words>", "category": "<one of the words listed above>", "confidence": <0 to 1>}]`;
 
 /**
  * What the slice above ended with, so a section cut by a seam is recognised as continuing.

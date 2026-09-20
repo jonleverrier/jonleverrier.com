@@ -12,7 +12,11 @@
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {pageSignature, signatureFacts} from '../lib/signature.mjs';
+import {TILE_PROMPT} from '../lib/vision.mjs';
+
+const digest = (parts) => createHash('sha256').update(parts.join('\n')).digest('hex').slice(0, 16);
 
 const meta = {image: {width: 1440, height: 5717}, fullHeight: 5717};
 const rects = [
@@ -73,4 +77,17 @@ test('no rects is a usable signature, not a crash', () => {
 
 test('an empty page and a populated one do not collide', () => {
     assert.notEqual(pageSignature(meta, []), pageSignature(meta, rects));
+});
+
+/**
+ * A stored answer stops describing the site when the site changes — and equally when we
+ * change what we asked. Defining `brand` in TILE_PROMPT turned three atkinsonsca.co.uk
+ * photo bands from `unclassified` into a category on markup that had not moved a pixel;
+ * without this the cache would have served the old answer forever.
+ */
+test('the question is part of the signature', () => {
+    const f = signatureFacts(meta, rects);
+    assert.ok(f.promptDigest, 'the prompt is one of the stated facts');
+    assert.equal(f.promptDigest, digest([TILE_PROMPT]));
+    assert.notEqual(f.promptDigest, digest([`${TILE_PROMPT} and one more rule`]));
 });

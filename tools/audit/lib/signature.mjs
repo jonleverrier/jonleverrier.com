@@ -25,6 +25,13 @@
  * unsorted digest would report a change every time a framework rendered its children in a
  * different order, which is the same failure as hashing the pixels.
  *
+ * THE QUESTION IS PART OF THE PAGE. A stored answer stops describing the site when the
+ * site changes — and equally when we change what we asked. Defining `brand` in the prompt
+ * turned three atkinsonsca.co.uk photo bands from `unclassified` into a category, on a
+ * page whose markup had not moved a pixel; without the prompt in this digest the cache
+ * would have served the old answer forever and the change would have looked like a no-op.
+ * So TILE_PROMPT is hashed in beside the structure, and editing it re-audits everything.
+ *
  * The limitation worth knowing: a site that changes only its imagery — a new hero
  * photograph behind the same layout and copy — will not be re-audited, and its report will
  * be right about the proportions and stale about the picture. That is the intended trade,
@@ -32,6 +39,7 @@
  * in the photographs.
  */
 import {createHash} from 'node:crypto';
+import {TILE_PROMPT} from './vision.mjs';
 
 const digest = (parts) => createHash('sha256').update(parts.join('\n')).digest('hex').slice(0, 16);
 
@@ -47,11 +55,12 @@ export function signatureFacts(meta, rects) {
         rectCount: list.length,
         textDigest: digest(lines),
         edgeDigest: digest(list.map((r) => `${r.y}:${r.y + r.h}`).sort()),
+        promptDigest: digest([TILE_PROMPT]),
     };
 }
 
 export function pageSignature(meta, rects) {
     const f = signatureFacts(meta, rects);
 
-    return digest([f.height, f.rectCount, f.textDigest, f.edgeDigest]);
+    return digest([f.height, f.rectCount, f.textDigest, f.edgeDigest, f.promptDigest]);
 }

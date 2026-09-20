@@ -15,7 +15,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {
     PIN_DRIFT_FRACTION, SAME_PIXELS_MAX, choosePairs, comparableRegion, groupDisjoint,
-    newCensus, pinnedBetween, pixelChange, preferredPairs, recordStep, samePixels,
+    chromeVerdict, newCensus, pinnedBetween, pixelChange, preferredPairs, recordStep, samePixels,
 } from '../lib/pinned.mjs';
 
 /* ------------------------------------------------------------------ pinned or not */
@@ -248,4 +248,48 @@ test('past the group cap, the rest are left undecided rather than compared wrong
     const {groups, left} = groupDisjoint([1, 2, 3], [boxes], 2);
     assert.equal(groups.length, 2);
     assert.deepEqual(left, [3]);
+});
+
+/* ------------------------------------------------------------- chrome, content, neither */
+
+const VIEWPORT_H = 900;
+const at = (y, h) => ({box: [0, y, 1440, h]});
+
+test('pixels that match convict; pixels that differ acquit', () => {
+    const same = {fraction: 0, compared: 1000};
+    const moved = {fraction: 0.8, compared: 1000};
+    assert.equal(chromeVerdict(same, at(0, 100), at(0, 100), VIEWPORT_H).verdict, 'chrome');
+    assert.equal(chromeVerdict(moved, at(0, 100), at(0, 100), VIEWPORT_H).verdict, 'content');
+});
+
+/**
+ * jerseyfinance.com. A header that retracts on scroll down is above the viewport by the
+ * time the page has moved 900, so no two offsets show the same part of it. Left undecided
+ * it painted its half-retracted remains across the middle of a paragraph.
+ */
+test('an element that has scrolled up out of view is chrome', () => {
+    const got = chromeVerdict(null, at(-58, 58), at(-58, 58), VIEWPORT_H);
+    assert.equal(got.verdict, 'chrome');
+    assert.match(got.why, /off screen/);
+});
+
+/**
+ * jersey.com. Its footer sat 1,064px BELOW the fold at both sampled offsets — never
+ * photographed, never compared, nothing learned. Convicted, it was hidden from every
+ * slice and the capture came back with 1,694px of white where a footer is.
+ */
+test('an element below the fold at both offsets is not convicted', () => {
+    const got = chromeVerdict(null, at(1964, 821), at(1064, 821), VIEWPORT_H);
+    assert.equal(got.verdict, 'undecided', 'nothing was seen, so nothing may be concluded');
+    assert.match(got.why, /below the fold/);
+});
+
+test('an element on screen at one offset and below the fold at the other is still chrome', () => {
+    // It was seen going; that is the retracting case, not the never-reached one.
+    assert.equal(chromeVerdict(null, at(400, 200), at(1200, 200), VIEWPORT_H).verdict, 'chrome');
+});
+
+test('an element nobody could describe is undecided', () => {
+    assert.equal(chromeVerdict(null, null, at(0, 100), VIEWPORT_H).verdict, 'undecided');
+    assert.equal(chromeVerdict(null, at(0, 100), null, VIEWPORT_H).verdict, 'undecided');
 });
