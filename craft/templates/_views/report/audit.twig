@@ -112,6 +112,7 @@
         .r-chip--blank { border-color: transparent; }
         .r-swatch--rest .r-chip-label { color: #666; }
         .r-drift b { font-weight: 600; opacity: .5; }
+        .r-none { margin: 0 0 18px; color: #333; }
         .r-caveats { margin-top: 22px; padding: 12px; background: #f6f6f6; }
         .r-caveats li { margin-bottom: 6px; }
 
@@ -213,6 +214,18 @@
                 </li>
             {% endif %}
         </ul>
+    {% endif %}
+
+    {% if report.styles and not report.styles.colours.sameColour|length %}
+        {# CHECKED AND FOUND NONE, SAID OUT LOUD. An absent section is indistinguishable
+           from a check that never ran, and on this tool that distinction is the whole
+           argument. whitepaper.co.uk is the case: its closest two colours are dE 6.58
+           apart, so nothing groups — which is a finding about the page, not a gap in the
+           report. #}
+        <h2>Colours that are the same colour</h2>
+        <p class="r-none">None. No two colours on this page are within dE
+            {{ report.styles.colours.deltaE }} of each other, the point at which a person
+            stops being able to tell them apart.</p>
     {% endif %}
 
     {% if report.styles and report.styles.colours.sameColour|length %}
