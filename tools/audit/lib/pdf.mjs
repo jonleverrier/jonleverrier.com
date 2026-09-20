@@ -36,6 +36,7 @@ import {leaves} from './blocks.mjs';
 import {surfaceArea} from './surface.mjs';
 import {noteCodes} from './notes.mjs';
 import {bytesSummary} from './bytes.mjs';
+import {clusterColours, SAME_COLOUR_DE} from './styles.mjs';
 
 /** A4 at 96dpi, less a 12mm margin: the box an image has to fit inside. */
 export const PAGE = {width: 794, height: 1123, margin: 45};
@@ -74,10 +75,36 @@ export function reportData(outDir, viewportHeight = 900) {
         speed: meta.psi && !meta.psi.error ? meta.psi : null,
         weight: meta.bytes?.measured ? meta.bytes : null,
         weightSummary: bytesSummary(meta.bytes),
-        styles: meta.styles?.measured ? meta.styles : null,
+        // The styles as measured, plus the one thing that is a judgement rather than a
+        // measurement: which of those colours a person would call the same colour. Derived
+        // HERE and not at capture time, so the threshold can move without re-photographing
+        // a page whose colours have not.
+        styles: meta.styles?.measured ? withColourGroups(meta.styles) : null,
         // The honesty layer, verbatim. A report that drops these is not this tool's report.
         caveats: Object.values(notes?.conditions ?? {}).map((c) => ({effect: c.effect, message: c.message})),
         noteCodes: noteCodes(notes),
+    };
+}
+
+/**
+ * The measured styles with the colour grouping added.
+ *
+ * A group asserts that a person could not tell its members apart, so it is complete-link:
+ * every pair inside it is within the threshold, not merely some path through it. See
+ * clusterColours, and the kohde.agency case that proves why the difference matters.
+ */
+export function withColourGroups(styles, limit = SAME_COLOUR_DE) {
+    const palette = styles.colours?.palette ?? [];
+
+    return {
+        ...styles,
+        colours: {
+            ...styles.colours,
+            sameColour: clusterColours(palette, limit)
+                .filter((g) => g.length > 1)
+                .map((g) => g.map((c) => c.colour)),
+            deltaE: limit,
+        },
     };
 }
 

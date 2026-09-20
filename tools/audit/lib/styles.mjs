@@ -54,8 +54,20 @@
  * and the wrong one for an audit of the whole site.
  */
 
-/** Two colours closer than this are the same colour twice. See the header. */
-export const SAME_COLOUR_DE = 5;
+/**
+ * Two colours closer than this are the same colour twice.
+ *
+ * 2.3 IS THE JUST-NOTICEABLE DIFFERENCE — below it a person cannot tell two colours apart
+ * with both in front of them. That is the claim this makes, so that is where the line goes.
+ *
+ * IT WAS 5, AND 5 WAS INDEFENSIBLE. A reader looked at kohde.agency's group and said
+ * rgb(240,240,245) looks different to white, which it does: they are dE 5.69 apart. Every
+ * genuine drift found across the corpus is far tighter — visionarygrid.studio's brand
+ * yellow declared twice is 0.68, jersey.com's near-blacks 1.00, hsbc.co.uk's greys 1.76 —
+ * so the looser threshold bought nothing and cost the only thing that matters here, which
+ * is that the claim is true.
+ */
+export const SAME_COLOUR_DE = 2.3;
 
 /**
  * The three channels out of an `rgb()` or `rgba()` string.
@@ -109,12 +121,18 @@ export function toLab(rgb) {
 export const deltaE = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 
 /**
- * Colours grouped so that any two in a group are within `limit` of one another.
+ * Colours grouped so that EVERY pair in a group is within `limit` of one another.
  *
- * SINGLE-LINK, DELIBERATELY: a colour joins a group if it is close to ANY member, so a run
- * of near-whites collects into one group rather than into overlapping pairs. The cost is
- * that a long chain can span more than `limit` end to end, which on a page's palette means
- * a ramp of greys reported as one family of grey — the right answer for this question.
+ * COMPLETE-LINK, AND THE FIRST ATTEMPT WAS SINGLE-LINK, WHICH WAS WRONG. Joining a group
+ * on closeness to ANY member lets a chain form: on kohde.agency, white joined
+ * rgb(250,250,252) at dE 1.96, then rgb(240,240,245) joined THAT at 3.73 — and the report
+ * announced white and rgb(240,240,245) as the same colour when they are 5.69 apart and
+ * visibly different. A reader spotted it immediately, which is what a claim like this
+ * deserves.
+ *
+ * The header comment called that cost "the right answer for this question". It was not.
+ * A group here asserts that a person could not tell these apart, so every pair in it has
+ * to pass, not merely some path through it.
  *
  * Input is `{colour, area}` sorted by area, and the order is kept: the first member of a
  * group is the one covering the most of the page, which is the one a reader would call the
@@ -124,7 +142,7 @@ export function clusterColours(colours, limit = SAME_COLOUR_DE) {
     const groups = [];
     for (const c of colours) {
         const lab = toLab(channels(c.colour));
-        const home = groups.find((g) => g.some((m) => deltaE(toLab(channels(m.colour)), lab) <= limit));
+        const home = groups.find((g) => g.every((m) => deltaE(toLab(channels(m.colour)), lab) <= limit));
         if (home) {
             home.push(c);
         } else {
@@ -251,7 +269,7 @@ export const COLLECT_STYLES = () => {
  * see the header — and `sameColour` holds only the groups with more than one member, since
  * a group of one is a colour, not an inconsistency.
  */
-export function styleRecord(collected, limit = SAME_COLOUR_DE) {
+export function styleRecord(collected) {
     if (!collected || !Array.isArray(collected.colours)) {
         return {measured: false, why: 'the style census returned nothing'};
     }
@@ -276,11 +294,13 @@ export function styleRecord(collected, limit = SAME_COLOUR_DE) {
         colours: {
             values: collected.colours.length,
             total: palette.length,
+            // THE PALETTE AND NOT THE GROUPING. Which colours are the same colour is a
+            // DERIVATION from this, at a threshold that is a judgement — and a judgement
+            // baked in here is frozen into meta.json at capture time, so changing it would
+            // mean re-photographing a page whose colours have not moved. The measurement
+            // belongs to the capture; the grouping belongs to the report. See reportData
+            // in lib/pdf.mjs, which clusters this.
             palette,
-            // Groups of two or more: colours a person would call the same one.
-            sameColour: clusterColours(palette, limit).filter((g) => g.length > 1)
-                .map((g) => g.map((c) => c.colour)),
-            deltaE: limit,
         },
         fonts: {
             declared: faces.length,

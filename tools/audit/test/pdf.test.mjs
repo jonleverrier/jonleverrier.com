@@ -13,7 +13,8 @@ import {mkdtempSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import sharp from 'sharp';
-import {MAX_IMAGE_PAGES, PAGE, reportData, sliceAnnotated, stubTemplate} from '../lib/pdf.mjs';
+import {MAX_IMAGE_PAGES, PAGE, reportData, sliceAnnotated, stubTemplate, withColourGroups} from '../lib/pdf.mjs';
+import {SAME_COLOUR_DE} from '../lib/styles.mjs';
 
 const leaf = (y, h, category, coverage = 0.4) => ({
     x: 0, y, w: 1440, h, depth: 1, children: [], coverage,
@@ -163,4 +164,39 @@ test('one image page becomes one printed section', () => {
     const data = reportData(audit());
     const html = stubTemplate(data, {slices: [{uri: 'data:image/jpeg;base64,AA', height: 10}], pages: 1, truncated: false});
     assert.equal((html.match(/class="shot"/g) ?? []).length, 1);
+});
+
+/* ------------------------------------------------- the grouping, derived at report time */
+
+/**
+ * Which colours are the same colour is a judgement at a threshold, not a measurement, so
+ * it is derived here rather than frozen into meta.json when the page was photographed.
+ * Moving the threshold must not mean re-capturing a site whose colours have not moved.
+ */
+test('the colour grouping is added to the measured palette', () => {
+    const styles = {measured: true, colours: {total: 2, values: 2, palette: [
+        {colour: 'rgb(64, 64, 64)', area: 900},
+        {colour: 'rgb(68, 68, 68)', area: 10},
+    ]}, fonts: {declared: 0, loaded: 0, families: [], rendered: [], faces: []}, fontSizes: []};
+    const got = withColourGroups(styles);
+    assert.deepEqual(got.colours.sameColour, [['rgb(64, 64, 64)', 'rgb(68, 68, 68)']]);
+    assert.equal(got.colours.deltaE, SAME_COLOUR_DE);
+    assert.deepEqual(got.colours.palette, styles.colours.palette, 'the measurement is untouched');
+});
+
+/**
+ * kohde.agency. White and rgb(240,240,245) are dE 5.69 apart and visibly different; they
+ * were reported as the same colour because a chain joined them through rgb(250,250,252).
+ * A reader saw it immediately.
+ */
+test('a chain does not make a group', () => {
+    const styles = {measured: true, colours: {total: 3, values: 3, palette: [
+        {colour: 'rgb(250, 250, 252)', area: 900},
+        {colour: 'rgb(255, 255, 255)', area: 500},
+        {colour: 'rgb(240, 240, 245)', area: 100},
+    ]}, fonts: {declared: 0, loaded: 0, families: [], rendered: [], faces: []}, fontSizes: []};
+    const groups = withColourGroups(styles).colours.sameColour;
+    assert.equal(groups.length, 1, 'only the pair that really is one colour');
+    assert.equal(groups[0].length, 2);
+    assert.ok(!groups[0].includes('rgb(240, 240, 245)'));
 });

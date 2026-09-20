@@ -69,13 +69,33 @@ test('two colours that merely look similar as numbers stay apart', () => {
     assert.equal(groups.length, 2);
 });
 
-/** A ramp of near-whites collects into one family of white rather than overlapping pairs. */
-test('single-link clustering gathers a run rather than splitting it', () => {
+/**
+ * THIS TEST ASSERTED THE BUG. It required a ramp of near-whites to collect into one group,
+ * which is what single-link clustering does — and on kohde.agency it made the report
+ * announce rgb(255,255,255) and rgb(240,240,245) as the same colour when they are dE 5.69
+ * apart and visibly different. A reader saw it at a glance.
+ *
+ * A group claims a person could not tell its members apart, so EVERY pair has to pass, not
+ * merely some path through the group. These three split: the first two are 1.96 apart and
+ * stay together, the third is 5.69 from white and leaves.
+ */
+test('a chain is not a group: every pair has to be within the limit', () => {
     const groups = clusterColours([
         c('rgb(255, 255, 255)'), c('rgb(250, 250, 252)'), c('rgb(240, 240, 245)'),
     ]);
-    assert.equal(groups.length, 1);
-    assert.equal(groups[0].length, 3);
+    assert.equal(groups.length, 2, 'white and 240,240,245 are not the same colour');
+    assert.deepEqual(groups[0].map((g) => g.colour), ['rgb(255, 255, 255)', 'rgb(250, 250, 252)']);
+    assert.deepEqual(groups[1].map((g) => g.colour), ['rgb(240, 240, 245)']);
+});
+
+/** The drifts that matter are far tighter than the limit, and all still group. */
+test('a real drift is well inside the limit', () => {
+    // visionarygrid.studio's brand yellow, declared twice.
+    assert.equal(clusterColours([c('rgb(255, 211, 0)'), c('rgb(255, 210, 2)')]).length, 1);
+    // jersey.com's near-blacks.
+    assert.equal(clusterColours([c('rgb(26, 26, 26)'), c('rgb(28, 28, 28)')]).length, 1);
+    // hsbc.co.uk's two greys.
+    assert.equal(clusterColours([c('rgb(64, 64, 64)'), c('rgb(68, 68, 68)')]).length, 1);
 });
 
 test('the largest-area colour leads its group, so the rest read as drift from it', () => {
@@ -87,6 +107,11 @@ test('a tighter limit splits what a looser one joined', () => {
     const pair = [c('rgb(64, 64, 64)'), c('rgb(68, 68, 68)')];
     assert.equal(clusterColours(pair, SAME_COLOUR_DE).length, 1);
     assert.equal(clusterColours(pair, 0.5).length, 2);
+});
+
+/** The threshold is the just-noticeable difference, not a number someone liked. */
+test('the limit is the point two colours stop being distinguishable', () => {
+    assert.equal(SAME_COLOUR_DE, 2.3);
 });
 
 /* ------------------------------------------------------------------- the record */
@@ -116,19 +141,17 @@ test('a colour used at two opacities is one colour, and its areas add', () => {
     assert.equal(got.colours.palette[0].area, 1500, 'both opacities are that colour being used');
 });
 
-test('only groups of more than one are an inconsistency', () => {
+/**
+ * THE GROUPING IS NOT MEASURED HERE, and that is the point of the split. Which colours are
+ * the same colour is a judgement at a threshold, and a judgement baked into meta.json at
+ * capture time would need a page re-photographed to change. The palette is the
+ * measurement; withColourGroups in lib/pdf.mjs derives the rest at report time.
+ */
+test('the record carries the palette and leaves the grouping alone', () => {
     const got = styleRecord(collected());
-    assert.deepEqual(got.colours.sameColour, [], 'two distinct colours are not a drift');
-
-    const drifting = styleRecord(collected({
-        colours: [c('rgb(64, 64, 64)', 900), c('rgb(68, 68, 68)', 10)],
-    }));
-    assert.deepEqual(drifting.colours.sameColour, [['rgb(64, 64, 64)', 'rgb(68, 68, 68)']]);
-});
-
-test('the threshold the clustering used is part of the record', () => {
-    assert.equal(styleRecord(collected()).colours.deltaE, SAME_COLOUR_DE);
-    assert.equal(styleRecord(collected(), 1).colours.deltaE, 1);
+    assert.ok(got.colours.palette.length, 'the measurement is here');
+    assert.equal('sameColour' in got.colours, false, 'and the judgement is not');
+    assert.equal('deltaE' in got.colours, false);
 });
 
 /** Declared, loaded and rendered are three different numbers. kohde.agency: 7, 5 and 2. */
@@ -168,7 +191,7 @@ test('a page with no colours at all does not throw', () => {
     const got = styleRecord({colours: [], faces: [], fontSizes: [], renderedFamilies: []});
     assert.equal(got.measured, true);
     assert.equal(got.colours.total, 0);
-    assert.deepEqual(got.colours.sameColour, []);
+    assert.deepEqual(got.colours.palette, []);
     assert.equal(got.fonts.declared, 0);
 });
 
