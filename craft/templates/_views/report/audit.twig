@@ -86,6 +86,15 @@
         td { padding: 5px 0; border-bottom: 1px solid #eee; }
         .r-n { text-align: right; font-variant-numeric: tabular-nums; }
         .r-facts { margin: 20px 0; color: #333; }
+        /* A swatch has to carry its own outline: a near-white chip on a white sheet is
+           otherwise invisible, which is exactly the case this section is about. */
+        .r-swatches, .r-drift { list-style: none; margin: 0 0 18px; padding: 0; }
+        .r-swatches li, .r-drift li { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+        .r-chip { display: inline-block; width: 13px; height: 13px; flex: none;
+            border: 1px solid rgba(0,0,0,.25); }
+        .r-chip-label { font-variant-numeric: tabular-nums; }
+        .r-chip-share { margin-left: auto; font-variant-numeric: tabular-nums; }
+        .r-drift b { font-weight: 600; opacity: .5; }
         .r-caveats { margin-top: 22px; padding: 12px; background: #f6f6f6; }
         .r-caveats li { margin-bottom: 6px; }
 
@@ -138,9 +147,47 @@
         {% if report.styles %}
             <div>{{ report.styles.colours.total }} colours &middot;
                 {{ report.styles.fonts.loaded }} font faces loaded of {{ report.styles.fonts.declared }} declared &middot;
-                {{ report.styles.fonts.rendered|length }} rendered</div>
+                {{ report.styles.fonts.rendered|length }} rendered as
+                {{ report.styles.fonts.rendered|map(f => f.family)|join(', ') }}</div>
         {% endif %}
     </div>
+
+    {% if report.styles and report.styles.colours.palette|length %}
+        {# THE PALETTE BY AREA, because a count cannot tell a system from an accident:
+           eleven colours where three cover most of the page is a palette with accents,
+           eleven spread evenly is an accretion. The areas are measured; which of the two
+           this is, is the reader's to judge. #}
+        {% set paletteArea = report.styles.colours.palette|reduce((sum, c) => sum + c.area, 0) %}
+        <h2>The colours on the page</h2>
+        <ul class="r-swatches">
+            {% for c in report.styles.colours.palette|slice(0, 8) %}
+                <li class="r-swatch">
+                    <span class="r-chip" style="background: {{ c.colour }}"></span>
+                    <span class="r-chip-label">{{ c.colour }}</span>
+                    <span class="r-chip-share">{{ r.pc(paletteArea ? c.area / paletteArea : null) }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if report.styles and report.styles.colours.sameColour|length %}
+        {# COLOURS A PERSON WOULD CALL THE SAME ONE — within dE 5 in CIELAB once alpha is
+           collapsed. visionarygrid.studio declares its brand yellow twice, as
+           rgb(255,211,0) and rgb(255,210,2); jersey.com paints three near-blacks a point
+           apart. Differences nobody chose and nobody can see: a design token entered
+           twice. Stated and not judged — a page may layer near-whites deliberately. #}
+        <h2>Colours that are the same colour</h2>
+        <ul class="r-drift">
+            {% for group in report.styles.colours.sameColour %}
+                <li>
+                    {% for colour in group %}
+                        <span class="r-chip" style="background: {{ colour }}"></span>
+                        <span class="r-chip-label">{{ colour }}</span>{% if not loop.last %} <b>~</b> {% endif %}
+                    {% endfor %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 
     {% if report.caveats|length %}
         <section class="r-caveats">
