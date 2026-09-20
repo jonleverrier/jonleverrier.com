@@ -1,0 +1,55 @@
+{#
+  The homepage audit tool — the `tools` structure at /tools/{slug}.
+
+  NAMED FOR THE ENTRY TYPE, not `default`. The structure router tries the type before
+  falling back (see _routers/structure.twig), and there will be more than one tool here:
+  each gets its own type and its own view, which is what lets the next one include a
+  different form without this file growing a conditional for every tool ever added.
+
+  Directory is the section HANDLE — the structure router keys off `entry.section.handle`,
+  unlike the single router which uses the name. Section handle is `tools`.
+
+  Built on the same `_components/content` shape as the contact single and the generic page,
+  so a tool sits in the family rather than looking like a new kind of page. The form is the
+  only thing it adds: `form` takes a template path, so the shared component renders this
+  tool's form in the place the contact page puts its own.
+#}
+{% extends '_layouts/page.twig' %}
+{% import '_macros/text' as text %}
+
+{% set tplPath = _self %}
+
+{# Cream slab, as the contact single and the generic page use. #}
+{% set slabModifier = 'b-slab--l600' %}
+
+{% block siteContent %}
+    {# CTAs from the globals single — the same source the footer and the contact page use,
+       filtered by the visitor's VIP purpose. Somebody who would rather not wait for a
+       report still needs a way to reach Jon. #}
+    {% set ctas = craft.frontend.ctas() %}
+
+    {# The Summary as a standfirst above the form, exactly as on a generic page: a
+       plain-text field, so it is escaped here; blank lines become paragraphs and single
+       line breaks stay as breaks. #}
+    {% set summary = (entry.summary ?? '')|trim %}
+    {% set standfirst = null %}
+    {% if summary %}
+        {% set standfirst %}
+            {% for para in summary|split("\n\n") %}
+                <p class="c-content__summary">{{ text.standfirst(para) }}</p>
+            {% endfor %}
+        {% endset %}
+    {% endif %}
+
+    {# Whisper is the SECTION's name rather than the entry's title, which is already the
+       h1 — repeating it above itself reads as a stutter. Taken from the section so
+       renaming it in the CMS carries here. #}
+    {% include '_components/content' with {
+        whisper: entry.section.name,
+        title: entry.longTitle ?: entry.title,
+        body: standfirst,
+        form: '_components/audit-form',
+        ctas: ctas,
+        ctasHeading: 'Or just get in touch',
+    } only %}
+{% endblock %}
