@@ -8,7 +8,11 @@
  * outDir defaults OUTSIDE the repo: nothing under tools/ is gitignored, and a
  * full-page screenshot of a commercial homepage is several megabytes.
  */
+import {writeFileSync} from 'node:fs';
+import {join} from 'node:path';
 import {capturePage} from './lib/capture.mjs';
+import {fetchPsi} from './lib/psi.mjs';
+import {bytesSummary} from './lib/bytes.mjs';
 import {RENDERER_MAX, webglWarning} from './lib/webgl.mjs';
 import {shotTruncationWarning, unrenderedWarning, paintLimitWarning} from './lib/unrendered.mjs';
 import {printable} from './lib/printable.mjs';
@@ -53,6 +57,18 @@ if (!url) {
 
 process.stderr.write(`capturing ${printable(url)}\n`);
 try {
+    // STARTED BESIDE THE CAPTURE, NOT BEFORE IT. PSI took 21.5s and 27.5s on the two probe
+    // sites and the browser work takes longer than that on any page worth measuring, so
+    // running them together costs nothing and running them in sequence would add half a
+    // minute to every audit. It still finishes before anything is segmented, which is the
+    // ordering that matters: if PageSpeed cannot fetch the URL either, the page is not
+    // reachable and we have learned that without paying a model to describe it.
+    //
+    // NOT AWAITED HERE, AND NEVER ALLOWED TO REJECT. fetchPsi returns `{error}` rather
+    // than throwing; the catch is belt and braces so that a supporting number can never
+    // take down a capture that worked.
+    const psiRunning = fetchPsi(url).catch((e) => ({error: e.message}));
+
     const meta = await capturePage(url, outDir);
     // Everything below that is not a number came from the page or from the URL a
     // stranger submitted, so all of it goes through printable() on the way out. See
@@ -113,6 +129,26 @@ try {
     console.log(`webgl asked  ${meta.webgl.requested.length ? printable(meta.webgl.requested.join(", "), RENDERER_MAX) : "no"}`);
     console.log(`webgl draws  ${meta.webgl.draws}`);
     console.log(`content ends ${meta.heightGap.contentBottom}px of ${meta.fullHeight}px`);
+    // What the page shipped, over the load and the scroll that made the image.
+    const weight = bytesSummary(meta.bytes);
+    console.log(`weight       ${weight ? printable(weight, 200) : `not measured — ${printable(meta.bytes?.why ?? 'no reason recorded', 120)}`}`);
+
+    const psi = await psiRunning;
+    if (psi.error) {
+        // A NOTE, NOT A FAILURE. The surface measurement is the product and this is a
+        // supporting number; an audit that refused because Google was busy would have its
+        // priorities backwards. lib/notes.mjs carries the same distinction.
+        console.log(`pagespeed    unavailable — ${printable(psi.error, 160)}`);
+    } else {
+        writeFileSync(join(outDir, 'psi.json'), JSON.stringify(psi, null, 1));
+        console.log(`pagespeed    ${psi.score}/100 desktop — LCP ${psi.lab.lcpMs}ms, TBT ${psi.lab.tbtMs}ms, CLS ${psi.lab.cls}`);
+        // Said out loud because most of this tool's prospects will never have it, and a lab
+        // figure read as though real people had lived it is the whole failure mode.
+        console.log(`real users   ${psi.field.available
+            ? `${psi.field.overall} (${psi.field.scope}) — LCP ${psi.field.metrics.lcp?.percentile}ms`
+            : 'no CrUX data — too little traffic, so the figures above are a lab simulation'}`);
+    }
+
     console.log(`artefacts    ${printable(outDir)}`);
 
     // Loud, and on stderr, because the capture SUCCEEDED — the page is simply missing a

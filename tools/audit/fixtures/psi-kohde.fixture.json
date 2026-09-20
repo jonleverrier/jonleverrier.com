@@ -1,0 +1,47 @@
+{
+ "id": "https://kohde.agency/",
+ "loadingExperience": {},
+ "lighthouseResult": {
+  "finalUrl": "https://kohde.agency/",
+  "lighthouseVersion": "13.4.1",
+  "fetchTime": "2026-09-20T15:20:03.009Z",
+  "configSettings": {
+   "formFactor": "desktop"
+  },
+  "categories": {
+   "performance": {
+    "score": 0.68
+   }
+  },
+  "audits": {
+   "first-contentful-paint": {
+    "numericValue": 500.2056298802539,
+    "numericUnit": "millisecond"
+   },
+   "largest-contentful-paint": {
+    "numericValue": 1298.1339346766922,
+    "numericUnit": "millisecond"
+   },
+   "total-blocking-time": {
+    "numericValue": 647.5,
+    "numericUnit": "millisecond"
+   },
+   "cumulative-layout-shift": {
+    "numericValue": 0,
+    "numericUnit": "unitless"
+   },
+   "speed-index": {
+    "numericValue": 2025.4118522043082,
+    "numericUnit": "millisecond"
+   },
+   "interactive": {
+    "numericValue": 4834.2990276856135,
+    "numericUnit": "millisecond"
+   },
+   "server-response-time": {
+    "numericValue": 2,
+    "numericUnit": "millisecond"
+   }
+  }
+ }
+}

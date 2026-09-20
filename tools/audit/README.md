@@ -14,6 +14,8 @@ receives is not built yet.
 | `lib/pinned.mjs` | Which elements hold the viewport, and which of those draw the same thing every time. |
 | `lib/unrendered.mjs` | Regions that exist for a visitor and are missing from the capture. |
 | `lib/webgl.mjs` | Whether this browser could render a WebGL hero, and whether the page wanted one. |
+| `lib/bytes.mjs` | What the page shipped, counted on the load and scroll that made the image. |
+| `lib/psi.mjs` | How fast it is, from Lighthouse via PageSpeed Insights. Lab metrics; CrUX when it exists. |
 | `lib/consent.mjs` | The cookie-banner selectors, and the two attempts at dismissing one. |
 | `lib/shadow.mjs` | One walk of the page that does not stop at a web component's boundary. |
 | `lib/tiles.mjs` | The page cut into non-overlapping tiles the model is shown one at a time. |
@@ -51,6 +53,25 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.test.mjs           # plus the networ
 - **Artefacts go outside the repo.** Nothing under `tools/` is gitignored, and a
   full-page screenshot of a commercial homepage is several megabytes. `outDir`
   defaults to `/tmp/audit`. The fixtures are the deliberate exception.
+- **The page weight is ours and the speed is Google's, and neither borrows the other's
+  number.** PageSpeed reports a byte weight too, and it is not the one in `meta.bytes`:
+  Lighthouse loads a page and never scrolls it, so everything lazy-loaded is missing from
+  its count. kohde.agency measured 1,229 KiB at load and 2,710 KiB after the scroll pass,
+  against PSI's 4,924 KiB — three numbers for one page. The weight that belongs beside a
+  measurement of the whole page is the one taken over the whole page, so it is counted here
+  from CDP, free, on the load we were doing anyway. Speed goes the other way: our own
+  timings would be unthrottled, measured from wherever this runs, and would flatter every
+  page on earth. That has to come from Lighthouse, so it does.
+- **Most sites have no CrUX data, and the report must say so rather than fill the gap.**
+  Field data needs enough traffic to report: natwest.com has it for both page and origin,
+  kohde.agency has neither, and the second is what most prospects look like. Lab metrics
+  were complete for both, so lab is the signal and `field.available` is a declared fact.
+  A lab figure presented as though real visitors had lived it is the confident wrong number
+  in a new costume.
+- **PageSpeed runs beside the capture, not before it.** It took 21.5s and 27.5s on the two
+  probes and the browser work takes longer than that on any page worth measuring, so they
+  overlap and the audit pays nothing for it. It still lands before anything is segmented,
+  which is the ordering that matters.
 - **A consent banner we fail to dismiss is not a failure.** It is part of that page's
   surface area and should be measured as such. `meta.json` records which happened.
 - **The text pass only looks inside something banner-shaped, and a navigation is never a

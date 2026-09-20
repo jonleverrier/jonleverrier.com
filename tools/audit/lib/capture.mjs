@@ -77,6 +77,7 @@ import {dismissConsent, dismissLateConsent} from './consent.mjs';
 import {SHADOW_CENSUS, SHADOW_INIT} from './shadow.mjs';
 import {WEBGL_PROBE_INIT, probeWebgl} from './webgl.mjs';
 import {COLLECT_PINNED, heightGap} from './unrendered.mjs';
+import {countBytes} from './bytes.mjs';
 import {
     BEGIN_PIN, HIDE_PINNED, MARK_PINNED, MEASURE_BOXES, RESTORE_HIDDEN,
     decideChrome, markEarlyPinned, newCensus, recordStep,
@@ -563,6 +564,21 @@ export async function capturePage(url, outDir, opts = {}) {
             reducedMotion: 'reduce',
         });
         const page = await context.newPage();
+        // WHAT THIS PAGE SHIPS, counted on the load we are doing anyway. Attached before
+        // the first navigation so nothing is missed, and it costs the capture nothing: no
+        // key, no second page load, no service that can be down. PageSpeed reports a byte
+        // weight too and it is not this one — Lighthouse never scrolls, so everything
+        // lazy-loaded is absent from it. See lib/bytes.mjs.
+        //
+        // A FAILURE HERE IS NEVER THE CAPTURE'S. A byte count is the least important thing
+        // this tool produces and the capture is the most expensive, so the census declares
+        // itself unmeasured rather than throwing into a run that is otherwise fine.
+        let bytes = null;
+        try {
+            bytes = await countBytes(await context.newCDPSession(page));
+        } catch (e) {
+            process.stderr.write(`byte census unavailable: ${printable(e.message, 200)}\n`);
+        }
         // EVERY IN-PAGE STEP IS BOUNDED. Playwright puts no timeout on evaluate or on
         // screenshot, and a page that never returned from one of them held a capture for
         // fourteen minutes. The budget is the whole capture's, so a single stuck step
@@ -601,6 +617,9 @@ export async function capturePage(url, outDir, opts = {}) {
         // record was the final URL, so both events read as `wrongPage` — "these blocks are
         // of another site" — about a perfectly correct measurement. See lib/notes.mjs.
         const landedUrl = page.url();
+        // Before the scroll pass, so the gap between this and the end is what deferring
+        // work actually bought. kohde.agency: 1,229 KiB here, 2,710 KiB by the end.
+        bytes?.mark('atLoad');
 
         // SMOOTH SCROLLING IS A SOURCE OF VARIANCE, and this pass scrolls a great deal. A
         // page with `scroll-behavior: smooth` animates every scrollTo below, so a shot can
@@ -659,6 +678,9 @@ export async function capturePage(url, outDir, opts = {}) {
             await page.waitForTimeout(400);
         }
         const scrollCapHit = scrolls >= maxScrolls;
+        // The page has now been walked from top to bottom, which is what makes this the
+        // weight a visitor who read the page would have paid.
+        bytes?.mark('afterScroll');
 
         // ONE MORE ATTEMPT AT A BANNER THAT WAS NOT THERE WHEN WE ASKED, and this is the
         // moment for it: the page has been scrolled to the bottom, so a banner loaded by a
@@ -788,6 +810,10 @@ export async function capturePage(url, outDir, opts = {}) {
             fullHeight,
             image,
             capture,
+            // What the page shipped, over the load and the scroll that produced the image
+            // above. Never PageSpeed's number — see lib/bytes.mjs for why they differ and
+            // why two page weights in one report is worse than one.
+            bytes: bytes ? bytes.result() : {measured: false, why: 'the census never attached'},
             httpStatus,
             consentDismissed: consent.dismissed,
             consentBannerSeen: consent.bannerSeen === true,

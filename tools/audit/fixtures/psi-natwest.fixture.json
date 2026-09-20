@@ -1,0 +1,256 @@
+{
+ "id": "https://www.natwest.com/",
+ "loadingExperience": {
+  "overall_category": "FAST",
+  "metrics": {
+   "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+    "percentile": 4,
+    "distributions": [
+     {
+      "min": 0,
+      "max": 10,
+      "proportion": 0.9252
+     },
+     {
+      "min": 10,
+      "max": 25,
+      "proportion": 0.0382
+     },
+     {
+      "min": 25,
+      "proportion": 0.0366
+     }
+    ],
+    "category": "FAST"
+   },
+   "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+    "percentile": 296,
+    "distributions": [
+     {
+      "min": 0,
+      "max": 800,
+      "proportion": 0.9187
+     },
+     {
+      "min": 800,
+      "max": 1800,
+      "proportion": 0.0502
+     },
+     {
+      "min": 1800,
+      "proportion": 0.0311
+     }
+    ],
+    "category": "FAST"
+   },
+   "FIRST_CONTENTFUL_PAINT_MS": {
+    "percentile": 748,
+    "distributions": [
+     {
+      "min": 0,
+      "max": 1800,
+      "proportion": 0.9293
+     },
+     {
+      "min": 1800,
+      "max": 3000,
+      "proportion": 0.0353
+     },
+     {
+      "min": 3000,
+      "proportion": 0.0354
+     }
+    ],
+    "category": "FAST"
+   },
+   "INTERACTION_TO_NEXT_PAINT": {
+    "percentile": 61,
+    "distributions": [
+     {
+      "min": 0,
+      "max": 200,
+      "proportion": 0.9685
+     },
+     {
+      "min": 200,
+      "max": 500,
+      "proportion": 0.0207
+     },
+     {
+      "min": 500,
+      "proportion": 0.0108
+     }
+    ],
+    "category": "FAST"
+   },
+   "LARGEST_CONTENTFUL_PAINT_MS": {
+    "percentile": 1780,
+    "distributions": [
+     {
+      "min": 0,
+      "max": 2500,
+      "proportion": 0.8455
+     },
+     {
+      "min": 2500,
+      "max": 4000,
+      "proportion": 0.0828
+     },
+     {
+      "min": 4000,
+      "proportion": 0.0717
+     }
+    ],
+    "category": "FAST"
+   }
+  }
+ },
+ "originLoadingExperience": {
+  "overall_category": "FAST",
+  "metrics": {
+   "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+    "percentile": 6,
+    "distributions": [
+     {
+      "min": 0,
+      "max": 10,
+      "proportion": 0.817
+     },
+     {
+      "min": 10,
+      "max": 25,
+      "proportion": 0.0818
+     },
+     {
+      "min": 25,
+      "proportion": 0.1012
+     }
+    ],
+    "category": "FAST"
+   },
+   "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+    "percentile": 303,
+    "distributions": [
+     {
+      "min": 0,
+      "max": 800,
+      "proportion": 0.8875
+     },
+     {
+      "min": 800,
+      "max": 1800,
+      "proportion": 0.0557
+     },
+     {
+      "min": 1800,
+      "proportion": 0.0569
+     }
+    ],
+    "category": "FAST"
+   },
+   "FIRST_CONTENTFUL_PAINT_MS": {
+    "percentile": 736,
+    "distributions": [
+     {
+      "min": 0,
+      "max": 1800,
+      "proportion": 0.9155
+     },
+     {
+      "min": 1800,
+      "max": 3000,
+      "proportion": 0.0425
+     },
+     {
+      "min": 3000,
+      "proportion": 0.042
+     }
+    ],
+    "category": "FAST"
+   },
+   "INTERACTION_TO_NEXT_PAINT": {
+    "percentile": 64,
+    "distributions": [
+     {
+      "min": 0,
+      "max": 200,
+      "proportion": 0.9561
+     },
+     {
+      "min": 200,
+      "max": 500,
+      "proportion": 0.0302
+     },
+     {
+      "min": 500,
+      "proportion": 0.0137
+     }
+    ],
+    "category": "FAST"
+   },
+   "LARGEST_CONTENTFUL_PAINT_MS": {
+    "percentile": 1565,
+    "distributions": [
+     {
+      "min": 0,
+      "max": 2500,
+      "proportion": 0.8728
+     },
+     {
+      "min": 2500,
+      "max": 4000,
+      "proportion": 0.0697
+     },
+     {
+      "min": 4000,
+      "proportion": 0.0575
+     }
+    ],
+    "category": "FAST"
+   }
+  }
+ },
+ "lighthouseResult": {
+  "finalUrl": "https://www.natwest.com/",
+  "lighthouseVersion": "13.4.1",
+  "fetchTime": "2026-09-20T15:18:56.586Z",
+  "configSettings": {
+   "formFactor": "desktop"
+  },
+  "categories": {
+   "performance": {
+    "score": 0.84
+   }
+  },
+  "audits": {
+   "first-contentful-paint": {
+    "numericValue": 596.0223322329575,
+    "numericUnit": "millisecond"
+   },
+   "largest-contentful-paint": {
+    "numericValue": 2262.110646063289,
+    "numericUnit": "millisecond"
+   },
+   "total-blocking-time": {
+    "numericValue": 97,
+    "numericUnit": "millisecond"
+   },
+   "cumulative-layout-shift": {
+    "numericValue": 0.050203810948721464,
+    "numericUnit": "unitless"
+   },
+   "speed-index": {
+    "numericValue": 1890.5169953547024,
+    "numericUnit": "millisecond"
+   },
+   "interactive": {
+    "numericValue": 2765.719841345728,
+    "numericUnit": "millisecond"
+   },
+   "server-response-time": {
+    "numericValue": 92,
+    "numericUnit": "millisecond"
+   }
+  }
+ }
+}
