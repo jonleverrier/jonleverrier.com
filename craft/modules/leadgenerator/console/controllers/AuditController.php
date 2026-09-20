@@ -6,7 +6,10 @@ use Craft;
 use craft\console\Controller;
 use craft\elements\Entry;
 use craft\helpers\Console;
+use craft\helpers\UrlHelper;
+use modules\leadgenerator\controllers\ReportController;
 use modules\leadgenerator\audit\jobs\RunAudit;
+use modules\leadgenerator\LeadGenerator;
 use yii\console\ExitCode;
 
 /**
@@ -87,6 +90,35 @@ class AuditController extends Controller
         $report = $after->auditReport?->one();
         $this->stdout('report       ' . ($report ? $report->getUrl() : 'none') . "\n");
         $this->stdout('file         ' . ($report ? $report->filename : 'none') . "\n");
+
+        return ExitCode::OK;
+    }
+
+    /**
+     * The URL to open while designing the report.
+     *
+     * The report is a web page that happens to be printed, so the design loop is a browser
+     * refresh rather than a re-render. The token is here because a report sits beside a
+     * stranger's email address and the page is not public; logged into the control panel
+     * you can drop the token and the URL still works.
+     */
+    public function actionPreview(int $entryId): int
+    {
+        $entry = Craft::$app->getEntries()->getEntryById($entryId);
+        if (!$entry) {
+            $this->stderr("no entry {$entryId}\n", Console::FG_RED);
+
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+        if (!LeadGenerator::getInstance()->audit->reportData($entryId)) {
+            $this->stderr("no report.json yet — run the audit first\n", Console::FG_RED);
+
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+        $this->stdout(UrlHelper::actionUrl('leadgenerator/report/view', [
+            'entry' => $entryId,
+            't' => ReportController::token($entryId),
+        ]) . "\n", Console::FG_GREEN);
 
         return ExitCode::OK;
     }

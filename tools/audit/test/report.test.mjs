@@ -8,7 +8,7 @@
  * The assertions are about HONESTY as much as arithmetic: that every note reaches the
  * reader as a caveat, that a capture whose provenance could not be checked says so before
  * anything else, and that unclassified area appears as its own line rather than being
- * folded into the four categories somebody is being told about.
+ * folded into the named categories somebody is being told about.
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';

@@ -335,7 +335,7 @@ export function runNotes(meta, reason = 'missing', rects = null, unpainted = nul
     // these two are about the READING of it, and nothing else in the pipeline can see
     // them.
     //
-    // `unclassified` is never redistributed into the four categories. A percentage that
+    // `unclassified` is never redistributed into the named categories. A percentage that
     // quietly absorbs our own uncertainty is exactly the confident wrong number this tool
     // exists to avoid, and the person reading the report owns the site — they are entitled
     // to know how much of it we could not name.
@@ -351,7 +351,7 @@ export function runNotes(meta, reason = 'missing', rects = null, unpainted = nul
                 'unknown',
                 `${(unsureShare * 100).toFixed(1)}% of this page is in blocks the model was not confident `
                     + `about (below ${LOW_CONFIDENCE}). Those blocks are reported as unclassified and are `
-                    + 'not shared out among the four categories',
+                    + 'not shared out among the named categories',
                 {share: Number(unsureShare.toFixed(4)), blocks: unsure.length, threshold: LOW_CONFIDENCE},
             );
         }

@@ -104,6 +104,9 @@ class Audit extends Component
         foreach ([
             ['capture', ['tools/audit/capture.mjs', $url, $dir]],
             ['analyse', ['tools/audit/analyse.mjs', $dir]],
+            // report.json before the PDF, because the Twig template reads it and nothing
+            // in PHP may recompute a percentage — see tools/audit/data.mjs.
+            ['data', ['tools/audit/data.mjs', $dir]],
             ['report', ['tools/audit/pdf.mjs', $dir]],
         ] as [$step, $args]) {
             $result = $this->node($args);
@@ -260,6 +263,38 @@ class Audit extends Component
         }
 
         return $asset;
+    }
+
+    /**
+     * What a report is allowed to know, as Node worked it out. Null when it has not run.
+     *
+     * READ, NEVER RECOMPUTED. The percentages come from lib/surface.mjs over a partition
+     * that is asserted to tile the page exactly; adding the same areas up again in PHP
+     * would be a second implementation of one number, and the first anyone would know it
+     * had drifted is a prospect asking which of the two is right.
+     */
+    public function reportData(int $entryId): ?array
+    {
+        $path = $this->workDir($entryId) . '/report.json';
+        if (!is_file($path)) {
+            return null;
+        }
+        $data = json_decode((string) file_get_contents($path), true);
+
+        return is_array($data) ? $data : null;
+    }
+
+    /** A file from this entry's audit directory, or null. Used to serve the annotated page. */
+    public function artefact(int $entryId, string $name): ?string
+    {
+        // Name only — never a path. This is reached from a controller, and a request that
+        // could ask for ../../.env would be asking the web server to hand over the keys.
+        if (!preg_match('/^[a-z0-9._-]+$/i', $name) || str_contains($name, '..')) {
+            return null;
+        }
+        $path = $this->workDir($entryId) . '/' . $name;
+
+        return is_file($path) ? $path : null;
     }
 
     /** `example-com-4f9c2e11.pdf` — the site, so it is recognisable, and eight bytes so it is not. */

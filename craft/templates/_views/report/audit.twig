@@ -1,0 +1,134 @@
+{#
+  THE REPORT. A web page that happens to be printed.
+
+  Reached at /actions/leadgenerator/report/view?entry=<id>, which is also how Playwright
+  reaches it before calling page.pdf(). So what you see in a browser at A4 width is what a
+  prospect gets, and designing it is a refresh rather than a re-render.
+
+  IT READS AND NEVER CALCULATES. Every number here came out of report.json, which came out
+  of lib/surface.mjs over a partition asserted to tile the page exactly. Adding anything up
+  in this file would be a second implementation of a number somebody may argue with.
+
+  THE ANNOTATED PAGE IS ONE IMAGE SHOWN THROUGH SEVERAL WINDOWS. CSS cannot break an image
+  across printed pages — it overflows and is cut, or shrinks to nothing — and a homepage
+  screenshot is thousands of pixels tall (jersey.com is 16,368). So each sheet holds a box
+  with the image as its background, offset by one sheet's worth, which is the only way the
+  block labels stay readable.
+
+  WHAT MUST SURVIVE ANY REDESIGN: the caveats. A number this tool could not measure is
+  reported as unmeasured, and a report that quietly drops that is not this tool's report.
+#}
+{% set pct = { } %}
+{% macro pc(n) %}{% if n is null %}—{% else %}{{ (n * 100)|number_format(1) }}%{% endif %}{% endmacro %}
+{% import _self as r %}
+
+{# A4 at 96dpi less the margin — the box an image has to fit in. Kept in step with
+   PAGE in tools/audit/lib/pdf.mjs; if one moves the other has to. #}
+{% set sheet = { width: 704, height: 1033 } %}
+{% set shotWidth = report.width ?? 1440 %}
+{% set shotHeight = report.height ?? 0 %}
+{% set scaled = shotHeight * (sheet.width / shotWidth) %}
+{% set sheets = min(12, max(1, (scaled / sheet.height)|round(0, 'ceil'))) %}
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ report.url }} — homepage audit</title>
+    <style>
+        @page { size: A4; margin: 45px; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font: 11px/1.55 -apple-system, system-ui, sans-serif; color: #111; }
+
+        /* On screen, stand the sheets on a grey field so the printed page is visible while
+           it is being designed. Neither rule survives into the PDF. */
+        @media screen {
+            body { background: #e9e9ec; padding: 24px; }
+            .r-sheet { width: 794px; min-height: 1123px; padding: 45px; margin: 0 auto 24px;
+                background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+        }
+        @media print { .r-sheet { break-after: page; padding: 0; } .r-sheet:last-child { break-after: auto; } }
+
+        h1 { font-size: 22px; margin: 0 0 2px; }
+        .r-meta { color: #666; margin-bottom: 22px; }
+        table { border-collapse: collapse; width: 100%; }
+        th { text-align: left; font-weight: 600; border-bottom: 1px solid #111; padding: 5px 0; }
+        td { padding: 5px 0; border-bottom: 1px solid #eee; }
+        .r-n { text-align: right; font-variant-numeric: tabular-nums; }
+        .r-facts { margin: 20px 0; color: #333; }
+        .r-caveats { margin-top: 22px; padding: 12px; background: #f6f6f6; }
+        .r-caveats li { margin-bottom: 6px; }
+
+        /* One image, several windows onto it. `background-position` walks down it a sheet
+           at a time; the box is a fixed height so a short last slice does not stretch. */
+        .r-shot { width: {{ sheet.width }}px; height: {{ sheet.height }}px;
+            background-image: url('{{ annotated }}');
+            background-repeat: no-repeat;
+            background-size: {{ sheet.width }}px auto; }
+    </style>
+</head>
+<body>
+
+<section class="r-sheet">
+    <h1>{{ report.url }}</h1>
+    <p class="r-meta">
+        {{ report.width }}&times;{{ report.height }}px &middot;
+        {{ report.blocks }} blocks &middot;
+        {{ r.pc(report.coverage) }} of it drawn on &middot;
+        measured {{ report.capturedAt|date('j F Y') }}
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>&nbsp;</th>
+                <th class="r-n">share of page</th>
+                <th class="r-n">content to space</th>
+                <th class="r-n">first viewport</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in report.categories %}
+                <tr>
+                    <td>{{ c.category }}</td>
+                    <td class="r-n">{{ r.pc(c.share) }}</td>
+                    <td class="r-n">{{ r.pc(c.coverage) }}</td>
+                    <td class="r-n">{{ r.pc(c.firstViewport) }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="r-facts">
+        {% if report.weightSummary %}<div>{{ report.weightSummary }}</div>{% endif %}
+        {% if report.speed %}
+            <div>PageSpeed {{ report.speed.score }}/100 desktop &middot;
+                LCP {{ report.speed.lab.lcpMs }}ms &middot; TBT {{ report.speed.lab.tbtMs }}ms</div>
+        {% endif %}
+        {% if report.styles %}
+            <div>{{ report.styles.colours.total }} colours &middot;
+                {{ report.styles.fonts.loaded }} font faces loaded of {{ report.styles.fonts.declared }} declared &middot;
+                {{ report.styles.fonts.rendered|length }} rendered</div>
+        {% endif %}
+    </div>
+
+    {% if report.caveats|length %}
+        <section class="r-caveats">
+            <h2>What this does not cover</h2>
+            <ul>
+                {% for c in report.caveats %}
+                    <li><b>{{ c.effect }}</b> {{ c.message }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+</section>
+
+{% for i in 0..(sheets - 1) %}
+    <section class="r-sheet">
+        <div class="r-shot" style="background-position: 0 -{{ i * sheet.height }}px;"></div>
+    </section>
+{% endfor %}
+
+</body>
+</html>
