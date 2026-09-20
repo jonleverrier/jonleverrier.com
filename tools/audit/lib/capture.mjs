@@ -79,6 +79,7 @@ import {WEBGL_PROBE_INIT, probeWebgl} from './webgl.mjs';
 import {COLLECT_PINNED, heightGap} from './unrendered.mjs';
 import {countBytes} from './bytes.mjs';
 import {fetchPsi} from './psi.mjs';
+import {COLLECT_STYLES, styleRecord} from './styles.mjs';
 import {
     BEGIN_PIN, HIDE_PINNED, MARK_PINNED, MEASURE_BOXES, RESTORE_HIDDEN,
     decideChrome, markEarlyPinned, newCensus, recordStep,
@@ -806,6 +807,19 @@ export async function capturePage(url, outDir, opts = {}) {
         if (!rects) rects = topRects;
         capture.rects = rects.length;
 
+        // AFTER THE SCROLL PASS, because a face is only `loaded` once something on the page
+        // has needed it — a typeface used solely below the fold would read as declared and
+        // unused if this ran at the top. Taken here, beside the final rect collection, so
+        // it describes the same state of the page the image does.
+        let styles = {measured: false, why: 'the style census never ran'};
+        try {
+            styles = styleRecord(await step('reading colours and fonts', () => page.evaluate(COLLECT_STYLES)));
+        } catch (e) {
+            // Never the capture's failure: this is a supporting record, and an absence is
+            // declared rather than reported as a page with no colours in it.
+            styles = {measured: false, why: printable(e.message, 200)};
+        }
+
         const fullHeight = await step('measuring the final page height', () => page.evaluate(PAGE_HEIGHT));
         const image = pngSize(shot);
         const webgl = await step('probing WebGL', () => probeWebgl(page));
@@ -833,6 +847,9 @@ export async function capturePage(url, outDir, opts = {}) {
             // it could not be had — never absent, so a reader can tell "we did not ask"
             // from "we asked and it failed".
             psi: askPsi ? await askPsi : {error: 'not requested'},
+            // The colours and typefaces this page renders with, from computed styles
+            // rather than from its stylesheets. See lib/styles.mjs for why.
+            styles,
             httpStatus,
             consentDismissed: consent.dismissed,
             consentBannerSeen: consent.bannerSeen === true,

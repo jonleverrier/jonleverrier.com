@@ -16,6 +16,7 @@ receives is not built yet.
 | `lib/webgl.mjs` | Whether this browser could render a WebGL hero, and whether the page wanted one. |
 | `lib/bytes.mjs` | What the page shipped, counted on the load and scroll that made the image. |
 | `lib/psi.mjs` | How fast it is, from Lighthouse via PageSpeed Insights. Lab metrics only. |
+| `lib/styles.mjs` | The colours and typefaces the page renders with, and the fonts it loaded. |
 | `lib/consent.mjs` | The cookie-banner selectors, and the two attempts at dismissing one. |
 | `lib/shadow.mjs` | One walk of the page that does not stop at a web component's boundary. |
 | `lib/tiles.mjs` | The page cut into non-overlapping tiles the model is shown one at a time. |
@@ -62,6 +63,26 @@ AUDIT_LIVE=1 node --test tools/audit/test/*.test.mjs           # plus the networ
   from CDP, free, on the load we were doing anyway. Speed goes the other way: our own
   timings would be unthrottled, measured from wherever this runs, and would flatter every
   page on earth. That has to come from Lighthouse, so it does.
+- **Colours and fonts come from the RENDERED page, not from the stylesheets.** Parsing CSS
+  answers a different question: a stylesheet covers every page of a site and carries
+  whatever third parties injected — kohde.agency loads 74 KB of CookieHub CSS from another
+  origin, which the client never wrote and cannot change. Computed styles answer what THIS
+  page uses, and cost nothing, because the capture is already walking the DOM.
+- **Alpha is not a colour, and distance is measured in CIELAB.** `rgba(60,16,83,0.6)` and
+  `rgb(60,16,83)` are one colour at two opacities; four of natwest.com's eighteen colour
+  values were exactly that, and counting them separately reports a drift where there is a
+  deliberate choice. Once alpha is collapsed, two colours are "the same colour twice" when
+  they are within dE 5 in Lab — not in RGB, where twenty points of green is nearly twice
+  the perceived distance of twenty points of red. Measured across four sites the drift
+  signal is thin: 11, 14, 11 and 11 colours, and one genuine drift between them
+  (hsbc.co.uk's `rgb(64,64,64)` beside `rgb(68,68,68)`).
+- **Fonts are three numbers, not one.** Declared is the `@font-face` rules the page has;
+  loaded is the faces the browser actually fetched, because a face is only `loaded` once
+  something needs it; rendered is the families that actually paint text. kohde.agency is
+  7, 5 and 2. The naming carries as much as the counts: natwest.com renders with
+  `RNHouseSansRegular` AND `RNHouseSans-Regular` — the same weight of the same typeface
+  under two names — alongside `knilebold` and `knileblack`, which are weights wearing
+  family names. A raw family count has that exactly backwards.
 - **Lab data only, and CrUX is deliberately not collected.** Field data — real Chrome
   visitors over a rolling 28 days — is unarguably the better number, and it needs enough
   traffic before Google reports on a site at all. natwest.com has it for both page and

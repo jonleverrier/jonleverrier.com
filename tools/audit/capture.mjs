@@ -126,6 +126,18 @@ try {
         ? `unavailable — ${printable(psi.error, 160)}`
         : `${psi.score}/100 desktop — LCP ${psi.lab.lcpMs}ms, TBT ${psi.lab.tbtMs}ms, CLS ${psi.lab.cls}`}`);
 
+    // Colours and typefaces, as the page renders them.
+    const st = meta.styles ?? {};
+    if (st.measured) {
+        const drift = st.colours.sameColour;
+        console.log(`colours      ${st.colours.total} on the page`
+            + `${drift.length ? `, ${drift.length} pair(s) within dE ${st.colours.deltaE}: ${printable(drift.map((g) => g.join(' ~ ')).join('; '), 140)}` : ''}`);
+        console.log(`fonts        ${st.fonts.declared} declared, ${st.fonts.loaded} loaded, `
+            + `${st.fonts.rendered.length} rendered: ${printable(st.fonts.rendered.map((f) => f.family).join(', '), 120)}`);
+    } else {
+        console.log(`colours      not measured — ${printable(st.why ?? 'no reason recorded', 120)}`);
+    }
+
     console.log(`artefacts    ${printable(outDir)}`);
 
     // Loud, and on stderr, because the capture SUCCEEDED — the page is simply missing a
