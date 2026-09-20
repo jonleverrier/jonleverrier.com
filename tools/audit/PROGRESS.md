@@ -36,9 +36,11 @@ reviewed by eye.
 
 ### Decisions outstanding, all the user's
 
-1. **Drop `brand`?** It scored 0% on all 27 sites, twice. With `hero` defined functionally
-   and `navigation` owning the header logo, nothing can reach it. A permanent `brand 0%`
-   in a report invites the wrong question from a prospect.
+1. ~~**Drop `brand`?**~~ **SETTLED 2026-09-20: keep it.** It read 0% because it was
+   unreachable, not because pages have none: `CATEGORIES` named it and `TILE_PROMPT` never
+   defined it, so the only thing the model was ever told about brand was that client logos
+   are not it. Defined as identity with no claim, no ask and nothing to click,
+   atkinsonsca's three decorative photo bands read `brand` at 0.86, 0.7 and 0.9.
 2. **Delete `lib/xycut.mjs`?** 2,130 lines, and a leaf — only `segment.mjs` imports it.
 3. **Merge?** Nothing is pushed. The branch wants renaming off `worktree-audit-tool`.
 4. **Phase 4 needs three product answers** before it can be built: what a prospect sees
@@ -47,17 +49,26 @@ reviewed by eye.
 
 ### Known and open
 
-- **visionarygrid.studio's consent banner is not detected at all** — `consentBannerSeen`
-  is false on a page that visibly has one, so this is a detection miss rather than a
-  failure to dismiss. Reported by the user, not yet diagnosed.
-- **The honesty layer's thresholds did not catch visionarygrid's unpainted case study**
-  even once the ink pass ran: the region is 10.9% of the page against `BLANK_REGION`'s 15%
-  floor, and holds 5 DOM elements against `UNPAINTED`'s minimum of 6. The pass is no longer
-  skipped — see `inkPrefixFromPng` — but the thresholds are tuned for shorter pages.
-- **`unclassified` above zero on three sites**: visionarygrid 11%, jersey.com 10%,
-  atkinsonsca 8%. Everything else is 0%.
 - lloydsbank reports 84% `unclassified` and carries `errorPageLikely`. Reviewed and
   accepted: it really is an error page, and declining to categorise it is the right answer.
+- **The corpus at `~/audit-corpus/` predates 2026-09-20 and its labels are stale.** The
+  prompt is now part of the page signature, so every site re-asks. Re-swept to
+  `~/audit-corpus-v3/`.
+
+### Closed 2026-09-20, all four found by the user reading debug images
+
+| was | the mechanism | measured after |
+|---|---|---|
+| jersey.com block 22 was 1,694px of white where its footer is | The pinned census convicts an element that shares no pixels between two scroll offsets, because a retracting header (jerseyfinance) must be hidden. jersey's `<footer>` sat **1,064px below the fold at both offsets** — never photographed, never compared — and was hidden from every slice on a measurement that never happened. Scrolled past convicts; never reached does not. `chromeVerdict` is now its own tested function. | footer back, plus the two sections hidden with it; `unrenderedGap` gone; content ends 16,347 of 16,347 |
+| hsbc.co.uk cut the Trustpilot panel in two at the seam at 1400 | The seam-merge rule keyed on confidence. One run returned 0.5 either side and merged; the next returned 0.55 and 0.6 and did not — same pixels, split on a five-hundredth of a point. Height is the signal that does not wander, because the seam is what made the sliver. | one `trust` block 993–1493. Replaying all 27 stored answers: six sites joined a pair, **every join at a seam**, slivers of 87, 87, 93, 111, 133, 171, 196px, no site losing a block anywhere else |
+| atkinsonsca block 13, a decorative photo band, read `unclassified` | `brand` was in `CATEGORIES` and absent from `TILE_PROMPT`. A category with no definition cannot be chosen. | three photo bands at `brand` 0.86 / 0.7 / 0.9; that page 0% unclassified |
+| visionarygrid's consent banner undetected | Not the `<a>` — its accept carries `role="button"` and matched `CLICKABLE`. Its **container** is `position: absolute`, and all three gates enumerated `fixed`/`sticky` while each comment described the principle as "taken out of the flow so it can sit over the page". Three copies of one rule, drifted. Now one constant. | `dismissed via text "Accept"`, banner absent from the capture |
+| visionarygrid's unpainted case study passed the honesty layer | `BLANK_REGION.minShare` of 15% was calibrated on ~4,000px pages and **fires on nothing across all 27 sites**: the corpus holds exactly two blocks at or under 0.1% ink, at 10.9% and 10.4%, and both are real voids. Height is now the other way in, at one viewport. | `notes 1 — blankRegion`: "1440x2707 at y=7929, 11% of the page at 0.02% ink… unmeasured rather than a number" |
+
+**What did not move:** `UNPAINTED.minRects` is unchanged at 6. The earlier note that
+visionarygrid's void "holds 5 DOM elements" was wrong — it holds **zero** content rects, so
+that detector could never fire on it and is not the right one. It catches many elements
+failing to render; this is one `<section>` that is not content-shaped at all.
 
 ---
 
