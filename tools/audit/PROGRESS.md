@@ -60,6 +60,21 @@ reviewed by eye.
 
 ### Known and open
 
+- **CLOUDFLARE IS SERVING robots.txt ON PRODUCTION, AND CRAFT'S IS NEVER REACHED.**
+  `https://jonleverrier.com/robots.txt` is 24 lines of Cloudflare's own "content signals"
+  boilerplate: `server: cloudflare`, `cf-cache-status: HIT`, and not one line of
+  `craft/templates/robots.txt`. So two things are live locally and invisible in production:
+  the `Disallow: /assets/lead-generator/` added for the audit reports, and — which matters
+  more and predates all of this — the `Sitemap:` directive.
+
+  The reports are not exposed by it. What keeps one private is that its filename carries
+  eight random characters, and robots.txt was only ever belt-and-braces. The sitemap line
+  is the real loss.
+
+  Three ways, undecided: turn off Cloudflare's managed robots.txt so Craft's template
+  serves again (restores both); add the rules in Cloudflare beside their boilerplate; or
+  leave it. Worth checking first whether the managed file is deliberate.
+
 - lloydsbank reports 84% `unclassified` and carries `errorPageLikely`. Reviewed and
   accepted: it really is an error page, and declining to categorise it is the right answer.
 - **The corpus at `~/audit-corpus/` predates 2026-09-20 and its labels are stale.** The
