@@ -794,6 +794,12 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     --band-bg: #536069; // the input's focus border (navy at 70%) composited on the cream, solid
     --band-bg-deep: #3e4e5c; // under the pointer on the label
 
+    // The clip's two timings, named because the hover rule below overrides them
+    // rather than restating the whole transition. Values and reasoning at the
+    // `transition` declaration.
+    --band-wipe: 260ms;
+    --band-hold: 375ms;
+
     position: absolute;
     left: 0;
     right: 0;
@@ -833,11 +839,30 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     // inside it are one object to a visitor, and they should not expire at different
     // times, so the two move together.
     //
+    // THE WIPE IS ONE-WAY: it animates OUT and not IN (see the hover rule, which sets
+    // --band-wipe to 0s). The hold covers a leave of up to 375ms, but a leave of
+    // 375-635ms lands INSIDE the wipe, and coming back then reverses it from wherever
+    // it got to. Measured, sampling the computed clip every frame while driving the
+    // pointer out of the field and back: an out-and-back of 450ms catches the band 92%
+    // wiped, one of 500ms catches it at 98%, and easing that back took ~200ms. That is
+    // the flap — the band half leaving and being dragged back — and it is what a glance
+    // away and back does with a real hand, not a contrived one.
+    //
+    // A reversal can't be designed out of a delayed transition: any finite hold has a
+    // boundary, and the wipe behind it is always interruptible. So the reversal is made
+    // to cost nothing instead — the band is simply out again on the next frame, and
+    // there is no partial state on screen while the pointer is on the field.
+    //
+    // The lost reveal is not a loss. It is what the 140ms hold above was invented to
+    // paper over: a pointer diving from the bar to the words could outrun the opening
+    // clip and land on a region that was not there yet. A band that is out on the first
+    // frame cannot be outrun, and that failure mode is retired rather than delayed.
+    //
     // Only the clip is delayed. The row and the colour keep their own timings: they
     // animate INSIDE a band that is still on screen, so holding them back would stall
     // the drawer's own close rather than the band's.
     transition:
-        clip-path 260ms cubic-bezier(0.16, 1, 0.3, 1) 375ms,
+        clip-path var(--band-wipe) cubic-bezier(0.16, 1, 0.3, 1) var(--band-hold),
         grid-template-rows 340ms cubic-bezier(0.16, 1, 0.3, 1),
         background-color 200ms ease;
 
@@ -951,10 +976,14 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     :focus-within
 ) .c-jonson__band {
     clip-path: inset(0);
-    // Out at once. The delay on the base rule is for the return trip only — see there.
-    // Safe as a blanket reset: every other transition on this element already runs at
-    // zero delay.
-    transition-delay: 0s;
+    // No hold and no wipe on the way in: the band is out on the first frame. The 260ms
+    // is the right weight for a band leaving of its own accord and the wrong one for a
+    // band being pulled back under a pointer that has returned — at 0s a return mid-exit
+    // costs one frame, so the band is never caught half-drawn while you are pointing at
+    // it. Overriding the two names rather than restating the whole shorthand keeps one
+    // declaration site for the transition (see the base rule).
+    --band-hold: 0s;
+    --band-wipe: 0s;
 }
 
 // Someone typing doesn't need to be told what to ask: once the field has anything

@@ -47,9 +47,11 @@ const TUCK_MS = 260;
 // seconds was tried and overshot — it read as stuck rather than patient; a second was
 // the correction to that, 500ms the next, and both still sat a shade long.)
 //
-// KEEP IN STEP with the band's own hide delay on .c-jonson__band (_jonson.scss). The
-// band and the drawer inside it are one object to a visitor; if these two differ, one
-// expires under the other and it reads as a glitch rather than a choice.
+// KEEP IN STEP with --band-hold on .c-jonson__band (_jonson.scss), which is the band's
+// own hide delay. The band and the drawer inside it are one object to a visitor; if
+// these two differ, one expires under the other and it reads as a glitch rather than a
+// choice. Only the HOLD is shared: the band's wipe runs on the way OUT only, so a return
+// mid-wipe puts it back in a frame, and that has no counterpart here.
 //
 // Cancelled on re-entry, so coming back inside is not merely forgiven but forgotten.
 const LEAVE_GRACE_MS = 375;
