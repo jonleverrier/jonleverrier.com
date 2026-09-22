@@ -30,8 +30,9 @@
  */
 import {chromium} from 'playwright';
 import sharp from 'sharp';
-import {readFileSync, existsSync} from 'node:fs';
-import {join} from 'node:path';
+import {readFileSync, writeFileSync, existsSync} from 'node:fs';
+import {PDFDocument} from 'pdf-lib';
+import {join as joinPath} from 'node:path';
 import {leaves} from './blocks.mjs';
 import {CATEGORY_ORDER, surfaceArea} from './surface.mjs';
 import {titleCase} from './debug.mjs';
@@ -55,6 +56,18 @@ export const MAX_IMAGE_PAGES = 12;
  * a redesign cannot change what was measured and a new measurement cannot be forgotten by
  * a template — it either appears here or it does not exist to the report.
  */
+/** Two printed documents, back to back, as one file. */
+async function join(first, second) {
+    const out = await PDFDocument.create();
+    for (const part of [first, second]) {
+        const doc = await PDFDocument.load(part);
+        const pages = await out.copyPages(doc, doc.getPageIndices());
+        pages.forEach((page) => out.addPage(page));
+    }
+
+    return Buffer.from(await out.save());
+}
+
 /**
  * THE TECHNICAL SCORE, AND IT IS OURS RATHER THAN GOOGLE'S.
  *
@@ -179,8 +192,8 @@ export function withEmptyCategories(rows) {
 }
 
 export function reportData(outDir, viewportHeight = 900) {
-    const meta = JSON.parse(readFileSync(join(outDir, 'meta.json'), 'utf8'));
-    const {notes, tree} = JSON.parse(readFileSync(join(outDir, 'blocks.json'), 'utf8'));
+    const meta = JSON.parse(readFileSync(joinPath(outDir, 'meta.json'), 'utf8'));
+    const {notes, tree} = JSON.parse(readFileSync(joinPath(outDir, 'blocks.json'), 'utf8'));
     const {full, firstViewport, coverage} = surfaceArea(tree, meta.viewport?.height ?? viewportHeight);
     const fold = (category) => firstViewport.find((f) => f.category === category)?.share ?? null;
     // Grouped once: the brand score is a judgement ABOUT the grouping, so it must see the
@@ -367,8 +380,8 @@ export function stubTemplate(data, image) {
  * `(data, image) => html` and nothing else, so a designer needs no part of this file.
  */
 export async function renderPdf(outDir, opts = {}) {
-    const out = opts.out ?? join(outDir, 'report.pdf');
-    const png = opts.annotated ?? join(outDir, 'debug.png');
+    const out = opts.out ?? joinPath(outDir, 'report.pdf');
+    const png = opts.annotated ?? joinPath(outDir, 'debug.png');
     if (!opts.url && !existsSync(png)) {
         throw new Error(`no annotated image at ${png} — has analyse.mjs run?`);
     }
@@ -440,17 +453,30 @@ export async function renderPdf(outDir, opts = {}) {
             + `${esc(opts.from || data.url)}</span>`
             + `<span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>`
             + `</div>`;
-        await page.pdf({
-            path: out,
-            format: 'A4',
-            printBackground: true,
-            preferCSSPageSize: true,
+        // TWO PASSES AND A JOIN, because Chromium renders ONE header template for the whole
+        // document. There is no way to vary it by page and no selector that can see the page
+        // number, so a running head that belongs on every page but the cover cannot be asked
+        // for — it has to be printed twice and the right halves kept.
+        //
+        // The first page is printed bare and the rest with the head, then the two are
+        // stitched. `pageRanges` is Chromium's, so the split costs nothing but a second
+        // render of a document already in memory.
+        const base = {format: 'A4', printBackground: true, preferCSSPageSize: true};
+        const withHead = {
+            ...base,
             displayHeaderFooter: true,
             headerTemplate: bar,
             // An empty span, not nothing: left out entirely, Chromium prints its own
             // default footer — the source URL and the date — along the bottom of each page.
             footerTemplate: '<span></span>',
-        });
+        };
+
+        const cover = await page.pdf({...base, pageRanges: '1'});
+        // A one-page report has no "rest", and asking for `2-` would throw.
+        const total = (await PDFDocument.load(await page.pdf(withHead))).getPageCount();
+        const rest = total > 1 ? await page.pdf({...withHead, pageRanges: `2-${total}`}) : null;
+
+        writeFileSync(out, rest ? await join(cover, rest) : cover);
     } finally {
         await browser.close();
     }

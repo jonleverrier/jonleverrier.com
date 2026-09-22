@@ -50,6 +50,11 @@ class AuditController extends Controller
         $surname = trim((string) $request->getBodyParam('surname'));
         $email = trim((string) $request->getBodyParam('email'));
         $url = $this->homepageUrl((string) $request->getBodyParam('auditUrl'));
+        // OPTIONAL, SO EMPTY IS NOT AN ERROR — but a competitor that was typed and is not a
+        // homepage is, because silently dropping it would leave the lead expecting a
+        // comparison the report will not carry.
+        $rival = trim((string) $request->getBodyParam('auditCompetitorUrl'));
+        $rivalUrl = $rival === '' ? null : $this->homepageUrl($rival);
 
         $fieldErrors = [];
         if ($firstName === '') {
@@ -64,12 +69,18 @@ class AuditController extends Controller
         if ($url === null) {
             $fieldErrors['auditUrl'] = 'Please add your homepage address, like example.com';
         }
+        if ($rival !== '' && $rivalUrl === null) {
+            $fieldErrors['auditCompetitorUrl'] = 'Please add a homepage address, like example.com';
+        }
         $emailProblem = $guard->emailProblem($email);
         if ($emailProblem !== null) {
             $fieldErrors['email'] = $emailProblem;
         }
         if ($fieldErrors) {
-            return $this->fail('', $fieldErrors, compact('firstName', 'surname', 'email') + ['auditUrl' => $request->getBodyParam('auditUrl')]);
+            return $this->fail('', $fieldErrors, compact('firstName', 'surname', 'email') + [
+                'auditUrl' => $request->getBodyParam('auditUrl'),
+                'auditCompetitorUrl' => $request->getBodyParam('auditCompetitorUrl'),
+            ]);
         }
 
         $section = Craft::$app->getEntries()->getSectionByHandle('leadGenerator');
@@ -91,6 +102,7 @@ class AuditController extends Controller
             'surname' => $surname,
             'email' => $email,
             'auditUrl' => $url,
+            'auditCompetitorUrl' => $rivalUrl,
             'auditStatus' => 'received',
             'referrerUrl' => $guard->ownReferrer((string) $request->getBodyParam('referrerUrl')),
         ]);

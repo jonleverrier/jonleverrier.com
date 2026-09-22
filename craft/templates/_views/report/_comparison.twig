@@ -1,0 +1,109 @@
+{#
+  THE TWO SITES SIDE BY SIDE.
+
+  Takes `report` and `competitor`, both reportData records. Every figure here has already
+  appeared on a sheet the reader has passed, with the table that shows its working — this
+  page adds no measurement, it only puts two of them next to each other.
+
+  NOTHING IS JUDGED. No winner, no arrows, no green and red: which way a difference cuts
+  depends on what the business is for, and a capture cannot know that. A homepage that gives
+  52% to routing is not better or worse than one that gives 18%, it is a different decision —
+  and a report that picks a side is arguing a case it has no evidence for.
+#}
+{% import '_views/report/_macros.twig' as r %}
+
+{% set mine = r.host(report.url) %}
+{% set theirs = r.host(competitor.url) %}
+
+{% set scores = [
+    { label: 'Speed', a: report.speed ? report.speed.score / 10 : null, b: competitor.speed ? competitor.speed.score / 10 : null },
+    { label: 'Technical', a: report.technical ? report.technical.score : null, b: competitor.technical ? competitor.technical.score : null },
+    { label: 'Consistency', a: report.brand ? report.brand.score : null, b: competitor.brand ? competitor.brand.score : null }
+] %}
+
+{# Every segment either page spends anything on, so a category one of them has and the
+   other does not still gets a row — an absence is a finding and must not be a gap. #}
+{% set names = [] %}
+{% for c in report.categories %}{% if c.share > 0 %}{% set names = names|merge([c.category]) %}{% endif %}{% endfor %}
+{% for c in competitor.categories %}{% if c.share > 0 and c.category not in names %}{% set names = names|merge([c.category]) %}{% endif %}{% endfor %}
+
+<section class="r-sheet">
+    <h1>Executive Comparison</h1>
+    <p class="r-meta"><b>{{ mine }}</b> &bull; <b>{{ theirs }}</b></p>
+
+    <h2>Scores</h2>
+    <table class="r-speed">
+        <thead>
+            <tr>
+                <th>&nbsp;</th>
+                <th class="r-n">{{ mine }}</th>
+                <th class="r-n">{{ theirs }}</th>
+                <th class="r-n">Change</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in scores %}
+                <tr>
+                    <td><b>{{ s.label }}</b></td>
+                    <td class="r-n">{{ s.a is null ? '—' : s.a|number_format(1) ~ '/10' }}</td>
+                    <td class="r-n">{{ s.b is null ? '—' : s.b|number_format(1) ~ '/10' }}</td>
+                    <td class="r-n">{{ r.change(s.a, s.b, 'points', 'up') }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Segments</h2>
+    <table class="r-speed">
+        <thead>
+            <tr>
+                <th>Segment</th>
+                <th class="r-n">{{ mine }}</th>
+                <th class="r-n">{{ theirs }}</th>
+                <th class="r-n">Change</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name in names %}
+                {% set a = report.categories|filter(c => c.category == name)|first %}
+                {% set b = competitor.categories|filter(c => c.category == name)|first %}
+                <tr>
+                    <td><b>{{ name|title }}</b></td>
+                    <td class="r-n">{{ r.pc(a ? a.share : 0) }}</td>
+                    <td class="r-n">{{ r.pc(b ? b.share : 0) }}</td>
+                    <td class="r-n">{{ r.change(a ? a.share : 0, b ? b.share : 0, 'share') }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {# THE PAGE ITSELF, rather than what is on it. Neither of these has a better direction:
+       a longer page is not a worse one, and ink is how much of the surface is painted rather
+       than how much is said — a page of type reads as almost empty because letters are
+       mostly the gaps between them. So the arrows are grey and the figures do the talking. #}
+    <h2>Page</h2>
+    <table class="r-speed">
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th class="r-n">{{ mine }}</th>
+                <th class="r-n">{{ theirs }}</th>
+                <th class="r-n">Change</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><b>Page Length</b></td>
+                <td class="r-n">{{ report.height|number_format }}px</td>
+                <td class="r-n">{{ competitor.height|number_format }}px</td>
+                <td class="r-n">{{ r.change(report.height, competitor.height) }}</td>
+            </tr>
+            <tr>
+                <td><b>Ink to Surface</b></td>
+                <td class="r-n">{{ r.pc(report.coverage) }}</td>
+                <td class="r-n">{{ r.pc(competitor.coverage) }}</td>
+                <td class="r-n">{{ r.change(report.coverage, competitor.coverage, 'share') }}</td>
+            </tr>
+        </tbody>
+    </table>
+</section>

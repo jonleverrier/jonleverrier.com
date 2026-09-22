@@ -1,4 +1,4 @@
-dateModified: 1790088212
+dateModified: 1790088837
 elementSources:
   craft\elements\Entry:
     -
@@ -301,6 +301,7 @@ meta:
     9a729bf7-4da1-42b6-90a3-6a4c12666f0c: Context # Context
     9d03f484-8451-4fdb-a587-204054e6a7dc: '3UP Image' # 3UP Image
     16eff64f-e755-49ec-9bac-66c60032a09d: Strapline # Strapline
+    23ad658f-6d2e-4417-a30e-98e776dc9984: 'Competitor URL' # Competitor URL
     23d5ad16-5f00-488c-8d54-ec6a454aa3ef: 'Job Titles' # Job Titles
     24d25123-4314-4ccb-a64f-a450d200cb1d: URL # URL
     26c8a621-4825-4302-adb0-d8db3b9c2d76: Status # Status

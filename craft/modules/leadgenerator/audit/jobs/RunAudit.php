@@ -29,6 +29,9 @@ use modules\leadgenerator\LeadGenerator;
  */
 class RunAudit extends BaseJob
 {
+    /** The subdirectory a competitor's artefacts are measured into. */
+    public const COMPETITOR = 'competitor';
+
     public int $entryId;
 
     public function execute($queue): void
@@ -57,7 +60,33 @@ class RunAudit extends BaseJob
         $this->progress($queue, 0.05, 'capturing');
 
         $audit = LeadGenerator::getInstance()->audit;
-        $result = $audit->run($url, (int) $entry->id);
+        $result = $audit->measure($url, (int) $entry->id);
+
+        if (!$result['ok']) {
+            $this->finish($entry, 'failed', (string) $result['why']);
+
+            return;
+        }
+
+        // A COMPETITOR THAT FAILS MUST NOT COST THE LEAD THEIR OWN REPORT. It is an optional
+        // extra on a document that stands up without it, and the site is somebody else's: it
+        // can block a crawler, time out, or have been typed wrong, none of which is the
+        // lead's doing. So it is measured, and a failure is written down and stepped over.
+        // The template prints the comparison only when there is something to compare.
+        $rival = trim((string) $entry->auditCompetitorUrl);
+        $rivalWhy = null;
+        if ($rival !== '') {
+            $this->progress($queue, 0.45, 'capturing the competitor');
+            $measured = $audit->measure($rival, (int) $entry->id, self::COMPETITOR);
+            if (!$measured['ok']) {
+                $rivalWhy = (string) $measured['why'];
+                Craft::warning("[leadgenerator] audit {$entry->id} {$rivalWhy}", __METHOD__);
+            }
+        }
+
+        // PRINTED ONCE, AFTER BOTH. One lead, one document, however many sites it covers.
+        $this->progress($queue, 0.8, 'printing the report');
+        $result = $audit->print((int) $entry->id);
 
         if (!$result['ok']) {
             $this->finish($entry, 'failed', (string) $result['why']);
@@ -79,7 +108,10 @@ class RunAudit extends BaseJob
             // `in-review` AND NOT `ready`: the report exists, and the next thing that has
             // to happen is a person reading it. The status names whose move it is.
             'auditStatus' => 'in-review',
-            'auditFailure' => '',
+            // A competitor that could not be measured is the one thing worth saying on an
+            // otherwise successful audit: the report is sound, and the comparison the lead
+            // asked for is not in it.
+            'auditFailure' => $rivalWhy ?? '',
             'auditReport' => [$asset->id],
         ]);
     }

@@ -15,6 +15,7 @@
     "@spiriit/vite-plugin-svg-spritemap": "^5.0.0",
     "autoprefixer": "^10.4.21",
     "npm-check-updates": "^19.1.1",
+    "pdf-lib": "^1.17.1",
     "playwright": "^1.63.0",
     "postcss-combine-duplicated-selectors": "^10.0.3",
     "postcss-sort-media-queries": "^5.2.0",

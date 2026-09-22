@@ -80,7 +80,7 @@
 
     <label class="c-form__field{{ fieldErrors.auditUrl is defined ? ' c-form__field--error' }}">
         <span class="c-form__label">
-            <span class="c-form__label-text">Your homepage</span>
+            <span class="c-form__label-text">Your Homepage URL</span>
             {% if fieldErrors.auditUrl is defined %}{{ f.errorMessage(fieldErrors.auditUrl) }}{% endif %}
         </span>
         <span class="c-form__control">
@@ -91,6 +91,24 @@
                 autocomplete="url" autocapitalize="off" autocorrect="off" spellcheck="false"
                 value="{{ old.auditUrl ?? '' }}" placeholder="example.com" required>
             {% if fieldErrors.auditUrl is defined %}{{ f.errorIcon() }}{% endif %}
+        </span>
+    </label>
+
+    {# OPTIONAL, AND THAT IS THE POINT OF IT. A lead with nobody in mind still converts;
+       one who names a rival has told you what they are actually worried about, which is
+       worth more than the field costs. Filled in, it adds a second set of pages to the same
+       PDF and a comparison at the end. #}
+    <label class="c-form__field{{ fieldErrors.auditCompetitorUrl is defined ? ' c-form__field--error' }}">
+        <span class="c-form__label">
+            <span class="c-form__label-text">Competitor Homepage URL
+                <span class="c-form__optional">(optional)</span></span>
+            {% if fieldErrors.auditCompetitorUrl is defined %}{{ f.errorMessage(fieldErrors.auditCompetitorUrl) }}{% endif %}
+        </span>
+        <span class="c-form__control">
+            <input class="c-form__input" type="text" name="auditCompetitorUrl" inputmode="url"
+                autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+                value="{{ old.auditCompetitorUrl ?? '' }}" placeholder="competitor.com">
+            {% if fieldErrors.auditCompetitorUrl is defined %}{{ f.errorIcon() }}{% endif %}
         </span>
     </label>
 

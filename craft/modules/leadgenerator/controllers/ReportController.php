@@ -4,6 +4,7 @@ namespace modules\leadgenerator\controllers;
 
 use Craft;
 use craft\web\Controller;
+use modules\leadgenerator\audit\jobs\RunAudit;
 use modules\leadgenerator\LeadGenerator;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -53,6 +54,11 @@ class ReportController extends Controller
             // and unused until now; it is the one image in the audit that is their page
             // rather than our marks on top of it.
             'firstScreen' => $this->artefactUrl($entry, 'viewport.png'),
+            // THE SECOND SITE, WHEN THERE IS ONE. Null is how the template knows there is
+            // no comparison to print — a lead who named nobody gets the document they
+            // always got, with nothing switched off and nothing left empty.
+            'competitor' => LeadGenerator::getInstance()->audit->reportData($entry, RunAudit::COMPETITOR),
+            'competitorAnnotated' => $this->artefactUrl($entry, 'debug.png', RunAudit::COMPETITOR),
         ], \craft\web\View::TEMPLATE_MODE_SITE);
     }
 
@@ -64,10 +70,14 @@ class ReportController extends Controller
      * next to their email address. Serving it through here keeps the same answer to "who
      * may see this" as the report itself.
      */
-    public function actionArtefact(int $entry, string $name): Response
+    public function actionArtefact(int $entry, string $name, string $which = ''): Response
     {
         $this->authorise($entry);
-        $path = LeadGenerator::getInstance()->audit->artefact($entry, $name);
+        // `which` NAMES A SUBDIRECTORY AND IS CHECKED AGAINST A LIST, not passed through:
+        // it arrives on a URL, and a request that could name any folder would be asking
+        // the web server to hand over whatever it can reach.
+        $which = $which === RunAudit::COMPETITOR ? RunAudit::COMPETITOR : '';
+        $path = LeadGenerator::getInstance()->audit->artefact($entry, $name, $which);
         if (!$path) {
             throw new NotFoundHttpException('no such artefact');
         }
@@ -114,11 +124,12 @@ class ReportController extends Controller
      *
      * A relative one is resolved against whichever host loaded the page, so both are right.
      */
-    private function artefactUrl(int $entryId, string $name): string
+    private function artefactUrl(int $entryId, string $name, string $which = ''): string
     {
         $url = \craft\helpers\UrlHelper::actionUrl('leadgenerator/report/artefact', [
             'entry' => $entryId,
             'name' => $name,
+            'which' => $which !== '' ? $which : null,
             't' => self::token($entryId),
         ]);
 

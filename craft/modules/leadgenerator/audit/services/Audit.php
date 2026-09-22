@@ -37,6 +37,10 @@ use yii\base\Component;
  */
 class Audit extends Component
 {
+    /** Where the tool's own page lives, so the report can borrow its name. */
+    private const TOOL_SECTION = 'tools';
+    private const TOOL_TYPE = 'audit';
+
     /** The volume subpath the field already points at. */
     public string $reportSubpath = 'lead-generator/audit';
 
@@ -105,9 +109,10 @@ class Audit extends Component
      * Craft's own storage path rather than an alias: it is the one Craft itself writes to,
      * so it is right in ddev, right on Forge, and right if either ever moves.
      */
-    public function workDir(int $entryId): string
+    public function workDir(int $entryId, string $which = ''): string
     {
-        $dir = Craft::$app->getPath()->getStoragePath() . '/audits/' . $entryId;
+        $dir = Craft::$app->getPath()->getStoragePath() . '/audits/' . $entryId
+            . ($which !== '' ? '/' . $which : '');
         FileHelper::createDirectory($dir);
 
         return $dir;
@@ -121,30 +126,72 @@ class Audit extends Component
      * model that cannot read the image is an analysis failure with a capture worth keeping;
      * a PDF that will not render is neither, and leaves a measurement that could still be
      * sent by hand.
+     *
+     * `$which` NAMES A SUBDIRECTORY, so the same pipeline can measure a second site for the
+     * same lead without either capture landing on the other. The competitor's artefacts go
+     * to audits/<id>/competitor; the lead's own stay where they have always been, because
+     * moving them would orphan every report already on disk.
      */
-    public function run(string $url, int $entryId): array
+    public function run(string $url, int $entryId, string $which = ''): array
     {
-        $dir = $this->workDir($entryId);
+        $measured = $this->measure($url, $entryId, $which);
+
+        return $measured['ok'] ? $this->print($entryId) : $measured;
+    }
+
+    /**
+     * Capture, analyse, and write the record a template reads. No PDF.
+     *
+     * SEPARATE FROM PRINTING, because a lead who names a competitor is measured twice and
+     * printed once: both sites have to be on disk before the document that compares them
+     * can be rendered. Run them the other way round and the competitor's pages would be
+     * missing from the PDF that was printed before they existed.
+     */
+    public function measure(string $url, int $entryId, string $which = ''): array
+    {
+        $dir = $this->workDir($entryId, $which);
 
         foreach ([
             ['capture', ['tools/audit/capture.mjs', $url, $dir]],
             ['analyse', ['tools/audit/analyse.mjs', $dir]],
-            // report.json before the PDF, because the Twig template reads it and nothing
-            // in PHP may recompute a percentage — see tools/audit/data.mjs.
+            // report.json last, because the Twig template reads it and nothing in PHP may
+            // recompute a percentage — see tools/audit/data.mjs.
             ['data', ['tools/audit/data.mjs', $dir]],
-            // THE REPORT IS CRAFT'S TEMPLATE, PRINTED. Without --url this step falls back to
-            // the stub in lib/pdf.mjs, which is what it did for months: every design change
-            // in _views/report/audit.twig showed up in the preview and none of it reached
-            // the PDF a lead was sent. The token is the same one the preview uses — the page
-            // sits beside a stranger's email address and is not public.
-            ['report', ['tools/audit/pdf.mjs', $dir, '--url=' . $this->reportUrl($entryId),
-                '--from=' . rtrim(Craft::$app->getSites()->getPrimarySite()->getBaseUrl() ?? '', '/'),
-                '--logo=' . __DIR__ . '/../assets/mark.svg']],
         ] as [$step, $args]) {
             $result = $this->node($args);
             if (!$result['ok']) {
+                $step = $which !== '' ? $which . ' ' . $step : $step;
+
                 return ['ok' => false, 'why' => $step . ': ' . $result['why'], 'pdf' => null];
             }
+        }
+
+        return ['ok' => true, 'why' => null, 'pdf' => null];
+    }
+
+    /**
+     * The document, printed from Craft's own template.
+     *
+     * WITHOUT `--url` THIS FALLS BACK TO THE STUB in lib/pdf.mjs, which is what it did for
+     * months: every design change in _views/report/audit.twig showed up in the preview and
+     * none of it reached the PDF a lead was sent. The token is the same one the preview
+     * uses — the page sits beside a stranger's email address and is not public.
+     *
+     * It prints into the lead's own directory whatever else was measured, because there is
+     * one document per lead however many sites it covers.
+     */
+    public function print(int $entryId): array
+    {
+        $dir = $this->workDir($entryId);
+        $result = $this->node([
+            'tools/audit/pdf.mjs', $dir,
+            '--url=' . $this->reportUrl($entryId),
+            '--from=' . rtrim(Craft::$app->getSites()->getPrimarySite()->getBaseUrl() ?? '', '/'),
+            '--logo=' . __DIR__ . '/../assets/mark.svg',
+        ]);
+
+        if (!$result['ok']) {
+            return ['ok' => false, 'why' => 'report: ' . $result['why'], 'pdf' => null];
         }
 
         $pdf = $dir . '/report.pdf';
@@ -314,9 +361,9 @@ class Audit extends Component
      * would be a second implementation of one number, and the first anyone would know it
      * had drifted is a prospect asking which of the two is right.
      */
-    public function reportData(int $entryId): ?array
+    public function reportData(int $entryId, string $which = ''): ?array
     {
-        $path = $this->workDir($entryId) . '/report.json';
+        $path = $this->workDir($entryId, $which) . '/report.json';
         if (!is_file($path)) {
             return null;
         }
@@ -326,24 +373,64 @@ class Audit extends Component
     }
 
     /** A file from this entry's audit directory, or null. Used to serve the annotated page. */
-    public function artefact(int $entryId, string $name): ?string
+    public function artefact(int $entryId, string $name, string $which = ''): ?string
     {
         // Name only — never a path. This is reached from a controller, and a request that
         // could ask for ../../.env would be asking the web server to hand over the keys.
         if (!preg_match('/^[a-z0-9._-]+$/i', $name) || str_contains($name, '..')) {
             return null;
         }
-        $path = $this->workDir($entryId) . '/' . $name;
+        // The subdirectory is named by the CALLER, never by the request: `$which` comes from
+        // a constant in this module and the regex above still guards `$name`. A competitor's
+        // annotated page has to be reachable too, and this is the only door to it.
+        $path = $this->workDir($entryId, $which) . '/' . $name;
 
         return is_file($path) ? $path : null;
     }
 
-    /** `example-com-4f9c2e11.pdf` — the site, so it is recognisable, and eight bytes so it is not. */
+    /**
+     * `whitepaper-co-uk-homepage-analysis-4f9c2e11.pdf`.
+     *
+     * The site first, because that is what a reader is looking for in a downloads folder;
+     * then what the document IS, because a lead may end up with more than one thing from
+     * here; then eight bytes, because the file sits in a public volume and a guessable name
+     * is somebody else's report one wrong URL away.
+     */
     public function reportName(Entry $entry): string
     {
         $host = (string) parse_url((string) $entry->auditUrl, PHP_URL_HOST) ?: 'homepage';
-        $slug = strtolower((string) preg_replace('/[^a-z0-9]+/i', '-', $host));
 
-        return trim($slug, '-') . '-' . bin2hex(random_bytes(4)) . '.pdf';
+        return $this->slug($host) . '-' . $this->slug($this->toolName())
+            . '-' . bin2hex(random_bytes(4)) . '.pdf';
+    }
+
+    /**
+     * What this tool is called, from the page that sells it.
+     *
+     * THE CMS OWNS THE NAME. The tool's own entry at /tools/{slug} is where "Homepage
+     * Analysis" is written, and it is the name a lead has already read before they gave
+     * their address — so the filename and the email subject should say the same words
+     * rather than each keeping a copy in PHP. Rename it there and both follow.
+     *
+     * FOUND BY SECTION AND TYPE, not by slug or id: the slug is editable and the id differs
+     * per environment, and the entry type is the one handle that identifies this tool.
+     */
+    public function toolName(): string
+    {
+        $tool = Entry::find()
+            ->section(self::TOOL_SECTION)
+            ->type(self::TOOL_TYPE)
+            ->status(null)
+            ->one();
+
+        $name = trim((string) ($tool?->title ?? ''));
+
+        return $name !== '' ? $name : 'Homepage Analysis';
+    }
+
+    /** Lowercase, hyphenated, nothing on either end. */
+    private function slug(string $text): string
+    {
+        return trim(strtolower((string) preg_replace('/[^a-z0-9]+/i', '-', $text)), '-');
     }
 }

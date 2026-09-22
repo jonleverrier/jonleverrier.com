@@ -6,6 +6,7 @@ use Craft;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\queue\BaseJob;
+use modules\leadgenerator\LeadGenerator;
 
 /**
  * SEND REPORT
@@ -33,10 +34,6 @@ use craft\queue\BaseJob;
  */
 class SendReport extends BaseJob
 {
-    /** Where the tool's own page lives, so the email can borrow its name. */
-    private const TOOL_SECTION = 'tools';
-    private const TOOL_TYPE = 'audit';
-
     public int $entryId = 0;
 
     public function execute($queue): void
@@ -82,7 +79,8 @@ class SendReport extends BaseJob
         // The address stays in the SUBJECT and not the body: a lead may have asked for more
         // than one, and the subject is the only part of an email that survives a full inbox.
         $site = $this->host((string) $entry->auditUrl);
-        $tool = $this->toolName();
+        // The same name the filename uses, from the same entry — see Audit::toolName.
+        $tool = LeadGenerator::getInstance()->audit->toolName();
 
         $message = Craft::$app->getMailer()
             ->compose()
@@ -120,32 +118,6 @@ class SendReport extends BaseJob
                 __METHOD__,
             );
         }
-    }
-
-    /**
-     * What this tool is called, from the page that sells it.
-     *
-     * THE CMS OWNS THE NAME. The tool's own entry at /tools/{slug} is where "Homepage
-     * Analysis" is written, and it is the name a lead has already read before they gave
-     * their address — so the subject line should say the same words rather than a second
-     * copy of them kept in PHP. Rename it there and the email follows.
-     *
-     * FOUND BY TYPE AND NOT BY SLUG OR ID. The slug is editable and the id is different in
-     * every environment; the entry type is the one handle that identifies this tool and is
-     * not going to be retyped. Falls back to the literal if the page is ever unpublished,
-     * because a subject line with a hole in it is worse than one that is out of date.
-     */
-    private function toolName(): string
-    {
-        $tool = Entry::find()
-            ->section(self::TOOL_SECTION)
-            ->type(self::TOOL_TYPE)
-            ->status(null)
-            ->one();
-
-        $name = trim((string) ($tool?->title ?? ''));
-
-        return $name !== '' ? $name : 'Homepage Analysis';
     }
 
     /**

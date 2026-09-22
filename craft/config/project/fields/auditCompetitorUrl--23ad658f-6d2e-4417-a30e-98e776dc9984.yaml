@@ -1,10 +1,10 @@
 columnSuffix: null
-handle: auditUrl
+handle: auditCompetitorUrl
 instructions: null
-name: 'Audit URL'
+name: 'Competitor URL'
 searchable: false
 settings:
-  fullGraphqlData: false
+  fullGraphqlData: true
   maxLength: 255
   showLabelField: false
   typeSettings:

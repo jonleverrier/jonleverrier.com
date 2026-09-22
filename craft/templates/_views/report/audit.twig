@@ -1,87 +1,11 @@
-{#
-  THE REPORT. A web page that happens to be printed.
-
-  Reached at /actions/leadgenerator/report/view?entry=<id>, which is also how Playwright
-  reaches it before calling page.pdf(). So what you see in a browser at A4 width is what a
-  prospect gets, and designing it is a refresh rather than a re-render.
-
-  IT READS AND NEVER CALCULATES. Every number here came out of report.json, which came out
-  of lib/surface.mjs over a partition asserted to tile the page exactly. Adding anything up
-  in this file would be a second implementation of a number somebody may argue with.
-
-  THE ANNOTATED PAGE IS ONE IMAGE SHOWN THROUGH SEVERAL WINDOWS. CSS cannot break an image
-  across printed pages — it overflows and is cut, or shrinks to nothing — and a homepage
-  screenshot is thousands of pixels tall (jersey.com is 16,368). So each sheet holds a box
-  with the image as its background, offset by one sheet's worth, which is the only way the
-  block labels stay readable.
-
-  WHAT MUST SURVIVE ANY REDESIGN: the caveats. A number this tool could not measure is
-  reported as unmeasured, and a report that quietly drops that is not this tool's report.
-#}
-{% set pct = { } %}
-{#
-  A percentage, or an em dash where there is nothing to say.
-
-  `<0.1%` AND NOT `0.0%` for anything present but smaller than the rounding can show.
-  kohde.agency paints rgb(220,220,226) across 288 pixels — about seventeen square — which
-  is 0.0033% of its page and rounded to a flat nought. A colour in a list of colours on the
-  page cannot be none of the page, and a reader asked why it was there. Rounding a real
-  measurement down to zero is the same fault as reporting an unmeasured region as empty.
-#}
-{% macro pc(n) %}
-    {%- if n is null -%}—
-    {%- elseif n > 0 and n * 100 < 0.05 -%}&lt;0.1%
-    {%- else -%}{{ (n * 100)|number_format(1) }}%
-    {%- endif -%}
-{% endmacro %}
-
-{# MB TO ONE PLACE, KB BELOW A MEGABYTE.
-
-   BINARY, AND IN STEP WITH tools/audit/lib/bytes.mjs:136, which divides by 1048576 and
-   calls the result MB. Decimal would be the more defensible unit and would match Chrome's
-   network panel, but the same bytes are printed by the capture CLI through that function:
-   two formatters means the PDF saying 4.5 MB while the console says 4.3 MB for one page.
-   If this moves, that moves with it. #}
-{% macro bytes(n) %}
-    {%- if n is null -%}—
-    {%- elseif n >= 1048576 -%}{{ (n / 1048576)|number_format(1) }}mb
-    {%- else -%}{{ (n / 1024)|number_format(0) }}kb
-    {%- endif -%}
-{% endmacro %}
-
-{# ONE BAR, TWO SCORES, and they are not the same kind of number: Speed is PageSpeed
-   divided by ten, Technical is this tool's own bands. Drawn identically because a reader
-   compares them anyway, so the difference is stated in the labels rather than hidden in
-   the styling. #}
-{% macro scorebar(n) %}
-    <div class="r-score">
-        {# ALWAYS A DECIMAL. A score of 8 and a score of 8.4 should not print in different
-           shapes: `8` reads as a rounder, cheaper number than `8.0`, and beside `6.7`
-           on the same cover it looks like a different kind of measurement. #}
-        <div class="r-score-n">{{ n|number_format(1) }}<span>/10</span></div>
-        <div class="r-score-bar" style="--r-fill: {{ n * 10 }}%"></div>
-    </div>
-{% endmacro %}
-
-{# THE SAME BAR, WITH A NAME OVER IT. The cover stacks three of these and the number alone
-   cannot say which is which, but a label BESIDE the bar pushed it 141px right and 141px
-   short of the one the sections print — measurably not the same object. Above it, the row
-   underneath is scorebar() itself, so the two cannot drift. #}
-{% macro scoreline(label, n) %}
-    <div class="r-scoreline">
-        <p class="r-scoreline__label">{{ label }}</p>
-        {{ _self.scorebar(n) }}
-    </div>
-{% endmacro %}
-{% import _self as r %}
+{# The report's own formatters and the two score bars. Their own file because the
+   sections are rendered twice — once for the lead's homepage, once for a competitor's —
+   and a partial included with `only` cannot see macros defined in its caller. #}
+{% import '_views/report/_macros.twig' as r %}
 
 {# A4 at 96dpi less the margin — the box an image has to fit in. Kept in step with
    PAGE in tools/audit/lib/pdf.mjs; if one moves the other has to. #}
 {% set sheet = { width: 704, height: 1033 } %}
-{% set shotWidth = report.width ?? 1440 %}
-{% set shotHeight = report.height ?? 0 %}
-{% set scaled = shotHeight * (sheet.width / shotWidth) %}
-{% set sheets = min(12, max(1, (scaled / sheet.height)|round(0, 'ceil'))) %}
 
 <!doctype html>
 <html lang="en">
@@ -237,6 +161,11 @@
         td { padding: 5px 0; border-bottom: 1px solid #eee; vertical-align: top; }
         tfoot td { border-top: 1px solid #111; border-bottom: none; padding-top: 7px; }
         .r-n { text-align: right; font-variant-numeric: tabular-nums; }
+        /* THE THREE NUMERIC COLUMNS GET FIXED ROOM. Left to the browser they shrink to
+           their content and `First Viewport` wraps to two lines while the Segment column
+           — which only holds a word and a bullet list that wraps anyway — keeps space it
+           does not need. 132px holds the longest heading on one line. */
+        .r-segments th:not(:first-child), .r-segments td:not(:first-child) { width: 132px; }
         .r-facts { margin: 20px 0; color: #333; }
         /* A facts line belonging to a heading sits under it, not 20px away from it. */
         h2 + .r-facts { margin-top: 0; }
@@ -346,6 +275,8 @@
         .r-cover__scores { margin: 0; }
         /* Under the address, not at the foot of the sheet: it is part of what this report
            is OF — this page, on this day — rather than a note about the document. */
+        .r-cover__rival { margin: 8px 0 0; font-size: 18px; color: rgba(255,255,255,.66); }
+        .r-cover__rival span { color: rgba(255,255,255,.4); }
         .r-cover__date { margin: 10px 0 0; color: rgba(255,255,255,.66); }
 
         .r-summary__head { margin-top: 0; }
@@ -364,16 +295,16 @@
         .r-findings li { padding: 4px 0 4px 14px; text-indent: -14px; }
         .r-findings li::before { content: '•'; margin-right: 8px; }
 
-        .r-shot { width: {{ sheet.width }}px; height: {{ sheet.height }}px;
-            {# `raw`, AND IT HAS TO BE. Twig escapes for HTML by default, so the `&` between
-               this URL's parameters arrives in the stylesheet as `&amp;` — CSS does not
-               decode entities, so the browser asks for `...&amp;entry=` and Craft answers
-               400. The PDF then carries blank pages where the screenshot should be and
-               nothing in the pipeline fails. The value is built in ReportController from an
-               integer and a fixed filename; there is nothing here to inject. #}
-            background-image: url('{{ annotated|raw }}');
-            background-repeat: no-repeat;
-            background-size: {{ sheet.width }}px auto; }
+        /* Colour only where a direction means something. A segment share has no better
+           way to go, so its arrow is grey and the number does the talking. */
+        .r-change { white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .r-change--good { color: #1f7a3d; }
+        .r-change--bad  { color: #b62515; }
+        .r-change--flat { color: #8a8a8a; }
+        /* The arrow trails the number, and is its own span so the figures stay in a
+           tabular column rather than being pushed about by a glyph in front of them. */
+        .r-change__arrow { margin-left: 4px; font-size: 9px; }
+
     </style>
 </head>
 <body>
@@ -411,6 +342,12 @@
         <div class="r-cover__head">
             <p class="r-cover__label">Homepage Audit</p>
             <h1 class="r-cover__url">{{ report.url }}</h1>
+            {# THE SECOND SITE, NAMED ON THE COVER. A lead who asked for a comparison should
+               see on the first page that they got one, rather than finding out on page six.
+               Marked as the competitor rather than left to look like a second homepage. #}
+            {% if competitor %}
+                <p class="r-cover__rival"><span>Compared against</span> {{ competitor.url }}</p>
+            {% endif %}
             <p class="r-cover__date">{{ report.capturedAt|date('jS F Y') }}</p>
         </div>
         <div class="r-cover__foot">
@@ -427,31 +364,69 @@
            that earns it — Speed over the PageSpeed metrics, Technical over the weight rows,
            Consistency over the duplicate colours — and a cover that lists them as well makes
            the reader check the same four numbers twice. #}
+        {# Inline rather than a macro: a Twig macro returns a STRING, so one that "returns"
+           these would hand back "[9.7,10,10]" and `|length` would count the characters. #}
         {% set marks = [
             report.speed ? report.speed.score / 10 : null,
             report.technical ? report.technical.score : null,
             report.brand ? report.brand.score : null
         ]|filter(v => v is not null) %}
+        {% set rivalMarks = competitor ? [
+            competitor.speed ? competitor.speed.score / 10 : null,
+            competitor.technical ? competitor.technical.score : null,
+            competitor.brand ? competitor.brand.score : null
+        ]|filter(v => v is not null) : [] %}
+
+        {# ONE SCORE WHEN THERE IS ONE SITE, TWO WHEN THERE ARE TWO — and named, not
+           "Overall" and "Theirs". A cover carrying a single unlabelled mark above two
+           addresses cannot say whose it is, and the reader's first question about a
+           comparison is which number is theirs. #}
         <div class="r-cover__scores">
             {% if marks|length == 3 %}
-                {{ r.scoreline('Overall', (marks|reduce((sum, v) => sum + v, 0) / 3)|round(1)) }}
+                {% if rivalMarks|length == 3 %}
+                    {{ r.scoreline(r.host(report.url), (marks|reduce((sum, v) => sum + v, 0) / 3)|round(1)) }}
+                    {{ r.scoreline(r.host(competitor.url), (rivalMarks|reduce((sum, v) => sum + v, 0) / 3)|round(1)) }}
+                {% else %}
+                    {{ r.scoreline('Overall', (marks|reduce((sum, v) => sum + v, 0) / 3)|round(1)) }}
+                {% endif %}
             {% endif %}
         </div>
 
         {% set biggest = report.categories|first %}
         {% set heaviest = report.weight ? report.weight.byType|first : null %}
+
+        {# WITH A COMPETITOR, EVERY LINE IS A COMPARISON. A lead who named a rival did not
+           ask what their page is made of, they asked how it stands against somebody else's —
+           so the summary answers that question and the sections behind it still answer the
+           first one. Without a competitor these are the plain statements they always were.
+
+           STATED, NOT SCORED. "52.1% against 11.6%" is two measurements side by side; which
+           is the right answer for this business is not something a capture can know. #}
+        {% set rivalHost = competitor ? r.host(competitor.url) : null %}
+        {% set rivalBiggest = competitor and biggest
+            ? competitor.categories|filter(c => c.category == biggest.category)|first
+            : null %}
+
         <p class="r-scoreline__label r-findings__head">Summary</p>
         <ul class="r-findings">
             {% if biggest and biggest.share > 0 %}
                 <li>{{ r.pc(biggest.share) }} of the page is <b>{{ biggest.category }}</b>,
                     across {{ biggest.blocks|length }}
-                    section{{ biggest.blocks|length == 1 ? '' : 's' }}.</li>
+                    section{{ biggest.blocks|length == 1 ? '' : 's' }}{% if competitor %},
+                    against {{ r.pc(rivalBiggest ? rivalBiggest.share : 0) }}
+                    on {{ rivalHost }}{% endif %}.</li>
             {% endif %}
             {% if heaviest %}
-                <li>{{ r.bytes(heaviest.bytes) }} of it is <b>{{ heaviest.type }}</b>,
-                    {{ r.pc(heaviest.bytes / report.weight.afterScroll.bytes) }} of the weight
-                    across {{ heaviest.requests }} of {{ report.weight.afterScroll.requests }} requests.</li>
+                <li>The page weighs {{ r.bytes(report.weight.afterScroll.bytes) }},
+                    {{ r.pc(heaviest.bytes / report.weight.afterScroll.bytes) }} of it
+                    <b>{{ heaviest.type }}</b>{% if competitor and competitor.weight %},
+                    against {{ r.bytes(competitor.weight.afterScroll.bytes) }}
+                    on {{ rivalHost }}{% endif %}.</li>
             {% endif %}
+            {# A SECOND CLAUSE, NOT ", against X". These two lines are sentences rather than
+               figures — "little below the fold to defer" and "no two colours a person could
+               confuse" — and hanging a percentage off them with a comma produced the nonsense
+               "so there is little below the fold to defer, against 17.5%". #}
             {% if report.technical %}
                 <li>
                     {%- if report.technical.shortPage -%}
@@ -460,6 +435,9 @@
                         {{ r.pc(report.technical.deferred) }} of the weight waits until the visitor scrolls.
                     {%- else -%}
                         <b>Nothing is deferred</b>: the whole page loads before the visitor scrolls.
+                    {%- endif -%}
+                    {%- if competitor and competitor.technical %}
+                        {{ rivalHost }} defers {{ r.pc(competitor.technical.deferred) }}.
                     {%- endif -%}
                 </li>
             {% endif %}
@@ -472,6 +450,10 @@
                     {%- else -%}
                         No two colours on the page are ones a person could confuse.
                     {%- endif -%}
+                    {%- if competitor and competitor.brand %}
+                        {{ rivalHost }} has
+                        {{ competitor.brand.groups ? competitor.brand.groups ~ (competitor.brand.groups == 1 ? ' such pair' : ' such sets') : 'none' }}.
+                    {%- endif -%}
                 </li>
             {% endif %}
         </ul>
@@ -479,356 +461,38 @@
     </section>
 {% endif %}
 
-<section class="r-sheet">
-    <h1>{{ report.url }}</h1>
-    <p class="r-meta">
-        <b>URL measured on:</b> {{ report.capturedAt|date('jS F Y') }}
-        &bull; <b>Page dimensions:</b> {{ report.width }}px wide by {{ report.height|number_format }}px tall
-    </p>
+{# The lead's own homepage: its sections, then its annotated page. #}
+{% include '_views/report/_sections.twig' with {
+    report: report,
+    annotated: annotated,
+    sheet: sheet,
+    site: 'lead',
+} only %}
 
-    {% if report.speed or report.weight %}
-        <h2>Performance</h2>
-        {% if report.speed %}
-        {# THE THRESHOLDS ARE GOOGLE'S PUBLISHED ONES, so a reader who disagrees with a
-           verdict is arguing with Google rather than with this report — and the numbers
-           stay checkable, because anyone can run PageSpeed themselves in a minute.
+{# AND THE COMPETITOR'S, IN THE SAME SHAPE. Only when one was named and measured — a lead
+   who named nobody gets the document they always got, with nothing switched off and
+   nothing left empty. #}
+{% if competitor %}
+    {% include '_views/report/_sections.twig' with {
+        report: competitor,
+        annotated: competitorAnnotated,
+        sheet: sheet,
+        site: 'rival',
+    } only %}
 
-           The score inverts: for PageSpeed higher is better, for the other three lower is.
-           Written out per row rather than generalised, because four rows of plain
-           conditions are easier to check against Google's table than one clever rule.
+    {# THE COMPARISON, LAST. It comes after both sets of pages because it is the only part
+       of the document that cannot be read on its own: every number in it has already been
+       shown, with its working, on a sheet the reader has passed.
 
-           No Twig comments inside the hash below — one in an array literal 500s the page. #}
-        {% set psi = report.speed.score %}
-        {% set lcp = report.speed.lab.lcpMs %}
-        {% set tbt = report.speed.lab.tbtMs %}
-        {% set cls = report.speed.lab.cls|round(3) %}
-        {% set speedRows = [
-            {
-                metric: 'Google PageSpeed',
-                score: psi ~ '/100 Desktop',
-                note: psi >= 90 ? 'Good (90 or above)' : (psi >= 50 ? 'Needs work (under 90)' : 'Poor (under 50)')
-            },
-            {
-                metric: 'Largest Contentful Paint',
-                score: lcp ~ 'ms',
-                note: lcp <= 2500 ? 'Good (under 2.5s)' : (lcp <= 4000 ? 'Needs work (over 2.5s)' : 'Poor (over 4s)')
-            },
-            {
-                metric: 'Total Blocking Time',
-                score: tbt ~ 'ms',
-                note: tbt <= 200 ? 'Good (under 200ms)' : (tbt <= 600 ? 'Needs work (over 200ms)' : 'Poor (over 600ms)')
-            },
-            {
-                metric: 'Cumulative Layout Shift',
-                score: cls,
-                note: cls <= 0.1 ? 'Good (under 0.1)' : (cls <= 0.25 ? 'Needs work (over 0.1)' : 'Poor (over 0.25)')
-            }
-        ] %}
-        <h3>Speed</h3>
-        {{ r.scorebar((report.speed.score / 10)|round(1)) }}
-        <table class="r-speed">
-            <thead>
-                <tr>
-                    <th>Metric</th>
-                    <th>Score</th>
-                    <th>Note</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in speedRows %}
-                    <tr>
-                        <td>{{ row.metric }}</td>
-                        <td>{{ row.score }}</td>
-                        <td>{{ row.note }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
-        {% if report.weight %}
-            {# THESE BANDS ARE OURS, AND SPEED'S ARE GOOGLE'S. Worth knowing the difference:
-               a reader who disputes "Good (under 2.5s)" is arguing with Google, and one who
-               disputes "Needs work" here is arguing with us. So the comparison is carried in
-               the same breath as the verdict — at or under the median is Good, up to twice
-               it Needs work, past twice it Poor — and the median is named every time, so
-               the reader can see the line being drawn rather than take the word for it. #}
-            <h3>Technical</h3>
-            {% if report.technical %}{{ r.scorebar(report.technical.score) }}{% endif %}
-            {% set total = report.weight.afterScroll.bytes %}
-            {# THE ONE NUMBER IN THIS REPORT THAT IS NOT MEASURED. Everything else came off
-               the capture; this is the median desktop page from HTTP Archive, and it is a
-               moving target — it has risen year on year. It is stated in MB and multiplied
-               to bytes so it reads the same way r.bytes() prints, and it lives here alone
-               so correcting it is one edit rather than a hunt through prose. #}
-            {% set medianMb = report.technical ? report.technical.medianMb : 2.3 %}
-            {% set medianBytes = medianMb * 1048576 %}
-            {% set vsMedian = (total - medianBytes) / medianBytes %}
-            {% set weightVerdict = vsMedian <= 0.05 ? 'Good' : (vsMedian <= 1 ? 'Needs work' : 'Poor') %}
-            {% set heaviest = report.weight.byType|first %}
-            <table class="r-speed">
-                <thead>
-                    <tr>
-                        <th>Metric</th>
-                        <th>Score</th>
-                        <th>Note</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Total page weight</td>
-                        <td>{{ r.bytes(total) }}</td>
-                        <td>
-                            {{- weightVerdict }} (
-                            {%- if vsMedian|abs < 0.05 -%}
-                                about the median page
-                            {%- else -%}
-                                {{- (vsMedian|abs * 100)|number_format(0) }}%
-                                {{ vsMedian > 0 ? 'above' : 'below' }} the median page
-                            {%- endif -%})
-                        </td>
-                    </tr>
-                    {# WHAT THIS ROW IS ABOUT IS LAZY LOADING, and its absence. atLoad is
-                       marked before the scroll pass and afterScroll once the page has been
-                       walked to the bottom, so the gap between them is what the site chose
-                       to defer. kohde.agency defers more than half its weight; a page that
-                       defers none makes a visitor who reads the first screen and leaves pay
-                       for every image below it.
+       STATED SIDE BY SIDE AND NOT JUDGED. "52.1% against 18.4%" is two measurements; which
+       of them is the right answer for this business is not something a capture can know,
+       and a report that picks a winner is arguing a case it cannot support. #}
+    {% include '_views/report/_comparison.twig' with {
+        report: report,
+        competitor: competitor,
+    } only %}
+{% endif %}
 
-                       THE SHORT-PAGE GUARD IS NOT OPTIONAL. A page barely taller than the
-                       viewport has nothing below the fold to defer, and 100% before
-                       scrolling is then the correct answer rather than a fault. 900 is the
-                       capture viewport in lib/capture.mjs; if that moves, this moves. #}
-                    {% set deferred = 1 - (report.weight.atLoad.bytes / total) %}
-                    {% set nothingBelow = report.height < 900 * 2 %}
-                    <tr>
-                        <td>Weight before scrolling</td>
-                        <td>{{ r.bytes(report.weight.atLoad.bytes) }}</td>
-                        <td>
-                            {%- if nothingBelow -%}
-                                Good (little below the fold to defer)
-                            {%- elseif deferred >= 0.4 -%}
-                                Good ({{ r.pc(deferred) }} deferred until scroll)
-                            {%- elseif deferred < 0.02 -%}
-                                Needs work (nothing deferred until scroll)
-                            {%- else -%}
-                                Needs work (only {{ r.pc(deferred) }} deferred until scroll)
-                            {%- endif -%}
-                        </td>
-                    </tr>
-                    {% if heaviest %}
-                        <tr>
-                            <td>Heaviest type</td>
-                            <td>{{ r.bytes(heaviest.bytes) }} ({{ heaviest.type }})</td>
-                            {# "18 requests" ON ITS OWN MEANS NOTHING, and the row that
-                               carried the total was dropped. The comparison is what the
-                               number is for, so it travels with it rather than depending
-                               on another row being there. #}
-                            {# THE TWO PERCENTAGES ARE NOT THE SAME PERCENTAGE. 39.1% is this
-                               type's share of the BYTES; its share of the requests is 18 of
-                               78, which is 23%. Naming what each number counts is the only
-                               thing stopping a reader doing the arithmetic and finding it
-                               does not work. #}
-                            <td>{{ r.pc(heaviest.bytes / total) }} of the weight,
-                                {{ heaviest.requests }} of
-                                {{ report.weight.afterScroll.requests }} requests</td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        {% endif %}
-    {% endif %}
-
-    {% if report.styles or report.weight %}
-        <h2>Brand</h2>
-        {# ONE TABLE UNDER ONE HEADING. Only the duplicates row feeds the score: a palette of
-           eleven is not worse than one of six, and nothing here marks a page for the size of
-           its palette or the number of its typefaces. Those are choices. #}
-        <h3>Consistency</h3>
-        {% if report.brand %}{{ r.scorebar(report.brand.score) }}{% endif %}
-        <table class="r-speed">
-            <thead>
-                <tr>
-                    <th>Metric</th>
-                    <th>Score</th>
-                    <th>Note</th>
-                </tr>
-            </thead>
-            <tbody>
-                    {# FONTS AS ONE ROW, not a section of their own. What survived scrutiny is
-               the weight and the number of typefaces actually drawn with; "faces
-               declared" counted @font-face blocks, which nobody can check against a
-               network tab and which double-counts a stylesheet that declares the same
-               face twice.
-
-               NO FILE COUNT, because the census counts RESPONSES. kohde returns 13
-               font responses for 8 distinct files: reCAPTCHA's Roboto arrives six
-               times, five of them from cache at nought bytes. Printing "13 files"
-               would be wrong, and deduplicating by URL is a change to lib/bytes.mjs
-               rather than something to fudge here. The bytes are right either way. #}
-            {% set fontBytes = report.weight.byType|filter(t => t.type == 'font')|first %}
-            {% if fontBytes %}
-                <tr>
-                    <td>Fonts</td>
-                    <td>{{ r.bytes(fontBytes.bytes) }}</td>
-                    <td>
-                {%- if report.styles and report.styles.fonts.rendered|length -%}
-                    {{ report.styles.fonts.rendered|length }}
-                    {{- report.styles.fonts.rendered|length == 1 ? ' family' : ' families' }}
-                    on the page ({{ report.styles.fonts.rendered|map(f => f.family)|join(', ') }})
-                {%- else -%}
-                    No typeface was measured on the page
-                {%- endif -%}
-                    </td>
-                </tr>
-            {% endif %}
-                {% if report.styles and report.styles.colours.palette|length %}
-                    {# THE COUNT IS ONE CELL, THE PALETTE IS THE NEXT. A number on its own
-                       cannot tell a palette from an accretion: eleven colours where three
-                       cover most of the page is a palette with accents, eleven spread evenly
-                       is a page nobody decided. The shares are what settle it, so they sit
-                       in the same row as the count rather than in a section below it.
-
-                       OF THE PAGE, not of the summed colour areas, which was the first
-                       version and was a percentage of a number nobody can picture: the
-                       colour areas add up to 1.02x the page on kohde.agency and 0.78x on
-                       whitepaper.co.uk, so one figure meant something different on each.
-                       These do not total 100%, and both directions are honest. Short of it
-                       is page with no colour of its own, a transparent element over whatever
-                       is behind it. Over it is elements nesting, where a panel and the box
-                       inside it both count their own area.
-
-                       A CEILING THAT DECLARES ITSELF. This listed eight and said eleven
-                       beside it, and a reader counted. Whatever is cut has to be named and
-                       has to carry its share, or the list disagrees with the count. #}
-                    <tr>
-                        <td>Primary colours</td>
-                        <td>{{ report.styles.colours.total }}</td>
-                        <td>
-                            {%- for c in report.styles.colours.palette -%}
-                                <span class="r-swatch-inline" style="--c: {{ c.colour }}">{{ c.colour }}</span>
-                            {%- endfor -%}
-                        </td>
-                    </tr>
-                {% endif %}
-                {% if report.styles %}
-                    {# CHECKED AND FOUND NONE IS STILL AN ANSWER. An absent row is
-                       indistinguishable from a check that never ran, and on this tool that
-                       distinction is the whole argument. whitepaper.co.uk is the case: its
-                       closest two colours are dE 6.58 apart, so nothing groups, which is a
-                       finding about the page rather than a gap in the report.
-
-                       WHAT COUNTS AS THE SAME COLOUR is within dE 2.3 in CIELAB once alpha
-                       is collapsed, the point a person stops telling two apart.
-                       visionarygrid.studio declares its brand yellow twice, as
-                       rgb(255,211,0) and rgb(255,210,2); jersey.com paints three near-blacks
-                       a point apart. Differences nobody chose and nobody can see, which is a
-                       design token entered twice. Stated and not judged: a page may layer
-                       near-whites deliberately. #}
-                    <tr>
-                        <td>Duplicate colours</td>
-                        <td>{{ report.styles.colours.sameColour|length }}</td>
-                        <td>
-                            {%- if report.styles.colours.sameColour|length -%}
-                                <ul class="r-drift">
-                                    {% for group in report.styles.colours.sameColour %}
-                                        <li>
-                                            {% for colour in group %}
-                                                <span class="r-chip" style="background: {{ colour }}"></span>
-                                                <span class="r-chip-label">{{ colour }}</span>{% if not loop.last %} <b>~</b> {% endif %}
-                                            {% endfor %}
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            {%- else -%}
-                                None (no two colours within dE {{ report.styles.colours.deltaE }} of each other)
-                            {%- endif -%}
-                        </td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    {% endif %}
-
-    <h2>Segments</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Segment</th>
-                <th class="r-n">Share of Page</th>
-                <th class="r-n">Ink to Segment</th>
-                <th class="r-n">First Viewport</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for c in report.categories %}
-                <tr>
-                    {# THE SECTIONS BEHIND THE PERCENTAGE. "Explainer 57.8%" is not something a
-                       reader can act on; seven named sections is. The number is the one drawn
-                       on the annotated screenshot, so a row in this table can be found on the
-                       image. #}
-                    <td><b>{{ c.category|title }}</b>
-                        {%- if c.blocks|length %}
-                            <ul class="r-parts">
-                                {% for b in c.blocks %}
-                                    {# A BLOCK THE MODEL DOUBTED SAYS SO. kohde.agency's case
-                                       study card was labelled wrong at 0.6 confidence, the
-                                       lowest on that page, and nothing in the report let a
-                                       reader see it. Marked rather than hidden or dropped:
-                                       the label is still our best answer, it is just the one
-                                       to check against the picture. #}
-                                    <li{% if b.unsure %} class="r-part--unsure"{% endif %}>
-                                        {{- b.what ?: 'unnamed' }} <span>(Slice {{ b.n }})</span>
-                                        {%- if b.unsure %} <em>unsure</em>{% endif -%}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {%- endif %}
-                    </td>
-                    <td class="r-n">{{ r.pc(c.share) }}</td>
-                    <td class="r-n">{{ r.pc(c.coverage) }}</td>
-                    <td class="r-n">{{ r.pc(c.firstViewport) }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-        {# COMPUTED, NOT PRINTED AS "100%". Both columns should come to exactly that, so a
-           row that adds them up is a check on the arithmetic rather than a decoration: if
-           the shares ever stop totalling, this is where it shows. It is how `explainer`
-           going missing would have been caught — atkinsonsca.co.uk reported 42% of its own
-           homepage and nothing said the other 58% had gone.
-
-           The ink column is the page's own coverage and NOT the sum of the column above it,
-           which would add percentages of different areas together and mean nothing. #}
-        <tfoot>
-            <tr>
-                <td><b>Total</b></td>
-                <td class="r-n">{{ r.pc(report.categories|reduce((sum, c) => sum + c.share, 0)) }}</td>
-                <td class="r-n">{{ r.pc(report.coverage) }}</td>
-                <td class="r-n">{{ r.pc(report.categories|reduce((sum, c) => sum + (c.firstViewport ?? 0), 0)) }}</td>
-            </tr>
-        </tfoot>
-    </table>
-
-
-
-
-
-    {# THE CAVEATS ARE NOT PRINTED HERE, and this comment is the record of that decision.
-       They still reach the template in report.caveats and still live in report.json; what
-       was cut is showing them to a prospect. kohde.agency's only one names SwiftShader and
-       ANGLE, which reads as a fault in this tool rather than a finding about their site.
-
-       THE ONE TO WATCH IS `blankRegion` / `contentNotPainted`. Those say a region of the
-       page was never measured — visionarygrid.studio has 3,600px of case study the capture
-       photographed as empty yellow — and with nothing printed, its percentages silently
-       exclude it and nothing on the sheet says so. If that ever turns up on a real lead,
-       it belongs back on the page in a sentence a client can read. #}
-</section>
-
-{% for i in 0..(sheets - 1) %}
-    <section class="r-sheet">
-        <div class="r-shot" style="background-position: 0 -{{ i * sheet.height }}px;"></div>
-    </section>
-{% endfor %}
 
 </body>
 </html>

@@ -1,0 +1,122 @@
+{#
+  THE REPORT. A web page that happens to be printed.
+
+  Reached at /actions/leadgenerator/report/view?entry=<id>, which is also how Playwright
+  reaches it before calling page.pdf(). So what you see in a browser at A4 width is what a
+  prospect gets, and designing it is a refresh rather than a re-render.
+
+  IT READS AND NEVER CALCULATES. Every number here came out of report.json, which came out
+  of lib/surface.mjs over a partition asserted to tile the page exactly. Adding anything up
+  in this file would be a second implementation of a number somebody may argue with.
+
+  THE ANNOTATED PAGE IS ONE IMAGE SHOWN THROUGH SEVERAL WINDOWS. CSS cannot break an image
+  across printed pages — it overflows and is cut, or shrinks to nothing — and a homepage
+  screenshot is thousands of pixels tall (jersey.com is 16,368). So each sheet holds a box
+  with the image as its background, offset by one sheet's worth, which is the only way the
+  block labels stay readable.
+
+  WHAT MUST SURVIVE ANY REDESIGN: the caveats. A number this tool could not measure is
+  reported as unmeasured, and a report that quietly drops that is not this tool's report.
+#}
+{% set pct = { } %}
+{#
+  A percentage, or an em dash where there is nothing to say.
+
+  `<0.1%` AND NOT `0.0%` for anything present but smaller than the rounding can show.
+  kohde.agency paints rgb(220,220,226) across 288 pixels — about seventeen square — which
+  is 0.0033% of its page and rounded to a flat nought. A colour in a list of colours on the
+  page cannot be none of the page, and a reader asked why it was there. Rounding a real
+  measurement down to zero is the same fault as reporting an unmeasured region as empty.
+#}
+{% macro pc(n) %}
+    {%- if n is null -%}—
+    {%- elseif n > 0 and n * 100 < 0.05 -%}&lt;0.1%
+    {%- else -%}{{ (n * 100)|number_format(1) }}%
+    {%- endif -%}
+{% endmacro %}
+
+{# MB TO ONE PLACE, KB BELOW A MEGABYTE.
+
+   BINARY, AND IN STEP WITH tools/audit/lib/bytes.mjs:136, which divides by 1048576 and
+   calls the result MB. Decimal would be the more defensible unit and would match Chrome's
+   network panel, but the same bytes are printed by the capture CLI through that function:
+   two formatters means the PDF saying 4.5 MB while the console says 4.3 MB for one page.
+   If this moves, that moves with it. #}
+{% macro bytes(n) %}
+    {%- if n is null -%}—
+    {%- elseif n >= 1048576 -%}{{ (n / 1048576)|number_format(1) }}mb
+    {%- else -%}{{ (n / 1024)|number_format(0) }}kb
+    {%- endif -%}
+{% endmacro %}
+
+{# ONE BAR, TWO SCORES, and they are not the same kind of number: Speed is PageSpeed
+   divided by ten, Technical is this tool's own bands. Drawn identically because a reader
+   compares them anyway, so the difference is stated in the labels rather than hidden in
+   the styling. #}
+{% macro scorebar(n) %}
+    <div class="r-score">
+        {# ALWAYS A DECIMAL. A score of 8 and a score of 8.4 should not print in different
+           shapes: `8` reads as a rounder, cheaper number than `8.0`, and beside `6.7`
+           on the same cover it looks like a different kind of measurement. #}
+        <div class="r-score-n">{{ n|number_format(1) }}<span>/10</span></div>
+        <div class="r-score-bar" style="--r-fill: {{ n * 10 }}%"></div>
+    </div>
+{% endmacro %}
+
+{# THE SAME BAR, WITH A NAME OVER IT. The cover stacks three of these and the number alone
+   cannot say which is which, but a label BESIDE the bar pushed it 141px right and 141px
+   short of the one the sections print — measurably not the same object. Above it, the row
+   underneath is scorebar() itself, so the two cannot drift. #}
+{% macro scoreline(label, n) %}
+    <div class="r-scoreline">
+        <p class="r-scoreline__label">{{ label }}</p>
+        {{ _self.scorebar(n) }}
+    </div>
+{% endmacro %}
+
+{# The bare domain, as a person would say it out loud — the scheme and the `www.` are
+   punctuation a reader has to look past. The whole address is on the cover. #}
+{% macro host(url) %}
+    {%- set h = url|replace({'/^https?:\\/\\//': '', '/^www\\./': ''}) -%}
+    {{- h|split('/')|first -}}
+{% endmacro %}
+
+{#
+  THE CHANGE BETWEEN TWO FIGURES, and the arrow that goes with it.
+
+  `mode` says how the difference is expressed, and the three are not interchangeable:
+
+    'share'    the values are FRACTIONS of something (0.465 against 0.117) — the difference
+               is in percentage POINTS, because a ratio here is nonsense and sometimes
+               impossible. Routing at 0.0% against 52.0% is not an increase of any
+               percentage, it is a division by nothing.
+    'points'   the values are already on a scale (8.9 out of 10) — the difference is the
+               plain subtraction, in points of that scale.
+    'ratio'    the values are quantities (bytes, pixels) — the difference is a percentage
+               of the one compared against.
+
+  SHARES AND SCORES BOTH READ AS POINTS, so the Change column is one kind of number down
+  its whole length. They were 'pt' and '%' side by side and looked like a mistake.
+
+  `better` says which direction is an improvement: 'up', 'down', or '' for neither. Only the
+  first two take colour. A segment share has no better direction — a page giving 46% to its
+  footer is not winning against one giving 11%, it made a different decision.
+#}
+{% macro change(a, b, mode = 'ratio', better = '') %}
+    {%- if a is null or b is null -%}—
+    {%- else -%}
+        {%- if mode == 'share' -%}{% set delta = (a - b) * 100 %}{% set unit = 'pt' %}
+        {%- elseif mode == 'points' -%}{% set delta = a - b %}{% set unit = 'pt' %}
+        {%- else -%}{% set delta = b == 0 ? null : (a - b) / b * 100 %}{% set unit = '%' %}
+        {%- endif -%}
+        {%- if delta is null -%}—
+        {%- elseif delta|abs < 0.05 -%}<span class="r-change r-change--flat">no change</span>
+        {%- else -%}
+            {%- set up = delta > 0 -%}
+            {%- set tone = better == '' ? 'flat' : ((up and better == 'up') or (not up and better == 'down') ? 'good' : 'bad') -%}
+            <span class="r-change r-change--{{ tone }}">
+                {{- delta|abs|number_format(1) }}{{ unit }}
+                <span class="r-change__arrow">{{ up ? '▲' : '▼' }}</span></span>
+        {%- endif -%}
+    {%- endif -%}
+{% endmacro %}
