@@ -85,8 +85,8 @@ test('an empty array is an error rather than a page with no blocks', () => {
 
 test('the categories are the ones the report promises', () => {
     assert.deepEqual(CATEGORIES, [
-        'brand', 'navigation', 'hero', 'promotion', 'trust', 'routing', 'editorial', 'footer',
-        'unclassified',
+        'brand', 'navigation', 'hero', 'explainer', 'promotion', 'trust', 'routing', 'editorial',
+        'footer', 'unclassified',
     ]);
 });
 
@@ -110,7 +110,37 @@ test('the prompt is explicit that one block takes one category, first fit', () =
 test('the prompt settles article cards, client logos and USP rows', () => {
     assert.match(TILE_PROMPT, /is "routing", not "editorial"/);
     assert.match(TILE_PROMPT, /are "trust", not "brand"/);
-    assert.match(TILE_PROMPT, /is "hero", not "trust"/);
+    assert.match(TILE_PROMPT, /is "explainer", not "trust"/);
+});
+
+/**
+ * THE SPLIT THAT MADE `hero` MEAN SOMETHING. It was "the claim at the top, and ALSO any
+ * later section doing the same job", which is most of a homepage: atkinsonsca.co.uk came
+ * back with seven hero blocks covering 49.5% of the page. The two are the same voice, so
+ * the prompt has to separate them BY POSITION or the model has nothing to go on.
+ */
+test('the prompt tells hero and explainer apart by position, not by wording', () => {
+    assert.match(TILE_PROMPT, /ONLY AT THE TOP/);
+    assert.match(TILE_PROMPT, /ANYWHERE BELOW THE HERO/);
+    assert.match(TILE_PROMPT, /told apart BY POSITION/);
+});
+
+/** And explainer must not swallow editorial: the discriminator is who the passage is about. */
+test('the prompt keeps explainer out of editorial', () => {
+    assert.match(TILE_PROMPT, /is "explainer"; a section explaining a SUBJECT/);
+});
+
+/**
+ * kohde.agency block 4. A 330px white card reading "A belief system in design systems." with
+ * a client name and an arrow, sitting on 899px of dark green graphic. The model described
+ * what dominated the slice, read the tagline as the company's own voice, and called it
+ * `explainer` at 0.6 — the lowest confidence on the page, against 0.72 for a more obvious
+ * case study card higher up. A case study describes THE WORK, and the link is the only
+ * reliable tell.
+ */
+test('the prompt sends a case study card to routing, whatever the imagery around it', () => {
+    assert.match(TILE_PROMPT, /naming a CLIENT or a PROJECT and linking to it is "routing"/);
+    assert.match(TILE_PROMPT, /Ask what the link points at/);
 });
 
 /**

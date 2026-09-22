@@ -12,7 +12,8 @@
  */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {surfaceArea} from '../lib/surface.mjs';
+import {CATEGORY_ORDER, surfaceArea} from '../lib/surface.mjs';
+import {CATEGORIES} from '../lib/vision.mjs';
 
 const leaf = (y, h, category, coverage = 0.5) => ({
     x: 0, y, w: 1000, h, depth: 1, children: [], coverage,
@@ -133,4 +134,30 @@ test('a category measured in part reports coverage over the part that was measur
 test('a tree with no leaves does not divide by zero', () => {
     const empty = {x: 0, y: 0, w: 1000, h: 0, depth: 0, children: []};
     assert.doesNotThrow(() => surfaceArea(empty, 900));
+});
+
+/* ---------------------------------------------------- the two category lists must agree */
+
+/**
+ * THE BUG THIS EXISTS FOR. `explainer` was added to CATEGORIES and to the prompt, the model
+ * labelled it correctly on every page, and the tally walked a SEPARATE hard-coded list and
+ * quietly kept only the categories it recognised. atkinsonsca.co.uk reported 42% of its own
+ * homepage; the missing 58% was explainer, and nothing anywhere said so.
+ */
+test('every category the model may return has a place in the printed order', () => {
+    for (const c of CATEGORIES) {
+        assert.ok(CATEGORY_ORDER.includes(c), `${c} can be labelled but has no place in the table order`);
+    }
+    assert.equal(CATEGORY_ORDER.length, CATEGORIES.length, 'and the order names nothing that cannot be labelled');
+});
+
+/** Belt and braces: even an unknown label is counted rather than dropped. */
+test('a category nobody listed is still counted, and sorts last', () => {
+    const leaf = (h, category) => ({x: 0, y: 0, w: 100, h, area: 100 * h, depth: 1, children: [],
+        label: {category, what: 'x', cols: 1, confidence: 0.9}});
+    const tree = {x: 0, y: 0, w: 100, h: 300, depth: 0, children: [leaf(100, 'hero'), leaf(200, 'gubbins')]};
+    const {full} = surfaceArea(tree, 900);
+    const found = full.find((r) => r.category === 'gubbins');
+    assert.ok(found, 'an unrecognised category must not vanish');
+    assert.equal(Number(found.share.toFixed(4)), 0.6667);
 });

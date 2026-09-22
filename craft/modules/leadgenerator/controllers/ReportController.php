@@ -49,6 +49,10 @@ class ReportController extends Controller
             // The annotated page, addressed through this controller because the audit
             // directory is in storage and deliberately not under the webroot.
             'annotated' => $this->artefactUrl($entry, 'debug.png'),
+            // The first screen as a visitor meets it, for the cover. Captured by phase 1
+            // and unused until now; it is the one image in the audit that is their page
+            // rather than our marks on top of it.
+            'firstScreen' => $this->artefactUrl($entry, 'viewport.png'),
         ], \craft\web\View::TEMPLATE_MODE_SITE);
     }
 
@@ -98,12 +102,26 @@ class ReportController extends Controller
         throw new NotFoundHttpException('not found');
     }
 
+    /**
+     * RELATIVE, AND THAT IS THE WHOLE POINT OF IT.
+     *
+     * This page is read at two addresses: a person opens it at the site's hostname, and
+     * Playwright prints it from inside the container at localhost, because resolving the
+     * public name from in there goes out through the router for a page that is a socket
+     * away. An ABSOLUTE artefact URL works for the first and silently fails for the second:
+     * the document renders, the screenshot does not arrive, and the PDF carries three blank
+     * pages where the annotated page should be. Nothing errors.
+     *
+     * A relative one is resolved against whichever host loaded the page, so both are right.
+     */
     private function artefactUrl(int $entryId, string $name): string
     {
-        return \craft\helpers\UrlHelper::actionUrl('leadgenerator/report/artefact', [
+        $url = \craft\helpers\UrlHelper::actionUrl('leadgenerator/report/artefact', [
             'entry' => $entryId,
             'name' => $name,
             't' => self::token($entryId),
         ]);
+
+        return preg_replace('~^https?://[^/]+~', '', $url);
     }
 }

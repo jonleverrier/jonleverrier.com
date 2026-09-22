@@ -3,8 +3,13 @@
 namespace modules\leadgenerator;
 
 use Craft;
+use craft\elements\Entry;
+use craft\events\ModelEvent;
+use craft\helpers\Queue;
+use modules\leadgenerator\audit\jobs\SendReport;
 use modules\leadgenerator\audit\services\Audit;
 use modules\leadgenerator\services\FormGuard;
+use yii\base\Event;
 use yii\base\Module as BaseModule;
 
 /**
@@ -32,6 +37,12 @@ use yii\base\Module as BaseModule;
  */
 class LeadGenerator extends BaseModule
 {
+    /** The one section these handlers care about. */
+    private const SECTION = 'leadGenerator';
+
+    /** The field whose move into `sent` is what sends the report. */
+    private const STATUS_FIELD = 'auditStatus';
+
     public function init(): void
     {
         Craft::setAlias('@modules/leadgenerator', __DIR__);
@@ -45,5 +56,77 @@ class LeadGenerator extends BaseModule
             'formGuard' => FormGuard::class,
             'audit' => Audit::class,
         ]);
+
+        $this->watchForSending();
+    }
+
+    /**
+     * Setting the status to `sent` is what sends the report.
+     *
+     * THE TRANSITION, NOT THE VALUE. An entry is saved every time anything on it is
+     * touched — a typo in the name, a note, a resave from the console — and a handler that
+     * only checks "is it sent?" mails the lead again each time. So the stored status is read
+     * BEFORE the save and compared with the one going in: the mail goes out on the move into
+     * `sent` and never on a save that leaves it there.
+     *
+     * The limitation worth knowing: it is a transition and not a receipt. If the send fails,
+     * the entry still says `sent` and saving it again will not retry, because it was already
+     * `sent` beforehand. The retry lives in the queue, where the failure is; to send again
+     * from the entry, move it off `sent` and back.
+     */
+    private function watchForSending(): void
+    {
+        $before = [];
+
+        Event::on(Entry::class, Entry::EVENT_BEFORE_SAVE, static function (ModelEvent $e) use (&$before) {
+            $entry = $e->sender;
+            if (!self::isAudit($entry)) {
+                return;
+            }
+            // The value as the database still has it. Reading it off $entry here would give
+            // the one being saved, which is the thing we are trying to compare against.
+            $stored = Craft::$app->getEntries()->getEntryById($entry->id, $entry->siteId);
+            $before[$entry->id] = (string) ($stored?->getFieldValue(self::STATUS_FIELD)?->value ?? '');
+        });
+
+        Event::on(Entry::class, Entry::EVENT_AFTER_SAVE, static function (ModelEvent $e) use (&$before) {
+            $entry = $e->sender;
+            if (!self::isAudit($entry)) {
+                return;
+            }
+            $was = $before[$entry->id] ?? null;
+            unset($before[$entry->id]);
+
+            $now = (string) ($entry->getFieldValue(self::STATUS_FIELD)?->value ?? '');
+            if ($now !== 'sent' || $was === 'sent' || $was === null) {
+                return;
+            }
+
+            Queue::push(new SendReport(['entryId' => (int) $entry->id]));
+        });
+    }
+
+    /**
+     * An audit entry worth watching: saved, not a draft or a revision, and carrying the
+     * field this is all about.
+     *
+     * SECTION FIRST, THEN THE LAYOUT — the shape jonson\services\Vip already uses, for the
+     * same reason. These handlers fire on EVERY entry save on the site, so the first test
+     * has to be the cheapest one that rules most of them out, and it must not touch a field.
+     *
+     * The layout check went in after `getFieldValue('auditStatus')` threw
+     * `InvalidFieldException` on an entry whose type has no such field: editing the title of
+     * a page in the Tools structure died with a stack trace from this module. The section
+     * check goes in front of it because it is exact — audit entries live in one section —
+     * and because a second tool added to that section would fail the layout test anyway.
+     */
+    private static function isAudit(mixed $entry): bool
+    {
+        return $entry instanceof Entry
+            && $entry->id !== null
+            && ($entry->getSection()?->handle ?? '') === self::SECTION
+            && !$entry->getIsDraft()
+            && !$entry->getIsRevision()
+            && $entry->getFieldLayout()?->getFieldByHandle(self::STATUS_FIELD) !== null;
     }
 }

@@ -88,6 +88,14 @@ settings:
         -
           - group
           - General
+    -
+      __assoc__:
+        -
+          - uid
+          - ee770d67-9570-41e5-9e8a-506688403a63 # Form: Homepage Analysis
+        -
+          - group
+          - General
   includeTableView: false
   maxEntries: null
   minEntries: null

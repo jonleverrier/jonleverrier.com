@@ -34,6 +34,45 @@
     {%- else -%}{{ (n * 100)|number_format(1) }}%
     {%- endif -%}
 {% endmacro %}
+
+{# MB TO ONE PLACE, KB BELOW A MEGABYTE.
+
+   BINARY, AND IN STEP WITH tools/audit/lib/bytes.mjs:136, which divides by 1048576 and
+   calls the result MB. Decimal would be the more defensible unit and would match Chrome's
+   network panel, but the same bytes are printed by the capture CLI through that function:
+   two formatters means the PDF saying 4.5 MB while the console says 4.3 MB for one page.
+   If this moves, that moves with it. #}
+{% macro bytes(n) %}
+    {%- if n is null -%}—
+    {%- elseif n >= 1048576 -%}{{ (n / 1048576)|number_format(1) }}mb
+    {%- else -%}{{ (n / 1024)|number_format(0) }}kb
+    {%- endif -%}
+{% endmacro %}
+
+{# ONE BAR, TWO SCORES, and they are not the same kind of number: Speed is PageSpeed
+   divided by ten, Technical is this tool's own bands. Drawn identically because a reader
+   compares them anyway, so the difference is stated in the labels rather than hidden in
+   the styling. #}
+{% macro scorebar(n) %}
+    <div class="r-score">
+        {# ALWAYS A DECIMAL. A score of 8 and a score of 8.4 should not print in different
+           shapes: `8` reads as a rounder, cheaper number than `8.0`, and beside `6.7`
+           on the same cover it looks like a different kind of measurement. #}
+        <div class="r-score-n">{{ n|number_format(1) }}<span>/10</span></div>
+        <div class="r-score-bar" style="--r-fill: {{ n * 10 }}%"></div>
+    </div>
+{% endmacro %}
+
+{# THE SAME BAR, WITH A NAME OVER IT. The cover stacks three of these and the number alone
+   cannot say which is which, but a label BESIDE the bar pushed it 141px right and 141px
+   short of the one the sections print — measurably not the same object. Above it, the row
+   underneath is scorebar() itself, so the two cannot drift. #}
+{% macro scoreline(label, n) %}
+    <div class="r-scoreline">
+        <p class="r-scoreline__label">{{ label }}</p>
+        {{ _self.scorebar(n) }}
+    </div>
+{% endmacro %}
 {% import _self as r %}
 
 {# A4 at 96dpi less the margin — the box an image has to fit in. Kept in step with
@@ -48,9 +87,17 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>{{ report.url }} — homepage audit</title>
+    <title>{{ report.url }} homepage audit</title>
     <style>
-        /* THE SITE'S OWN TYPE, resolved through craft.vite.asset so the content hash in the
+        /* RELATIVE, LIKE THE SCREENSHOT, AND FOR THE SAME REASON. craft.vite.asset returns an
+           absolute URL at the site's hostname, and the browser printing this runs inside the
+           container where that name does not resolve: every face failed ERR_FAILED and the
+           PDF printed in a system fallback that looks near enough to pass. Stripping the
+           origin leaves the path, which resolves against whichever host loaded the page.
+           An earlier `ignoreHTTPSErrors` fixed a certificate error and was reported as
+           fixing this; it did not, and nothing said so.
+        
+           THE SITE'S OWN TYPE, resolved through craft.vite.asset so the content hash in the
            built filename is never written down here — a rebuild changes it, and a
            hardcoded path would fail by silently falling back to a system font, which on a
            PDF nobody would notice until a prospect had one.
@@ -60,7 +107,7 @@
            a nav's rules is a document fighting its own CSS. */
         @font-face {
             font-family: 'JonSonMono';
-            src: url('{{ craft.vite.asset('build/fonts/soehne-mono-leicht.woff2') }}') format('woff2');
+            src: url('{{ craft.vite.asset('build/fonts/soehne-mono-leicht.woff2')|replace({'/^https?:\\/\\/[^\\/]+/': ''}) }}') format('woff2');
             font-weight: 500;
             font-style: normal;
             /* `block`, not `swap`: this is printed, not read while it loads, and a swap
@@ -69,14 +116,33 @@
         }
         @font-face {
             font-family: 'JonSonMono';
-            src: url('{{ craft.vite.asset('build/fonts/soehne-mono-halbfett.woff2') }}') format('woff2');
+            src: url('{{ craft.vite.asset('build/fonts/soehne-mono-halbfett.woff2')|replace({'/^https?:\\/\\/[^\\/]+/': ''}) }}') format('woff2');
             font-weight: 600;
             font-style: normal;
             font-display: block;
         }
 
+        /* The site's sans, for the cover alone. Declared here for the same reason the mono
+           is: this sheet does not load the site's stylesheet, so the faces it uses have to be
+           named in it. Matches the JonSonSans block in build/scss/theme/_typography.scss. */
+        @font-face {
+            font-family: 'JonSonSans';
+            src: url('{{ craft.vite.asset('build/fonts/Baikal-ExpandedBold.woff2')|replace({'/^https?:\\/\\/[^\\/]+/': ''}) }}') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+            font-display: block;
+        }
+        @font-face {
+            font-family: 'JonSonSans';
+            src: url('{{ craft.vite.asset('build/fonts/Baikal-ExpandedLight.woff2')|replace({'/^https?:\\/\\/[^\\/]+/': ''}) }}') format('woff2');
+            font-weight: 500;
+            font-style: normal;
+            font-display: block;
+        }
+
         /* Matches $g-font-secondary in build/scss/theme/_setup.scss. */
-        :root { --r-mono: 'JonSonMono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+        :root { --r-mono: 'JonSonMono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+            --r-sans: 'JonSonSans', system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
 
         @page { size: A4; margin: 45px; }
         * { box-sizing: border-box; }
@@ -86,23 +152,141 @@
            it is being designed. Neither rule survives into the PDF. */
         @media screen {
             body { background: #e9e9ec; padding: 24px; }
-            .r-sheet { width: 794px; min-height: 1123px; padding: 45px; margin: 0 auto 24px;
-                background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
-        }
-        @media print { .r-sheet { break-after: page; padding: 0; } .r-sheet:last-child { break-after: auto; } }
+            /* WHERE THE PAPER ACTUALLY ENDS. 794x1123 is A4 at 96dpi, but it is a MIN-height:
+               a sheet holding more than a page grows, silently, and the preview stops being
+               the thing it is previewing. kohde.agency's first sheet is 1775px — 652px past
+               the paper — and nothing on screen said so.
 
-        h1 { font-size: 22px; font-weight: 600; margin: 0 0 2px; letter-spacing: -0.01em; }
-        h2 { font-size: 12px; font-weight: 600; margin: 0 0 8px; }
-        .r-meta { color: #666; margin-bottom: 22px; }
+               So the boundary is drawn every 1123px rather than the content being clipped
+               to it. Clipping would hide the overflow, which is the one thing worth seeing.
+               Screen only: this rule does not exist in the PDF. */
+            .r-sheet { width: 794px; min-height: 1123px; padding: 45px; margin: 0 auto 24px;
+                background: #fff repeating-linear-gradient(to bottom,
+                    transparent 0 1121px, rgba(224,46,26,.5) 1121px 1123px);
+                box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+        }
+        /* NOTHING IS CUT IN HALF EXCEPT THE SCREENSHOT, which is already sliced to the page
+           before it gets here. The first sheet holds more than one page of content — kohde
+           runs to 1,775px against A4's 1,123 — so it flows, and where it flows is what these
+           rules decide.
+
+           `tr` AND NOT `table`: the Segments table is taller than a page on its own, so
+           avoiding a break inside the whole table would push it to a fresh page and overflow
+           anyway. Keeping each ROW whole is the strongest rule that can always be honoured.
+
+           A row whose Note is a twelve-colour palette can still be taller than a page. Then
+           the browser breaks it regardless, which is the right failure: a rule that cannot
+           be met is not enforced, it is ignored. */
+        @media print {
+            /* FULL BLEED, AND ONLY ON THE COVER. With no page margin the navy reaches all
+               four edges; the sheet takes the 45px back as padding so the type sits where it
+               always did. `:first` keeps every other page on its 45px margin, which is what
+               the running head draws in and what PAGE.margin in lib/pdf.mjs slices the
+               screenshot against — neither has to move. The head is clipped on page one for
+               want of a band, which on a cover is the right answer anyway. */
+            @page :first { margin: 0; }
+
+            .r-sheet { break-after: page; padding: 0; }
+            /* THE COVER NEEDS A HEIGHT TO CENTRE AGAINST. `min-height: 1123px` is in the
+               screen block only, so in print a sheet is as tall as its content — and a flex
+               column with no free space has nothing for `margin: auto` to eat, which put the
+               whole cover back at the top of the page while the preview looked right.
+               `100vh` in paged media is the page box, and the @page margins take their own
+               space out of it. */
+            /* AFTER `.r-sheet`, and that is not a tidiness point. The cover carries both
+               classes and the two rules have the same specificity, so whichever is written
+               last wins: with this above, `.r-sheet { padding: 0 }` won and the cover printed
+               flush to all four edges with the type touching the paper. */
+            .r-cover { min-height: 100vh; padding: 45px; }
+            .r-sheet:last-child { break-after: auto; }
+            tr, li, .r-score, table { break-inside: avoid; }
+            /* `table` as well as `tr`, because a table split between its second and third
+               row reads as two tables. A table taller than a page cannot honour this and the
+               browser breaks it anyway, which is the right failure: a rule that cannot be met
+               is ignored rather than enforced badly. */
+            /* A heading stranded at the foot of a page is worse than a short page. */
+            h2, h3 { break-after: avoid; }
+            .r-score, table { break-before: avoid; }
+            /* Carried on to the next page, a table still says what its columns are. */
+            thead { display: table-header-group; }
+        }
+
+        /* The grey the h3s carry. Set on the element rather than on the cover, so both
+           addresses in the document — the cover's and the content sheet's — read the
+           same way without either one being special-cased. */
+        h1 { font-size: 25px; font-weight: 600; margin: 0 0 2px; letter-spacing: -0.01em;
+            color: #5e5e5e; }
+        /* Sections stand apart: a heading landing hard against the table above it reads
+           as a row of that table rather than the start of a new one. */
+        h2 { font-size: 19px; font-weight: 600; margin: 22px 0 8px; }
+        h3 { font-size: 15px; font-weight: 600; margin: 24px 0 9px; color: #5e5e5e; }
+        /* Margins collapse, so the space under an h2 that is followed by an h3 is the
+           h3's 24px and not the h2's. A subheading belongs to the heading above it. */
+        h2 + h3 { margin-top: 10px; }
+        /* Only 500 and 600 are loaded, and <b> asks for 700. Left alone the browser
+           picks the nearest, which is right here but is a decision nobody made —
+           and on a print document a synthesised bold is visible. */
+        b { font-weight: 600; }
+        .r-meta { color: #333; margin-bottom: 22px; }
         table { border-collapse: collapse; width: 100%; }
         th { text-align: left; font-weight: 600; border-bottom: 1px solid #111; padding: 5px 0; }
         /* Mono is already tabular, but saying so stops a fallback ruining the column. */
-        td { padding: 5px 0; border-bottom: 1px solid #eee; }
+        /* TOP, not the middle. A row whose Note is a twelve-item palette floats its
+           label and its number halfway down the cell, so the three stop reading as
+           one row. */
+        td { padding: 5px 0; border-bottom: 1px solid #eee; vertical-align: top; }
+        tfoot td { border-top: 1px solid #111; border-bottom: none; padding-top: 7px; }
         .r-n { text-align: right; font-variant-numeric: tabular-nums; }
         .r-facts { margin: 20px 0; color: #333; }
+        /* A facts line belonging to a heading sits under it, not 20px away from it. */
+        h2 + .r-facts { margin-top: 0; }
+
+        /* THE SCORE BAR. The fill is a pseudo-element and the value arrives as a custom
+           property, so there is no empty element in the markup whose only job is to be a
+           colour. `printBackground` is on in lib/pdf.mjs, which is what makes it survive
+           the print — without it the bar would be an empty grey box in the PDF and
+           nowhere else. */
+        .r-score { display: flex; align-items: center; gap: 14px; margin: 0 0 14px; }
+        /* A FLOOR SO EVERY BAR STARTS ON THE SAME LINE. `8` is a glyph narrower than
+           `9.5`, and the number shrinks to fit, so the Consistency bar began 33px left
+           of the others. 90px is the widest this column can be, now that every score carries
+           a decimal: `10.0` is the longest form it gets. */
+        .r-score-n { min-width: 90px; font-size: 28px; font-weight: 600; line-height: 1;
+            letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+        .r-score-n span { font-size: 13px; color: #666; }
+        /* The site's own two colours, by value rather than by class: this sheet cannot
+           load build/scss without inheriting the rules it exists to avoid. Track is
+           `primary 430` (.b-footer__whisper), fill is `primary 700` (.b-slab--p700).
+           If the palette moves in theme/_setup.scss, it has to be moved here too. */
+        .r-score-bar { position: relative; flex: 1; height: 12px; border-radius: 999px;
+            background: #b6ddff; }
+        .r-score-bar::before { content: ''; position: absolute; inset: 0 auto 0 0;
+            width: var(--r-fill); border-radius: 999px; background: #0c243c; }
+        .r-speed td:nth-child(1), .r-speed th:nth-child(1) { width: 32%; padding-right: 16px; }
+        .r-speed td:nth-child(2), .r-speed th:nth-child(2) { width: 20%; padding-right: 16px; }
+        .r-speed { margin-bottom: 26px; }
         /* A swatch has to carry its own outline: a near-white chip on a white sheet is
            otherwise invisible, which is exactly the case this section is about. */
         .r-swatches, .r-drift { list-style: none; margin: 0 0 18px; padding: 0; }
+        td .r-swatches, td .r-drift { margin: 0; }
+        /* The palette as a run of swatches rather than a stack of rows. The chip is a
+           pseudo-element and the colour arrives as a custom property, so the markup is
+           a list of colours and not a list of colours and boxes. Each one is nowrap so
+           `rgb(255, 255, 255)` never breaks across two lines mid-value. A near-white
+           chip on a white sheet carries its own outline. */
+        .r-swatch-inline { display: inline-block; white-space: nowrap; margin: 0 10px 3px 0;
+            font-variant-numeric: tabular-nums; }
+        .r-swatch-inline::before { content: ''; display: inline-block; width: 11px; height: 11px;
+            margin-right: 4px; vertical-align: -1px; background: var(--c);
+            border: 1px solid rgba(0,0,0,.25); }
+        /* The sections behind a segment's percentage, under its name. The index is the
+           one lib/debug.mjs draws on the screenshot, so it is set apart rather than
+           reading as part of the description. */
+        .r-parts { list-style: none; margin: 4px 0 2px; padding: 0; color: #5e5e5e; font-weight: 500; }
+        .r-parts li { padding: 1px 0 1px 10px; text-indent: -10px; }
+        .r-parts li::before { content: '•'; margin-right: 6px; }
+        .r-parts span { color: #999; font-variant-numeric: tabular-nums; }
+        .r-parts em { font-style: normal; color: #b62515; }
         .r-swatches li, .r-drift li { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
         .r-chip { display: inline-block; width: 13px; height: 13px; flex: none;
             border: 1px solid rgba(0,0,0,.25); }
@@ -118,145 +302,526 @@
 
         /* One image, several windows onto it. `background-position` walks down it a sheet
            at a time; the box is a fixed height so a short last slice does not stretch. */
+        /* THE COVER. A column: label and address at the top, their first screen below it,
+           the date pushed to the foot. The capture is 1440x900 and is drawn at the sheet's
+           own width, so it keeps its proportions whatever the paper is. */
+        /* Bottom-aligned: the stack sits on the foot of the sheet and the air goes above
+           it, so a short findings list and a long one both end on the same line. */
+        /* `margin: auto 0` on the head is what does it: in a flex column an auto margin eats
+           the free space, so the address centres in whatever is left above the foot while the
+           foot stays on the bottom edge. A short findings list and a long one then end on the
+           same line, and the difference is absorbed above where nobody looks. */
+        /* The head centres in the space above the foot, and is then nudged down. Centring on
+           the SHEET instead was tried and overshot: it put the title on the page's midpoint,
+           a long way below where it had been. This is the original position plus 60px. */
+        /* THE DARK SHEET. primary 700 and primary 430 from build/scss/theme/_setup.scss —
+           the same two the score bars are drawn in, swapped round: on navy the navy fill
+           would vanish, so the pale blue does the filling and the track becomes a wash of
+           white. Everything else on this sheet inverts with it. */
+        .r-cover { display: flex; flex-direction: column;
+            background: #0c243c; color: #fff; }
+        .r-cover h1,
+        .r-cover .r-scoreline__label,
+        .r-cover .r-cover__date { color: rgba(255,255,255,.66); }
+        .r-cover .r-cover__label { color: #fff; }
+        .r-cover .r-score-n { color: #fff; }
+        .r-cover .r-score-n span { color: rgba(255,255,255,.55); }
+        .r-cover .r-score-bar { background: rgba(255,255,255,.2); }
+        .r-cover .r-score-bar::before { background: #b6ddff; }
+        .r-cover__head { margin: auto 0; position: relative; top: 60px; }
+        .r-cover__band { flex: none; margin: -45px -45px 0; padding: 22px 45px;
+            background: #fff; }
+        .r-cover__logo { display: block; width: 186px; height: auto; }
+        /* 55px. The one thing on the sheet set in the site's sans: it
+           is the title of the document, so it is the only line that does not have to look
+           like a measurement.
+
+           `balance` ON THE WRAP, because at this size "Homepage Audit" is most of the
+           column: it fits on one line here, and a longer title would otherwise break with
+           one word stranded on the second. */
+        .r-cover__label { margin: 0 0 16px; color: #111; font-family: var(--r-sans);
+            font-size: 55px; font-weight: 600; line-height: 1; letter-spacing: -0.02em;
+            text-wrap: balance; }
+        .r-cover__url { margin: 0 0 32px; word-break: break-all; }
+        .r-cover__scores { margin: 0; }
+        /* Under the address, not at the foot of the sheet: it is part of what this report
+           is OF — this page, on this day — rather than a note about the document. */
+        .r-cover__date { margin: 10px 0 0; color: rgba(255,255,255,.66); }
+
+        .r-summary__head { margin-top: 0; }
+        /* The label sits over the row, and the row is scorebar() untouched, so the cover's
+           three scores and the one above each table are the same object to the pixel. */
+        .r-scoreline { margin: 0 0 20px; }
+        /* 15px and #5e5e5e: the h3 treatment, because that is what it is — the name of
+           the score under it, doing the same job `Speed` does above the Speed table. */
+        .r-scoreline__label { margin: 0 0 6px; font-size: 15px; font-weight: 600;
+            color: #5e5e5e; }
+        .r-scoreline .r-score { margin: 0; }
+        .r-scoreline .r-score-bar { flex: 1; }
+        /* The same label the scores carry, so the cover has one voice for its headings. */
+        .r-findings__head { margin-top: 26px; }
+        .r-findings { list-style: none; margin: 0; padding: 0; }
+        .r-findings li { padding: 4px 0 4px 14px; text-indent: -14px; }
+        .r-findings li::before { content: '•'; margin-right: 8px; }
+
         .r-shot { width: {{ sheet.width }}px; height: {{ sheet.height }}px;
-            background-image: url('{{ annotated }}');
+            {# `raw`, AND IT HAS TO BE. Twig escapes for HTML by default, so the `&` between
+               this URL's parameters arrives in the stylesheet as `&amp;` — CSS does not
+               decode entities, so the browser asks for `...&amp;entry=` and Craft answers
+               400. The PDF then carries blank pages where the screenshot should be and
+               nothing in the pipeline fails. The value is built in ReportController from an
+               integer and a fixed filename; there is nothing here to inject. #}
+            background-image: url('{{ annotated|raw }}');
             background-repeat: no-repeat;
             background-size: {{ sheet.width }}px auto; }
     </style>
 </head>
 <body>
 
+{# THE COVER. Their own first screen, because a prospect opening this should see their page
+   before they see a number: it says the report was made for them rather than generated at
+   them. `viewport.png` is phase 1's capture of the first 1440x900 and is the only image in
+   the audit that is their page rather than our marks on top of it.
+
+   THE SCORES ARE HERE AS WELL AS ON THEIR OWN SECTIONS, deliberately repeated. Speed is
+   PageSpeed divided by ten and the other two are this tool's own bands, which is a
+   difference a cover cannot carry — so each one is printed again beside the table that
+   earns it, where the rows show the working.
+
+   STATED AND NOT EXPLAINED. "52.1% of the page is routing" is a measurement; "which is why
+   nobody converts" is an argument this tool cannot support, and a reader who catches one
+   overreach stops believing the tables as well. #}
+{% if firstScreen is defined and firstScreen %}
+    <section class="r-sheet r-cover">
+        {# Two groups, and the space between them is the design: the address sits in the
+           middle of the sheet, the summary and the date on its foot. #}
+        {# A WHITE BAND, EDGE TO EDGE. The cover pads itself by 45px so the type sits in from
+           the paper; the band has to undo that on three sides to reach the edges, which is
+           what the negative margins are for. `flex: none` keeps it out of the centring —
+           the address still centres in what is left below it.
+
+           THE LOCKUP IS INLINE, not an <img>. Three separate things on this sheet have
+           already failed silently by asking for a file at an absolute URL the printer could
+           not reach — the report page, the screenshot and the fonts. Inlined, there is
+           nothing to fetch and nothing to fail. #}
+        <div class="r-cover__band">
+            {% include '_views/report/_lockup.svg' %}
+        </div>
+
+        <div class="r-cover__head">
+            <p class="r-cover__label">Homepage Audit</p>
+            <h1 class="r-cover__url">{{ report.url }}</h1>
+            <p class="r-cover__date">{{ report.capturedAt|date('jS F Y') }}</p>
+        </div>
+        <div class="r-cover__foot">
+        {# TEN POINTS EACH, THIRTY IN ALL. The overall is the three added up and put back on
+           the same scale, which is the version a reader can check in their head: "23 out of
+           a possible 30". It is arithmetically the mean, and the cost of that is worth
+           knowing — a perfect Consistency buys back a poor Technical, so a page shipping
+           4.3mb with nothing deferred still comes out around 7.
+
+           ONLY WHEN ALL THREE ARE THERE. Averaging two and calling it a total would score a
+           page out of 20 and print it as though it were out of 30.
+
+           THE THREE THEMSELVES ARE NOT ON THE COVER. Each one is printed above the table
+           that earns it — Speed over the PageSpeed metrics, Technical over the weight rows,
+           Consistency over the duplicate colours — and a cover that lists them as well makes
+           the reader check the same four numbers twice. #}
+        {% set marks = [
+            report.speed ? report.speed.score / 10 : null,
+            report.technical ? report.technical.score : null,
+            report.brand ? report.brand.score : null
+        ]|filter(v => v is not null) %}
+        <div class="r-cover__scores">
+            {% if marks|length == 3 %}
+                {{ r.scoreline('Overall', (marks|reduce((sum, v) => sum + v, 0) / 3)|round(1)) }}
+            {% endif %}
+        </div>
+
+        {% set biggest = report.categories|first %}
+        {% set heaviest = report.weight ? report.weight.byType|first : null %}
+        <p class="r-scoreline__label r-findings__head">Summary</p>
+        <ul class="r-findings">
+            {% if biggest and biggest.share > 0 %}
+                <li>{{ r.pc(biggest.share) }} of the page is <b>{{ biggest.category }}</b>,
+                    across {{ biggest.blocks|length }}
+                    section{{ biggest.blocks|length == 1 ? '' : 's' }}.</li>
+            {% endif %}
+            {% if heaviest %}
+                <li>{{ r.bytes(heaviest.bytes) }} of it is <b>{{ heaviest.type }}</b>,
+                    {{ r.pc(heaviest.bytes / report.weight.afterScroll.bytes) }} of the weight
+                    across {{ heaviest.requests }} of {{ report.weight.afterScroll.requests }} requests.</li>
+            {% endif %}
+            {% if report.technical %}
+                <li>
+                    {%- if report.technical.shortPage -%}
+                        The page is barely taller than a screen, so there is little below the fold to defer.
+                    {%- elseif report.technical.deferScore >= 4 -%}
+                        {{ r.pc(report.technical.deferred) }} of the weight waits until the visitor scrolls.
+                    {%- else -%}
+                        <b>Nothing is deferred</b>: the whole page loads before the visitor scrolls.
+                    {%- endif -%}
+                </li>
+            {% endif %}
+            {% if report.brand %}
+                <li>
+                    {%- if report.brand.groups -%}
+                        {{ report.brand.colours }} colours on the page are
+                        <b>{{ report.brand.groups == 1 ? 'a pair' : report.brand.groups ~ ' sets' }}</b>
+                        a person cannot tell apart.
+                    {%- else -%}
+                        No two colours on the page are ones a person could confuse.
+                    {%- endif -%}
+                </li>
+            {% endif %}
+        </ul>
+        </div>
+    </section>
+{% endif %}
+
 <section class="r-sheet">
     <h1>{{ report.url }}</h1>
     <p class="r-meta">
-        {{ report.width }}&times;{{ report.height }}px &middot;
-        {{ report.blocks }} blocks &middot;
-        {{ r.pc(report.coverage) }} of it drawn on &middot;
-        measured {{ report.capturedAt|date('j F Y') }}
+        <b>URL measured on:</b> {{ report.capturedAt|date('jS F Y') }}
+        &bull; <b>Page dimensions:</b> {{ report.width }}px wide by {{ report.height|number_format }}px tall
     </p>
 
+    {% if report.speed or report.weight %}
+        <h2>Performance</h2>
+        {% if report.speed %}
+        {# THE THRESHOLDS ARE GOOGLE'S PUBLISHED ONES, so a reader who disagrees with a
+           verdict is arguing with Google rather than with this report — and the numbers
+           stay checkable, because anyone can run PageSpeed themselves in a minute.
+
+           The score inverts: for PageSpeed higher is better, for the other three lower is.
+           Written out per row rather than generalised, because four rows of plain
+           conditions are easier to check against Google's table than one clever rule.
+
+           No Twig comments inside the hash below — one in an array literal 500s the page. #}
+        {% set psi = report.speed.score %}
+        {% set lcp = report.speed.lab.lcpMs %}
+        {% set tbt = report.speed.lab.tbtMs %}
+        {% set cls = report.speed.lab.cls|round(3) %}
+        {% set speedRows = [
+            {
+                metric: 'Google PageSpeed',
+                score: psi ~ '/100 Desktop',
+                note: psi >= 90 ? 'Good (90 or above)' : (psi >= 50 ? 'Needs work (under 90)' : 'Poor (under 50)')
+            },
+            {
+                metric: 'Largest Contentful Paint',
+                score: lcp ~ 'ms',
+                note: lcp <= 2500 ? 'Good (under 2.5s)' : (lcp <= 4000 ? 'Needs work (over 2.5s)' : 'Poor (over 4s)')
+            },
+            {
+                metric: 'Total Blocking Time',
+                score: tbt ~ 'ms',
+                note: tbt <= 200 ? 'Good (under 200ms)' : (tbt <= 600 ? 'Needs work (over 200ms)' : 'Poor (over 600ms)')
+            },
+            {
+                metric: 'Cumulative Layout Shift',
+                score: cls,
+                note: cls <= 0.1 ? 'Good (under 0.1)' : (cls <= 0.25 ? 'Needs work (over 0.1)' : 'Poor (over 0.25)')
+            }
+        ] %}
+        <h3>Speed</h3>
+        {{ r.scorebar((report.speed.score / 10)|round(1)) }}
+        <table class="r-speed">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Score</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in speedRows %}
+                    <tr>
+                        <td>{{ row.metric }}</td>
+                        <td>{{ row.score }}</td>
+                        <td>{{ row.note }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+        {% if report.weight %}
+            {# THESE BANDS ARE OURS, AND SPEED'S ARE GOOGLE'S. Worth knowing the difference:
+               a reader who disputes "Good (under 2.5s)" is arguing with Google, and one who
+               disputes "Needs work" here is arguing with us. So the comparison is carried in
+               the same breath as the verdict — at or under the median is Good, up to twice
+               it Needs work, past twice it Poor — and the median is named every time, so
+               the reader can see the line being drawn rather than take the word for it. #}
+            <h3>Technical</h3>
+            {% if report.technical %}{{ r.scorebar(report.technical.score) }}{% endif %}
+            {% set total = report.weight.afterScroll.bytes %}
+            {# THE ONE NUMBER IN THIS REPORT THAT IS NOT MEASURED. Everything else came off
+               the capture; this is the median desktop page from HTTP Archive, and it is a
+               moving target — it has risen year on year. It is stated in MB and multiplied
+               to bytes so it reads the same way r.bytes() prints, and it lives here alone
+               so correcting it is one edit rather than a hunt through prose. #}
+            {% set medianMb = report.technical ? report.technical.medianMb : 2.3 %}
+            {% set medianBytes = medianMb * 1048576 %}
+            {% set vsMedian = (total - medianBytes) / medianBytes %}
+            {% set weightVerdict = vsMedian <= 0.05 ? 'Good' : (vsMedian <= 1 ? 'Needs work' : 'Poor') %}
+            {% set heaviest = report.weight.byType|first %}
+            <table class="r-speed">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Score</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Total page weight</td>
+                        <td>{{ r.bytes(total) }}</td>
+                        <td>
+                            {{- weightVerdict }} (
+                            {%- if vsMedian|abs < 0.05 -%}
+                                about the median page
+                            {%- else -%}
+                                {{- (vsMedian|abs * 100)|number_format(0) }}%
+                                {{ vsMedian > 0 ? 'above' : 'below' }} the median page
+                            {%- endif -%})
+                        </td>
+                    </tr>
+                    {# WHAT THIS ROW IS ABOUT IS LAZY LOADING, and its absence. atLoad is
+                       marked before the scroll pass and afterScroll once the page has been
+                       walked to the bottom, so the gap between them is what the site chose
+                       to defer. kohde.agency defers more than half its weight; a page that
+                       defers none makes a visitor who reads the first screen and leaves pay
+                       for every image below it.
+
+                       THE SHORT-PAGE GUARD IS NOT OPTIONAL. A page barely taller than the
+                       viewport has nothing below the fold to defer, and 100% before
+                       scrolling is then the correct answer rather than a fault. 900 is the
+                       capture viewport in lib/capture.mjs; if that moves, this moves. #}
+                    {% set deferred = 1 - (report.weight.atLoad.bytes / total) %}
+                    {% set nothingBelow = report.height < 900 * 2 %}
+                    <tr>
+                        <td>Weight before scrolling</td>
+                        <td>{{ r.bytes(report.weight.atLoad.bytes) }}</td>
+                        <td>
+                            {%- if nothingBelow -%}
+                                Good (little below the fold to defer)
+                            {%- elseif deferred >= 0.4 -%}
+                                Good ({{ r.pc(deferred) }} deferred until scroll)
+                            {%- elseif deferred < 0.02 -%}
+                                Needs work (nothing deferred until scroll)
+                            {%- else -%}
+                                Needs work (only {{ r.pc(deferred) }} deferred until scroll)
+                            {%- endif -%}
+                        </td>
+                    </tr>
+                    {% if heaviest %}
+                        <tr>
+                            <td>Heaviest type</td>
+                            <td>{{ r.bytes(heaviest.bytes) }} ({{ heaviest.type }})</td>
+                            {# "18 requests" ON ITS OWN MEANS NOTHING, and the row that
+                               carried the total was dropped. The comparison is what the
+                               number is for, so it travels with it rather than depending
+                               on another row being there. #}
+                            {# THE TWO PERCENTAGES ARE NOT THE SAME PERCENTAGE. 39.1% is this
+                               type's share of the BYTES; its share of the requests is 18 of
+                               78, which is 23%. Naming what each number counts is the only
+                               thing stopping a reader doing the arithmetic and finding it
+                               does not work. #}
+                            <td>{{ r.pc(heaviest.bytes / total) }} of the weight,
+                                {{ heaviest.requests }} of
+                                {{ report.weight.afterScroll.requests }} requests</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        {% endif %}
+    {% endif %}
+
+    {% if report.styles or report.weight %}
+        <h2>Brand</h2>
+        {# ONE TABLE UNDER ONE HEADING. Only the duplicates row feeds the score: a palette of
+           eleven is not worse than one of six, and nothing here marks a page for the size of
+           its palette or the number of its typefaces. Those are choices. #}
+        <h3>Consistency</h3>
+        {% if report.brand %}{{ r.scorebar(report.brand.score) }}{% endif %}
+        <table class="r-speed">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Score</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                    {# FONTS AS ONE ROW, not a section of their own. What survived scrutiny is
+               the weight and the number of typefaces actually drawn with; "faces
+               declared" counted @font-face blocks, which nobody can check against a
+               network tab and which double-counts a stylesheet that declares the same
+               face twice.
+
+               NO FILE COUNT, because the census counts RESPONSES. kohde returns 13
+               font responses for 8 distinct files: reCAPTCHA's Roboto arrives six
+               times, five of them from cache at nought bytes. Printing "13 files"
+               would be wrong, and deduplicating by URL is a change to lib/bytes.mjs
+               rather than something to fudge here. The bytes are right either way. #}
+            {% set fontBytes = report.weight.byType|filter(t => t.type == 'font')|first %}
+            {% if fontBytes %}
+                <tr>
+                    <td>Fonts</td>
+                    <td>{{ r.bytes(fontBytes.bytes) }}</td>
+                    <td>
+                {%- if report.styles and report.styles.fonts.rendered|length -%}
+                    {{ report.styles.fonts.rendered|length }}
+                    {{- report.styles.fonts.rendered|length == 1 ? ' family' : ' families' }}
+                    on the page ({{ report.styles.fonts.rendered|map(f => f.family)|join(', ') }})
+                {%- else -%}
+                    No typeface was measured on the page
+                {%- endif -%}
+                    </td>
+                </tr>
+            {% endif %}
+                {% if report.styles and report.styles.colours.palette|length %}
+                    {# THE COUNT IS ONE CELL, THE PALETTE IS THE NEXT. A number on its own
+                       cannot tell a palette from an accretion: eleven colours where three
+                       cover most of the page is a palette with accents, eleven spread evenly
+                       is a page nobody decided. The shares are what settle it, so they sit
+                       in the same row as the count rather than in a section below it.
+
+                       OF THE PAGE, not of the summed colour areas, which was the first
+                       version and was a percentage of a number nobody can picture: the
+                       colour areas add up to 1.02x the page on kohde.agency and 0.78x on
+                       whitepaper.co.uk, so one figure meant something different on each.
+                       These do not total 100%, and both directions are honest. Short of it
+                       is page with no colour of its own, a transparent element over whatever
+                       is behind it. Over it is elements nesting, where a panel and the box
+                       inside it both count their own area.
+
+                       A CEILING THAT DECLARES ITSELF. This listed eight and said eleven
+                       beside it, and a reader counted. Whatever is cut has to be named and
+                       has to carry its share, or the list disagrees with the count. #}
+                    <tr>
+                        <td>Primary colours</td>
+                        <td>{{ report.styles.colours.total }}</td>
+                        <td>
+                            {%- for c in report.styles.colours.palette -%}
+                                <span class="r-swatch-inline" style="--c: {{ c.colour }}">{{ c.colour }}</span>
+                            {%- endfor -%}
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if report.styles %}
+                    {# CHECKED AND FOUND NONE IS STILL AN ANSWER. An absent row is
+                       indistinguishable from a check that never ran, and on this tool that
+                       distinction is the whole argument. whitepaper.co.uk is the case: its
+                       closest two colours are dE 6.58 apart, so nothing groups, which is a
+                       finding about the page rather than a gap in the report.
+
+                       WHAT COUNTS AS THE SAME COLOUR is within dE 2.3 in CIELAB once alpha
+                       is collapsed, the point a person stops telling two apart.
+                       visionarygrid.studio declares its brand yellow twice, as
+                       rgb(255,211,0) and rgb(255,210,2); jersey.com paints three near-blacks
+                       a point apart. Differences nobody chose and nobody can see, which is a
+                       design token entered twice. Stated and not judged: a page may layer
+                       near-whites deliberately. #}
+                    <tr>
+                        <td>Duplicate colours</td>
+                        <td>{{ report.styles.colours.sameColour|length }}</td>
+                        <td>
+                            {%- if report.styles.colours.sameColour|length -%}
+                                <ul class="r-drift">
+                                    {% for group in report.styles.colours.sameColour %}
+                                        <li>
+                                            {% for colour in group %}
+                                                <span class="r-chip" style="background: {{ colour }}"></span>
+                                                <span class="r-chip-label">{{ colour }}</span>{% if not loop.last %} <b>~</b> {% endif %}
+                                            {% endfor %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {%- else -%}
+                                None (no two colours within dE {{ report.styles.colours.deltaE }} of each other)
+                            {%- endif -%}
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <h2>Segments</h2>
     <table>
         <thead>
             <tr>
-                <th>&nbsp;</th>
-                <th class="r-n">share of page</th>
-                <th class="r-n">content to space</th>
-                <th class="r-n">first viewport</th>
+                <th>Segment</th>
+                <th class="r-n">Share of Page</th>
+                <th class="r-n">Ink to Segment</th>
+                <th class="r-n">First Viewport</th>
             </tr>
         </thead>
         <tbody>
             {% for c in report.categories %}
                 <tr>
-                    <td>{{ c.category }}</td>
+                    {# THE SECTIONS BEHIND THE PERCENTAGE. "Explainer 57.8%" is not something a
+                       reader can act on; seven named sections is. The number is the one drawn
+                       on the annotated screenshot, so a row in this table can be found on the
+                       image. #}
+                    <td><b>{{ c.category|title }}</b>
+                        {%- if c.blocks|length %}
+                            <ul class="r-parts">
+                                {% for b in c.blocks %}
+                                    {# A BLOCK THE MODEL DOUBTED SAYS SO. kohde.agency's case
+                                       study card was labelled wrong at 0.6 confidence, the
+                                       lowest on that page, and nothing in the report let a
+                                       reader see it. Marked rather than hidden or dropped:
+                                       the label is still our best answer, it is just the one
+                                       to check against the picture. #}
+                                    <li{% if b.unsure %} class="r-part--unsure"{% endif %}>
+                                        {{- b.what ?: 'unnamed' }} <span>(Slice {{ b.n }})</span>
+                                        {%- if b.unsure %} <em>unsure</em>{% endif -%}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {%- endif %}
+                    </td>
                     <td class="r-n">{{ r.pc(c.share) }}</td>
                     <td class="r-n">{{ r.pc(c.coverage) }}</td>
                     <td class="r-n">{{ r.pc(c.firstViewport) }}</td>
                 </tr>
             {% endfor %}
         </tbody>
+        {# COMPUTED, NOT PRINTED AS "100%". Both columns should come to exactly that, so a
+           row that adds them up is a check on the arithmetic rather than a decoration: if
+           the shares ever stop totalling, this is where it shows. It is how `explainer`
+           going missing would have been caught — atkinsonsca.co.uk reported 42% of its own
+           homepage and nothing said the other 58% had gone.
+
+           The ink column is the page's own coverage and NOT the sum of the column above it,
+           which would add percentages of different areas together and mean nothing. #}
+        <tfoot>
+            <tr>
+                <td><b>Total</b></td>
+                <td class="r-n">{{ r.pc(report.categories|reduce((sum, c) => sum + c.share, 0)) }}</td>
+                <td class="r-n">{{ r.pc(report.coverage) }}</td>
+                <td class="r-n">{{ r.pc(report.categories|reduce((sum, c) => sum + (c.firstViewport ?? 0), 0)) }}</td>
+            </tr>
+        </tfoot>
     </table>
 
-    <div class="r-facts">
-        {% if report.weightSummary %}<div>{{ report.weightSummary }}</div>{% endif %}
-        {% if report.speed %}
-            <div>PageSpeed {{ report.speed.score }}/100 desktop &middot;
-                LCP {{ report.speed.lab.lcpMs }}ms &middot; TBT {{ report.speed.lab.tbtMs }}ms</div>
-        {% endif %}
-        {% if report.styles %}
-            <div>{{ report.styles.colours.total }} colours &middot;
-                {{ report.styles.fonts.loaded }} font faces loaded of {{ report.styles.fonts.declared }} declared &middot;
-                {{ report.styles.fonts.rendered|length }} rendered as
-                {{ report.styles.fonts.rendered|map(f => f.family)|join(', ') }}</div>
-        {% endif %}
-    </div>
 
-    {% if report.styles and report.styles.colours.palette|length %}
-        {# THE PALETTE BY AREA, because a count cannot tell a system from an accident:
-           eleven colours where three cover most of the page is a palette with accents,
-           eleven spread evenly is an accretion. The areas are measured; which of the two
-           this is, is the reader's to judge. #}
-        {# OF THE PAGE, and not of the summed colour areas, which was the first version and
-           was a percentage of a number nobody can picture. The denominators differ by a
-           lot: the colour areas add up to 1.02x the page on kohde.agency and 0.78x on
-           whitepaper.co.uk, so "42.7%" meant something different on each.
 
-           These do not total 100%, and both directions are honest. Short of it is page
-           with no colour of its own — a transparent element over whatever is behind it.
-           Over it is elements nesting, where a panel and the box inside it both count
-           their own area. Saying "of the page" and letting the column fall where it does
-           beats a tidy 100% of something unmeasurable. #}
-        {# A CEILING THAT DECLARES ITSELF. This listed eight and said eleven above it, and
-           a reader counted. Whatever is cut has to be named and has to carry its share,
-           or the list quietly disagrees with the count beside it. #}
-        {% set pageArea = report.width * report.height %}
-        {% set shown = report.styles.colours.palette|slice(0, 12) %}
-        {% set rest = report.styles.colours.palette|slice(12) %}
-        <h2>The colours on the page</h2>
-        <ul class="r-swatches">
-            <li class="r-swatch r-swatch--head">
-                <span class="r-chip r-chip--blank"></span>
-                <span class="r-chip-label">&nbsp;</span>
-                <span class="r-chip-share">share of page</span>
-            </li>
-            {% for c in shown %}
-                <li class="r-swatch">
-                    <span class="r-chip" style="background: {{ c.colour }}"></span>
-                    <span class="r-chip-label">{{ c.colour }}</span>
-                    <span class="r-chip-share">{{ r.pc(pageArea ? c.area / pageArea : null) }}</span>
-                </li>
-            {% endfor %}
-            {% if rest|length %}
-                {% set restArea = rest|reduce((sum, c) => sum + c.area, 0) %}
-                <li class="r-swatch r-swatch--rest">
-                    <span class="r-chip r-chip--blank"></span>
-                    <span class="r-chip-label">and {{ rest|length }} more</span>
-                    <span class="r-chip-share">{{ r.pc(pageArea ? restArea / pageArea : null) }}</span>
-                </li>
-            {% endif %}
-        </ul>
-    {% endif %}
 
-    {% if report.styles and not report.styles.colours.sameColour|length %}
-        {# CHECKED AND FOUND NONE, SAID OUT LOUD. An absent section is indistinguishable
-           from a check that never ran, and on this tool that distinction is the whole
-           argument. whitepaper.co.uk is the case: its closest two colours are dE 6.58
-           apart, so nothing groups — which is a finding about the page, not a gap in the
-           report. #}
-        <h2>Colours that are the same colour</h2>
-        <p class="r-none">None. No two colours on this page are within dE
-            {{ report.styles.colours.deltaE }} of each other, the point at which a person
-            stops being able to tell them apart.</p>
-    {% endif %}
 
-    {% if report.styles and report.styles.colours.sameColour|length %}
-        {# COLOURS A PERSON WOULD CALL THE SAME ONE — within dE 5 in CIELAB once alpha is
-           collapsed. visionarygrid.studio declares its brand yellow twice, as
-           rgb(255,211,0) and rgb(255,210,2); jersey.com paints three near-blacks a point
-           apart. Differences nobody chose and nobody can see: a design token entered
-           twice. Stated and not judged — a page may layer near-whites deliberately. #}
-        <h2>Colours that are the same colour</h2>
-        <ul class="r-drift">
-            {% for group in report.styles.colours.sameColour %}
-                <li>
-                    {% for colour in group %}
-                        <span class="r-chip" style="background: {{ colour }}"></span>
-                        <span class="r-chip-label">{{ colour }}</span>{% if not loop.last %} <b>~</b> {% endif %}
-                    {% endfor %}
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+    {# THE CAVEATS ARE NOT PRINTED HERE, and this comment is the record of that decision.
+       They still reach the template in report.caveats and still live in report.json; what
+       was cut is showing them to a prospect. kohde.agency's only one names SwiftShader and
+       ANGLE, which reads as a fault in this tool rather than a finding about their site.
 
-    {% if report.caveats|length %}
-        <section class="r-caveats">
-            <h2>What this does not cover</h2>
-            <ul>
-                {% for c in report.caveats %}
-                    <li><b>{{ c.effect }}</b> {{ c.message }}</li>
-                {% endfor %}
-            </ul>
-        </section>
-    {% endif %}
+       THE ONE TO WATCH IS `blankRegion` / `contentNotPainted`. Those say a region of the
+       page was never measured — visionarygrid.studio has 3,600px of case study the capture
+       photographed as empty yellow — and with nothing printed, its percentages silently
+       exclude it and nothing on the sheet says so. If that ever turns up on a real lead,
+       it belongs back on the page in a sentence a client can read. #}
 </section>
 
 {% for i in 0..(sheets - 1) %}

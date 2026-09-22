@@ -47,8 +47,14 @@ class RunAudit extends BaseJob
             return;
         }
 
+        // NO INTERIM STATUS. This wrote `capturing` here and the entry sat in it for the
+        // minute the audit takes; the queue's own progress already says the job is running,
+        // and a status nobody acts on is a row in a dropdown that can never be chosen by
+        // hand. An entry now goes straight from `submitted` to `ready` or `failed`.
+        //
+        // What went with it: a re-run of a failed audit keeps the old `auditFailure` text on
+        // screen until the job finishes, because that blanking happened here.
         $this->progress($queue, 0.05, 'capturing');
-        $this->save($entry, ['auditStatus' => 'capturing', 'auditFailure' => '']);
 
         $audit = LeadGenerator::getInstance()->audit;
         $result = $audit->run($url, (int) $entry->id);
@@ -70,7 +76,9 @@ class RunAudit extends BaseJob
         }
 
         $this->save($entry, [
-            'auditStatus' => 'ready',
+            // `in-review` AND NOT `ready`: the report exists, and the next thing that has
+            // to happen is a person reading it. The status names whose move it is.
+            'auditStatus' => 'in-review',
             'auditFailure' => '',
             'auditReport' => [$asset->id],
         ]);

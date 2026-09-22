@@ -402,6 +402,28 @@
                     <div class="c-case-content__text">{{ prose|raw }}</div>
                 {% endif %}
                 {% set leading = false %}
+            {% elseif block.type.handle == 'contentHomepageAnalysis' %}
+                {# THE FORM AS A BLOCK, so the page decides where it sits rather than the
+                   template deciding for it. The tool page used to pass `form` to
+                   _components/content, which pinned it beside the columns; as a block it
+                   can go after the argument that earns it.
+
+                   `with_context = false` and the form gets what it needs explicitly: this
+                   component is included the same way, and a form that quietly read whatever
+                   happened to be in scope would work here and break in the next caller. #}
+                {# THE WHITE PANEL COMES WITH IT. In the `form` slot the component wrapped
+                   both in `c-content__form-cols` — the form and the ways-in box as one
+                   two-column object — so a block that renders the form alone loses the half
+                   of it that says "or just talk to me". The grid class is the same one, so
+                   the two are still the same object wherever it is placed. #}
+                <div class="c-case-content__form c-content__form-cols">
+                    {{ include('_components/audit-form', {}, with_context = false) }}
+                    {% include '_components/ctas' with {
+                        ctas: craft.frontend.ctas(),
+                        heading: 'Or just get in touch',
+                    } only %}
+                </div>
+                {% set leading = false %}
             {% endif %}
         {% endfor %}
     </div>

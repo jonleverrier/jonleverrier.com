@@ -19,6 +19,12 @@ web_environment:
     # can't exec on arm64. Read by rollup-plugin-critical during `npm run build`.
     - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
     - PUPPETEER_SKIP_DOWNLOAD=true
+    # The audit tool drives Playwright's own Chromium (Puppeteer's Chrome for
+    # Testing has no arm64 build). Its default cache is ~/.cache, which lives in
+    # the container's own layer and is lost every time the container is recreated —
+    # a 115MB re-download, and a capture that fails until someone notices. The
+    # global cache is a Docker volume, so it survives, and it is not mutagen-synced.
+    - PLAYWRIGHT_BROWSERS_PATH=/mnt/ddev-global-cache/playwright
 nodejs_version: "22"
 corepack_enable: false
 

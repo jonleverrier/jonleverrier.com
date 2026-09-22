@@ -8,7 +8,7 @@ settings:
   charLimit: null
   code: true
   initialRows: 4
-  multiline: false
+  multiline: true
   placeholder: null
   uiMode: normal
 translationKeyFormat: null

@@ -96,9 +96,9 @@ $cc-flow: ':not(.is-images-only)';
 $cc-gap-image:     $c-case-content-gap; // between images in a run; also the spine's own air
 $cc-gap-figure:    rem(44);             // prose into a figure — the heading floor, so a picture gets the air a section break gets (measured: 22 read as tight against 44 everywhere else)
 
-$cc-prose:   '.c-case-content__text, .c-case-content__code, .c-case-content__figure--inline, .c-case-content__figure--backdrop';
+$cc-prose:   '.c-case-content__text, .c-case-content__code, .c-case-content__form, .c-case-content__figure--inline, .c-case-content__figure--backdrop';
 $cc-imagery: '.c-case-content__figure:not(.c-case-content__figure--inline, .c-case-content__figure--backdrop), .c-case-content__pair, .c-case-content__trio';
-$cc-hosts:   '.c-case-content__text, .c-case-content__code, .c-case-content__quote, .c-case-content__method'; // blocks that can carry the spine
+$cc-hosts:   '.c-case-content__text, .c-case-content__code, .c-case-content__form, .c-case-content__quote, .c-case-content__method'; // blocks that can carry the spine
 
 // The default: a join is a spine.
 .c-case-content#{$cc-flow} > * + :is(#{$cc-hosts})::before,
@@ -257,6 +257,20 @@ $cc-hosts:   '.c-case-content__text, .c-case-content__code, .c-case-content__quo
         // to shrink below its intrinsic width and push the row past the container.
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+}
+
+
+// THE SAME WIDTH THE FORM HAS ON /contact, which is $g-measure-wide — the max-width
+// .c-content__body carries. As a Case Content block it sat in the blocks track instead,
+// which runs to 1600 and landed at 1140: thirty pixels wider than the same form on the
+// contact page, which is the kind of difference that reads as a mistake rather than a
+// decision. Not the 740 reading measure either — this is a form, not a paragraph.
+//
+// Listed with the prose above so it takes the paragraph gap and can carry the spine, which
+// makes it part of the argument rather than an interruption in it.
+.c-case-content__form {
+    max-width: $g-measure-wide;
+    margin-inline: auto;
 }
 
 .c-case-content__text {

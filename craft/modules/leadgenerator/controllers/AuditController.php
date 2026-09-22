@@ -55,6 +55,12 @@ class AuditController extends Controller
         if ($firstName === '') {
             $fieldErrors['firstName'] = 'Please add your first name.';
         }
+        // REQUIRED ON THE SERVER AS WELL AS IN THE MARKUP. `required` is a courtesy to the
+        // person filling the form in; it is not a check, because a post that never went
+        // through the form never saw it.
+        if ($surname === '') {
+            $fieldErrors['surname'] = 'Please add your surname.';
+        }
         if ($url === null) {
             $fieldErrors['auditUrl'] = 'Please add your homepage address, like example.com';
         }
@@ -85,7 +91,7 @@ class AuditController extends Controller
             'surname' => $surname,
             'email' => $email,
             'auditUrl' => $url,
-            'auditStatus' => 'submitted',
+            'auditStatus' => 'received',
             'referrerUrl' => $guard->ownReferrer((string) $request->getBodyParam('referrerUrl')),
         ]);
 

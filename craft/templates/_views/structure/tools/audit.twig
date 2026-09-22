@@ -10,9 +10,13 @@
   unlike the single router which uses the name. Section handle is `tools`.
 
   Built on the same `_components/content` shape as the contact single and the generic page,
-  so a tool sits in the family rather than looking like a new kind of page. The form is the
-  only thing it adds: `form` takes a template path, so the shared component renders this
-  tool's form in the place the contact page puts its own.
+  so a tool sits in the family rather than looking like a new kind of page.
+
+  THE FORM IS A CASE CONTENT BLOCK, not a slot. It used to be passed as `form` and landed
+  beside the columns wherever the component put it; as a `contentHomepageAnalysis` block it
+  goes where the argument for it ends, which is an editorial decision and belongs in the CMS.
+  No block, no form — a tool page with nothing to fill in is a page that is not finished, and
+  that should be visible rather than papered over by a fallback.
 #}
 {% extends '_layouts/page.twig' %}
 {% import '_macros/text' as text %}
@@ -23,10 +27,11 @@
 {% set slabModifier = 'b-slab--l600' %}
 
 {% block siteContent %}
-    {# CTAs from the globals single — the same source the footer and the contact page use,
-       filtered by the visitor's VIP purpose. Somebody who would rather not wait for a
-       report still needs a way to reach Jon. #}
-    {% set ctas = craft.frontend.ctas() %}
+    {# THE CTAs TRAVEL WITH THE FORM, not with the page. They used to be passed here and
+       the component drew them beside the `form` slot; now the form is a Case Content block
+       and takes its ways-in box with it, so passing them here as well drew the white panel
+       twice — once empty beside nothing, once properly beside the form. See
+       _components/case-content, contentHomepageAnalysis. #}
 
     {# The Summary as a standfirst above the form, exactly as on a generic page: a
        plain-text field, so it is escaped here; blank lines become paragraphs and single
@@ -41,15 +46,36 @@
         {% endset %}
     {% endif %}
 
-    {# Whisper is the SECTION's name rather than the entry's title, which is already the
-       h1 — repeating it above itself reads as a stutter. Taken from the section so
-       renaming it in the CMS carries here. #}
+    {# Whisper is the entry's TITLE and the h1 is its longTitle: "Homepage Analysis" over
+       "The space on your homepage is a budget nobody has ever audited". The short name says
+       what the page is, the long one makes the argument, and a reader gets them in that
+       order.
+
+       FALLS BACK TO THE SECTION when there is no longTitle, because the h1 falls back to
+       the title — and the same words twice, once small and once large, reads as a stutter.
+       That was why this was the section's name to begin with. #}
+    {# The Case Content builder, rendered to HTML first and handed over finished — the same
+       shape the About single and the case studies use. `_components/content` takes markup
+       and knows nothing about block types, which is what lets a tool page carry the same
+       blocks as a case study without either template learning about the other. #}
+    {% set caseBlocks = entry.caseContent.all() %}
+    {% set blocks = include('_components/case-content', {
+        blocks: caseBlocks,
+    }, with_context = false) %}
+
+    {% set heading = entry.longTitle ?: entry.title %}
+
+    {# `blocksAfterBody` puts the blocks BELOW the standfirst, as the About single and the
+       notes channel pass it. Without it the component renders blocks above the body and the
+       page's own summary ends up under everything it was meant to introduce.
+
+       The comment is out here because a Twig comment INSIDE a hash literal is a syntax error
+       and takes the page down with it. #}
     {% include '_components/content' with {
-        whisper: entry.section.name,
-        title: entry.longTitle ?: entry.title,
+        whisper: heading == entry.title ? entry.section.name : entry.title,
+        title: heading,
         body: standfirst,
-        form: '_components/audit-form',
-        ctas: ctas,
-        ctasHeading: 'Or just get in touch',
+        blocks: blocks|trim ? blocks : null,
+        blocksAfterBody: true,
     } only %}
 {% endblock %}

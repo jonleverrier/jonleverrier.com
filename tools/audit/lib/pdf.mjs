@@ -33,7 +33,8 @@ import sharp from 'sharp';
 import {readFileSync, existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {leaves} from './blocks.mjs';
-import {surfaceArea} from './surface.mjs';
+import {CATEGORY_ORDER, surfaceArea} from './surface.mjs';
+import {titleCase} from './debug.mjs';
 import {noteCodes} from './notes.mjs';
 import {bytesSummary} from './bytes.mjs';
 import {clusterColours, SAME_COLOUR_DE} from './styles.mjs';
@@ -54,11 +55,151 @@ export const MAX_IMAGE_PAGES = 12;
  * a redesign cannot change what was measured and a new measurement cannot be forgotten by
  * a template — it either appears here or it does not exist to the report.
  */
+/**
+ * THE TECHNICAL SCORE, AND IT IS OURS RATHER THAN GOOGLE'S.
+ *
+ * The speed score on this report is PageSpeed divided by ten: a reader who disputes it is
+ * disputing Google. This one is not like that, and the report has to be built knowing the
+ * difference, because the two sit inches apart and will be read as equals.
+ *
+ * WEIGHT ON A LOG CURVE, because the linear version makes 4.6MB and 9.2MB both just "bad"
+ * and stops discriminating exactly where pages get interesting. On this curve doubling a
+ * page's weight always costs the same 2.5 points, wherever it started: at the median it
+ * scores 10, at twice the median 5, at four times it 0.
+ *
+ * DEFERRAL IS THE OTHER FORTY PER CENT, because weight alone cannot tell apart two pages
+ * of the same size where one makes a visitor who reads the first screen pay for all of it.
+ * Full marks at 40% deferred, which is roughly what a page doing ordinary lazy loading
+ * manages; kohde.agency defers 31%, atkinsonsca.co.uk defers nothing.
+ *
+ * THE SHORT-PAGE GUARD IS NOT OPTIONAL. A page barely taller than the viewport has nothing
+ * below the fold to defer, so nought per cent deferred is the correct answer rather than a
+ * fault, and it takes full marks. Without it whitepaper.co.uk — 0.2MB, and about as light
+ * as a page gets — scored 6.
+ *
+ * The split and the target are judgement, not measurement. They are constants so that
+ * moving them is one edit and a test failure rather than a hunt.
+ */
+export const MEDIAN_PAGE_MB = 2.3;
+export const DEFERRAL_TARGET = 0.4;
+export const WEIGHT_SHARE = 0.6;
+export const SHORT_PAGE_VIEWPORTS = 2;
+
+const clamp10 = (n) => Math.max(0, Math.min(10, n));
+
+export function technicalScore(weight, pageHeight, viewportHeight = 900) {
+    if (!weight?.measured || !weight.afterScroll?.bytes) {
+        return null;
+    }
+    const median = MEDIAN_PAGE_MB * 1048576;
+    const total = weight.afterScroll.bytes;
+    const deferred = 1 - (weight.atLoad?.bytes ?? total) / total;
+    const shortPage = pageHeight < viewportHeight * SHORT_PAGE_VIEWPORTS;
+
+    const weightScore = clamp10(10 * (1 - Math.log2(total / median) / 2));
+    const deferScore = shortPage ? 10 : clamp10(10 * (deferred / DEFERRAL_TARGET));
+
+    return {
+        score: Number((weightScore * WEIGHT_SHARE + deferScore * (1 - WEIGHT_SHARE)).toFixed(1)),
+        weightScore: Number(weightScore.toFixed(1)),
+        deferScore: Number(deferScore.toFixed(1)),
+        deferred,
+        shortPage,
+        medianMb: MEDIAN_PAGE_MB,
+    };
+}
+
+/**
+ * THE BRAND SCORE, WHICH IS REALLY A CONSISTENCY SCORE.
+ *
+ * MOST BRAND SIGNALS ARE TASTE AND CANNOT BE SCORED. Eleven colours is not worse than six,
+ * and two typefaces is not worse than one — those are choices, and a number claiming
+ * otherwise would assert a judgement the measurement cannot support. That mistake has been
+ * made on this report once already, in a column that called a decorative photograph ten
+ * times more "content" than an article.
+ *
+ * A DUPLICATE IS NEVER A CHOICE. Two colours within dE 2.3 in CIELAB are two colours a
+ * person cannot tell apart, so a page carrying both is carrying a design token that was
+ * entered twice: visionarygrid.studio declares its brand yellow as rgb(255,211,0) and
+ * rgb(255,210,2), jersey.com paints three near-blacks a point apart. Nobody decided that,
+ * which is exactly why it can be scored.
+ *
+ * AREA WAS TRIED AND REJECTED. The first version scored "stray" colours — those outside the
+ * smallest set covering 99% of the painted colour. whitepaper.co.uk killed it: its brand
+ * red covers 0.54% of the page, because a button is small, and the score marked the most
+ * deliberate colour on the page as a leftover. Area cannot tell an accent from an accident.
+ *
+ * The penalty is judgement, not measurement, so it is a constant and has a test.
+ */
+export const DUPLICATE_PENALTY = 2;
+
+export function brandScore(styles) {
+    const colours = styles?.colours;
+    if (!colours?.palette?.length || !Array.isArray(colours.sameColour)) {
+        return null;
+    }
+    const groups = colours.sameColour.length;
+
+    return {
+        score: Number(Math.max(0, 10 - DUPLICATE_PENALTY * groups).toFixed(1)),
+        groups,
+        colours: colours.sameColour.reduce((sum, g) => sum + g.length, 0),
+        deltaE: colours.deltaE,
+    };
+}
+
+/**
+ * BELOW THIS, SAY SO. The model returns a confidence per block and it was measured and
+ * thrown away. kohde.agency block 4 is a case study card on a large graphic; the model read
+ * the tagline as the company's own voice, called it `explainer`, and scored itself 0.6 —
+ * the lowest on that page, against 0.72 for a more obvious case study card higher up. It
+ * knew. Nothing in the report said so, and it took cropping the screenshot to find.
+ *
+ * HIGHER THAN notes.mjs's LOW_CONFIDENCE OF 0.5, deliberately, because these are different
+ * questions. That one asks whether a block should be reported as `unclassified` at all;
+ * this one asks whether a reader should look at the picture before believing the label.
+ * At 0.7 the only block flagged on kohde is the one that was wrong.
+ */
+export const UNSURE = 0.7;
+
+/** The measured rows, plus a nought row for every category this page spends nothing on. */
+export function withEmptyCategories(rows) {
+    const present = new Set(rows.map((r) => r.category));
+    const empty = CATEGORY_ORDER
+        .filter((c) => c !== 'unclassified' && !present.has(c))
+        .map((category) => ({category, area: 0, share: 0, coverage: null, firstViewport: null, blocks: []}));
+
+    // Nought rows sit above `unclassified`, which stays last: a refusal to label is not a
+    // category and must never read as the page's smallest feature.
+    return [
+        ...rows.filter((r) => r.category !== 'unclassified'),
+        ...empty,
+        ...rows.filter((r) => r.category === 'unclassified'),
+    ];
+}
+
 export function reportData(outDir, viewportHeight = 900) {
     const meta = JSON.parse(readFileSync(join(outDir, 'meta.json'), 'utf8'));
     const {notes, tree} = JSON.parse(readFileSync(join(outDir, 'blocks.json'), 'utf8'));
     const {full, firstViewport, coverage} = surfaceArea(tree, meta.viewport?.height ?? viewportHeight);
     const fold = (category) => firstViewport.find((f) => f.category === category)?.share ?? null;
+    // Grouped once: the brand score is a judgement ABOUT the grouping, so it must see the
+    // same one the template prints rather than deriving its own.
+    const grouped = meta.styles?.measured ? withColourGroups(meta.styles) : null;
+
+    // THE NUMBER IS THE ONE DRAWN ON THE SCREENSHOT. lib/debug.mjs labels each block with
+    // its index in leaves() order, so a reader can read "4" in the table and find 4 on the
+    // image. If either stops using leaves() order the table starts pointing at the wrong
+    // section, which is worse than not pointing at all.
+    const blocksByCategory = new Map();
+    leaves(tree).forEach((l, n) => {
+        const key = l.label?.category ?? 'unclassified';
+        const held = blocksByCategory.get(key) ?? [];
+        const confidence = l.label?.confidence ?? null;
+        held.push({n, what: titleCase(l.label?.what ?? null), y: l.y, h: l.h, confidence,
+            unsure: confidence !== null && confidence < UNSURE});
+        blocksByCategory.set(key, held);
+    });
 
     return {
         url: meta.url,
@@ -68,18 +209,34 @@ export function reportData(outDir, viewportHeight = 900) {
         height: meta.image.height,
         blocks: leaves(tree).length,
         coverage,
-        categories: full.map((s) => ({...s, firstViewport: fold(s.category)})),
+        // EVERY CATEGORY, INCLUDING THE ONES WORTH NOTHING. An absent row reads as a
+        // category we did not check; a row at 0.0% reads as a page that spends nothing on
+        // it, and that is frequently the finding — atkinsonsca.co.uk gives no space at all
+        // to `trust`, which for an accountancy firm is worth saying out loud.
+        //
+        // `unclassified` is the exception and is only ever shown when it happened. It is
+        // not a category, it is the model declining to guess, and "unclassified 0.0%" tells
+        // a reader nothing about their homepage.
+        categories: withEmptyCategories(full.map((s) => ({
+            ...s,
+            firstViewport: fold(s.category),
+            blocks: blocksByCategory.get(s.category) ?? [],
+        }))),
         // NULL AND NOT UNDEFINED, because this record is serialised: `undefined` drops out
         // of JSON entirely, so a consumer cannot tell "we did not measure it" from "the
         // field was never there". An absence has to survive the wire to be an absence.
         speed: meta.psi && !meta.psi.error ? meta.psi : null,
         weight: meta.bytes?.measured ? meta.bytes : null,
         weightSummary: bytesSummary(meta.bytes),
+        // A judgement at a threshold, derived here for the same reason the colour grouping
+        // is: moving the bands must not mean re-photographing a page that has not changed.
+        technical: technicalScore(meta.bytes, meta.image.height, meta.viewport?.height ?? viewportHeight),
         // The styles as measured, plus the one thing that is a judgement rather than a
         // measurement: which of those colours a person would call the same colour. Derived
         // HERE and not at capture time, so the threshold can move without re-photographing
         // a page whose colours have not.
-        styles: meta.styles?.measured ? withColourGroups(meta.styles) : null,
+        styles: grouped,
+        brand: brandScore(grouped),
         // The honesty layer, verbatim. A report that drops these is not this tool's report.
         caveats: Object.values(notes?.conditions ?? {}).map((c) => ({effect: c.effect, message: c.message})),
         noteCodes: noteCodes(notes),
@@ -212,20 +369,88 @@ export function stubTemplate(data, image) {
 export async function renderPdf(outDir, opts = {}) {
     const out = opts.out ?? join(outDir, 'report.pdf');
     const png = opts.annotated ?? join(outDir, 'debug.png');
-    if (!existsSync(png)) {
+    if (!opts.url && !existsSync(png)) {
         throw new Error(`no annotated image at ${png} — has analyse.mjs run?`);
     }
     const data = reportData(outDir);
-    const image = await sliceAnnotated(png, opts.maxImagePages ?? MAX_IMAGE_PAGES);
-    const html = (opts.template ?? stubTemplate)(data, image);
+    // WITH A URL, THE DOCUMENT IS CRAFT'S. The Twig template at _views/report/audit does its
+    // own pagination and fetches the annotated image through a signed controller action, so
+    // there is nothing to slice here and nothing to hand it. Without one this falls back to
+    // the stub, which is what the tool prints when it is run outside Craft.
+    const image = opts.url ? null : await sliceAnnotated(png, opts.maxImagePages ?? MAX_IMAGE_PAGES);
+    const html = opts.url ? null : (opts.template ?? stubTemplate)(data, image);
 
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
-        // `domcontentloaded` and not `networkidle`: every image is a data URI, so there is
-        // no network to go idle and waiting for it is waiting for a timeout.
-        await page.setContent(html, {waitUntil: 'domcontentloaded'});
-        await page.pdf({path: out, format: 'A4', printBackground: true, preferCSSPageSize: true});
+        // `ignoreHTTPSErrors` FOR OUR OWN SITE, because in local development the certificate
+        // is self-signed and the printer refuses it: the fonts came back
+        // ERR_CERT_AUTHORITY_INVALID and the PDF printed in a fallback face, looking close
+        // enough that nobody noticed. The only thing being fetched is this application.
+        const context = await browser.newContext({ignoreHTTPSErrors: true});
+        const page = await context.newPage();
+        if (opts.url) {
+            // `networkidle` HERE, because Craft's version fetches the annotated screenshot
+            // over HTTP and printing before it lands gives a report with a blank page in it.
+            const res = await page.goto(opts.url, {waitUntil: 'networkidle', timeout: 60000});
+            if (!res || !res.ok()) {
+                throw new Error(`the report page answered ${res ? res.status() : 'nothing'}`);
+            }
+        } else {
+            // `domcontentloaded` and not `networkidle`: every image in the stub is a data
+            // URI, so there is no network to go idle and waiting for it is waiting for a
+            // timeout.
+            await page.setContent(html, {waitUntil: 'domcontentloaded'});
+        }
+        // A RUNNING HEAD ON EVERY PAGE, through Chromium's own header/footer rather than
+        // CSS: `@page { @top-center }` is in the spec and Chromium does not implement it,
+        // so this is the only way to get one into the PDF.
+        //
+        // THE TEMPLATE IS ITS OWN LITTLE DOCUMENT. It does not inherit the report's
+        // stylesheet, its fonts or its colours, so everything it needs is inline and it
+        // falls back to a system mono rather than silently printing in Times. The classes
+        // `pageNumber` and `totalPages` are Chromium's and are substituted by the printer.
+        //
+        // WHOSE REPORT THIS IS, not whose site it is about. The audited URL is already the
+        // title at the top of page one; a reader who has printed this and put it down needs
+        // to know where it came from. Craft passes its own site URL, so this is right on any
+        // install rather than a name written into a general-purpose tool.
+        //
+        // It draws inside the @page top margin, which PAGE.margin has to stay in step with;
+        // 45px is enough room for one 8px line and the space below it.
+        // A DATA URI AND NOT A PATH. The footer template is its own document and is not
+        // resolved against the page's origin, so `<img src="/…">` fetches nothing and fails
+        // silently — the same way the screenshot did. Inlined, there is nothing to fetch.
+        const mark = opts.logo && existsSync(opts.logo)
+            ? `<img src="data:image/svg+xml;base64,${readFileSync(opts.logo).toString('base64')}"`
+                + ` style="height:11px;width:11px;margin-right:6px;display:block;`
+                + `position:relative;top:-1px;">`
+            : '';
+        const bar = `<div style="width:100%;margin:0 45px;font-size:8px;color:#8a8a8a;`
+            + `font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;`
+            + `display:flex;align-items:center;justify-content:space-between;">`
+            // `line-height:1` IS WHAT CENTRES IT. `align-items:center` centres the mark on
+            // the LINE BOX, and a line box is taller than its glyphs — it carries room for
+            // ascenders and descenders the address never uses — so the mark sat visibly
+            // above the text. Collapsed to the text's own height, the two agree.
+            //
+            // The last pixel is the `top:-1px` on the mark, and it was measured rather than
+            // eyeballed: rendered at 3x and read off the dark-pixel extents, the mark's
+            // centre sat 3px below the text's, which is one pixel on the page.
+            + `<span style="display:flex;align-items:center;line-height:1;">${mark}`
+            + `${esc(opts.from || data.url)}</span>`
+            + `<span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>`
+            + `</div>`;
+        await page.pdf({
+            path: out,
+            format: 'A4',
+            printBackground: true,
+            preferCSSPageSize: true,
+            displayHeaderFooter: true,
+            headerTemplate: bar,
+            // An empty span, not nothing: left out entirely, Chromium prints its own
+            // default footer — the source URL and the date — along the bottom of each page.
+            footerTemplate: '<span></span>',
+        });
     } finally {
         await browser.close();
     }
@@ -233,9 +458,12 @@ export async function renderPdf(outDir, opts = {}) {
     return {
         path: out,
         bytes: readFileSync(out).length,
-        imagePages: image.slices.length,
-        imagePagesAvailable: image.pages,
-        truncated: image.truncated,
+        // Null and not nought when Craft printed it: the template paginated the screenshot
+        // itself and this function never counted the sheets, which is not the same as there
+        // being none of them.
+        imagePages: image ? image.slices.length : null,
+        imagePagesAvailable: image ? image.pages : null,
+        truncated: image ? image.truncated : null,
         data,
     };
 }

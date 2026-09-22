@@ -7,6 +7,8 @@ use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\helpers\Assets as AssetsHelper;
 use craft\helpers\FileHelper;
+use craft\helpers\UrlHelper;
+use modules\leadgenerator\controllers\ReportController;
 use yii\base\Component;
 
 /**
@@ -75,6 +77,29 @@ class Audit extends Component
     }
 
     /**
+     * The signed URL Playwright prints. See controllers/ReportController.
+     *
+     * LOCALHOST AND NOT THE SITE URL, because the browser doing the printing is inside the
+     * same container as the web server: resolving the public hostname from in there goes out
+     * to DNS and back through the router for a page that is a socket away, and in local
+     * development it may not resolve at all.
+     *
+     * `localhost` AND NOT `127.0.0.1`, which was tried and printed the SITE HOMEPAGE into
+     * the report: the address does not match a Craft site, so the action route never
+     * resolves and Craft serves the default site instead. It fails silently and looks like
+     * a template bug. If this ever has to change, print one and look at it.
+     */
+    public function reportUrl(int $entryId): string
+    {
+        $url = UrlHelper::actionUrl('leadgenerator/report/view', [
+            'entry' => $entryId,
+            't' => ReportController::token($entryId),
+        ]);
+
+        return preg_replace('~^https?://[^/]+~', 'http://localhost', $url);
+    }
+
+    /**
      * The directory this entry's artefacts live in, made if it is not there.
      *
      * Craft's own storage path rather than an alias: it is the one Craft itself writes to,
@@ -107,7 +132,14 @@ class Audit extends Component
             // report.json before the PDF, because the Twig template reads it and nothing
             // in PHP may recompute a percentage — see tools/audit/data.mjs.
             ['data', ['tools/audit/data.mjs', $dir]],
-            ['report', ['tools/audit/pdf.mjs', $dir]],
+            // THE REPORT IS CRAFT'S TEMPLATE, PRINTED. Without --url this step falls back to
+            // the stub in lib/pdf.mjs, which is what it did for months: every design change
+            // in _views/report/audit.twig showed up in the preview and none of it reached
+            // the PDF a lead was sent. The token is the same one the preview uses — the page
+            // sits beside a stranger's email address and is not public.
+            ['report', ['tools/audit/pdf.mjs', $dir, '--url=' . $this->reportUrl($entryId),
+                '--from=' . rtrim(Craft::$app->getSites()->getPrimarySite()->getBaseUrl() ?? '', '/'),
+                '--logo=' . __DIR__ . '/../assets/mark.svg']],
         ] as [$step, $args]) {
             $result = $this->node($args);
             if (!$result['ok']) {
@@ -141,6 +173,15 @@ class Audit extends Component
             'HOME' => getenv('HOME') ?: '/home/forge',
             'PATH' => getenv('PATH') ?: '/usr/local/bin:/usr/bin:/bin',
         ];
+
+        // ddev keeps the Playwright browsers on a volume that survives the container being
+        // recreated, and says so through this variable; Forge leaves them under HOME and
+        // does not set it. Passed through only when it holds something, because an empty
+        // value is not "unset" to Playwright — it sends it looking in the filesystem root.
+        $browsers = getenv('PLAYWRIGHT_BROWSERS_PATH');
+        if ($browsers) {
+            $env['PLAYWRIGHT_BROWSERS_PATH'] = $browsers;
+        }
 
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $process = proc_open($cmd, $descriptors, $pipes, $root, $env);

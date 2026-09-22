@@ -47,7 +47,7 @@ class AuditController extends Controller
         $entry->enabled = false;
         $entry->setFieldValues([
             'auditUrl' => $url,
-            'auditStatus' => 'submitted',
+            'auditStatus' => 'received',
             'firstName' => 'Console',
             'email' => 'console@example.com',
         ]);
@@ -81,7 +81,7 @@ class AuditController extends Controller
         $status = (string) $after->auditStatus?->value;
         $took = time() - $started;
 
-        $this->stdout("status       {$status}   ({$took}s)\n", $status === 'ready' ? Console::FG_GREEN : Console::FG_RED);
+        $this->stdout("status       {$status}   ({$took}s)\n", $status === 'in-review' ? Console::FG_GREEN : Console::FG_RED);
         if ($status === 'failed') {
             $this->stdout('why          ' . $after->auditFailure . "\n", Console::FG_RED);
 

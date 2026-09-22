@@ -13,7 +13,10 @@ import {mkdtempSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import sharp from 'sharp';
-import {MAX_IMAGE_PAGES, PAGE, reportData, sliceAnnotated, stubTemplate, withColourGroups} from '../lib/pdf.mjs';
+import {brandScore, DEFERRAL_TARGET, DUPLICATE_PENALTY, MAX_IMAGE_PAGES, MEDIAN_PAGE_MB, PAGE,
+    reportData, sliceAnnotated, stubTemplate, technicalScore, UNSURE, withColourGroups,
+    withEmptyCategories} from '../lib/pdf.mjs';
+import {CATEGORY_ORDER} from '../lib/surface.mjs';
 import {SAME_COLOUR_DE} from '../lib/styles.mjs';
 
 const leaf = (y, h, category, coverage = 0.4) => ({
@@ -199,4 +202,204 @@ test('a chain does not make a group', () => {
     assert.equal(groups.length, 1, 'only the pair that really is one colour');
     assert.equal(groups[0].length, 2);
     assert.ok(!groups[0].includes('rgb(240, 240, 245)'));
+});
+
+/* ------------------------------------------------- the technical score, ours not Google's */
+
+const MB = 1048576;
+const weight = (totalMb, deferred = 0) => ({
+    measured: true,
+    afterScroll: {bytes: Math.round(totalMb * MB), requests: 10},
+    atLoad: {bytes: Math.round(totalMb * MB * (1 - deferred)), requests: 8},
+});
+const TALL = 9000;
+
+/**
+ * THE CURVE IS THE POINT. A linear score makes 4.6MB and 9.2MB both simply "bad" and stops
+ * telling pages apart where it matters most; on a log curve doubling always costs the same,
+ * so the difference between twice the median and four times it is still 5 points.
+ */
+test('doubling a page\'s weight always costs the same, wherever it started', () => {
+    const at = (mb) => technicalScore(weight(mb), TALL).weightScore;
+    assert.equal(at(MEDIAN_PAGE_MB), 10, 'the median scores full marks');
+    assert.equal(at(MEDIAN_PAGE_MB * 2), 5);
+    assert.equal(at(MEDIAN_PAGE_MB * 4), 0);
+    // And the step between each doubling is the same 5 points, not a shrinking tail.
+    assert.equal(at(MEDIAN_PAGE_MB) - at(MEDIAN_PAGE_MB * 2), at(MEDIAN_PAGE_MB * 2) - at(MEDIAN_PAGE_MB * 4));
+});
+
+test('a page lighter than the median is not scored above ten', () => {
+    assert.equal(technicalScore(weight(0.2), TALL).weightScore, 10);
+});
+
+test('deferral earns its forty per cent, and full marks at the target', () => {
+    const none = technicalScore(weight(MEDIAN_PAGE_MB, 0), TALL);
+    const target = technicalScore(weight(MEDIAN_PAGE_MB, DEFERRAL_TARGET), TALL);
+    assert.equal(none.deferScore, 0);
+    assert.equal(target.deferScore, 10);
+    // Same weight, so the whole gap between them is the deferral's share.
+    assert.equal(Number((target.score - none.score).toFixed(1)), 4);
+});
+
+/**
+ * whitepaper.co.uk is why. 0.2MB and nothing deferred, because there is nothing below the
+ * fold to defer — the correct behaviour for a short page, scored 6 before this guard.
+ */
+test('a page with nothing below the fold is not punished for deferring nothing', () => {
+    const short = technicalScore(weight(0.2, 0), 1200);
+    assert.equal(short.shortPage, true);
+    assert.equal(short.deferScore, 10);
+    assert.equal(short.score, 10);
+});
+
+test('an unmeasured census scores nothing rather than nought', () => {
+    assert.equal(technicalScore({measured: false}, TALL), null, 'a score of 0 would be a verdict we did not earn');
+    assert.equal(technicalScore(null, TALL), null);
+});
+
+test('the report carries the score, and carries null when there was no census', () => {
+    assert.equal(reportData(audit()).technical, null);
+    const scored = reportData(audit({meta: {bytes: weight(4.3, 0)}}));
+    assert.ok(scored.technical.score > 0 && scored.technical.score < 10);
+});
+
+/* ------------------------------------------------ the brand score: duplicates, not taste */
+
+const styled = (palette, sameColour) => ({
+    colours: {total: palette.length, values: palette.length, deltaE: 2.3, palette, sameColour},
+});
+const colours = (...areas) => areas.map((area, i) => ({colour: `rgb(${i}, 0, 0)`, area}));
+
+test('a page with no two colours a person could confuse scores ten', () => {
+    assert.equal(brandScore(styled(colours(4000, 3000, 2000), [])).score, 10);
+});
+
+test('each group of colours nobody can tell apart costs its penalty', () => {
+    const one = styled(colours(4000, 3000, 2000), [['rgb(0, 0, 0)', 'rgb(1, 0, 0)']]);
+    assert.equal(brandScore(one).score, 10 - DUPLICATE_PENALTY);
+    assert.equal(brandScore(one).groups, 1);
+    assert.equal(brandScore(one).colours, 2, 'the colours involved, for the row beside the score');
+});
+
+/**
+ * NOT A JUDGEMENT ON THE PALETTE'S SIZE. Eleven colours is a choice and six is a choice, so
+ * a wide palette with nothing duplicated takes full marks. This is the line between a
+ * consistency score and a taste one, and it is the whole reason area was abandoned.
+ */
+test('a big palette is not punished for being big', () => {
+    assert.equal(brandScore(styled(colours(...Array(14).fill(1000)), [])).score, 10);
+});
+
+/**
+ * whitepaper.co.uk is why area was rejected. Its brand red covers 0.54% of the page because
+ * a button is small, and the area-based version marked the most deliberate colour on the
+ * page as a leftover. A tiny colour is not a fault.
+ */
+test('a deliberate accent covering almost nothing costs nothing', () => {
+    assert.equal(brandScore(styled(colours(9000, 5000, 60), [])).score, 10);
+});
+
+test('the score has a floor, so a chaotic page is not scored below nothing', () => {
+    const many = Array.from({length: 9}, (_, i) => [`rgb(${i}, 0, 0)`, `rgb(${i}, 0, 1)`]);
+    assert.equal(brandScore(styled(colours(1000, 1000), many)).score, 0);
+});
+
+test('no grouping means no score, rather than a score of ten', () => {
+    assert.equal(brandScore(null), null);
+    assert.equal(brandScore({colours: {palette: colours(10)}}), null, 'ungrouped styles cannot be scored');
+});
+
+/* ----------------------------------------------------- every category, including nought */
+
+/**
+ * AN ABSENT ROW AND A NOUGHT ROW SAY DIFFERENT THINGS. Absent reads as a category nobody
+ * checked; 0.0% reads as a page that spends nothing on it, which is often the finding —
+ * atkinsonsca.co.uk gives no space at all to `trust`, and for an accountancy firm that is
+ * worth a reader seeing.
+ */
+test('a category the page spends nothing on is printed at nought, not dropped', () => {
+    const rows = withEmptyCategories([{category: 'hero', area: 10, share: 1, coverage: 0.2, firstViewport: 1}]);
+    const trust = rows.find((r) => r.category === 'trust');
+    assert.ok(trust, 'trust was never on the page, and that is the point');
+    assert.equal(trust.share, 0);
+    assert.equal(trust.coverage, null, 'nothing was measured, so there is no ink figure to give');
+    assert.equal(trust.firstViewport, null);
+});
+
+test('every category the table can print gets a row', () => {
+    const rows = withEmptyCategories([{category: 'hero', area: 10, share: 1}]);
+    for (const c of CATEGORY_ORDER) {
+        if (c === 'unclassified') continue;
+        assert.ok(rows.some((r) => r.category === c), `${c} has no row`);
+    }
+});
+
+/**
+ * `unclassified` is not a category, it is the model declining to guess. A nought row for it
+ * would tell a reader nothing about their homepage, and put a refusal in a table of findings.
+ */
+test('unclassified is not invented, and stays last when it is real', () => {
+    assert.ok(!withEmptyCategories([{category: 'hero', share: 1}]).some((r) => r.category === 'unclassified'));
+    const withIt = withEmptyCategories([
+        {category: 'hero', share: 0.8},
+        {category: 'unclassified', share: 0.2},
+    ]);
+    assert.equal(withIt[withIt.length - 1].category, 'unclassified', 'a refusal is never the page\'s smallest feature');
+});
+
+test('the measured rows keep their order and their numbers', () => {
+    const rows = withEmptyCategories([
+        {category: 'routing', share: 0.6},
+        {category: 'hero', share: 0.4},
+    ]);
+    assert.deepEqual(rows.slice(0, 2).map((r) => r.category), ['routing', 'hero']);
+    assert.equal(rows[0].share, 0.6);
+});
+
+/* ------------------------------------------------ the blocks behind each category's share */
+
+/**
+ * "Explainer 57.8%" says nothing a reader can act on; seven named sections does. The number
+ * beside each is its index in leaves() order, which is what lib/debug.mjs draws on the
+ * annotated screenshot — read 4 in the table, find 4 on the image. If the two ever stop
+ * agreeing the table points at the wrong section, which is worse than pointing at nothing.
+ */
+test('each category carries the blocks it is made of, numbered as the screenshot numbers them', () => {
+    const data = reportData(audit({children: [
+        leaf(0, 100, 'navigation'), leaf(100, 900, 'hero'), leaf(1000, 500, 'hero'),
+    ]}));
+    const hero = data.categories.find((c) => c.category === 'hero');
+    assert.equal(hero.blocks.length, 2);
+    assert.deepEqual(hero.blocks.map((b) => b.n), [1, 2], 'the indices are leaves() order, from zero');
+    assert.equal(hero.blocks[0].what, 'X', 'the description the model gave, title cased for print');
+    assert.equal(data.categories.find((c) => c.category === 'navigation').blocks[0].n, 0);
+});
+
+test('a category the page spends nothing on has no blocks rather than no field', () => {
+    const trust = reportData(audit()).categories.find((c) => c.category === 'trust');
+    assert.deepEqual(trust.blocks, [], 'an absent list is a shape change a template would trip on');
+});
+
+/**
+ * kohde.agency block 4: a case study card the model called `explainer`, scoring itself 0.6 —
+ * the lowest on the page, and the only label on it that was wrong. The confidence was
+ * measured and discarded, so finding the mistake meant cropping the screenshot by hand.
+ */
+test('a block the model was unsure about is marked as such', () => {
+    const unsure = (c) => ({x: 0, y: 0, w: 1440, h: 900, depth: 1, children: [], coverage: 0.4,
+        label: {category: 'explainer', what: 'x', cols: 1, confidence: c}});
+    const data = reportData(audit({children: [unsure(0.6), unsure(0.95)]}));
+    const blocks = data.categories.find((b) => b.category === 'explainer').blocks;
+    assert.equal(blocks[0].unsure, true, `0.6 is below ${UNSURE}`);
+    assert.equal(blocks[1].unsure, false);
+    assert.equal(blocks[0].confidence, 0.6, 'the number survives, not just the verdict');
+});
+
+/** A block with no label at all is not silently confident. */
+test('a block with no confidence recorded is not marked as sure', () => {
+    const bare = {x: 0, y: 0, w: 1440, h: 900, depth: 1, children: [], coverage: 0.4};
+    const blocks = reportData(audit({children: [bare]})).categories
+        .find((b) => b.category === 'unclassified').blocks;
+    assert.equal(blocks[0].confidence, null);
+    assert.equal(blocks[0].unsure, false, 'unmeasured is not the same as doubted');
 });

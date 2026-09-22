@@ -1,0 +1,25 @@
+allowLineBreaksInTitles: false
+color: pink
+description: null
+fieldLayouts:
+  01125db0-c023-4b39-b486-66c6cfba6cdd:
+    cardThumbAlignment: end
+    tabs:
+      -
+        elementCondition: null
+        name: Content
+        uid: ab86baa1-d2bf-4034-9754-46efbaeb95ae
+        userCondition: null
+    thumbFieldKey: null
+handle: contentHomepageAnalysis
+hasTitleField: false
+icon: null
+name: 'Form: Homepage Analysis'
+showSlugField: false
+showStatusField: false
+slugTranslationKeyFormat: null
+slugTranslationMethod: site
+titleFormat: null
+titleTranslationKeyFormat: null
+titleTranslationMethod: site
+uiLabelFormat: '{title}'

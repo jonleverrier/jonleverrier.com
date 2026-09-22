@@ -106,13 +106,15 @@
                 {% if fieldErrors.firstName is defined %}{{ f.errorIcon() }}{% endif %}
             </span>
         </label>
-        <label class="c-form__field">
+        <label class="c-form__field{{ fieldErrors.surname is defined ? ' c-form__field--error' }}">
             <span class="c-form__label">
-                <span class="c-form__label-text">Surname <span class="c-form__optional">(optional)</span></span>
+                <span class="c-form__label-text">Surname</span>
+                {% if fieldErrors.surname is defined %}{{ f.errorMessage(fieldErrors.surname) }}{% endif %}
             </span>
             <span class="c-form__control">
                 <input class="c-form__input" type="text" name="surname" autocomplete="family-name"
-                    value="{{ old.surname ?? vip.surname ?? '' }}" placeholder="Cartier-Bresson">
+                    value="{{ old.surname ?? vip.surname ?? '' }}" placeholder="Cartier-Bresson" required>
+                {% if fieldErrors.surname is defined %}{{ f.errorIcon() }}{% endif %}
             </span>
         </label>
     </div>

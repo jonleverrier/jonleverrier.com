@@ -47,14 +47,16 @@ import {leaves} from './blocks.mjs';
  *
  * The sweep and the leaderboard sort their own rows; this is the per-page order only.
  */
-const CATEGORY_ORDER = [
-    'navigation', 'hero', 'brand', 'promotion', 'trust', 'routing', 'editorial', 'footer',
-    'unclassified',
+export const CATEGORY_ORDER = [
+    'navigation', 'hero', 'explainer', 'brand', 'promotion', 'trust', 'routing', 'editorial',
+    'footer', 'unclassified',
 ];
 
+/** A category the order does not name sorts last rather than first, which -1 would give. */
+const order = (c) => (CATEGORY_ORDER.indexOf(c) + 1 || CATEGORY_ORDER.length + 1) - 1;
+
 /** Ties break on the fixed order above, so the same page always prints the same table. */
-const bySize = (a, b) => (b.share - a.share)
-    || (CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category));
+const bySize = (a, b) => (b.share - a.share) || (order(a.category) - order(b.category));
 
 const biggestFirst = (rows) => [
     ...rows.filter((r) => r.category !== 'unclassified').sort(bySize),
@@ -85,8 +87,13 @@ const tally = (ls, total) => {
         byCategory.set(key, held);
     }
 
-    const rows = CATEGORY_ORDER
-        .filter((c) => byCategory.has(c))
+    // FROM WHAT IS THERE, NOT FROM A LIST OF WHAT WE EXPECT. This walked CATEGORY_ORDER and
+    // kept the categories it recognised, so `explainer` — added to CATEGORIES and to the
+    // prompt, labelled correctly on every page — was dropped here without a word: atkinsons
+    // reported 42% of its own homepage and nothing said the other 58% had gone missing. A
+    // list of expected categories must never be what decides which ones get counted.
+    const rows = [...byCategory.keys()]
+        .sort((a, b) => order(a) - order(b))
         .map((category) => {
             const {area, inked, measured} = byCategory.get(category);
 

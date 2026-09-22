@@ -55,10 +55,19 @@ export const MAX_TOKENS = 4000;
  * came back `unclassified` twice and `hero` once at confidence 0.4 — a page saying nothing
  * cannot be making a claim. Before deleting a category that reads zero, check it is
  * reachable.
+ *
+ * `explainer` SPLITS A BUCKET THAT HAD BECOME THE SECOND `other`. `hero` was defined as the
+ * company's own claim "at the top, and ALSO any later section doing the same job", which is
+ * true of most of a homepage: atkinsonsca.co.uk returned SEVEN hero blocks covering 49.5% of
+ * the page — a case study image, a family-firm story, a services breakdown, a Xero
+ * explanation, a "why choose us". A reader seeing "hero 49.5%" assumes we mean their top
+ * banner, and half a page under one label answers nothing. The line is POSITION AND JOB
+ * TOGETHER: the opening statement is the hero, every later section still describing the
+ * company is an explainer. Splitting them turns one dead number into two live ones.
  */
 export const CATEGORIES = [
-    'brand', 'navigation', 'hero', 'promotion', 'trust', 'routing', 'editorial', 'footer',
-    'unclassified',
+    'brand', 'navigation', 'hero', 'explainer', 'promotion', 'trust', 'routing', 'editorial',
+    'footer', 'unclassified',
 ];
 
 /**
@@ -99,11 +108,15 @@ Give each block ONE category. Work down this list and take the FIRST that fits:
                  icons, a newsletter box, payment marks. Position decides this, not content.
 - "navigation" - persistent wayfinding chrome OUTSIDE the footer, which would appear on any
                  page of this site: the header bar, a utility strip, a mega-menu.
-- "hero"       - the elevator pitch: THE COMPANY'S OWN CLAIM about what it does and why you
-                 would care. The big statement at the top, and ALSO any later section doing
-                 the same job — a row of USPs or value propositions, a "why choose us", a
-                 "how it works", a feature explanation. Judged by what it says, not by
-                 where it sits.
+- "hero"       - the elevator pitch, and ONLY AT THE TOP: the opening statement of the page,
+                 the first thing a visitor reads, THE COMPANY'S OWN CLAIM about what it does
+                 and why you would care. Almost every page has exactly one. If you are
+                 looking at a slice that is not the beginning of the page, it is almost
+                 certainly "explainer" and not this.
+- "explainer"  - the company still describing itself, ANYWHERE BELOW THE HERO: a row of USPs
+                 or value propositions, a "why choose us", a "how it works", a services or
+                 feature breakdown, an "about us" passage, a story about the firm. Same voice
+                 as the hero, further down the page.
 - "promotion"  - asks the visitor to act now: an offer, a price, urgency, a competition, a
                  download push, a demo request, a signup or capture form.
 - "trust"      - EVIDENCE FROM OUTSIDE THE COMPANY that the claim is true: testimonials in
@@ -125,13 +138,24 @@ Four rules where blocks could take more than one:
 - A card row of articles or blog posts is "routing", not "editorial": its job on a homepage
   is to send the reader somewhere.
 - Client logos are "trust", not "brand": they are evidence, not this company's identity.
-- A row of USPs or value propositions is "hero", not "trust". Ask WHOSE WORD IT IS: a
+- A row of USPs or value propositions is "explainer", not "trust". Ask WHOSE WORD IT IS: a
   company saying "fast, secure, always on" is making its own claim, so it is the pitch. It
   only becomes trust when somebody else is vouching for it, or it is a figure that could be
   checked.
-- A photograph with no words on it and nothing to click is "brand", not "hero" and not
-  "unclassified". A picture makes no claim. It becomes "hero" only when words beside it say
-  what the company does.
+- "hero" and "explainer" are the same voice and are told apart BY POSITION, not by wording.
+  The opening statement is the hero; everything later that still describes the company is an
+  explainer. A page with two heroes is almost always a page with one hero and one explainer.
+- A section explaining what the company does is "explainer"; a section explaining a SUBJECT,
+  which would still be worth reading if another firm published it, is "editorial". Ask who
+  the passage is about.
+- A card naming a CLIENT or a PROJECT and linking to it is "routing", not "explainer" and
+  not "brand", however small the card and however large the imagery around it. The words on
+  a case study card describe THE WORK, not the company: "A belief system in design systems"
+  beside a client name and an arrow is a link to a case study, not a claim about the firm.
+  Ask what the link points at, not what the sentence sounds like.
+- A photograph with no words on it and nothing to click is "brand", not "hero", not
+  "explainer" and not "unclassified". A picture makes no claim. It becomes one of those only
+  when words beside it say what the company does.
 
 COORDINATES. Answer in THIS IMAGE's pixels: 0 is the top of THIS image, not of the page.
 Do not add any offset and do not rescale. Cover this image top to bottom with no gaps and
