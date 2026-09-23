@@ -77,10 +77,41 @@
     // `> ul > li`, not `> ul li`: a nested list's items take their own pairing below,
     // and an unscoped descendant rule would hand them the outer list's.
     > ul { list-style: disc; padding-left: $prose-bullet-offset; }
-    > ol { list-style: decimal; padding-left: $prose-number-offset; }
+    // A NUMBER THIS SIDE PLACES ITSELF. `list-style-position: outside` leaves the
+    // marker's x to the engine, and the engines disagree: measured on
+    // /tools/homepage-analysis at 1440, Chrome sets "1." flush at the content edge
+    // (x=352, level with the body copy) and Safari hangs it eight pixels outside the
+    // column (x=344) while the heading above starts at 354. Same stylesheet, and in
+    // Safari the numbers visibly break the left edge of the page.
+    //
+    // A counter in a ::before is positioned by us instead, so both engines put it in
+    // exactly the same place. Bullets keep ::marker: a disc is drawn rather than set,
+    // there is no width to control, and the engine difference on a symmetrical dot is
+    // invisible where it is not on a numeral with a full stop after it.
+    > ol {
+        list-style: none;
+        padding-left: 0;
+        counter-reset: prose-item;
+    }
 
     > ul > li { padding-left: $prose-list-indent - $prose-bullet-offset; }
-    > ol > li { padding-left: $prose-list-indent - $prose-number-offset; }
+    // The WHOLE indent, where before it was split between the list and the item: with
+    // no marker to leave behind, there is nothing for padding on the list to move.
+    > ol > li {
+        position: relative;
+        padding-left: $prose-list-indent;
+    }
+
+    // Flush left, in the number's own width. `$prose-number-offset` is what "12." needs
+    // at this size; the gap to the text is the rest of $prose-list-indent.
+    > ol > li::before {
+        content: counter(prose-item) '.';
+        counter-increment: prose-item;
+        position: absolute;
+        left: 0;
+        color: $marker;
+        font-weight: 700;
+    }
 
     // The full paragraph gap, not half of it. With the items set at the paragraph's
     // own leading, a smaller gap left the space between two items barely wider than
@@ -94,8 +125,8 @@
     // which means "this is interactive" everywhere else on the site; a bullet in it
     // promised a click it couldn't keep. ::marker takes only a short list of
     // properties; colour and font are both on it.
-    > ul li::marker,
-    > ol li::marker {
+    // `ul` only now: an ordered list draws its own number in ::before, above.
+    > ul li::marker {
         color: $marker;
     }
 
@@ -113,12 +144,9 @@
         line-height: 0;
     }
 
-    // Numbers hold their weight instead of their size — it gives them the presence a
-    // bigger disc gives a bullet, without pushing the numerals out of step with the
-    // body copy they sit beside.
-    > ol li::marker {
-        font-weight: 700;
-    }
+    // (Numbers hold their weight instead of their size — the presence a bigger disc
+    // gives a bullet, without pushing the numerals out of step with the body copy they
+    // sit beside. That now lives on the ::before that draws them.)
 
     // Nested lists change marker so the levels are distinguishable, and take the same
     // split treatment on a narrower total — a lower-alpha marker is one glyph plus the

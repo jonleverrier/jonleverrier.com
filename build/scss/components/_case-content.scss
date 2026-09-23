@@ -115,6 +115,28 @@ $cc-hosts:   '.c-case-content__text, .c-case-content__code, .c-case-content__for
     }
 }
 
+// THE FORM IS PROSE-SHAPED AND IS NOT A PARAGRAPH. It sits in $cc-prose because it is a
+// column at the measure and because that is what stops a spine being drawn into it — and
+// the join above it then took $cc-gap-paragraph, so on /tools/homepage-analysis a
+// two-column panel with a dark fill sat 24px under the last line of "How it works" and
+// read as part of that list rather than as the thing the whole page is for.
+//
+// THE SPINE IS NOT THE ANSWER, and this rule is here rather than a line in $cc-hosts
+// because of it: the form's own element is `display: grid` (see .c-content__form-cols),
+// so a ::before with content becomes a GRID ITEM. Tried it — the panel grew 214px and the
+// gap went to nothing.
+//
+// The figure gap rather than the paragraph one: the same air a picture gets, for the same
+// reason, which is that a block with its own edges needs more room than a line of text.
+// `:is(#{$cc-prose}) +`, not `* +`, and that is about SPECIFICITY rather than about which
+// joins to catch. The prose-after-prose rule above scores a class for each side of the
+// join; `> * + .c-case-content__form` scores one, loses the tie, and leaves the 24px
+// exactly where it was. Matching its shape makes them equal and the later rule — this one
+// — wins.
+.c-case-content#{$cc-flow} > :is(#{$cc-prose}) + .c-case-content__form {
+    margin-top: $cc-gap-figure;
+}
+
 // Imagery after imagery: the image-run gap. Scoped to direct children, so the
 // figures INSIDE a pair or trio — laid out by their grid — are left alone.
 .c-case-content#{$cc-flow} > :is(#{$cc-imagery}) + :is(#{$cc-imagery}, .c-case-content__figure--inline, .c-case-content__figure--backdrop) {
