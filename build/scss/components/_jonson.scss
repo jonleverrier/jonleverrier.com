@@ -221,16 +221,17 @@ $c-jonson-line: #383910;
 }
 
 .c-jonson__question {
-    // Opening question matches the homepage hero headline (.c-frontdoor__title).
+    // Opening question matches the homepage hero headline (.c-frontdoor__title), and
+    // matches it by taking the same global scale rather than by repeating the same two
+    // hardcoded sizes. Both carried `rem(60)` with `rem(80)` from lg, which equals the
+    // scale at md and lg and overrode it below md — so on a phone the question set at
+    // 60px beside prose sized off an h1 of 35.1. See the note in _frontdoor.scss.
+    //
+    // It tops out at the scale's own 80 — 8rem on this site's 10px root. It used to take
+    // another step to rem(100) from xxl, which on a 1728 canvas put the question at a
+    // size the ANSWER beneath it could never answer at: the reply is prose, and a
+    // headline twice its height reads as the page shouting its own question back.
     @include typography(h1);
-    font-size: rem(60);
-    // Tops out at rem(80) — 8rem on this site's 10px root. It used to take another step
-    // to rem(100) from xxl, which on a 1728 canvas put the question at a size the ANSWER
-    // beneath it could never answer at: the reply is prose, and a headline twice its
-    // height reads as the page shouting its own question back.
-    @include mq(from, lg) {
-        font-size: rem(80);
-    }
     font-weight: 600;
     width: 100%;
     margin: 0;

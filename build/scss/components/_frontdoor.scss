@@ -127,20 +127,22 @@
 
 .c-frontdoor__title {
     color: getmap($colour, light, 100);
-    @include typography(h1);
-    // Trimmed below the global h1 scale on small screens — the hero is full-bleed and
-    // wants more presence there than a note's title does — and level with it from lg.
+    // THE GLOBAL h1 SCALE, and nothing on top of it. This carried
+    // `font-size: rem(60)` with `rem(80)` from lg, under a comment saying it was
+    // "trimmed below the global h1 scale on small screens". That was true of the old
+    // 66/88/110 scale and stopped being true when the scale was cut for phones: h1 is
+    // now clamp(31px, 9vw, 44px) below md, "the largest cut because it is the one that
+    // was shouting" (see _setup.scss). The hardcoded 60 never followed, so at 390 the
+    // front door set its headline at 60px while every other h1 on the site set 35.1.
     //
-    // THERE IS NO xxl STEP, deliberately. There was one, at rem(100), under a comment
-    // calling the whole thing "~10% below the global h1 scale (66/88/110)". The scale
-    // has since become 66/80 with no xxl step of its own, for a stated reason: past lg
-    // the slab is a fixed width (b-wrap caps at 108em), so a bigger headline only buys
-    // more lines inside the same box. The trim had quietly become a boost, and the
-    // homepage ran to 10rem where every other h1 on the site stops at 8.
-    font-size: rem(60);
-    @include mq(from, lg) {
-        font-size: rem(80);
-    }
+    // The override was doing nothing anywhere else: the scale is 66 at md and 80 at lg,
+    // which is what the two hardcoded values already were. Removing them changes this
+    // headline only below md, which is the only width it was ever out of step at.
+    //
+    // THERE IS NO xxl STEP, deliberately, and there is nothing here to add one to. Past
+    // lg the slab is a fixed width (b-wrap caps at 108em), so a bigger headline only
+    // buys more lines inside the same box.
+    @include typography(h1);
 
     // NO ORPHANS. The measure below wraps this to two lines by design, but the browser
     // fills the first line and leaves whatever is over: "How can I" / "help?", a single
