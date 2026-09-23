@@ -147,6 +147,13 @@ export default defineConfig(({command}) => ({
                 {uri: 'case-study/vaiie-product-branding', template: '_views/structure/caseStudies/default'},
                 // Likewise one plain page stands in for the whole `pages` structure.
                 {uri: 'ai-policy', template: '_views/structure/pages/default'},
+                // The tools structure. A page missing from this list does not degrade to
+                // "no critical CSS and a blocking stylesheet" — the stylesheet is loaded
+                // `media="print" onload` either way, so with nothing inlined the page
+                // paints UNSTYLED and re-lays out when the CSS lands. That is the failure
+                // measured on the front door when SKIP_CRITICAL was left set: CLS 0.446
+                // and LCP 4.1s on a throttled phone. See tools/deploy/forge-deploy.sh.
+                {uri: 'tools/homepage-analysis', template: '_views/structure/tools/audit'},
             ],
             criticalConfig: {
                 // Capture at every breakpoint the CSS actually has, not the plugin's
