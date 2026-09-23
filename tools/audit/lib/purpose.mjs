@@ -62,9 +62,23 @@ const tidy = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
 
 const clip = (s, max) => (s.length <= max ? s : `${s.slice(0, max - 1).replace(/\s+\S*$/, '')}…`);
 
+/**
+ * A line long enough to be saying something rather than shouting it.
+ *
+ * "Work Smart, Grow Fast." is 22 characters and tells a reader nothing about what
+ * boondmanager.com sells; it is also the biggest heading in their hero, so it is what the
+ * old code quoted and classified from. A slogan is not a claim, and the difference is
+ * roughly this long.
+ */
+export const CLAIM_MIN = 30;
+
 /** The hero band, if the page has one. */
 const heroBand = (blocks) => (blocks?.tree?.children ?? [])
     .find((b) => b?.label?.category === 'hero') ?? null;
+
+/** The explainer bands: "the company still describing itself", per lib/vision.mjs. */
+const explainerBands = (blocks) => (blocks?.tree?.children ?? [])
+    .filter((b) => b?.label?.category === 'explainer');
 
 /**
  * The page's own words, out of the capture.
@@ -83,28 +97,57 @@ export function heroText(blocks, rects) {
         ? {top: hero.y, bottom: hero.y + hero.h, from: 'hero'}
         : {top: 0, bottom: FIRST_SCREEN, from: 'first-screen'};
 
-    const inBand = (rects ?? [])
-        .filter((r) => READABLE.has(r.tag) && r.y >= band.top && r.y + r.h <= band.bottom)
-        .map((r) => ({...r, words: tidy(r.text)}))
-        .filter((r) => r.words.length > 1);
+    const lines = (top, bottom) => {
+        const inBand = (rects ?? [])
+            .filter((r) => READABLE.has(r.tag) && r.y >= top && r.y + r.h <= bottom)
+            .map((r) => ({...r, words: tidy(r.text)}))
+            .filter((r) => r.words.length > 1);
 
-    // Headings before prose, and within a tag the one nearer the top of the band. Not by
-    // area: the biggest box in a hero is usually the one wrapping everything else.
-    inBand.sort((a, b) => (RANK[a.tag] ?? 99) - (RANK[b.tag] ?? 99) || a.y - b.y);
+        // Headings before prose, and within a tag the one nearer the top of the band. Not
+        // by area: the biggest box in a hero is usually the one wrapping everything else.
+        inBand.sort((a, b) => (RANK[a.tag] ?? 99) - (RANK[b.tag] ?? 99) || a.y - b.y);
 
-    const kept = [];
-    for (const r of inBand) {
-        // Already said. rects.json records every visible element, so a heading and the
-        // link inside it arrive as two records carrying the same words.
-        if (kept.some((k) => k.includes(r.words) || r.words.includes(k))) continue;
-        kept.push(r.words);
-        if (kept.join(' ').length >= CONTEXT_MAX) break;
+        const kept = [];
+        for (const r of inBand) {
+            // Already said. rects.json records every visible element, so a heading and the
+            // link inside it arrive as two records carrying the same words.
+            if (kept.some((k) => k.includes(r.words) || r.words.includes(k))) continue;
+            kept.push(r.words);
+            if (kept.join(' ').length >= CONTEXT_MAX) break;
+        }
+
+        return kept;
+    };
+
+    const kept = lines(band.top, band.bottom);
+
+    // THE EXPLAINER, WHEN THE HERO IS ONLY A SLOGAN. The claim is printed under "In its
+    // own words", so it has to be worth reading — and a hero whose largest line is "Work
+    // Smart, Grow Fast." gives a reader nothing. The explainer is the model's own label for
+    // "the company still describing itself", which is exactly the sentence wanted here, and
+    // it is visible page text like the hero, so the quote stays honest.
+    let claim = kept.find((line) => line.length >= CLAIM_MIN) ?? kept[0] ?? null;
+    let from = kept.length ? band.from : null;
+    let extra = [];
+
+    if (!claim || claim.length < CLAIM_MIN) {
+        for (const b of explainerBands(blocks)) {
+            extra = lines(b.y, b.y + b.h);
+            const better = extra.find((line) => line.length >= CLAIM_MIN);
+            if (better) {
+                claim = better;
+                from = 'explainer';
+                break;
+            }
+        }
     }
 
     return {
-        claim: kept.length ? clip(kept[0], CLAIM_MAX) : null,
-        context: clip(kept.join(' '), CONTEXT_MAX),
-        from: kept.length ? band.from : null,
+        claim: claim ? clip(claim, CLAIM_MAX) : null,
+        // Everything found, hero first: the classifier is better off with more, and the
+        // explainer's words are the ones that say what the company actually does.
+        context: clip([...kept, ...extra].join(' '), CONTEXT_MAX),
+        from,
     };
 }
 
@@ -131,6 +174,11 @@ Decide what the page is FOR: what it is trying to make happen. Not what industry
                because everything downstream is read against whatever you choose here.
 
 Judge only by the words you are given. Do not guess from the domain name.
+
+You may be given the page's title, its meta description, its social or structured-data
+description, and the words on the page itself. A description is written for someone who has
+never heard of the company and is usually the plainest statement of what it does; the words
+on the page may be a slogan. Weigh them accordingly.
 
 Return ONLY a JSON object, no prose and no code fence:
 {"kind": "<one of the words above>", "confidence": <0 to 1>}`;
@@ -178,7 +226,23 @@ export const MAX_TOKENS = 200;
  * that is down costs the report one section rather than the whole document.
  */
 export async function askPurpose(context, opts = {}) {
-    const words = tidy(context);
+    // THE <head> TOO, WHEN THERE IS ONE. A meta description is written for a stranger who
+    // has never heard of the company, which is the classifier's own question — and it is
+    // often the only place a page says plainly what it sells. Labelled rather than merged
+    // so the model can weigh a description differently from a slogan, and never quoted:
+    // the report's "In its own words" is visible page text (see heroText).
+    const head = opts.head ?? {};
+    const said = [
+        head.title ? `Title: ${tidy(head.title)}` : '',
+        head.description ? `Meta description: ${tidy(head.description)}` : '',
+        head.ogDescription && head.ogDescription !== head.description
+            ? `Social description: ${tidy(head.ogDescription)}` : '',
+        head.schemaDescription && head.schemaDescription !== head.description
+            ? `Structured data: ${tidy(head.schemaDescription)}` : '',
+        tidy(context) ? `On the page: ${tidy(context)}` : '',
+    ].filter(Boolean).join('\n');
+
+    const words = said;
     if (!words) {
         return {kind: 'unclear', confidence: 0, why: 'the page said nothing readable'};
     }
@@ -194,7 +258,7 @@ export async function askPurpose(context, opts = {}) {
             body: JSON.stringify({
                 model: opts.model ?? MODEL,
                 max_tokens: MAX_TOKENS,
-                messages: [{role: 'user', content: `${PURPOSE_PROMPT}\n\nThe page says:\n${words}`}],
+                messages: [{role: 'user', content: `${PURPOSE_PROMPT}\n\n${words}`}],
             }),
         });
         if (!res.ok) {

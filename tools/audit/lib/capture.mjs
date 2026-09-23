@@ -94,6 +94,77 @@ import {
  */
 export const EARLY_SETTLE_MS = 200;
 
+/**
+ * What the page says about itself in its own <head>. Runs IN the page.
+ *
+ * WHY THIS IS WORTH A LINE OF CODE. lib/purpose.mjs decides what a homepage is FOR, and it
+ * had only the hero to go on. boondmanager.com's hero says "Work Smart, Grow Fast." —
+ * three words with nothing in them about what the company sells — and it classified at 72%
+ * where gov.uk answers at 97%; its competitor came back at exactly 60, the confidence floor
+ * itself. A meta description is written for a stranger who has never heard of the company,
+ * which is the same question the classifier is asking.
+ *
+ * FOUR SOURCES BECAUSE THEY FAIL DIFFERENTLY. A description can be absent, or boilerplate,
+ * or the same on every page of the site; og:description is often better kept, because
+ * people check how their links look when shared; a title is nearly always "Brand | what
+ * they do"; JSON-LD is authoritative when a plugin wrote it and missing otherwise. They are
+ * kept apart rather than merged so the caller can weigh them and a reader can see which
+ * one spoke.
+ *
+ * NOTHING HERE IS EVER QUOTED IN THE REPORT. The report prints the page's claim under "In
+ * its own words", and none of this is words a visitor reads. It is for classifying only —
+ * see lib/purpose.mjs, where the quote stays visible page text.
+ *
+ * READ FROM THE PAGE ALREADY OPEN, so it costs one evaluate and no second load.
+ */
+export const HEAD_MAX = 400;
+
+export const READ_HEAD = () => {
+    const tidy = (v) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, 400);
+    const attr = (selector) => tidy(document.querySelector(selector)?.getAttribute('content'));
+
+    // The first Organization-ish description in any JSON-LD block. Most plugins write a
+    // @graph rather than a bare object, so the walk goes through arrays and @graph alike.
+    let schemaDescription = '';
+    for (const tag of document.querySelectorAll('script[type="application/ld+json"]')) {
+        let parsed;
+        try {
+            parsed = JSON.parse(tag.textContent || '');
+        } catch {
+            continue; // a broken block is somebody else's bug, not a reason to stop
+        }
+        const stack = [parsed];
+        while (stack.length && !schemaDescription) {
+            const node = stack.pop();
+            if (Array.isArray(node)) {
+                stack.push(...node);
+                continue;
+            }
+            if (!node || typeof node !== 'object') {
+                continue;
+            }
+            if (typeof node.description === 'string' && node.description.trim()) {
+                schemaDescription = tidy(node.description);
+                break;
+            }
+            if (node['@graph']) {
+                stack.push(node['@graph']);
+            }
+        }
+        if (schemaDescription) {
+            break;
+        }
+    }
+
+    return {
+        title: tidy(document.title),
+        description: attr('meta[name="description" i]'),
+        ogDescription: attr('meta[property="og:description" i]'),
+        ogTitle: attr('meta[property="og:title" i]'),
+        schemaDescription,
+    };
+};
+
 export const VIEWPORT = {width: 1440, height: 900};
 
 /**
@@ -823,6 +894,16 @@ export async function capturePage(url, outDir, opts = {}) {
         const fullHeight = await step('measuring the final page height', () => page.evaluate(PAGE_HEIGHT));
         const image = pngSize(shot);
         const webgl = await step('probing WebGL', () => probeWebgl(page));
+        // NEVER FATAL. A page with a hostile <head> is still a page worth measuring, and
+        // this only sharpens a classification that already has the hero to work from.
+        let head = {title: '', description: '', ogDescription: '', ogTitle: '', schemaDescription: ''};
+        try {
+            head = await step('reading the head', () => page.evaluate(READ_HEAD));
+        } catch (e) {
+            // The reason is kept beside the empty values, the way lib/styles.mjs does it:
+            // an absent head and a head we failed to read are different facts.
+            head = {...head, why: printable(e.message, 200)};
+        }
 
         const meta = {
             url,
@@ -850,6 +931,9 @@ export async function capturePage(url, outDir, opts = {}) {
             // The colours and typefaces this page renders with, from computed styles
             // rather than from its stylesheets. See lib/styles.mjs for why.
             styles,
+            // What the page says about itself in its <head> — for classifying what the
+            // page is FOR, never for quoting. See READ_HEAD.
+            head,
             httpStatus,
             consentDismissed: consent.dismissed,
             consentBannerSeen: consent.bannerSeen === true,

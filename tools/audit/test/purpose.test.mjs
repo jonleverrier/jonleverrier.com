@@ -19,7 +19,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    heroText, parsePurposeReply, PURPOSES, PURPOSE_PROMPT, CLAIM_MAX, CONTEXT_MAX, FIRST_SCREEN,
+    heroText, parsePurposeReply, PURPOSES, PURPOSE_PROMPT, CLAIM_MAX, CLAIM_MIN, CONTEXT_MAX, FIRST_SCREEN,
 } from '../lib/purpose.mjs';
 
 const rect = (y, h, tag, text, x = 0, w = 1440) => ({x, y, w, h, tag, text});
@@ -155,4 +155,54 @@ test('confidence is clamped, because a model will write 1.5', () => {
 test('unclear always carries no confidence, whatever it claimed', () => {
     // "I am certain I do not know" is not a thing the report should act on.
     assert.equal(parsePurposeReply('{"kind": "unclear", "confidence": 0.95}').confidence, 0);
+});
+
+/* ------------------------------------------- when the hero is only a slogan */
+
+/**
+ * boondmanager.com. Its hero's largest line is "Work Smart, Grow Fast." — 22 characters
+ * saying nothing about what the company sells. That was quoted under "In its own words"
+ * and was all the classifier had, which is why it came back at 72% where gov.uk answers
+ * at 97%.
+ *
+ * The explainer is the model's own label for "the company still describing itself", so it
+ * is where that sentence actually lives — and it is visible page text like the hero, so
+ * the quote stays honest.
+ */
+const sloganPage = {
+    tree: {
+        children: [
+            {x: 0, y: 0, w: 1440, h: 300, label: {category: 'hero', what: 'slogan and a button'}},
+            {x: 0, y: 300, w: 1440, h: 600, label: {category: 'explainer', what: 'what we do'}},
+        ],
+    },
+};
+const sloganRects = [
+    rect(40, 90, 'h1', 'Work Smart, Grow Fast.'),
+    rect(150, 40, 'a', 'Book a demo'),
+    rect(360, 60, 'h2', 'The ERP built for consulting and engineering firms'),
+    rect(440, 80, 'p', 'Staffing, projects, invoicing and recruitment in one place.'),
+];
+
+test('a hero that is only a slogan hands the claim to the explainer', () => {
+    const {claim, from} = heroText(sloganPage, sloganRects);
+    assert.equal(from, 'explainer');
+    assert.equal(claim, 'The ERP built for consulting and engineering firms');
+});
+
+test('…and the classifier still sees the slogan, because more words is better', () => {
+    const {context} = heroText(sloganPage, sloganRects);
+    assert.match(context, /Work Smart, Grow Fast/);
+    assert.match(context, /consulting and engineering/);
+});
+
+test('a hero with a real sentence keeps it, and never reaches for the explainer', () => {
+    const {claim, from} = heroText(govuk, govukRects);
+    assert.equal(from, 'hero');
+    assert.equal(claim, 'The best place to find government services and information');
+});
+
+test('CLAIM_MIN is the line between a slogan and a claim', () => {
+    assert.ok(CLAIM_MIN > 'Work Smart, Grow Fast.'.length, 'the slogan has to fall below it');
+    assert.ok(CLAIM_MIN < 'The best place to find government services and information'.length);
 });

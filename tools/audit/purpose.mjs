@@ -43,7 +43,12 @@ try {
     }
 
     const {claim, context, from} = heroText(blocks, rects);
-    const answer = await askPurpose(context);
+    // THE <head> GOES TO THE CLASSIFIER AND NEVER TO THE QUOTE. A meta description is
+    // written for a stranger who has never heard of the company, which is the same question
+    // being asked here — but it is not words a visitor reads, and the report prints the
+    // claim under "In its own words". See lib/capture.mjs READ_HEAD.
+    const meta = read(join(outDir, 'meta.json'));
+    const answer = await askPurpose(context, {head: meta?.head ?? {}});
     // THE WORDS TRAVEL WITH THE KIND. The report quotes the claim and never prints the
     // kind on its own: a reader can disagree with a sentence from their own page in a way
     // they cannot disagree with the word "route".
@@ -58,7 +63,14 @@ try {
 
     writeFileSync(path, JSON.stringify({...withPurpose, reading}, null, 1));
 
+    const head = meta?.head ?? {};
     console.log(`read from    ${from ?? 'nothing readable'}`);
+    console.log(`head         ${[
+        head.title ? 'title' : '',
+        head.description ? 'description' : '',
+        head.ogDescription ? 'og' : '',
+        head.schemaDescription ? 'schema' : '',
+    ].filter(Boolean).join(', ') || 'nothing in <head>'}`);
     console.log(`claim        ${claim ? printable(claim, 200) : '(none)'}`);
     console.log(`purpose      ${purpose.kind} (${Math.round(purpose.confidence * 100)}%)`);
     console.log(`findings     ${reading.worth ? reading.findings.length : 'none — nothing will be printed'}`);
