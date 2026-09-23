@@ -27,6 +27,29 @@ import {
 } from '../lib/capture.mjs';
 import {paintLimitWarning, PAINT_LIMIT_PX} from '../lib/unrendered.mjs';
 
+/**
+ * Await something while the event loop is HELD OPEN, with an ordinary ref'd timer.
+ *
+ * `withDeadline` unrefs its bell (see lib/capture.mjs), which is right: a safety-net timer
+ * must never keep a real capture alive. It makes the timer invisible to the loop, and the
+ * promises these tests hand it are pending by design — so for the length of the deadline
+ * there is nothing ref'd outstanding anywhere. Node 22's test runner reads that as a
+ * drained loop and cancels the whole FILE: "Promise resolution is still pending but the
+ * event loop has already resolved".
+ *
+ * Node 24 tolerates it. So the suite passed on the host and cancelled 35 of 38 tests
+ * inside ddev, which is the version production runs — and the failure names whichever test
+ * happens to be first, never the one that caused it.
+ */
+const whileHeldOpen = async (work) => {
+    const keepAlive = setTimeout(() => {}, 1000);
+    try {
+        return await work();
+    } finally {
+        clearTimeout(keepAlive);
+    }
+};
+
 /* ---------------------------------------------------------------- the budget */
 
 test('a budget reports what is left and refuses a step once it is spent', () => {
@@ -43,21 +66,17 @@ test('a step that never finishes is given up on rather than waited for', async (
     // The whole reason the budget exists: page.evaluate has no timeout of its own, and a
     // page that never returns from one held a capture for fourteen minutes.
     //
-    // THE STUCK PROMISE IS RELEASED AFTERWARDS, and it has to be. `new Promise(() => {})`
-    // is pending for ever, and node 22's test runner treats a permanently pending promise
-    // as a drained event loop: it cancelled every test after this one with "Promise
-    // resolution is still pending but the event loop has already resolved". Node 24
-    // tolerates it, so this passed on the host and cancelled 35 tests inside ddev — which
-    // is the version the queue job will actually run. Releasing it costs the test nothing:
-    // the deadline has already fired and been asserted on by then.
+    // Released afterwards, and awaited inside whileHeldOpen: a promise that is pending for
+    // ever, timed by an unref'd bell, is a drained event loop as far as node 22 is
+    // concerned. See whileHeldOpen.
     let release;
     const stuck = new Promise((resolve) => {
         release = resolve;
     });
-    await assert.rejects(
+    await whileHeldOpen(() => assert.rejects(
         withDeadline(stuck, 10, 'a step that never returns'),
         /a step that never returns did not finish within 10ms/,
-    );
+    ));
     release();
 });
 
@@ -73,7 +92,7 @@ test('losing the race does not leave an unhandled rejection behind', async () =>
     const late = new Promise((_, reject) => {
         fail = reject;
     });
-    await assert.rejects(withDeadline(late, 5, 'a step'), /did not finish/);
+    await whileHeldOpen(() => assert.rejects(withDeadline(late, 5, 'a step'), /did not finish/));
     fail(new Error('the browser went away'));
     await new Promise((resolve) => setTimeout(resolve, 20));
 });
