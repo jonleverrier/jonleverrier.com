@@ -40,6 +40,19 @@
     justify-content: center;
     text-align: center;
     min-height: rem(200);
+
+    // A PROGRAMMATIC FOCUS TARGET, NOT A CONTROL. Submitting redirects to this panel's
+    // own fragment, and it carries tabindex="-1" so focus follows the scroll — which is
+    // what puts a screen reader on the message instead of leaving it at the top of the
+    // page. Chrome counts that as :focus-visible and draws its ring around the whole
+    // 740px panel, which reads as an error state on a success message.
+    //
+    // Safe to drop because tabindex="-1" takes the element out of the tab order: there
+    // is no keyboard user who can land here and need the ring to know where they are.
+    // The focus stays and only the ring goes, so nothing is lost to a screen reader.
+    &:focus {
+        outline: none;
+    }
 }
 
 .c-form__thanks {
