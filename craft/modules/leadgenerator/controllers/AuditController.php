@@ -139,7 +139,7 @@ class AuditController extends Controller
         // the report came out is what the control panel is for.
         Queue::push(new NotifyNewLead([
             'entryId' => (int) $entry->id,
-            'source' => 'the homepage analysis',
+            'source' => 'homepage analysis',
         ]));
 
         // NO RunAudit PUSH HERE. Saving the entry is what queues the audit (see
