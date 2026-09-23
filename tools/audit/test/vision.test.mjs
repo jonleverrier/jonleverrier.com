@@ -102,6 +102,20 @@ test('the prompt carries a definition for every category', () => {
     }
 });
 
+/**
+ * www.gov.uk's "Is this page useful? Yes / No" bar. It came back `unclassified` on one run
+ * and `promotion` on the next from the same prompt and the same page, which is worse than
+ * either answer: a figure a client is shown must not move because the model was asked
+ * twice. The rule is written down so it cannot.
+ */
+test('the prompt settles what a feedback widget is', () => {
+    // \s+ because the prompt is wrapped: the phrase spans a line break and its indent.
+    assert.match(TILE_PROMPT, /feedback or\s+satisfaction survey/);
+    assert.match(TILE_PROMPT, /feedback or satisfaction widget/);
+    assert.match(TILE_PROMPT, /Is this page useful\?/);
+    assert.match(TILE_PROMPT, /is "promotion"\. It asks the visitor to do something FOR THE SITE/);
+});
+
 test('the prompt is explicit that one block takes one category, first fit', () => {
     assert.match(TILE_PROMPT, /take the FIRST that fits/);
 });

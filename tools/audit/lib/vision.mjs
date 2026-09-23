@@ -118,7 +118,8 @@ Give each block ONE category. Work down this list and take the FIRST that fits:
                  feature breakdown, an "about us" passage, a story about the firm. Same voice
                  as the hero, further down the page.
 - "promotion"  - asks the visitor to act now: an offer, a price, urgency, a competition, a
-                 download push, a demo request, a signup or capture form.
+                 download push, a demo request, a signup or capture form, a feedback or
+                 satisfaction survey.
 - "trust"      - EVIDENCE FROM OUTSIDE THE COMPANY that the claim is true: testimonials in
                  someone else's words, client logos, awards, ratings, certifications,
                  accreditations, audited or published statistics, survey results,
@@ -137,6 +138,12 @@ Give each block ONE category. Work down this list and take the FIRST that fits:
 Four rules where blocks could take more than one:
 - A card row of articles or blog posts is "routing", not "editorial": its job on a homepage
   is to send the reader somewhere.
+- A feedback or satisfaction widget - "Is this page useful?", "Rate this page", a star
+  rating, a short poll - is "promotion". It asks the visitor to do something FOR THE SITE,
+  which is what promotion means. It is not "trust": the "survey results" named there are
+  somebody else's finding being quoted at you, not a form collecting yours. It is not
+  "navigation" either, however persistent it is, because it leads nowhere. Position still
+  decides "footer", so one INSIDE the footer is footer like everything else there.
 - Client logos are "trust", not "brand": they are evidence, not this company's identity.
 - A row of USPs or value propositions is "explainer", not "trust". Ask WHOSE WORD IT IS: a
   company saying "fast, secure, always on" is making its own claim, so it is the pitch. It
