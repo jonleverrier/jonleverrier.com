@@ -19,7 +19,7 @@ settings:
           - ''
         -
           - color
-          - ''
+          - '#96d35f'
         -
           - default
           - '1'
@@ -67,10 +67,27 @@ settings:
           - sent
         -
           - icon
-          - paper-plane
+          - ''
         -
           - color
           - '#96d35f'
+        -
+          - default
+          - ''
+    -
+      __assoc__:
+        -
+          - label
+          - Complete
+        -
+          - value
+          - complete
+        -
+          - icon
+          - ''
+        -
+          - color
+          - ''
         -
           - default
           - ''

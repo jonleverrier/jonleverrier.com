@@ -23,9 +23,20 @@ use modules\leadgenerator\LeadGenerator;
  * HTML template would make it look like a newsletter, which is the one thing it must not
  * look like. The PDF carries the design.
  *
+ * THE BODY CANNOT HOLD THE ATTACHMENT OFF THE SIGNATURE, and it has been tried twice. It
+ * ended "Jon" followed by two blank lines both times, and the string really did end
+ * `Jon\n\n` — but clients trim trailing whitespace and then draw the attachment card in
+ * their own chrome, so nothing written here changes that distance. Adding a line of text
+ * after the name would, and it is not this file's decision to put one there.
+ *
  * A FAILURE IS WRITTEN TO THE ENTRY AS WELL AS THROWN. The queue keeps the stack trace;
  * `auditFailure` keeps the sentence, beside the lead it belongs to, where it will actually
  * be seen — and the status goes back to `failed` so the entry stops claiming it was sent.
+ *
+ * `sent` IS THE INSTRUCTION AND `complete` IS THE RECEIPT. Moving an entry to `sent` asks
+ * for the report to go; this job writes `complete` once it has. Two values rather than one
+ * because they answer different questions — "should this go?" and "did it?" — and an entry
+ * that answered only the first could not tell a delivered report from a queued one.
  *
  * The limitation worth knowing: the body is written here rather than in a CMS field, so
  * changing the wording is a deploy. That is the right trade while there is one email and
@@ -95,11 +106,19 @@ class SendReport extends BaseJob
             throw new \RuntimeException("the mailer refused the report for entry {$this->entryId}");
         }
 
-        // Cleared on the way out, so a reason from a previous attempt cannot sit under a
-        // status that now says it went.
-        if (trim((string) $entry->auditFailure) !== '') {
-            $this->save($entry, ['auditFailure' => '']);
-        }
+        // `complete`, AND THE SEND IS WHAT WRITES IT. `sent` is the instruction — a person
+        // moving the status there is asking for the report to go — and `complete` is the
+        // receipt. Before this the entry sat on the instruction for ever, so the control
+        // panel could not tell an email that had gone from one that was still queued, or
+        // from one whose job had been lost.
+        //
+        // It also makes re-sending a real gesture again: the send fires on the move INTO
+        // `sent`, and an entry that stays there can never fire twice. From `complete`,
+        // moving it back to `sent` asks for it once more.
+        //
+        // The failure reason goes with it, so a reason from an earlier attempt cannot sit
+        // under a status that now says it went.
+        $this->save($entry, ['auditStatus' => 'complete', 'auditFailure' => '']);
 
         Craft::info("[leadgenerator] report for entry {$this->entryId} sent to {$to}", __METHOD__);
     }
@@ -173,8 +192,6 @@ class SendReport extends BaseJob
             Best wishes,
 
             Jon
-
-
             TEXT;
     }
 
