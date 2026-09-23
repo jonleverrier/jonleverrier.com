@@ -212,7 +212,16 @@
                times, five of them from cache at nought bytes. Printing "13 files"
                would be wrong, and deduplicating by URL is a change to lib/bytes.mjs
                rather than something to fudge here. The bytes are right either way. #}
-            {% set fontBytes = report.weight.byType|filter(t => t.type == 'font')|first %}
+            {# GUARDED, BECAUSE THIS SECTION OPENS ON `styles OR weight`. A page whose byte
+               census came back unmeasured has styles and no weight, and the unguarded
+               version 500d the whole report on `byType` of null — which reaches a lead as
+               "pdf failed: the report page answered 500" and no report at all.
+
+               It is a small page that does this: the census declares itself unmeasured
+               below CENSUS_MIN_BYTES, on the grounds that a page which recorded almost
+               nothing was not really measured. example.com is under a kilobyte and trips it
+               every time. #}
+            {% set fontBytes = report.weight ? report.weight.byType|filter(t => t.type == 'font')|first : null %}
             {% if fontBytes %}
                 <tr>
                     <td>Fonts</td>
