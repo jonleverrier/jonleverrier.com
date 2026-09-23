@@ -115,18 +115,34 @@ export default defineConfig(({command}) => ({
         // what writeBundle gives us, since Craft reads the new manifest on the very
         // next request.
         //
-        // Needs Chromium, installed into the web container by
+        // Needs Chromium. Locally that is installed into the web container by
         // .ddev/web-build/Dockerfile.chromium (Puppeteer's own download is x86-64
-        // only and won't exec on arm64).
-        // SKIPPED ON THE SERVER. This step needs three things a Forge deploy cannot
-        // give it: headless Chromium (installed here by .ddev/web-build/
-        // Dockerfile.chromium, not on the box), a URL that resolves, and the site
-        // already LIVE serving the build that has just been made — which during a
-        // deploy is the previous release, and on a first deploy is nothing at all.
+        // only and won't exec on arm64); on the server the deploy installs it, which
+        // is what `npx playwright install chromium` is doing in forge-deploy.sh.
         //
-        // Opt-OUT rather than opt-in, so local behaviour is untouched: `npm run
-        // build` in ddev still generates critical CSS exactly as before, and only
-        // the deploy script sets SKIP_CRITICAL=1.
+        // IT RUNS ON THE SERVER TOO, and this paragraph used to say the opposite.
+        // SKIP_CRITICAL=1 was set for the server migration, while jonleverrier.com
+        // still resolved to the old box and the crawl would have measured the wrong
+        // site. DNS has moved and nothing sets it any more — grep says so — so a
+        // deploy generates critical CSS against the live site like a local build does.
+        //
+        // Leaving the flag set is expensive in a way that is easy to miss, which is
+        // why the old wording mattered: a page with no critical file does NOT fall
+        // back to a blocking stylesheet. The stylesheet is loaded `media="print"
+        // onload` either way (see _includes/page/head.twig), so with nothing inlined
+        // the page paints UNSTYLED and re-lays out when the CSS lands. Measured on
+        // prod 2026-09-15: the front door jumped 133px to 789px at ~2.1s on a
+        // throttled phone, CLS 0.446 and LCP 4.1s, against 2.2kB of critical CSS.
+        //
+        // THE SERVER NEEDS `127.0.0.1 jonleverrier.com` IN /etc/hosts. Without it the
+        // crawl leaves the box, meets Cloudflare, is served a bot challenge, and
+        // inlines the challenge page's CSS as though it were the site's. No error,
+        // no warning, and every page ships critical CSS of something nobody will see.
+        //
+        // The flag stays as an opt-OUT so local behaviour is untouched and a deploy
+        // can still be forced past this step when something is genuinely broken. Set
+        // it for ONE deploy to get a release out, then remove it: see the same note
+        // in tools/deploy/forge-deploy.sh, which is where it was last needed.
         ...(process.env.SKIP_CRITICAL === '1' ? [] : [critical({
             criticalUrl: process.env.URL,
             criticalBase: './public/dist/criticalcss/',
