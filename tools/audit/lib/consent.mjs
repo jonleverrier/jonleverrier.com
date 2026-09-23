@@ -231,6 +231,61 @@ export const CLICKABLE = 'button, [role="button"], input[type="button"], input[t
 export const OVERLAY_POSITIONS = ['fixed', 'sticky', 'absolute'];
 
 /**
+ * The other way a banner is built: IN THE FLOW, across the top of the document, pushing
+ * the page down rather than sitting over it.
+ *
+ * www.gov.uk is the page that found this. The GOV.UK Design System renders its cookie
+ * banner as an ordinary block above the header — `position: static` on the banner and on
+ * every ancestor up to `<body>` — so all three gates, which asked only about positioning,
+ * refused it. The capture recorded `consentBannerSeen: false` about a banner occupying the
+ * first 325px of its own screenshot, and the audit then reported that 6.6% of gov.uk's
+ * homepage is navigation the site had chosen to spend space on. It had not.
+ *
+ * Any design system that does this does it the same way, and the shape is worth naming
+ * exactly, because unlike `fixed` it is NOT rare. Three limits keep it from meaning
+ * "anything at all":
+ *
+ *   - IT IS NOT THE PAGE. `<body>` and `<html>` sit at the top of the document and span
+ *     it, so an ancestor walk that accepted them would call every control on every page
+ *     banner-shaped. They are excluded by name.
+ *   - IT IS AT THE VERY TOP. Measured against the DOCUMENT, not the viewport, so the
+ *     answer does not change with the scroll position at which it is asked.
+ *   - IT IS A BAND. A strip across the page, not most of a screen: a full-height in-flow
+ *     wall is not a thing consent tools build, and the cap is what stops a hero section
+ *     qualifying.
+ *
+ * As with OVERLAY_POSITIONS, this decides nothing alone. Every caller also requires consent
+ * WORDING in the same ancestor, or an accept LABEL on the control itself — see the test
+ * `an in-flow band at the top that says nothing about consent is left alone`, which is a
+ * site header with a button labelled "Accept".
+ */
+export const LEADING_BAND_TOP_SLACK = 4;
+export const LEADING_BAND_MIN_WIDTH = 0.9;
+export const LEADING_BAND_MAX_HEIGHT = 0.7;
+
+/**
+ * What the three gates are handed, so the shape of a banner has one definition even though
+ * the test for it is written out in each of them.
+ *
+ * IT IS DATA AND NOT A FUNCTION because the gates are serialised and run INSIDE the page,
+ * where nothing this module holds exists. A source string evaluated there would need
+ * `new Function`, which a strict Content-Security-Policy refuses — and gov.uk, the page
+ * this whole rule exists for, sends one. So the numbers travel and the four lines that use
+ * them are repeated; see the note on OVERLAY_POSITIONS about what drifting apart costs.
+ */
+export const BANNER_SHAPE = {
+    positions: OVERLAY_POSITIONS,
+    // Carried here because the in-flow shape cannot be trusted without it — see
+    // IS_BANNER_SHAPED. Assigned below CONSENT_SUBJECT, which is declared further down.
+    subjectSource: null,
+    band: {
+        topSlack: LEADING_BAND_TOP_SLACK,
+        minWidth: LEADING_BAND_MIN_WIDTH,
+        maxHeight: LEADING_BAND_MAX_HEIGHT,
+    },
+};
+
+/**
  * Is this control inside something shaped like a banner? Runs IN the page.
  *
  * The ways a consent banner is actually built: taken out of the flow so it can sit over
@@ -256,15 +311,34 @@ export const OVERLAY_POSITIONS = ['fixed', 'sticky', 'absolute'];
  * elements inside an open shadow root; the `position: fixed` overlay that makes it a banner
  * is in the same shadow tree, and the walk never reached it. See lib/shadow.mjs.
  */
-export const IS_BANNER_SHAPED = (el, positions) => {
+export const IS_BANNER_SHAPED = (el, {positions, band, subjectSource}) => {
     const deep = window.__auditDeep;
     const above = deep ? deep.parent : (node) => node.parentElement;
+    const subject = new RegExp(subjectSource, 'i');
+    // The in-flow shape. See BANNER_SHAPE for why this is written out here.
+    const isLeadingBand = (a) => {
+        if (a.tagName === 'BODY' || a.tagName === 'HTML' || !a.getBoundingClientRect) return false;
+        const r = a.getBoundingClientRect();
+
+        return r.width >= window.innerWidth * band.minWidth
+            && r.height <= window.innerHeight * band.maxHeight
+            && r.top + window.scrollY <= band.topSlack;
+    };
     for (let a = el; a; a = above(a)) {
         if (a.__auditPinned === true) return true;
         const role = a.getAttribute ? a.getAttribute('role') : null;
         if (role === 'dialog' || role === 'alertdialog') return true;
         if (a.getAttribute && a.getAttribute('aria-modal') === 'true') return true;
         if (positions.includes(getComputedStyle(a).position)) return true;
+        // AND IT MUST SAY WHAT IT IS ABOUT, which none of the shapes above is asked to do.
+        //
+        // They can stand alone because they are rare: a fixed, sticky or absolute band the
+        // width of the page, holding a control labelled "Accept", is a consent banner. An
+        // in-flow band across the top of a document is a SITE HEADER, on most of the web —
+        // and the test `an in-flow band at the top that says nothing about consent is left
+        // alone` is exactly that, with an Accept button in it, and it was clicked the first
+        // time this rule shipped without the wording gate.
+        if (isLeadingBand(a) && subject.test((a.textContent || '').slice(0, 400))) return true;
     }
 
     return false;
@@ -286,16 +360,25 @@ export const IS_BANNER_SHAPED = (el, positions) => {
  * whatever its accept control happens to be labelled. The wording of the button is
  * isAcceptLabel's job and has already been applied by the time this runs.
  */
-export const IS_CONSENT_BANNER = (el, {subjectSource, positions}) => {
+export const IS_CONSENT_BANNER = (el, {subjectSource, positions, band}) => {
     const subject = new RegExp(subjectSource, 'i');
     const deep = window.__auditDeep;
     const above = deep ? deep.parent : (node) => node.parentElement;
+    const isLeadingBand = (a) => {
+        if (a.tagName === 'BODY' || a.tagName === 'HTML' || !a.getBoundingClientRect) return false;
+        const r = a.getBoundingClientRect();
+
+        return r.width >= window.innerWidth * band.minWidth
+            && r.height <= window.innerHeight * band.maxHeight
+            && r.top + window.scrollY <= band.topSlack;
+    };
     for (let a = el; a; a = above(a)) {
         const role = a.getAttribute ? a.getAttribute('role') : null;
         const shaped = a.__auditPinned === true
             || role === 'dialog' || role === 'alertdialog'
             || (a.getAttribute && a.getAttribute('aria-modal') === 'true')
-            || positions.includes(getComputedStyle(a).position);
+            || positions.includes(getComputedStyle(a).position)
+            || isLeadingBand(a);
         if (shaped && subject.test((a.textContent || '').slice(0, 400))) return true;
     }
 
@@ -473,7 +556,7 @@ async function frameIsBanner(page, frame) {
     return ask(async () => {
         const owner = await frame.frameElement();
 
-        return owner ? await owner.evaluate(IS_BANNER_SHAPED, OVERLAY_POSITIONS) : false;
+        return owner ? await owner.evaluate(IS_BANNER_SHAPED, BANNER_SHAPE) : false;
     }, false);
 }
 
@@ -609,6 +692,10 @@ export const CONSENT_SUBJECT = new RegExp(
 );
 
 /** How much text to read from a candidate before deciding. A banner says it early. */
+// Declared here rather than in the literal because CONSENT_SUBJECT is defined below it,
+// and the shape is what the three gates are handed.
+BANNER_SHAPE.subjectSource = CONSENT_SUBJECT.source;
+
 const SUBJECT_SAMPLE = 400;
 
 /**
@@ -627,15 +714,24 @@ const SUBJECT_SAMPLE = 400;
  * 1440x0 wrappers, dropped them for being too small, and said `false` again for a different
  * reason. See lib/shadow.mjs.
  */
-export const FIND_BANNER = ({subjectSource, positions}) => {
+export const FIND_BANNER = ({subjectSource, positions, band}) => {
     const subject = new RegExp(subjectSource, 'i');
     const deep = window.__auditDeep;
+    const isLeadingBand = (a) => {
+        if (a.tagName === 'BODY' || a.tagName === 'HTML' || !a.getBoundingClientRect) return false;
+        const r = a.getBoundingClientRect();
+
+        return r.width >= window.innerWidth * band.minWidth
+            && r.height <= window.innerHeight * band.maxHeight
+            && r.top + window.scrollY <= band.topSlack;
+    };
     const candidates = deep
         ? deep.all(document.body).filter((el) => ['DIV', 'SECTION', 'ASIDE', 'DIALOG', 'FORM'].includes(el.tagName))
         : document.querySelectorAll('div, section, aside, dialog, form');
     for (const el of candidates) {
         const cs = getComputedStyle(el);
-        const positioned = positions.includes(cs.position) || el.__auditPinned === true;
+        const positioned = positions.includes(cs.position) || el.__auditPinned === true
+            || isLeadingBand(el);
         const role = el.getAttribute('role');
         if (!positioned && role !== 'dialog' && role !== 'alertdialog' && el.ariaModal !== 'true') continue;
         if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
@@ -683,6 +779,10 @@ export async function dismissConsent(page, timeoutMs = 2000) {
         return {dismissed: false, via: null, navigatedAway: true, restored: await restore(page, requested), bannerSeen};
     }
 
+    // Only after a dismissal: with nothing dismissed there is no wreckage, and a band that
+    // is still up is the banner itself, which is not ours to hide.
+    const remnants = outcome.dismissed ? await hideConsentRemnant(page) : 0;
+
     return {
         dismissed: outcome.dismissed,
         via: outcome.via,
@@ -690,7 +790,69 @@ export async function dismissConsent(page, timeoutMs = 2000) {
         // A control that dismissed IS a banner, whatever the shape-and-wording test made of it.
         bannerSeen: outcome.dismissed ? true : bannerSeen,
         arrivedLate: false,
+        remnants,
     };
+}
+
+/**
+ * What a consent banner leaves behind once it has been dismissed, and how to be rid of it.
+ *
+ * www.gov.uk again, and this half cost more than the first. Its banner IS now dismissed —
+ * "Accept additional cookies" is clicked and the 325px band goes — and the page immediately
+ * replaces it with a 160px band saying "You have accepted additional cookies", with a
+ * `Hide cookie message` button. Rejecting produces the same band with the other verb, so no
+ * choice of click escapes it. Measured: the page went 4,923px to 4,758px when the whole
+ * banner was worth 325, and the remaining 165 was still counted as surface area the site
+ * had chosen to spend.
+ *
+ * IT IS HIDDEN, NOT CLICKED, and that is the safe direction rather than the lazy one. This
+ * runs only after something has ALREADY been dismissed, so a band that is still banner
+ * shaped and still talking about cookies is the wreckage of the thing we just dealt with.
+ * Clicking it would mean finding and pressing a second unknown control, with everything
+ * that goes with that — a navigation, a new overlay, a consent choice made on a stranger's
+ * site. Setting `display: none` cannot do any of those. Nothing else on the page depends on
+ * a confirmation message, which is why it carries its own dismiss button.
+ *
+ * Returns how many bands were hidden, which is nearly always 0 or 1.
+ */
+export const HIDE_REMNANT = ({subjectSource, positions, band}) => {
+    const subject = new RegExp(subjectSource, 'i');
+    const isLeadingBand = (a) => {
+        if (a.tagName === 'BODY' || a.tagName === 'HTML' || !a.getBoundingClientRect) return false;
+        const r = a.getBoundingClientRect();
+
+        return r.width >= window.innerWidth * band.minWidth
+            && r.height <= window.innerHeight * band.maxHeight
+            && r.top + window.scrollY <= band.topSlack;
+    };
+
+    let hidden = 0;
+    for (const el of document.querySelectorAll('div, section, aside, dialog, form')) {
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+        const r = el.getBoundingClientRect();
+        // The same floor FIND_BANNER uses: below it there is nothing worth measuring and
+        // nothing a reader would see.
+        if (r.width < 100 || r.height < 30) continue;
+        if (!positions.includes(cs.position) && !el.__auditPinned && !isLeadingBand(el)) continue;
+        if (!subject.test((el.textContent || '').slice(0, 400))) continue;
+        // The OUTERMOST match only. A band contains wrappers that each satisfy all of the
+        // above, and hiding the parent hides them; carrying on would count the same band
+        // several times over.
+        if (el.parentElement && el.parentElement.closest && el.closest('[data-audit-hidden]')) continue;
+        el.setAttribute('data-audit-hidden', 'consent');
+        el.style.setProperty('display', 'none', 'important');
+        hidden += 1;
+    }
+
+    return hidden;
+};
+
+/**
+ * Hide whatever the dismissed banner left on the page. Safe to call when nothing is there.
+ */
+export async function hideConsentRemnant(page) {
+    return ask(() => page.evaluate(HIDE_REMNANT, {subjectSource: CONSENT_SUBJECT.source, ...BANNER_SHAPE}), 0);
 }
 
 /**
@@ -754,10 +916,10 @@ const everyFrame = (page) => [page, ...page.frames().filter((f) => f !== page.ma
  * differ: `wholeFrame` is the shortcut that lets a CMP's iframe vouch for its own controls,
  * and it is only sound while the parent document is the one the page loaded with.
  */
-const AT_LOAD = {test: IS_BANNER_SHAPED, arg: OVERLAY_POSITIONS, wholeFrame: true};
+const AT_LOAD = {test: IS_BANNER_SHAPED, arg: BANNER_SHAPE, wholeFrame: true};
 const AFTER_SCROLLING = {
     test: IS_CONSENT_BANNER,
-    arg: {subjectSource: CONSENT_SUBJECT.source, positions: OVERLAY_POSITIONS},
+    arg: {subjectSource: CONSENT_SUBJECT.source, ...BANNER_SHAPE},
     wholeFrame: false,
 };
 
@@ -807,7 +969,7 @@ async function attempt(page, frames, timeoutMs, gate) {
  */
 async function lookForBanner(frames) {
     for (const frame of frames) {
-        if (await ask(() => frame.evaluate(FIND_BANNER, {subjectSource: CONSENT_SUBJECT.source, positions: OVERLAY_POSITIONS}), false)) {
+        if (await ask(() => frame.evaluate(FIND_BANNER, {subjectSource: CONSENT_SUBJECT.source, ...BANNER_SHAPE}), false)) {
             return true;
         }
     }

@@ -102,6 +102,39 @@ const URLS = {
             + '<p>By clicking Accept you agree to the storing of cookies on your device.</p>'
             + `<a href="#" role="button" onclick="${REMOVE};return false">Accept</a></div>`,
     ),
+    // www.gov.uk. The GOV.UK Design System banner is IN NORMAL FLOW — `position: static`
+    // on the banner and on every one of its ancestors — so it pushes the page down instead
+    // of sitting over it. All three gates tested only for positioning, so a 325px banner
+    // filling the top of the capture reported `consentBannerSeen: false`.
+    inFlowBanner: page$(
+        'inflow-banner.html',
+        '<div id="banner" style="width:100%;background:#f3f2f1;padding:20px">'
+            + '<h2>Cookies on GOV.UK</h2>'
+            + '<p>We use some essential cookies to make this website work.</p>'
+            + `<button onclick="${REMOVE}">Accept additional cookies</button>`
+            + `<button onclick="${REMOVE}">Reject additional cookies</button></div>${HOME}`,
+    ),
+    // The safety case for the rule above. Same shape exactly — an in-flow band across the
+    // top of the document — saying nothing about consent. Its button carries a perfect
+    // accept label, so only the wording gate can save it.
+    inFlowHeader: page$(
+        'inflow-header.html',
+        '<div id="banner" style="width:100%;background:#eee;padding:20px">'
+            + '<p>Welcome to the shop.</p>'
+            + `<button onclick="${REMOVE}">Accept</button></div>${HOME}`,
+    ),
+    // www.gov.uk, the half that only shows up after the click: accepting replaces the banner
+    // with a confirmation band of its own, 160px of it, which is still consent furniture
+    // and still counted as the site's surface area.
+    confirmingBanner: page$(
+        'confirming-banner.html',
+        '<div id="banner" style="width:100%;background:#f3f2f1;padding:20px">'
+            + '<h2>Cookies on this site</h2><p>We use some essential cookies.</p>'
+            + '<button onclick="document.getElementById(\'banner\').outerHTML = '
+            + '\'&lt;div id=&quot;after&quot; style=&quot;width:100%;background:#f3f2f1;padding:20px&quot;&gt;'
+            + 'You have accepted additional cookies. &lt;button&gt;Hide cookie message&lt;/button&gt;&lt;/div&gt;\'">'
+            + 'Accept additional cookies</button></div>' + HOME,
+    ),
     // A dialog that is not positioned at all: the role is the only evidence it is a banner.
     dialogBanner: page$(
         'dialog-banner.html',
@@ -275,6 +308,13 @@ const look = async (page) => ({
     bannerStillThere: await page.evaluate(BANNER_ELEMENT) !== null,
     furnitureStillThere: await page.evaluate(() => document.getElementById('furniture') !== null),
     clicks: await page.evaluate(() => window.__clicks ?? 0),
+    // The band a dismissed banner can leave behind: present in the DOM, and the question
+    // is whether it would be DRAWN — which is what the capture measures.
+    confirmationVisible: await page.evaluate(() => {
+        const el = document.getElementById('after');
+
+        return el !== null && getComputedStyle(el).display !== 'none';
+    }),
 });
 
 const open = async (url, pinned) => {
@@ -361,6 +401,45 @@ test('an absolutely positioned banner is seen and dismissed', async () => {
     assert.equal(consent.dismissed, true);
     assert.equal(state.bannerStillThere, false);
     assert.equal(state.url, URLS.absoluteBanner, 'dismissing must not move the page');
+});
+
+/**
+ * www.gov.uk. Its banner is `position: static`, like every ancestor above it, because the
+ * GOV.UK Design System puts the banner in the document flow and lets it push the page
+ * down. Measured on the real capture: `consentBannerSeen: false`, and 325px — 6.6% of a
+ * 4,923px page — counted as surface area the site had chosen to spend.
+ */
+test('an in-flow banner at the top of the page is seen and dismissed', async () => {
+    const {consent, state} = await attempt(URLS.inFlowBanner);
+    assert.equal(consent.bannerSeen, true, 'it must at minimum be reported as there');
+    assert.equal(consent.dismissed, true);
+    assert.equal(state.bannerStillThere, false);
+    assert.equal(state.url, URLS.inFlowBanner, 'dismissing must not move the page');
+});
+
+/**
+ * The other half of that rule, and the reason it is safe. In-flow bands across the top of
+ * a document are ordinary — every site header is one — so shape cannot decide anything
+ * here any more than `fixed` can. This one says nothing about cookies, and its button is
+ * labelled as perfectly as a real banner's.
+ */
+test('an in-flow band at the top that says nothing about consent is left alone', async () => {
+    const {consent, state} = await attempt(URLS.inFlowHeader);
+    assert.equal(consent.dismissed, false, 'a header is not a banner, whatever its buttons say');
+    assert.equal(consent.via, null);
+    assert.equal(state.bannerStillThere, true);
+});
+
+/**
+ * The confirmation band. gov.uk swaps its banner for "You have accepted additional cookies"
+ * with a Hide button, and rejecting produces the same band with the other verb, so no
+ * choice of click avoids it. It is hidden rather than clicked — see hideConsentRemnant.
+ */
+test('the band a dismissed banner leaves behind is hidden too', async () => {
+    const {consent, state} = await attempt(URLS.confirmingBanner);
+    assert.equal(consent.dismissed, true);
+    assert.equal(consent.remnants, 1, 'the confirmation band must be found and hidden');
+    assert.equal(state.confirmationVisible, false, 'and must not be drawn in the capture');
 });
 
 test('a banner label made of escape characters is dismissed and reported harmlessly', async () => {
