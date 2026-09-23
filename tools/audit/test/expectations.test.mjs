@@ -326,3 +326,62 @@ test('…and it is still said when nothing at all is missing', () => {
     });
     assert.equal(read(gov).verdict, 'That is the page spending its space on what it says it is for.');
 });
+
+/* --------------------------------------------------- the first screen, and the rest */
+
+/**
+ * boondmanager.com. A page whose job is to sell, whose ask is 5.9% of it and NONE of the
+ * first screen — and the report printed neither fact. The first-screen share was only
+ * added to a bullet when it was above zero, so the most telling number a core segment can
+ * carry was suppressed exactly where it mattered.
+ */
+const boond = () => site('sell', {
+    explainer: {share: 0.390, blocks: [{}, {}, {}, {}]},
+    trust: {share: 0.170, blocks: [{}, {}, {}, {}]},
+    routing: {share: 0.161, blocks: [{}, {}]},
+    footer: {share: 0.087, blocks: [{}, {}, {}]},
+    brand: {share: 0.066, firstViewport: 0.214, blocks: [{}]},
+    hero: {share: 0.061, firstViewport: 0.714, blocks: [{}]},
+    promotion: {share: 0.059, firstViewport: 0, blocks: [{}]},
+    navigation: {share: 0.006, firstViewport: 0.071, blocks: [{}]},
+});
+
+test('a core segment on none of the first screen says so', () => {
+    const found = read(boond()).findings.find((f) => f.id === 'core-promotion');
+    assert.match(found.text, /none of the first screen/);
+});
+
+test('…and one that is most of the first screen says that too', () => {
+    const found = read(boond()).findings.find((f) => f.id === 'core-hero');
+    assert.match(found.text, /71\.4% of the first screen/);
+});
+
+test('where the space actually went is named when the page’s job is not where it is', () => {
+    const found = read(boond()).findings.find((f) => f.id === 'space-elsewhere');
+    assert.ok(found, 'the 72% nobody mentioned');
+    assert.match(found.text, /^Explainer, trust and routing take 72\.1% of the page between them\.$/);
+});
+
+test('…and not when the cores are where the space is', () => {
+    const gov = site('route', {
+        routing: {share: 0.693, firstViewport: 0.459, blocks: [{}, {}]},
+        hero: 0.092, navigation: 0.014, footer: 0.183,
+    });
+    assert.equal(read(gov).findings.some((f) => f.id === 'space-elsewhere'), false,
+        'the footer taking 18.3% is a fact, not a finding');
+});
+
+test('the comparison says what each page opens with, which no table on that sheet shows', () => {
+    const uk = site('route', {
+        routing: {share: 0.693, firstViewport: 0.459, blocks: [{}, {}]},
+        hero: {share: 0.092, firstViewport: 0.47, blocks: [{}]},
+        navigation: {share: 0.014, firstViewport: 0.071, blocks: [{}]},
+        footer: 0.183,
+    });
+    const je = site('route', {
+        routing: {share: 0.726, firstViewport: 0.688, blocks: [{}, {}, {}, {}]},
+        navigation: {share: 0.112, firstViewport: 0.312, blocks: [{}, {}]},
+    });
+    const said = compare(uk, je, NAMES);
+    assert.ok(said.points.some((p) => /gov\.uk opens with .*gov\.je opens with/.test(p)), said.points.join(' | '));
+});

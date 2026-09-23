@@ -61,6 +61,18 @@ export const CORE_FLOOR = 0.12;
 export const SURPRISE = 0.15;
 
 /**
+ * Below this, the page's own job is not where its space is, and what IS there is worth
+ * naming. boondmanager.com's two cores come to 12% of a 10,567px page.
+ */
+export const CORES_THIN = 0.25;
+
+/** And the rest only earns a sentence if it adds up to something. */
+export const ELSEWHERE = 0.4;
+
+/** A sliver of the first screen is not what a page "opens with". */
+export const OPENING_MIN = 0.1;
+
+/**
  * The table.
  *
  * `unclassified` is deliberately absent: it is not a kind of content, it is the model
@@ -299,10 +311,15 @@ export function read(report) {
             // `route` was the lucky case, not the normal one: every other purpose has two
             // cores or more. The conclusion belongs to the reading, not to each line of
             // it — see verdictFor.
+            // THE FIRST SCREEN IS SAID EVEN WHEN IT IS NOTHING, and especially then. This
+            // printed it only when it was above zero, which suppressed the single most
+            // telling number a core segment can carry: boondmanager.com is a page whose
+            // job is to sell, its promotion is 5.9% of the page, and NONE OF IT is on the
+            // first screen. The report had that measurement and threw it away.
             const first = seg?.firstViewport ?? 0;
             const measured = `${PLAIN[category].subject} takes ${pc(has)} of the page across `
-                + `${sections(seg?.blocks?.length ?? 0)}`
-                + (first > 0 ? `, and ${pc(first)} of the first screen` : '') + '.';
+                + `${sections(seg?.blocks?.length ?? 0)}, and `
+                + `${first > 0 ? pc(first) : 'none'} of the first screen.`;
 
             const healthy = has >= CORE_FLOOR;
             cores.push({category, healthy});
@@ -347,6 +364,38 @@ export function read(report) {
                 // of excusing as a nought.
                 notGaps.push(category);
             }
+        }
+    }
+
+    // WHERE THE SPACE ACTUALLY WENT, when the page's own job is not where it is. The
+    // section used to report on core segments and nothing else, so boondmanager.com got
+    // two bullets saying 5.9% and 6.1% and no mention of the 72% that explains, reassures
+    // and links. The numbers were all measured and the interesting one was never printed.
+    //
+    // ONLY WHEN THE CORES ARE THIN. On gov.uk routing is 69.3% and the biggest thing that
+    // is not core is the footer; "the footer takes 18.3%" is a fact, not a finding.
+    const coreShare = cores.reduce((sum, c) => sum + share(c.category), 0);
+    if (cores.length && coreShare < CORES_THIN) {
+        const others = (report.categories ?? [])
+            .filter((c) => c.share > 0 && !cores.some((k) => k.category === c.category))
+            .sort((a, b) => b.share - a.share)
+            .slice(0, 3);
+        const total = others.reduce((sum, c) => sum + c.share, 0);
+        if (others.length >= 2 && total >= ELSEWHERE) {
+            const names = others.map((c) => c.category);
+            findings.push({
+                id: 'space-elsewhere',
+                category: null,
+                role: 'context',
+                kind: 'shape',
+                // Just above the thin cores it explains, and below anything worse.
+                weight: 0.9,
+                // Capitalised here: these are category keys, and the sentence they open
+                // is a bullet of its own rather than a clause inside one.
+                text: `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} take `
+                    .replace(/^./, (c) => c.toUpperCase())
+                    + `${pc(total)} of the page between them.`,
+            });
         }
     }
 
@@ -406,6 +455,23 @@ export function compare(a, b, names) {
     const yours = gapsIn(theirs);
 
     const points = [];
+
+    // WHAT THE TABLES ON THAT SHEET CANNOT SHOW. Scores, segment shares and page length are
+    // all there in two columns; the FIRST SCREEN is not in any of them, and it is the one
+    // thing a visitor is guaranteed to see. gov.uk opens with a hero and gov.je opens with
+    // links, which is the finding of that whole comparison and no row states it.
+    const opening = (report) => (report.categories ?? [])
+        .filter((c) => (c.firstViewport ?? 0) >= OPENING_MIN)
+        .sort((a, b) => (b.firstViewport ?? 0) - (a.firstViewport ?? 0))
+        .slice(0, 2)
+        .map((c) => `${pc(c.firstViewport)} ${c.category}`);
+    const opensMine = opening(a);
+    const opensTheirs = opening(b);
+    if (opensMine.length && opensTheirs.length) {
+        points.push(`${names.mine} opens with ${opensMine.join(' and ')}; `
+            + `${names.theirs} opens with ${opensTheirs.join(' and ')}.`);
+    }
+
     // ONLY WHEN THEY ARE THE SAME KIND OF PAGE. "Only the magazine has no promotion" is
     // not a finding about the magazine, it is a finding about the comparison.
     if (same) {
