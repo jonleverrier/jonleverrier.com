@@ -248,6 +248,11 @@ class AuditController extends Controller
             $session->setFlash('auditForm', $values);
         }
 
-        return $this->redirect($this->request->getReferrer() ?: '/');
+        // THE POSTED REDIRECT FIRST, because it carries the anchor and the referrer does
+        // not. A validation error is the case that needs it most: the form sits a long way
+        // down a landing page, and a referrer redirect puts the visitor at the top with
+        // the message about what they typed wrong five thousand pixels below them. The
+        // referrer stays as the fallback for a post that arrived without one.
+        return $this->redirectToPostedUrl(null, $this->request->getReferrer() ?: '/');
     }
 }

@@ -18,6 +18,16 @@
     @include mq(from, md) {
         padding: getmap($space, rhythm, 700);
     }
+    // AIR ABOVE IT WHEN IT IS THE THING BEING SCROLLED TO. The audit form redirects to
+    // its own anchor after a submit (see _components/audit-form.twig), so the panel is a
+    // scroll target — and a scroll target lands flush against the top of the window,
+    // which on a panel with rounded corners and a solid fill reads as the page having
+    // been cut off rather than as having arrived somewhere.
+    //
+    // `scroll-margin-top` does nothing at all until something scrolls to this element, so
+    // it costs the contact form nothing to carry it too.
+    scroll-margin-top: getmap($space, rhythm, 900);
+
     border-radius: $b-radius-200; // matches the CTA boxes
     background-color: getmap($colour, primary, 500); // solid green
     color: getmap($colour, light, 100);

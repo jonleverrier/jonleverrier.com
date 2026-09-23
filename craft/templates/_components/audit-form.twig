@@ -15,6 +15,10 @@
   error and leave, and their address would go with them. So this accepts, queues, and lets
   a failure become an entry a human looks at.
 #}
+{# The id the redirect lands on and the id on the rendered state. Named once: two
+   spellings of it is a form that posts and a page that ignores where it was told to go. #}
+{% set anchor = 'link' %}
+
 {% set old = craft.app.session.getFlash('auditForm') ?? {} %}
 {% set error = craft.app.session.getFlash('error') %}
 {% set fieldErrors = craft.app.session.getFlash('auditErrors') ?? {} %}
@@ -38,7 +42,7 @@
     {# THE WAIT IS STATED, because it is minutes rather than seconds and nothing about a
        submitted form shows that. A person told "shortly" refreshes; a person told what is
        happening does not. #}
-    <div class="c-form c-form--done" role="status">
+    <div class="c-form c-form--done" id="{{ anchor }}" role="status" tabindex="-1">
         <p class="c-form__thanks">Measuring your homepage</p>
         <p class="c-form__thanks-sub">It takes a few minutes — we photograph the whole page,
             not just the first screen. The report lands in your inbox when it is ready.</p>
@@ -46,19 +50,28 @@
 {% elseif craft.app.session.getFlash('auditBlocked') %}
     {# Rate limited or filled implausibly fast. A one-time notice rather than a banner they
        can retry against, and deliberately not an explanation of which rule they tripped. #}
-    <div class="c-form c-form--done" role="status">
+    <div class="c-form c-form--done" id="{{ anchor }}" role="status" tabindex="-1">
         <p class="c-form__thanks">Not submitted</p>
         <p class="c-form__thanks-sub">Please get in touch directly and I will run it for you</p>
     </div>
 {% else %}
-<form class="c-form" method="post" accept-charset="UTF-8" data-audit-form>
+<form class="c-form" method="post" accept-charset="UTF-8" id="{{ anchor }}" data-audit-form>
     {{ csrfInput() }}
     {# A VIP visitor already has their details on their entry (modules/jonson/services/Vip),
        so they are not asked twice. A failed submit's own values always win: what somebody
        typed is what they meant, even where it differs from what we hold. #}
     {% set vip = craft.app.getModule('jonson').vip.current() %}
     <input type="hidden" name="action" value="leadgenerator/audit/submit">
-    {{ redirectInput(craft.app.request.pathInfo) }}
+    {# BACK TO THE FORM, NOT THE TOP OF THE PAGE. A plain POST + redirect reloads at the top,
+       and this form sits a long way down a landing page — on /tools/homepage-analysis the
+       visitor lands 5,000px above the message telling them their report is coming, and
+       every sign of having submitted anything is off screen.
+
+       A fragment on the redirect is all it takes, and it costs no JavaScript: the browser
+       is told where to land. The id is on whichever state renders — the form, the thanks,
+       or the blocked notice — and only one of them is ever on the page at a time, so they
+       can share it. #}
+    {{ redirectInput(craft.app.request.pathInfo ~ '#' ~ anchor) }}
 
     {# Signed render time — the controller refuses a form completed implausibly fast.
        Hashed, so the client's clock and the client's honesty are both beside the point. #}
