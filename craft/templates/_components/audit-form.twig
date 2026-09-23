@@ -19,6 +19,21 @@
    spellings of it is a form that posts and a page that ignores where it was told to go. #}
 {% set anchor = 'link' %}
 
+{# THE THANK-YOU COPY, from the tool's own entry, with the original wording as the
+   fallback while the fields are empty — the same shape _components/form.twig uses for the
+   contact single. Both fields were already on the `audit` entry type and neither was ever
+   read, so editing them in the control panel changed nothing.
+
+   FETCHED HERE RATHER THAN PASSED IN, because this component is included with
+   `with_context = false` on purpose: a form that read whatever happened to be in scope
+   would work on this page and break in the next caller. It asks for the entry it means by
+   section and type, which is the same question modules\leadgenerator\audit\services\Audit
+   asks for the tool's name. #}
+{% set tool = craft.entries().section('tools').type('audit').status(null).one() %}
+{% set sentTitle = (tool.messageSentTitle ?? '')|trim ?: 'Measuring your homepage' %}
+{% set sentText = (tool.messageSentText ?? '')|trim
+    ?: 'It takes a few minutes — we photograph the whole page, not just the first screen. The report lands in your inbox when it is ready.' %}
+
 {% set old = craft.app.session.getFlash('auditForm') ?? {} %}
 {% set error = craft.app.session.getFlash('error') %}
 {% set fieldErrors = craft.app.session.getFlash('auditErrors') ?? {} %}
@@ -43,9 +58,8 @@
        submitted form shows that. A person told "shortly" refreshes; a person told what is
        happening does not. #}
     <div class="c-form c-form--done" id="{{ anchor }}" role="status" tabindex="-1">
-        <p class="c-form__thanks">Measuring your homepage</p>
-        <p class="c-form__thanks-sub">It takes a few minutes — we photograph the whole page,
-            not just the first screen. The report lands in your inbox when it is ready.</p>
+        <p class="c-form__thanks">{{ sentTitle }}</p>
+        <p class="c-form__thanks-sub">{{ sentText }}</p>
     </div>
 {% elseif craft.app.session.getFlash('auditBlocked') %}
     {# Rate limited or filled implausibly fast. A one-time notice rather than a banner they
