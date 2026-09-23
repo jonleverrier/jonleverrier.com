@@ -154,9 +154,14 @@ class Audit extends Component
         foreach ([
             ['capture', ['tools/audit/capture.mjs', $url, $dir]],
             ['analyse', ['tools/audit/analyse.mjs', $dir]],
-            // report.json last, because the Twig template reads it and nothing in PHP may
-            // recompute a percentage — see tools/audit/data.mjs.
+            // report.json before the two steps that patch it, because the Twig template
+            // reads it and nothing in PHP may recompute a percentage — see
+            // tools/audit/data.mjs.
             ['data', ['tools/audit/data.mjs', $dir]],
+            // What the page says it is for, per site: a lead whose purpose differs from
+            // their competitor's is the case where comparing segment shares misleads, and
+            // the report can only say so if it asked both. One text-only request.
+            ['purpose', ['tools/audit/purpose.mjs', $dir]],
         ] as [$step, $args]) {
             $result = $this->node($args);
             if (!$result['ok']) {
