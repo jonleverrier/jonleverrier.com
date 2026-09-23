@@ -50,7 +50,16 @@ class NoteMemory extends Component
      *  card is written, rather than one that restates a one-line bio — or worse,
      *  pads it out. A project needs more than a note: a bio, a client line and a
      *  skills list add up to forty words of labels that say nothing about the job. */
-    public const MIN_SOURCE_WORDS = ['note' => 40, 'project' => 80];
+    /**
+     * The floor per SHAPE, and there must be one for every shape named in SECTIONS.
+     *
+     * `tool` shipped without its floor and the feature was silently dead: the lookup
+     * below read an undefined key, which is an ErrorException, thrown from inside the
+     * after-save handler where Craft swallows it. The entry saved, the control panel
+     * said so, and no job was ever queued — nothing in the logs and nothing to see.
+     * minSourceWords() no longer trusts this map to be complete.
+     */
+    public const MIN_SOURCE_WORDS = ['note' => 40, 'project' => 80, 'tool' => 80];
 
     /**
      * Whether the field exists at all — on the note's layout. Everything else
@@ -215,6 +224,21 @@ class NoteMemory extends Component
     public function minSourceWords(Entry $entry): int
     {
         $shape = self::SECTIONS[$entry->getSection()?->handle ?? ''] ?? 'note';
+
+        // A MISSING FLOOR MUST NOT BE FATAL. This runs inside an after-save handler, so
+        // anything thrown here is caught by Craft and disappears: the only symptom is a
+        // card that never appears. Fall back to the strictest floor we know — a shape
+        // with no floor is a mistake, and the safe reading of a mistake is to demand
+        // more text rather than less — and say so where somebody will see it.
+        if (!isset(self::MIN_SOURCE_WORDS[$shape])) {
+            Craft::warning(
+                "[jonson] no MIN_SOURCE_WORDS floor for the '{$shape}' shape; using the strictest. "
+                . 'Add one beside its entry in SECTIONS.',
+                __METHOD__,
+            );
+
+            return max(self::MIN_SOURCE_WORDS);
+        }
 
         return self::MIN_SOURCE_WORDS[$shape];
     }
