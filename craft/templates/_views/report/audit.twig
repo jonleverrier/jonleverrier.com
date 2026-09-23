@@ -265,9 +265,11 @@
            is the title of the document, so it is the only line that does not have to look
            like a measurement.
 
-           `balance` ON THE WRAP, because at this size "Homepage Audit" is most of the
-           column: it fits on one line here, and a longer title would otherwise break with
-           one word stranded on the second. */
+           `balance` ON THE WRAP, and it matters more now than it did: the words are the
+           Tools entry's title rather than anything written here, so their length is a CMS
+           field. "Homepage Analysis" fills most of the column at this size and fits on one
+           line; a longer title would otherwise break with one word stranded on the
+           second. */
         .r-cover__label { margin: 0 0 16px; color: #111; font-family: var(--r-sans);
             font-size: 55px; font-weight: 600; line-height: 1; letter-spacing: -0.02em;
             text-wrap: balance; }
@@ -340,7 +342,7 @@
         </div>
 
         <div class="r-cover__head">
-            <p class="r-cover__label">Homepage Audit</p>
+            <p class="r-cover__label">{{ toolName ?? 'Homepage Analysis' }}</p>
             <h1 class="r-cover__url">{{ report.url }}</h1>
             {# THE SECOND SITE, NAMED ON THE COVER. A lead who asked for a comparison should
                see on the first page that they got one, rather than finding out on page six.

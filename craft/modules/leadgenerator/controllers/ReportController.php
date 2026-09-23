@@ -59,6 +59,12 @@ class ReportController extends Controller
             // always got, with nothing switched off and nothing left empty.
             'competitor' => LeadGenerator::getInstance()->audit->reportData($entry, RunAudit::COMPETITOR),
             'competitorAnnotated' => $this->artefactUrl($entry, 'debug.png', RunAudit::COMPETITOR),
+            // THE TOOL'S OWN NAME, from the entry in the Tools structure — the same call the
+            // email subject and the PDF filename already make, so the page a lead read, the
+            // subject line, the filename and the cover all say one thing. The cover said
+            // "Homepage Audit" in hardcoded markup while everything else said "Homepage
+            // Analysis". See Audit::toolName for the fallback when that entry is missing.
+            'toolName' => LeadGenerator::getInstance()->audit->toolName(),
         ], \craft\web\View::TEMPLATE_MODE_SITE);
     }
 
