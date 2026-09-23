@@ -294,13 +294,17 @@
         /* The same label the scores carry, so the cover has one voice for its headings. */
         .r-findings__head { margin-top: 26px; }
         /* THE READING, under the Segments table and at the foot of the comparison.
-           MEASURED, NOT FULL WIDTH. This is the one part of the sheet somebody reads rather
-           than scans, and the table's 704px is about 105 characters of 11px mono to a line,
-           which is roughly twice a comfortable measure. 62ch computes to 409px.
+           FULL WIDTH, matching the table it is about. It was capped at 62ch for a reading
+           measure, which computes to 409px against the table's 704 — and inset like that it
+           read as a panel floating inside the section rather than as the reading of the
+           table above it.
 
-           Tried at full width and reverted: it matches the table it sits under, and it
-           reads worse. */
-        .r-reading-block { max-width: 62ch; }
+           The measure was tried, reverted, and tried again; the lines are single sentences
+           rather than paragraphs, so the long line costs less here than the loss of
+           alignment did. One box carries this for every child — see _sections.twig, where
+           a plain <p> that carried none of the old per-element classes ran the full 704
+           beside bullets set to 409. */
+        .r-reading-block { max-width: none; }
         .r-reading-block p { margin: 0 0 10px; }
         .r-reading { list-style: none; margin: 0 0 10px; padding: 0; }
         .r-reading li { padding: 3px 0 3px 14px; text-indent: -14px; }
