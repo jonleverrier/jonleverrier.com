@@ -1,4 +1,4 @@
-dateModified: 1790088837
+dateModified: 1790159418
 elementSources:
   craft\elements\Entry:
     -
@@ -188,6 +188,7 @@ elementSources:
       tableAttributes:
         - link
         - 'field:26c8a621-4825-4302-adb0-d8db3b9c2d76' # Status
+        - dateCreated
       type: native
     -
       heading: Settings
