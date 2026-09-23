@@ -1,0 +1,800 @@
+{
+  "base": "https://jonleverrier2.local",
+  "runs": 6,
+  "started": "2026-09-23T20:19:13.931Z",
+  "scenarios": [
+    {
+      "id": "work-repeat",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What results did the new booking engine deliver?",
+            "How did you handle the scattered conference data?",
+            "What's the AI copilot you built for them?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "White Paper are a UK CPD conference provider I've worked with for years, and I redesigned and built their booking engine and on-demand platform. The old flow took eight steps to book and their conference data was scattered across disconnected systems — I brought it all into one place, split the checkout into manageable tasks and automated a lot of the back office.\n\n[[casestudies]]\n\nIt's still ongoing — there's a fair bit of detail in the write-up if you want the full picture.\n\n[[next: what results did the new booking engine deliver? @study:white-paper-booking-engine-design-development | how did you handle the scattered conference data? @study:white-paper-booking-engine-design-development | what's the AI copilot you built for them? @study:white-paper-booking-engine-design-development]]"
+        },
+        {
+          "q": "Who have you worked with over the years?",
+          "tapped": null,
+          "shown": [
+            "clients",
+            "suggestions"
+          ],
+          "marked": [
+            "clients"
+          ],
+          "imgs": 0,
+          "chips": [
+            "Which sectors have you worked in?",
+            "Can I see more of your work?"
+          ],
+          "studies": [],
+          "answer": "Over 25 years I've worked with a real spread — banks and financial firms, telecoms, regulatory startups, ecommerce brands and agencies, both in-house and freelance.\n\n[[clients]]\n\nA good number have stuck around for ten years or more, which I take as the best sign I'm doing something right.\n\n[[next: which sectors have you worked in? @work | why do clients stay with you so long? @method | can I see more of your work? @work]]"
+        },
+        {
+          "q": "Can I see some of the actual projects?",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "contact"
+          ],
+          "marked": [
+            "casestudies",
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [
+            "https://jonleverrier2.local/case-study/logos",
+            "https://jonleverrier2.local/case-study/urban-co-uk-product-branding",
+            "https://jonleverrier2.local/case-study/vaiie-onboard-product-design",
+            "https://jonleverrier2.local/case-study/streetpal-ios-app-design-development",
+            "https://jonleverrier2.local/case-study/vaiie-identify-product-design",
+            "https://jonleverrier2.local/case-study/vaiie-product-branding",
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "Here's a selection — everything from a booking platform and identity verification products to branding for a regtech suite and my own street photography app.\n\n[[casestudies:all]]\n\nEach card opens the full write-up if you want to dig into the problem, the approach and what came out of it.\n\nIf any of them chime with what you're working on, I'd be glad to hear about it — you can reach me over on the [contact page](/contact).\n\n[[contact]]\n\n[[next: how do you approach a new project? @method | which of these was most challenging? @work | what would working together look like? @contact]]"
+        }
+      ],
+      "failures": [
+        "T3 repeated 1 study card(s) already on screen"
+      ]
+    },
+    {
+      "id": "work-repeat",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "How do you usually approach a project like this?",
+            "How much did drop-off actually improve?",
+            "What's the AI copilot you built for them?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "White Paper are a UK CPD conference provider I've worked with for years, and I redesigned and built their booking engine and on-demand platform. The old flow took eight steps to book and their conference data was scattered across disconnected systems — so I rebuilt it around a single content repository, split the checkout into manageable tasks, and automated a lot of the manual back office work.\n\n[[casestudies]]\n\n[[next: how much did drop-off actually improve? @study:white-paper-booking-engine-design-development | what's the AI copilot you built for them? @study:white-paper-booking-engine-design-development | how do you usually approach a project like this? @method]]"
+        },
+        {
+          "q": "Who have you worked with over the years?",
+          "tapped": null,
+          "shown": [
+            "clients",
+            "suggestions"
+          ],
+          "marked": [
+            "clients"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What sectors have you actually worked in?",
+            "Can we talk about a project I've got in mind?"
+          ],
+          "studies": [],
+          "answer": "Over 25 years I've worked with a real mix — banks and financial services, telecoms, regtech startups, ecommerce brands and events companies, both directly and through agencies. A fair few of those relationships have run for a decade or more, which tells you something about how I like to work.\n\n[[clients]]\n\n[[next: what sectors have you actually worked in? @work | why do your clients stay with you so long? @method | can we talk about a project I've got in mind? @contact]]"
+        },
+        {
+          "q": "Can I see some of the actual projects?",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "contact"
+          ],
+          "marked": [
+            "casestudies",
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [
+            "https://jonleverrier2.local/case-study/logos",
+            "https://jonleverrier2.local/case-study/urban-co-uk-product-branding",
+            "https://jonleverrier2.local/case-study/vaiie-onboard-product-design",
+            "https://jonleverrier2.local/case-study/streetpal-ios-app-design-development",
+            "https://jonleverrier2.local/case-study/vaiie-identify-product-design",
+            "https://jonleverrier2.local/case-study/vaiie-product-branding",
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "Here's a spread of them — regtech product work for Vaiie, the online estate agency Urban.co.uk, a street photography app I made as a side project, and the White Paper platform we just touched on.\n\n[[casestudies:all]]\n\nHave a poke around, and if something sparks a thought about your own project, you can reach me any of the ways over on the [contact page](/contact).\n\n[[contact]]\n\n[[next: what was the hardest part of the Vaiie identity work? @study:vaiie-identify-product-design | what made you build StreetPal? @study:streetpal-ios-app-design-development | how do you like to work with new clients? @method]]"
+        }
+      ],
+      "failures": [
+        "T3 repeated 1 study card(s) already on screen"
+      ]
+    },
+    {
+      "id": "work-repeat",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "How much did the drop-off actually improve?",
+            "How did you approach the research for it?",
+            "What's the AI copilot you mentioned?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "The booking engine and on-demand platform for [White Paper](/case-study/white-paper-booking-engine-design-development), the UK's leading provider of legal and business CPD conferences — and it's still ongoing. Their old flow took eight interactions to get from a programme page to a completed booking, with data scattered across disconnected platforms; I brought it all under one roof and rebuilt the whole journey.\n\n[[casestudies]]\n\n[[next: how much did the drop-off actually improve? @study:white-paper-booking-engine-design-development | what's the AI copilot you mentioned? @study:white-paper-booking-engine-design-development | how did you approach the research for it? @method]]"
+        },
+        {
+          "q": "Who have you worked with over the years?",
+          "tapped": null,
+          "shown": [
+            "clients",
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What sectors have you worked in?"
+          ],
+          "studies": [],
+          "answer": "Over 25 years I've worked with a good spread of well-known names — banks, government, telecoms, ecommerce brands and regulatory startups among them.\n\n[[clients]]\n\nSome of those relationships have run for over a decade, which tells you more than any single logo.\n\n[[testimonial]]\n\n[[next: what sectors have you worked in? @work | why do clients stay with you so long? @cv | how do you like to work with clients? @method]]"
+        },
+        {
+          "q": "Can I see some of the actual projects?",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "contact"
+          ],
+          "marked": [
+            "casestudies",
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [
+            "https://jonleverrier2.local/case-study/logos",
+            "https://jonleverrier2.local/case-study/urban-co-uk-product-branding",
+            "https://jonleverrier2.local/case-study/vaiie-onboard-product-design",
+            "https://jonleverrier2.local/case-study/streetpal-ios-app-design-development",
+            "https://jonleverrier2.local/case-study/vaiie-identify-product-design",
+            "https://jonleverrier2.local/case-study/vaiie-product-branding",
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "Here's a broader spread — regulatory product design, an online estate agency, ecommerce front-ends and a street photography app I built myself.\n\n[[casestudies:all]]\n\nIf any of them line up with what you've got in mind, I'm easy to reach — just [drop me a line](/contact) and we can talk it through.\n\n[[contact]]\n\n[[next: what was the StreetPal app about? @study:streetpal-ios-app-design-development | how did you approach the Vaiie branding? @study:vaiie-product-branding | what's your day rate and how do you work? @contact]]"
+        }
+      ],
+      "failures": [
+        "T3 repeated 1 study card(s) already on screen"
+      ]
+    },
+    {
+      "id": "work-repeat",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What did the back office look like before?",
+            "What does the AI copilot actually do?",
+            "How did you cut the checkout drop-off?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "Sure — White Paper is the UK's leading provider of legal and business CPD conferences, and I've been their design and technology partner for a good while now. The headline piece was rebuilding the booking engine and on-demand platform behind twenty years of conferences: taming a long, drop-off-prone checkout and pulling scattered conference data into one place.\n\n[[casestudies]]\n\nThe results were the satisfying part — far less drop-off, far less manual processing in the back office. Happy to go deeper on any of it.\n\n[[next: how did you cut the checkout drop-off? @study:white-paper-booking-engine-design-development | what does the AI copilot actually do? @study:white-paper-booking-engine-design-development | what did the back office look like before? @study:white-paper-booking-engine-design-development]]"
+        },
+        {
+          "q": "Who have you worked with over the years?",
+          "tapped": null,
+          "shown": [
+            "clients",
+            "sectors",
+            "suggestions"
+          ],
+          "marked": [
+            "clients",
+            "sectors"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What kinds of projects do you take on?",
+            "Can we talk about my project?",
+            "How do you approach a new project?"
+          ],
+          "studies": [],
+          "answer": "Over 25 years I've worked with a real range — banks, telecoms, regulators, ecommerce startups and government among them, some relationships running a decade or more.\n\n[[clients]]\n\nIt spans quite a few sectors too, from financial services and regtech through to beauty and property.\n\n[[sectors]]\n\n[[next: what kinds of projects do you take on? @work | how do you approach a new project? @method | can we talk about my project? @contact]]"
+        },
+        {
+          "q": "Can I see some of the actual projects?",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "contact"
+          ],
+          "marked": [
+            "casestudies",
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [
+            "https://jonleverrier2.local/case-study/logos",
+            "https://jonleverrier2.local/case-study/urban-co-uk-product-branding",
+            "https://jonleverrier2.local/case-study/vaiie-onboard-product-design",
+            "https://jonleverrier2.local/case-study/streetpal-ios-app-design-development",
+            "https://jonleverrier2.local/case-study/vaiie-identify-product-design",
+            "https://jonleverrier2.local/case-study/vaiie-product-branding",
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "Here's a spread of them — regulatory product work, an online estate agency, my own street photography app, and more.\n\n[[casestudies:all]]\n\nA couple worth a look: the [Vaiie identity verification journey](/case-study/vaiie-identify-product-design), where the interesting bit was watching how people actually read numbers and moved in front of a camera, and [Urban.co.uk](/case-study/urban-co-uk-product-branding), the UK's first online estate agency, right before their pre-seed round.\n\nIf any of it chimes with what you're working on, [drop me a line](/contact) and we can talk it through properly.\n\n[[contact]]\n\n[[next: what was tricky about the Vaiie identity work? @study:vaiie-identify-product-design | what did you do for Urban.co.uk? @study:urban-co-uk-product-branding | how do you like to work with clients? @method]]"
+        }
+      ],
+      "failures": [
+        "T3 repeated 1 study card(s) already on screen"
+      ]
+    },
+    {
+      "id": "work-repeat",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What's your process when you take on a project like this?",
+            "What results did the new booking engine deliver?",
+            "How did you handle the scattered conference data?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "One of my longest-running relationships — a UK CPD conference provider I've been working with for years. Most recently I designed and built their booking engine and on-demand platform, tackling a checkout that took far too many steps and conference data scattered across disconnected systems.\n\nThe [full write-up](/case-study/white-paper-booking-engine-design-development) goes into the whole thing — the research, what we built and the results.\n\n[[casestudies]]\n\n[[next: what results did the new booking engine deliver? @study:white-paper-booking-engine-design-development | how did you handle the scattered conference data? @study:white-paper-booking-engine-design-development | what's your process when you take on a project like this? @method]]"
+        },
+        {
+          "q": "Who have you worked with over the years?",
+          "tapped": null,
+          "shown": [
+            "clients",
+            "suggestions"
+          ],
+          "marked": [
+            "clients"
+          ],
+          "imgs": 0,
+          "chips": [
+            "Which sectors have you actually worked in?",
+            "Can I see more of your case studies?"
+          ],
+          "studies": [],
+          "answer": "Quite a range over 25-odd years — banks, telecoms, ecommerce startups, a national postal service, regulatory tech, and plenty in between, working across agencies, in-house teams and on my own.\n\n[[clients]]\n\n[[next: which sectors have you actually worked in? @work | can I see more of your case studies? @work | how do you like to work with clients? @method]]"
+        },
+        {
+          "q": "Can I see some of the actual projects?",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "contact"
+          ],
+          "marked": [
+            "casestudies",
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [
+            "https://jonleverrier2.local/case-study/logos",
+            "https://jonleverrier2.local/case-study/urban-co-uk-product-branding",
+            "https://jonleverrier2.local/case-study/vaiie-onboard-product-design",
+            "https://jonleverrier2.local/case-study/streetpal-ios-app-design-development",
+            "https://jonleverrier2.local/case-study/vaiie-identify-product-design",
+            "https://jonleverrier2.local/case-study/vaiie-product-branding",
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "Here's a spread across quite different worlds — a conference platform, a regtech suite, an identity verification product, an online estate agency, and a street photography app I built for myself.\n\n[[casestudies:all]]\n\nHave a browse — happy to dig into any of them if one catches your eye. And if you'd like to talk about something you're working on, you can reach me over on my [contact page](/contact).\n\n[[contact]]\n\n[[next: what was the Vaiie identity verification project about? @study:vaiie-identify-product-design | why did you build the StreetPal app yourself? @study:streetpal-ios-app-design-development | how do you usually price a project? @contact]]"
+        }
+      ],
+      "failures": [
+        "T3 repeated 1 study card(s) already on screen"
+      ]
+    },
+    {
+      "id": "work-repeat",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What results did the booking engine actually get?",
+            "How did you handle the scattered conference data?",
+            "What's the AI copilot you built for them?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "White Paper is a UK CPD conference provider I've worked with for years, and I designed and built their booking engine and on-demand platform — it's still an ongoing relationship. The short version: their old booking flow took eight steps and their conference data was scattered across disconnected platforms, so I pulled it all into one place and rethought the whole thing.\n\n[[casestudies]]\n\n[[next: what results did the booking engine actually get? @study:white-paper-booking-engine-design-development | how did you handle the scattered conference data? @study:white-paper-booking-engine-design-development | what's the AI copilot you built for them? @study:white-paper-booking-engine-design-development]]"
+        },
+        {
+          "q": "Who have you worked with over the years?",
+          "tapped": null,
+          "shown": [
+            "clients",
+            "suggestions"
+          ],
+          "marked": [
+            "clients"
+          ],
+          "imgs": 0,
+          "chips": [
+            "Which sectors have you worked in?",
+            "Can I see more of your case studies?"
+          ],
+          "studies": [],
+          "answer": "Quite a range over 25-odd years — banks like Lloyds and HSBC International, government work, ecommerce and beauty brands, telecoms, plus a good few startups and regtech products.\n\n[[clients]]\n\n[[next: which sectors have you worked in? @work | can I see more of your case studies? @work | how do you like to work with clients? @method]]"
+        },
+        {
+          "q": "Can I see some of the actual projects?",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "contact"
+          ],
+          "marked": [
+            "casestudies",
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [
+            "https://jonleverrier2.local/case-study/logos",
+            "https://jonleverrier2.local/case-study/urban-co-uk-product-branding",
+            "https://jonleverrier2.local/case-study/vaiie-onboard-product-design",
+            "https://jonleverrier2.local/case-study/streetpal-ios-app-design-development",
+            "https://jonleverrier2.local/case-study/vaiie-identify-product-design",
+            "https://jonleverrier2.local/case-study/vaiie-product-branding",
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "Here's a spread of them — from a booking platform and regtech products to an estate agency rebrand and one of my own side projects.\n\n[[casestudies:all]]\n\nA couple worth a look: the [Vaiie identity verification journey](/case-study/vaiie-identify-product-design), which ended up government approved and running across 254 countries, and [StreetPal](/case-study/streetpal-ios-app-design-development), my own iPhone app for street photographers.\n\nIf any of it sparks something for your own project, [drop me a line](/contact) and we can talk it through.\n\n[[contact]]\n\n[[next: what was the hardest part of the Vaiie verification project? @study:vaiie-identify-product-design | what made you build StreetPal? @study:streetpal-ios-app-design-development | how would you approach a project like mine? @method]]"
+        }
+      ],
+      "failures": [
+        "T3 repeated 1 study card(s) already on screen"
+      ]
+    },
+    {
+      "id": "work-chip-loop",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What's your process on a project like that?",
+            "What were the actual results?",
+            "How did you handle the on-demand video side?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "White Paper is a UK conference provider I've worked with for years, and I rebuilt the platform behind two decades of their conferences — the booking engine and an on-demand video service. The short version: booking used to take eight interactions and a long messy checkout, with data scattered across disconnected systems, so I brought it all onto one repository and split the checkout into sane steps.\n\n[[casestudies]]\n\nThe results were the bit I'm most pleased with — a big drop in abandoned bookings and the back office freed up massively.\n\n[[next: what were the actual results? @study:white-paper-booking-engine-design-development | how did you handle the on-demand video side? @study:white-paper-booking-engine-design-development | what's your process on a project like that? @method]]"
+        },
+        {
+          "q": "What's your process on a project like that?",
+          "tapped": 0,
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": [
+            "How would we get started working together?",
+            "How do you handle testing along the way?",
+            "Can you work with our existing developers?"
+          ],
+          "studies": [],
+          "answer": "Broadly it runs research first — understanding the users and the landscape before anything gets designed — then branding where needed, then design proper, then development. On White Paper that meant interviews and surveys up front (which turned up that the person booking often isn't the attendee), before a line of the interface got drawn.\n\n[[method]]\n\nI keep it flexible, though — it's a shape to work within, not a rigid checklist. Sometimes the tech or the feedback pushes you to reorder things.\n\n[[next: how do you handle testing along the way? @study:vaiie-identify-product-design | can you work with our existing developers? @method | how would we get started working together? @contact]]"
+        },
+        {
+          "q": "How would we get started working together?",
+          "tapped": 0,
+          "shown": [
+            "contact"
+          ],
+          "marked": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [],
+          "answer": "Usually it starts with a conversation — you tell me what you're trying to make or fix, and we work out whether it's a fixed-scope project or more of an ongoing arrangement. No obligation, just a chat to see if there's a good fit.\n\nDrop me a line whenever you're ready and we'll take it from there.\n\n[[contact]]\n\n[[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "work-chip-loop",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What results did the new booking engine deliver?",
+            "How do you usually approach a project like this?",
+            "How did you handle the on-demand platform side?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "One of my longest-standing relationships — a UK CPD conference provider I've been working with for years. I rebuilt the [booking engine and on-demand platform](/case-study/white-paper-booking-engine-design-development) behind twenty years of their conferences, taking a clunky eight-step booking flow down to something far simpler and pulling their scattered data into one place.\n\n[[casestudies]]\n\n[[next: what results did the new booking engine deliver? @study:white-paper-booking-engine-design-development | how did you handle the on-demand platform side? @study:white-paper-booking-engine-design-development | how do you usually approach a project like this? @method]]"
+        },
+        {
+          "q": "What results did the new booking engine deliver?",
+          "tapped": 0,
+          "shown": [
+            "suggestions"
+          ],
+          "marked": [],
+          "imgs": 0,
+          "chips": [
+            "Could you do something similar for my business?",
+            "How did you cut the booking flow down so much?",
+            "What did the on-demand platform involve?"
+          ],
+          "studies": [],
+          "answer": "The headline ones: around 90% less drop-off in the booking flow, 50–60% fewer interactions to complete a booking, and 85% less processing time on the admin side. The back office went from four staff handling bookings to one, and the on-demand platform now brings in about 35% of their revenue.\n\n[[next: how did you cut the booking flow down so much? @study:white-paper-booking-engine-design-development | what did the on-demand platform involve? @study:white-paper-booking-engine-design-development | could you do something similar for my business? @contact]]"
+        },
+        {
+          "q": "Could you do something similar for my business?",
+          "tapped": 0,
+          "shown": [
+            "testimonial",
+            "contact"
+          ],
+          "marked": [
+            "testimonial",
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [],
+          "answer": "Very likely, yes — that kind of work is squarely what I do: untangling a complicated flow, joining up scattered systems, and making the whole thing easier for both your customers and your team. I work across strategy, design and build, so it holds together end to end rather than being handed off halfway.\n\n[[testimonial]]\n\nI'd need to hear a bit about your setup to say anything concrete, so if you fancy talking it through, just drop me a line and we'll take it from there.\n\n[[contact]]\n\n[[next: how do you usually approach a new project? @method | what would working together actually look like? @method | what does it cost to work with you? @contact]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "work-chip-loop",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What results did the booking engine changes produce?",
+            "How do you usually approach a project like this?",
+            "How did you handle the on-demand platform?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "White Paper is a long-standing client of mine — a UK CPD conference provider that's been running for 20 years. I designed and built their booking engine and on-demand platform, pulling conference data that had been scattered across disconnected systems into one place and cutting a painful eight-step booking flow right down.\n\n[[casestudies]]\n\nIt's still ongoing, and there's a fair bit under the hood — the checkout redesign, the automation, the analytics side. Happy to go deeper on any of it.\n\n[[next: what results did the booking engine changes produce? @study:white-paper-booking-engine-design-development | how did you handle the on-demand platform? @study:white-paper-booking-engine-design-development | how do you usually approach a project like this? @method]]"
+        },
+        {
+          "q": "What results did the booking engine changes produce?",
+          "tapped": 0,
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": [
+            "How would I start a conversation with you about something similar?",
+            "What does your process look like on a project like this?",
+            "How did you cut the booking flow down so much?"
+          ],
+          "studies": [],
+          "answer": "The numbers came out well. Drop-off fell by around 90%, the booking journey itself shrank interactions by 50–60%, and processing time on the back office side dropped by about 85% — the admin team went from spending most of their day on bookings to roughly a fifth of it. On-demand ended up bringing in around 35% of revenue too, which was a nice bonus rather than the original goal.\n\n[[testimonial]]\n\nThe knock-on effect the MD mentioned was that the back office went from four people down to one.\n\n[[next: how did you cut the booking flow down so much? @study:white-paper-booking-engine-design-development | what does your process look like on a project like this? @method | how would I start a conversation with you about something similar? @contact]]"
+        },
+        {
+          "q": "How would I start a conversation with you about something similar?",
+          "tapped": 0,
+          "shown": [
+            "contact"
+          ],
+          "marked": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [],
+          "answer": "Easiest thing is just to drop me a line and tell me a bit about what you're working on — where you're at, what's feeling stuck, roughly what you're hoping to achieve. No need for a polished brief; a few sentences is plenty to get us talking.\n\n[[contact]]\n\n[[next: none]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "work-chip-loop",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What results did the booking engine changes deliver?",
+            "How do you usually approach a project like this?",
+            "How did you handle the on-demand video platform?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "Long-standing client of mine — they run CPD conferences for legal and business folk, and have done for around two decades. I designed and developed their booking engine and on-demand platform, and streamlined a lot of manual back-office work along the way.\n\nThe short version: [rebuilding a platform behind 20 years of conferences](/case-study/white-paper-booking-engine-design-development) — cutting the number of steps to book, pulling scattered conference data into one place, and automating the certificates and reminders that used to be done by hand.\n\n[[casestudies]]\n\n[[next: what results did the booking engine changes deliver? @study:white-paper-booking-engine-design-development | how did you handle the on-demand video platform? @study:white-paper-booking-engine-design-development | how do you usually approach a project like this? @method]]"
+        },
+        {
+          "q": "What results did the booking engine changes deliver?",
+          "tapped": 0,
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": [
+            "Could you help with something similar for us?",
+            "What does your process look like on a project like this?",
+            "How did you cut the drop-off so dramatically?"
+          ],
+          "studies": [],
+          "answer": "The numbers landed well: drop-off fell by around 90%, the steps to complete a booking came down by 50–60%, and processing time dropped by about 85% — admin now spend roughly a fifth of their time on bookings compared to before. The on-demand side also grew into about 35% of revenue.\n\nThe bit I'm proudest of is what it did for the team — the back office went from four people handling bookings down to one. As their MD put it, the work became genuinely integrated with how their business runs.\n\n[[testimonial]]\n\n[[next: how did you cut the drop-off so dramatically? @study:white-paper-booking-engine-design-development | what does your process look like on a project like this? @method | could you help with something similar for us? @contact]]"
+        },
+        {
+          "q": "Could you help with something similar for us?",
+          "tapped": 0,
+          "shown": [
+            "method",
+            "contact"
+          ],
+          "marked": [
+            "method",
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [],
+          "answer": "Very likely, yes — that mix of a clunky multi-step flow, data scattered across systems, and a team drowning in manual admin is exactly the kind of knot I enjoy untangling. The way I work, I'd start by understanding who's actually using the thing and where it's leaking, then design and build from there rather than jumping straight to screens.\n\n[[method]]\n\nHappy to talk it through properly whenever suits — easiest is to drop me a line via the [contact page](/contact) and tell me a bit about what you're dealing with.\n\n[[contact]]\n\n[[next: what would the first stage of working together look like? @method | what's your availability and rate? @contact | have you done this kind of work outside conferences? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "work-chip-loop",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "How do you usually approach a project like this?",
+            "What does the AI copilot actually do?",
+            "How did you cut the booking drop-off?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "White Paper is a UK CPD conference provider I've worked with for years, and I designed and built their booking engine and on-demand platform. The short version: getting from a conference programme to a completed booking used to take eight steps and a mountain of manual back-office work — I collapsed that into a much simpler journey and pulled all their scattered conference data into one place.\n\n[[casestudies]]\n\n[[next: how did you cut the booking drop-off? @study:white-paper-booking-engine-design-development | what does the AI copilot actually do? @study:white-paper-booking-engine-design-development | how do you usually approach a project like this? @method]]"
+        },
+        {
+          "q": "How do you usually approach a project like this?",
+          "tapped": 0,
+          "shown": [
+            "method",
+            "suggestions"
+          ],
+          "marked": [
+            "method"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What's it like working with you day to day?",
+            "Can we talk about my own project?",
+            "How long does a project like that usually take?"
+          ],
+          "studies": [],
+          "answer": "I tend to move through it in order — research first to understand who's actually involved and where things break, then branding if needed, then design, then development — but I stay flexible, because sometimes the technology or a discovery mid-project forces you to adapt. With White Paper, for instance, the research turned up that the person booking often isn't the person attending, which reshaped the whole checkout.\n\n[[method]]\n\n[[next: how long does a project like that usually take? @method | can we talk about my own project? @contact | what's it like working with you day to day? @work]]"
+        },
+        {
+          "q": "What's it like working with you day to day?",
+          "tapped": 0,
+          "shown": [
+            "testimonial",
+            "contact"
+          ],
+          "marked": [
+            "testimonial",
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [],
+          "answer": "People tend to describe me as reliable and adaptable, and someone who genuinely cares about getting it right — which is probably why a lot of my clients have stuck around for over ten years. I work remotely and find it just as productive as being on-site, if not more; I'm across the whole thing from strategy to code, so you're not handing off between people who don't talk to each other.\n\n[[testimonial]]\n\nIf you'd like to chat about your own thing, I'm easy to reach — just drop me a line and we can take it from there.\n\n[[contact]]\n\n[[next: what are the ways to work with you? @contact | i've got a project i'd like to discuss @contact | which sectors have you worked in? @work]]"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "work-chip-loop",
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "tapped": null,
+          "shown": [
+            "casestudies",
+            "suggestions"
+          ],
+          "marked": [
+            "casestudies"
+          ],
+          "imgs": 0,
+          "chips": [
+            "What results did the new booking engine deliver?",
+            "How does the AI copilot work for them?",
+            "What was the research process behind it?"
+          ],
+          "studies": [
+            "https://jonleverrier2.local/case-study/white-paper-booking-engine-design-development"
+          ],
+          "answer": "White Paper are a UK CPD conference provider I've worked with for years, and I redesigned and built their booking engine and on-demand platform. The old flow took eight steps to book and had conference data scattered across disconnected systems; I brought it all into one repository and split the checkout into sensible tasks, which cut drop-offs right down.\n\n[[casestudies]]\n\nIt's still ongoing — I'm currently improving a Claude-powered copilot for them that sits over the booking analytics.\n\n[[next: what results did the new booking engine deliver? @study:white-paper-booking-engine-design-development | how does the AI copilot work for them? @study:white-paper-booking-engine-design-development | what was the research process behind it? @study:white-paper-booking-engine-design-development]]"
+        },
+        {
+          "q": "What results did the new booking engine deliver?",
+          "tapped": 0,
+          "shown": [
+            "testimonial",
+            "suggestions"
+          ],
+          "marked": [
+            "testimonial"
+          ],
+          "imgs": 0,
+          "chips": [
+            "How would I start a conversation with you?",
+            "How do you usually approach a project like this?",
+            "Can you show me other work you've done?"
+          ],
+          "studies": [],
+          "answer": "The numbers came out strong: around 90% less drop-off, 50–60% fewer interactions to complete a booking, and 85% less processing time on the admin side. Their back office went from four staff handling bookings down to one, and on-demand now accounts for about 35% of revenue — a stream that barely existed before.\n\n[[testimonial]]\n\nThe bit I'm proudest of is that it wasn't a one-off delivery — I stayed in and kept suggesting improvements as the business changed, which is why it's still going.\n\n[[next: how do you usually approach a project like this? @method | can you show me other work you've done? @work | how would I start a conversation with you? @contact]]"
+        },
+        {
+          "q": "How would I start a conversation with you?",
+          "tapped": 0,
+          "shown": [
+            "contact"
+          ],
+          "marked": [
+            "contact"
+          ],
+          "imgs": 0,
+          "chips": [],
+          "studies": [],
+          "answer": "Easiest thing is to drop me a line and tell me a bit about what you're working on — no formality needed, just a rough sketch of the problem is plenty to get us started.\n\n[[contact]]\n\n[[next: none]]"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

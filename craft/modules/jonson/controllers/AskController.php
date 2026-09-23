@@ -1621,12 +1621,39 @@ class AskController extends Controller
                     if (!$shown) {
                         return $picked;
                     }
-                    foreach ($picked as $study) {
+                    $seen = static function (array $study) use ($shown): bool {
                         foreach ([$study['client'] ?? '', $study['title'] ?? ''] as $name) {
                             $name = mb_strtolower(trim((string) $name));
                             if ($name !== '' && !in_array($name, $shown, true)) {
-                                return $picked;
+                                return false;
                             }
+                        }
+
+                        return true;
+                    };
+
+                    // THE CATALOGUE IS FILTERED. A CURATED PICK IS NOT.
+                    //
+                    // The paragraph above is right about a pick: it is evidence for the
+                    // sentence beside it, and dropping a card out of it leaves the prose
+                    // naming work the strip doesn't show. So a pick still stands whole or
+                    // not at all.
+                    //
+                    // `:all` is not making a point. It is "here is the lot", and nothing
+                    // in the prose is contradicted by the lot arriving minus what is
+                    // already on screen. Left unfiltered it does the opposite of what the
+                    // visitor asked: they tapped to see MORE and got a second strip
+                    // carrying the first one's cards — measured, six runs out of six, by
+                    // the work-repeat scenario. The directive has promised the other
+                    // behaviour the whole time ("a study's card appears ONCE per
+                    // conversation"); this is the code keeping that promise.
+                    if ($modifier === 'all') {
+                        return array_values(array_filter($picked, static fn(array $study): bool => !$seen($study)));
+                    }
+
+                    foreach ($picked as $study) {
+                        if (!$seen($study)) {
+                            return $picked;
                         }
                     }
 
@@ -1930,6 +1957,26 @@ class AskController extends Controller
             ));
         }
 
+        // …AND A CHIP OFFERING THE WORK WHEN THERE IS NO WORK LEFT TO SHOW.
+        //
+        // Narrow on purpose. "Can I see more of your work?" with one card up is a
+        // GOOD chip — tapping it now brings the six studies the visitor hasn't seen
+        // (see the catalogue filter in surfaceRegistry). It only becomes a dead end
+        // once every study is on screen, and that is the only case dropped here.
+        //
+        // Nothing above catches it: the panel echo terms exclude "work" and
+        // "projects" on purpose, isShownStudyReask needs a study's name, and the
+        // citation is no help — the model tags this and "which sectors have you
+        // worked in?" alike as @work.
+        $noWorkLeft = $this->everyStudyShown($session);
+        $allStudies = $noWorkLeft ? $this->allStudyNames() : [];
+        if ($noWorkLeft) {
+            $modelGiven = array_values(array_filter(
+                $modelGiven,
+                fn(array $p): bool => !$this->isSeeMoreWorkReask($p['text'], $allStudies),
+            ));
+        }
+
         // Take up to MAX. A short slate is fine. Two budgets keep it moving, because
         // a chip repeats in two ways:
         //   - the SAME WORDS again. askedKeys() only knows what the visitor actually
@@ -1976,6 +2023,18 @@ class AskController extends Controller
         // (the get-started lead path + available content they haven't seen).
         if (!$out && !$deliberateNone) {
             $out = $this->candidateFallback($answer, $session, $stage ?? 'warm', $shownHandles);
+            // The same wall, on the way out. The fallback's casestudies candidate is
+            // the literal sentence "Can I see some of your work?", and filtering only
+            // the model's prompts let it back in by the side door — measured: the
+            // chip survived the fix until this line existed. The fallback's own
+            // $shownHandles is THIS TURN's panels, which cannot see a strip shown two
+            // turns ago.
+            if ($noWorkLeft) {
+                $out = array_values(array_filter(
+                    $out,
+                    fn(array $p): bool => !$this->isSeeMoreWorkReask($p['text'], $allStudies),
+                ));
+            }
         }
 
         // Bank the slate before it goes out, so next turn's budgets can see it —
@@ -3231,13 +3290,27 @@ class AskController extends Controller
             return false;
         }
         static $viewing = ['see', 'show', 'look', 'view', 'open', 'read', 'browse', 'write-up', 'write up', 'case study', 'the work', 'project'];
-        static $generic = ['the', 'and', 'for', 'with', 'design', 'product', 'branding', 'development', 'app', 'website', 'online', 'their', 'your', 'home', 'homes', 'owners', 'sell', 'helping', 'getting', 'putting', 'designing', 'experience', 'easy', 'use', 'that', 'into', 'back', 'front'];
         if (!$this->containsAnyTerm($chip, $viewing)) {
             return false;
         }
+
+        return $this->namesAnyStudy($chip, $shownStudies);
+    }
+
+    /**
+     * Does this chip name one of $names — a study's client or title — distinctively?
+     *
+     * Shared by the two study filters so "which words identify a study" is decided
+     * once. Words under four letters and the generic vocabulary of a design studio
+     * are skipped: nearly every study title contains "design" or "product", and
+     * matching on those would make every chip look like a re-ask of everything.
+     */
+    private function namesAnyStudy(string $chip, array $names): bool
+    {
+        static $generic = ['the', 'and', 'for', 'with', 'design', 'product', 'branding', 'development', 'app', 'website', 'online', 'their', 'your', 'home', 'homes', 'owners', 'sell', 'helping', 'getting', 'putting', 'designing', 'experience', 'easy', 'use', 'that', 'into', 'back', 'front'];
         $haystack = ' ' . mb_strtolower($chip) . ' ';
-        foreach ($shownStudies as $name) {
-            foreach (preg_split('/[^a-z0-9.]+/u', $name) ?: [] as $word) {
+        foreach ($names as $name) {
+            foreach (preg_split('/[^a-z0-9.]+/u', mb_strtolower($name)) ?: [] as $word) {
                 $word = trim($word, '.');
                 if (mb_strlen($word) < 4 || in_array($word, $generic, true)) {
                     continue;
@@ -3249,6 +3322,79 @@ class AskController extends Controller
         }
 
         return false;
+    }
+
+    /**
+     * Is every case study already on screen this conversation?
+     *
+     * The gate for the "offering the work when there is none left" filter, and it
+     * reads the same way the catalogue does in surfaceRegistry: a study counts as
+     * unseen when EITHER its client or its title is missing from the shown list, so
+     * a second Vaiie study is unseen even though "vaiie" has appeared.
+     */
+    private function everyStudyShown($session): bool
+    {
+        $shown = $this->shownStudies($session);
+        if (!$shown) {
+            return false;
+        }
+        foreach (Jonson::getInstance()->findContext->caseStudies() as $study) {
+            foreach ([(string) ($study['client'] ?? ''), (string) ($study['title'] ?? '')] as $name) {
+                $name = mb_strtolower(trim($name));
+                if ($name !== '' && !in_array($name, $shown, true)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /** Every study's client and title, lower-cased — the pool namesAnyStudy matches against. */
+    private function allStudyNames(): array
+    {
+        $names = [];
+        foreach (Jonson::getInstance()->findContext->caseStudies() as $s) {
+            foreach ([(string) ($s['client'] ?? ''), (string) ($s['title'] ?? '')] as $name) {
+                $name = mb_strtolower(trim($name));
+                if ($name !== '') {
+                    $names[] = $name;
+                }
+            }
+        }
+
+        return $names;
+    }
+
+    /**
+     * Is this chip a GENERIC offer to show the work — one naming no study at all?
+     *
+     * "Can I see more of your work?" is the chip that produced a second case-study
+     * strip carrying the first one's cards. Everything above it misses: the panel
+     * echo terms exclude "work" and "projects" on purpose (they recur in every
+     * genuine next question), and isShownStudyReask needs a study's name to match.
+     * This is the twin of isProcessRestate — a paraphrase no term list can catch —
+     * and it is deliberately just as narrow.
+     *
+     * Whether that is a dead end is the CALLER's question, not this one's: it only
+     * fires once every study is on screen. See the gate in suggestionsFor().
+     *
+     * A VIEWING VERB AND A GENERIC WORK NOUN, and no study named. The last clause is
+     * what keeps it honest: "can I see the StreetPal build?" is a real next direction
+     * and survives, and if that card is already up isShownStudyReask has it. Without
+     * a viewing verb nothing matches at all, which is why "which sectors have you
+     * worked in?" and "what kinds of projects do you take on?" — both tagged @work by
+     * the model, in the same slate — are untouched.
+     */
+    private function isSeeMoreWorkReask(string $chip, array $allStudyNames): bool
+    {
+        $t = ' ' . mb_strtolower(trim($chip)) . ' ';
+        $matched = (bool) preg_match(
+            '/\b(see|show|view|browse)\b[^?.]{0,40}\b(work|projects?|case study|case studies|portfolio)\b/',
+            $t,
+        );
+
+        return $matched && !$this->namesAnyStudy($chip, $allStudyNames);
     }
 
     /** Photo keys the rail has already shown this conversation (see forHandles). */

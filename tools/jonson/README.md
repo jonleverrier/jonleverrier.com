@@ -10,7 +10,8 @@ without a full run before and after.** A single-case fix is not a fix.
 |---|---|
 | `suite.json` | The scenarios. One or more turns in one fresh conversation, each naming the surfaces it expects and forbids. Expectations are **product intent**, never a description of current behaviour. |
 | `run.mjs` | The runner. Fresh cookie jar and cid per run, CSRF from `/actions/users/session-info`, reads the SSE stream, reports pass rate per scenario and missed/leaked per surface, writes the full record to `results/`. Exit 1 on any failure. |
-| `results/` | Runs. `baseline-2026-09-07.txt` is the pre-redesign run and `after-redesign-*.txt` the iterations that followed; keep them. Per-run JSON holds every turn's events, the markers the model wrote, photo and chip counts, and the full raw answer. |
+| | A turn can **tap** a chip the last turn offered (`tap: n`) instead of typing a question, and assert `noRepeatStudies` (no card already on screen) or `noWorkChip` (no generic "can I see your work?"). The record keeps every chip's **text** and every study's URL. |
+| `results/` | Runs. `baseline-2026-09-07.txt` is the pre-redesign run and `after-redesign-*.txt` the iterations that followed; keep them. Per-run JSON holds every turn's events, the markers the model wrote, the photo count, **the chips as text**, the study URLs on screen, and the full raw answer. |
 | `inline-markdown.test.mjs` | Unit test for `inlineMarkdown()` in jonson-ask.js — the **link allowlist** above all. It lifts the real function out of the module and asserts that tel:, mailto: and same-site paths become anchors while javascript:, data:, external http(s), protocol-relative `//host` and attribute break-outs stay literal text. No API calls, runs in a second: `node tools/jonson/inline-markdown.test.mjs`. Run it after any edit to that function. |
 | `backup-2026-09-07/` | The four files as they were before the redesign, for rollback — this project has no version control. |
 
@@ -55,3 +56,19 @@ Add a decoy for every surface you add: a question that mentions its subject in
 passing and must NOT show it. The rail's decoy is "Do you like Japan?"; the
 method's is "How do we start working together?". The suite is only as honest as
 its decoys.
+
+**Three ways a scenario passes without testing anything.** All three were live here.
+
+- **Counting instead of reading.** The chips arrived as `.length` for months, so the
+  whole suggestion layer was only ever checked for *existence* — and the chip that
+  sent a visitor back to work already on screen was invisible. If an assertion
+  cannot name the thing it failed on, it is not watching it.
+- **Guarding one surface and not its twin.** `noRepeatPhotos` existed from the start;
+  case studies had no equivalent, so a second strip carrying the first one's cards
+  passed every run. When a rule is about *the conversation* rather than the turn,
+  ask which other surfaces it should hold for.
+- **An opener that leaves nothing to get wrong.** `work-repeat` opens on one named
+  study on purpose. Open it with "show me your work" instead and all seven cards go
+  up, after which every later ask is correctly skipped for having nothing new — six
+  green runs proving only that the easy case works. **Set the scenario up so the bug
+  has room to happen, then watch it fail before you fix it.**

@@ -16,7 +16,11 @@
  * event named for its handle (casestudies, clients, sectors, method, testimonial,
  * contact, music), the photo rail is `context`, the chips are `suggestions`.
  * `noRepeatPhotos` on a turn asserts that no <img src> in this turn's rail was in
- * an earlier turn's rail of the same conversation.
+ * an earlier turn's rail of the same conversation; `noRepeatStudies` is its twin for
+ * case-study cards. `tap: n` replaces a turn's `q` with the nth chip the previous
+ * turn offered (default 0) and posts it as `fromChip`, so a scenario can follow the
+ * route the chips lay down instead of only the one we thought to type. `noWorkChip`
+ * asserts that none of a turn's chips is a generic offer to show the work.
  *
  * Output: a table per scenario (pass rate, and every failed assertion with its
  * count), a per-surface summary (missed when expected / shown when forbidden),
@@ -65,10 +69,13 @@ async function csrf(jar) {
     return json.csrfTokenValue;
 }
 
-/** POST one question; resolve to {events: {name: [data…]}, answer, imgs}. */
-async function ask(jar, cid, token, question, continuation) {
+/** POST one question; resolve to {events: {name: [data…]}, answer, imgs, chips, studies}. */
+async function ask(jar, cid, token, question, continuation, fromChip = null) {
     const body = new URLSearchParams({CRAFT_CSRF_TOKEN: token, question, cid});
     if (continuation) body.set('continuation', '1');
+    // The 0-based position of the chip this question came from, as jonson-ask.js
+    // sends it — the server logs it, and a tapped question is not a typed one.
+    if (fromChip !== null) body.set('fromChip', String(fromChip));
     const res = await fetch(`${BASE}/jonson/ask`, {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded', Accept: 'text/event-stream', Cookie: jar.header()},
@@ -86,8 +93,18 @@ async function ask(jar, cid, token, question, continuation) {
     const done = events.done?.[0] || {};
     const railHtml = (events.context || []).map((d) => d.html || '').join('');
     const imgs = [...railHtml.matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]);
-    const chips = (events.suggestions || []).flatMap((d) => d.items || []).length;
-    return {events, answer: done.answer || '', imgs, chips, error: events.error?.[0]?.message};
+    // THE CHIP TEXT, NOT A COUNT. This line used to end in `.length`, and that one
+    // word was the suite's blind spot: a chip re-offering work already on screen is
+    // invisible to a number, and the saved record kept nothing to read back either.
+    const chips = (events.suggestions || []).flatMap((d) => d.items || []);
+    // Which studies are on screen, keyed by the href on the card's own anchor —
+    // matched off `class="c-case-study"` (the component, in _components/case-study.twig)
+    // rather than off the URL, which is `/case-study/{slug}` today and is the section's
+    // to change. A first pass keyed on the path missed every card and left the repeat
+    // assertion below testing an empty list: green, and checking nothing.
+    const studyHtml = (events.casestudies || []).map((d) => d.html || '').join('');
+    const studies = [...new Set([...studyHtml.matchAll(/class="c-case-study"\s+href="([^"]+)"/g)].map((m) => m[1]))];
+    return {events, answer: done.answer || '', imgs, chips, studies, error: events.error?.[0]?.message};
 }
 
 /** Run one scenario once: every turn in one fresh conversation. */
@@ -97,8 +114,32 @@ async function runScenario(s) {
     const token = await csrf(jar);
     const record = {id: s.id, turns: [], failures: []};
     const seenImgs = new Set();
+    const seenStudies = new Set();
+    let offered = [];
     for (const [i, turn] of s.turns.entries()) {
-        const r = await ask(jar, cid, token, turn.q, i > 0);
+        // TAPPING A CHIP, rather than typing another question of our own. Every
+        // scenario here used to supply all its own questions, so the suite never
+        // travelled the route a real visitor takes — and the chips, which CHOOSE
+        // that route, were never under test at all. `tap` takes the nth chip the
+        // previous turn offered (the first, unless a number says otherwise), which
+        // also means a scenario cannot assume what the chip says: the assertion is
+        // about where tapping LEADS, and that holds whatever the model wrote.
+        let question = turn.q;
+        let fromChip = null;
+        if (turn.tap !== undefined) {
+            const n = typeof turn.tap === 'number' ? turn.tap : 0;
+            // NOTHING TO TAP IS NOT A FAILURE. A turn that offers no chips is a
+            // legitimate end — a sign-off, or the contact panel taking over — and a
+            // tapping scenario cannot assert about a turn the visitor could never
+            // have reached. Recorded and stopped, so the run still says what happened.
+            if (!offered[n]) {
+                record.turns.push({q: null, tapped: n, note: `no chip at position ${n} to tap`, shown: [], marked: [], imgs: 0, chips: [], studies: [], answer: ''});
+                break;
+            }
+            question = offered[n];
+            fromChip = n;
+        }
+        const r = await ask(jar, cid, token, question, i > 0, fromChip);
         const shown = SURFACES.filter((name) => (r.events[name] || []).length > 0);
         const fails = [];
         for (const e of turn.expect || []) if (!shown.includes(e)) fails.push(`T${i + 1} missing ${e}`);
@@ -119,11 +160,31 @@ async function runScenario(s) {
             const words = prose.split(/\s+/).filter(Boolean).length;
             if (words > turn.maxWords) fails.push(`T${i + 1} answer ran to ${words} words (max ${turn.maxWords})`);
         }
+        // A PANEL THAT SAYS NOTHING NEW. The directive already promises this — "a
+        // study's card appears ONCE per conversation" — but only the photo rail had
+        // an assertion for it (noRepeatPhotos, above). Case studies never grew the
+        // twin, which is how a second marquee carrying the first one's cards went
+        // unnoticed: every card was allowed, because each turn was judged alone.
+        if (turn.noRepeatStudies) {
+            const again = r.studies.filter((u) => seenStudies.has(u));
+            if (again.length) fails.push(`T${i + 1} repeated ${again.length} study card(s) already on screen`);
+        }
+        // A CHIP THAT LEADS NOWHERE. Once every study is on screen, "can I see some
+        // of your work?" is an offer of nothing — and it came from two places: the
+        // model's own [[next:]] and the canned fallback candidate. Asserted on the
+        // chip text rather than on the code's predicate, so the test still means
+        // something if that predicate is rewritten.
+        if (turn.noWorkChip) {
+            const offers = r.chips.filter((c) => /\b(see|show|view|browse)\b[^?.]{0,40}\b(work|projects?|case stud(y|ies)|portfolio)\b/i.test(c));
+            if (offers.length) fails.push(`T${i + 1} offered the work again: ${JSON.stringify(offers)}`);
+        }
         if (s.singleTestimonial) {
             const html = (r.events.testimonial || []).map((d) => d.html || '').join('');
             if (html && /has-multiple/.test(html)) fails.push(`T${i + 1} testimonial panel had several quotes`);
         }
         r.imgs.forEach((src) => seenImgs.add(src));
+        r.studies.forEach((u) => seenStudies.add(u));
+        offered = r.chips;
         // Which markers the model actually wrote, so a report can say whether a
         // missing surface was the model's judgement (unmarked) or the server's
         // (marked, then dropped) — the two need different fixes.
@@ -135,7 +196,7 @@ async function runScenario(s) {
             const wasMarked = m[1] === 'context' ? PHOTO_MARKED : marked.includes(m[1]);
             return `${f} (${wasMarked ? 'marked, dropped by server' : 'unmarked by model'})`;
         });
-        record.turns.push({q: turn.q, shown, marked, imgs: r.imgs.length, chips: r.chips, answer: r.answer});
+        record.turns.push({q: question, tapped: fromChip, shown, marked, imgs: r.imgs.length, chips: r.chips, studies: r.studies, answer: r.answer});
         record.failures.push(...annotated);
     }
     return record;

@@ -10,7 +10,11 @@
     "Run: node tools/jonson/run.mjs [runs=6] [concurrency=4] [filter]",
     "`singleTestimonial` on a scenario: any testimonial panel shown in it must carry exactly one quote (no `has-multiple`).",
     "`maxStudies: N` on a turn: the casestudies panel, if shown, carries at most N cards.",
-    "`maxWords: N` on a turn: the answer's prose (markers stripped) is at most N words — a card on screen means a lead-in, not an essay."
+    "`maxWords: N` on a turn: the answer's prose (markers stripped) is at most N words — a card on screen means a lead-in, not an essay.",
+    "`noRepeatStudies` on a turn: no case-study card in it was already on screen earlier in the conversation. The twin of noRepeatPhotos.",
+    "`noWorkChip` on a turn: no chip it offers is a generic 'can I see your work?' — the assertion for a chip that leads nowhere.",
+    "`tap: n` on a turn REPLACES its `q` with the nth chip the previous turn offered (0 by default). A scenario that taps cannot know what it",
+    "will ask, which is the point: the assertion is about where a chip LEADS, and that has to hold whatever the model chose to write."
   ],
   "scenarios": [
     {
@@ -404,6 +408,83 @@
           "forbid": [
             "context"
           ]
+        }
+      ]
+    },
+    {
+      "id": "work-repeat",
+      "_": [
+        "The incident: work goes on screen, the conversation widens, and a later ask for the work brings back a second",
+        "strip carrying the first one's cards. Turn 1 puts the cards up so the rest cannot pass vacuously; turn 2 widens",
+        "the way the real conversation did; turn 3 asks the generic question that every chip filter lets through, because",
+        "it names no study and says 'projects' rather than 'case studies'.",
+        "Turn 1 asks NARROW on purpose. Open with 'show me your work' and all seven cards go up, after which every later",
+        "ask is correctly skipped for having nothing new — the scenario passes having tested only the easy case."
+      ],
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "expect": [
+            "casestudies",
+            "suggestions"
+          ],
+          "forbid": [
+            "context"
+          ]
+        },
+        {
+          "q": "Who have you worked with over the years?",
+          "expect": [],
+          "forbid": [
+            "context"
+          ],
+          "noRepeatStudies": true
+        },
+        {
+          "q": "Can I see some of the actual projects?",
+          "expect": [],
+          "forbid": [
+            "context"
+          ],
+          "noRepeatStudies": true
+        },
+        {
+          "q": "What's it like working with you?",
+          "expect": [],
+          "forbid": [
+            "context"
+          ],
+          "noRepeatStudies": true,
+          "noWorkChip": true
+        }
+      ]
+    },
+    {
+      "id": "work-chip-loop",
+      "_": [
+        "The same defect reached the way a visitor actually reaches it — by tapping. A scenario that taps cannot know",
+        "what it will ask, which is the point: WHEREVER the chips lead, they must not lead back to what is already on",
+        "screen. This is the only scenario in the suite that travels the route the suggestion layer chooses.",
+        "Narrow opener, for the same reason work-repeat has one: a full catalogue on turn 1 makes the rest unfalsifiable."
+      ],
+      "turns": [
+        {
+          "q": "Tell me about the White Paper project",
+          "expect": [
+            "casestudies",
+            "suggestions"
+          ],
+          "forbid": [
+            "context"
+          ]
+        },
+        {
+          "tap": 0,
+          "noRepeatStudies": true
+        },
+        {
+          "tap": 0,
+          "noRepeatStudies": true
         }
       ]
     },
