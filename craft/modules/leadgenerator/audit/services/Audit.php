@@ -83,24 +83,39 @@ class Audit extends Component
     /**
      * The signed URL Playwright prints. See controllers/ReportController.
      *
-     * LOCALHOST AND NOT THE SITE URL, because the browser doing the printing is inside the
-     * same container as the web server: resolving the public hostname from in there goes out
-     * to DNS and back through the router for a page that is a socket away, and in local
-     * development it may not resolve at all.
+     * THE SITE'S OWN URL, UNTOUCHED. This used to rewrite the host to `http://localhost`,
+     * on the grounds that the browser doing the printing sits beside the web server and a
+     * public hostname would go out to DNS for a page a socket away. That is true in ddev,
+     * where nginx answers on localhost. It is not true on Forge, where nginx has a server
+     * block for the site and none for `localhost` — measured on the box, `curl
+     * http://localhost/` answers 000 — so every audit died with
      *
-     * `localhost` AND NOT `127.0.0.1`, which was tried and printed the SITE HOMEPAGE into
-     * the report: the address does not match a Craft site, so the action route never
-     * resolves and Craft serves the default site instead. It fails silently and looks like
-     * a template bug. If this ever has to change, print one and look at it.
+     *   report: pdf failed: page.goto: net::ERR_EMPTY_RESPONSE at http://localhost/...
+     *
+     * and a real lead got nothing. It worked in development for the same reason it could
+     * not work in production.
+     *
+     * THE ROUND TRIP IT WAS AVOIDING DOES NOT HAPPEN EITHER WAY. Production carries
+     * `127.0.0.1 jonleverrier.com` in /etc/hosts, so the site name resolves to the loopback
+     * and the request never leaves the machine; in ddev the container resolves its own
+     * hostname. Both measured at 200.
+     *
+     * SO THAT HOSTS ENTRY IS NOW LOAD-BEARING TWICE. It was added for the critical CSS
+     * crawl, which without it meets Cloudflare, is served a bot challenge, and inlines it
+     * silently (see vite.config.js). This has the same failure mode with a worse ending: a
+     * report printed from a challenge page, attached to an email, sent to a prospect.
+     *
+     * AND NOT `127.0.0.1`, which was tried and printed the SITE HOMEPAGE into the report:
+     * the address does not match a Craft site, so the action route never resolves and Craft
+     * serves the default site instead. It fails silently and looks like a template bug. If
+     * this ever has to change, print one and look at it.
      */
     public function reportUrl(int $entryId): string
     {
-        $url = UrlHelper::actionUrl('leadgenerator/report/view', [
+        return UrlHelper::actionUrl('leadgenerator/report/view', [
             'entry' => $entryId,
             't' => ReportController::token($entryId),
         ]);
-
-        return preg_replace('~^https?://[^/]+~', 'http://localhost', $url);
     }
 
     /**
