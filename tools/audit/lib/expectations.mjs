@@ -269,7 +269,7 @@ const sections = (n) => `${n} section${n === 1 ? '' : 's'}`;
  * above reading as a fault the report forgot to mention.
  *
  * NOTHING HERE MENTIONS ANOTHER SITE. This section runs per site, including inside a
- * comparison, and setting the two against each other is the Executive Comparison's job.
+ * comparison, and setting the two against each other is the Competitor Benchmark's job.
  */
 export function read(report) {
     const purpose = report?.purpose ?? null;
@@ -419,7 +419,7 @@ export function read(report) {
 export const KNOWN = PURPOSES.filter((p) => p !== 'unclear');
 
 /**
- * The two readings set against each other. The Executive Comparison's own summary.
+ * The two readings set against each other. The Competitor Benchmark's own summary.
  *
  * THE FIRST QUESTION IS WHETHER THEY ARE THE SAME KIND OF PAGE, and it is not a formality.
  * Every row on that sheet puts two shares side by side, and if one page is a directory and

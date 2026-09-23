@@ -28,8 +28,11 @@
 {% for c in competitor.categories %}{% if c.share > 0 and c.category not in names %}{% set names = names|merge([c.category]) %}{% endif %}{% endfor %}
 
 <section class="r-sheet">
-    <h1>Executive Comparison</h1>
-    <p class="r-meta"><b>{{ mine }}</b> &bull; <b>{{ theirs }}</b></p>
+    <h1>Competitor Benchmark</h1>
+    {# "versus" rather than the bullet the other meta lines use: those separate facts about
+       one page, and this names the two sides of a comparison. A bullet between two hosts
+       reads as a list of sites the report covers. #}
+    <p class="r-meta"><b>{{ mine }}</b> versus <b>{{ theirs }}</b></p>
 
     <h2>Scores</h2>
     <table class="r-speed">
