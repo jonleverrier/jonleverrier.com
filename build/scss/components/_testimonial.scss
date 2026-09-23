@@ -381,13 +381,35 @@ $c-testimonials-slide: rem(740);
     @include mq(from, md) {
         font-size: rem(276);
         grid-column: 1;
-        grid-row: 1 / -1; // stand alone alongside both the quote and the cite
+        grid-row: 1;
         align-self: start;
         margin-top: 0;    // the stacked spacing above is a mobile-only correction
         margin-bottom: 0; // no stacked tuck needed in its own column
-        // The glyph overflows its short line-box upward; drop it so its top
-        // lines up with the top of the quote's first line.
-        transform: translateY(rem(33));
+
+        // ZERO LINE-BOX, so the mark cannot size the row it sits in.
+        //
+        // At 276px a 0.6 line-height is a 165.6px box, and this is a grid item, so
+        // that box WAS the height of row one — the row the quote lives in. A short
+        // quote is 96.6px, which left 69px of empty row beneath it and pushed the
+        // attribution down by exactly that much. Only short quotes showed it: past
+        // 165.6px the text sizes the row and the mark stops mattering.
+        //
+        // `grid-row: 1 / -1` used to sit above, meaning to span the quote AND the
+        // cite so the mark could never do this. It never did. `-1` is the last line
+        // of the EXPLICIT grid; only `grid-template-columns` is declared here, so
+        // there are no explicit rows, `-1` resolved back to line 1, and the mark
+        // stayed in row one the whole time.
+        //
+        // With no line-box the glyph contributes nothing vertically and the rows
+        // size to the text. It still paints at full size, overflowing its own
+        // zero-height box, and the translate below puts it back where it was.
+        line-height: 0;
+
+        // Drops the glyph so its top lines up with the quote's first line. 115
+        // rather than the old 33 because zeroing the line-height lifts the glyph by
+        // half the leading it used to carry. MEASURED against the painted glyph and
+        // not calculated: 110 lands 5px high, 116 lands 1px low.
+        transform: translateY(rem(115));
     }
 }
 
