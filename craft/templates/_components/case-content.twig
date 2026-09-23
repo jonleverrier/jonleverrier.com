@@ -416,10 +416,23 @@
                    two-column object — so a block that renders the form alone loses the half
                    of it that says "or just talk to me". The grid class is the same one, so
                    the two are still the same object wherever it is placed. #}
-                <div class="c-case-content__form c-content__form-cols">
+                {# NOT EVERY WAY IN BELONGS BESIDE A FORM. "Get a free homepage analysis"
+                   was sitting next to the free homepage analysis, offering a visitor the
+                   thing they were already filling in.
+
+                   `Exclude from tools?` on the CTA is how that is said in the control
+                   panel, and it is read HERE rather than inside craft.frontend.ctas()
+                   because it is only true where the form is: the same CTA is right in the
+                   footer, on the contact page and in the slide-in panel, and a filter
+                   applied at the source would take it off all of them. #}
+                {% set formCtas = craft.frontend.ctas()|filter(c => not (c.isExcludedFromTools ?? false)) %}
+                {# The grid only when there are two columns to make. Excluding every CTA
+                   leaves the panel empty, and a two-column grid with one child puts the
+                   form in half the width with nothing beside it. #}
+                <div class="c-case-content__form{{ formCtas|length ? ' c-content__form-cols' : '' }}">
                     {{ include('_components/audit-form', {}, with_context = false) }}
                     {% include '_components/ctas' with {
-                        ctas: craft.frontend.ctas(),
+                        ctas: formCtas,
                         heading: 'Or just get in touch',
                     } only %}
                 </div>

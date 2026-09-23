@@ -1,4 +1,4 @@
-dateModified: 1790173757
+dateModified: 1790175251
 elementSources:
   craft\elements\Entry:
     -
@@ -271,6 +271,7 @@ meta:
     0adb35bc-92fb-4eeb-9c84-963c653035b5: Test # Test
     0baae4aa-d904-4c28-84b3-93034e5bcc7f: 'Date hidden?' # Date hidden?
     0cd51eff-21f4-45d3-a2f4-640a7a40422b: CTAs # CTAs
+    0d378d5b-3384-4304-9a4d-ef0ee276ae20: 'Exclude from tools?' # Exclude from tools?
     0ee05d4c-0e04-432a-9efa-e4f84b9ec1c2: Audit # Audit
     00fcf05d-4b96-4b68-a24b-e8699a932153: 'Custom Page Title' # Custom Page Title
     1a861c96-c194-4c76-96b0-35ef2047f305: 'Job Status' # Job Status

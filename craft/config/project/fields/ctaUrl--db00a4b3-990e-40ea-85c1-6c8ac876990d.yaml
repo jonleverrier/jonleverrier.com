@@ -12,19 +12,6 @@ settings:
   typeSettings:
     __assoc__:
       -
-        - url
-        -
-          __assoc__:
-            -
-              - allowRootRelativeUrls
-              - ''
-            -
-              - allowAnchors
-              - ''
-            -
-              - allowCustomSchemes
-              - ''
-      -
         - asset
         -
           __assoc__:
@@ -40,11 +27,38 @@ settings:
             -
               - showUnpermittedFiles
               - ''
+      -
+        - url
+        -
+          __assoc__:
+            -
+              - allowRootRelativeUrls
+              - ''
+            -
+              - allowAnchors
+              - ''
+            -
+              - allowCustomSchemes
+              - ''
+      -
+        - entry
+        -
+          __assoc__:
+            -
+              - sources
+              - '*'
+            -
+              - showUnpermittedSections
+              - ''
+            -
+              - showUnpermittedEntries
+              - ''
   types:
     - url
     - email
     - tel
     - asset
+    - entry
 translationKeyFormat: null
 translationMethod: none
 type: craft\fields\Link
