@@ -53,7 +53,11 @@ $c-ctas-border: getmap($colour, light, 750); // matches the content-page spine
 .c-ctas__item {
     position: relative;
     display: inline-flex;
-    align-items: center;
+    // TOP, NOT CENTRE, so a label that wraps keeps its icon beside the FIRST line.
+    // Centred, "Get a free homepage analysis" put the arrow in the gap between its two
+    // lines, pointing at nothing. The icon is 20px against a 1.2em line box, so on a
+    // single-line label this is the same place centring put it.
+    align-items: flex-start;
     max-width: 100%;
     padding: rem(12) rem(22);
     border: rem(2) solid $c-ctas-border;
@@ -187,6 +191,10 @@ $c-ctas-border: getmap($colour, light, 750); // matches the content-page spine
     flex: none;
     width: rem(20);
     height: rem(20);
+    // Centred on the first line rather than hung from its top: the icon and the line box
+    // are within a pixel of each other, so this is a hair's correction, and it is written
+    // as the arithmetic so it stays right if either size moves.
+    margin-top: calc((1.2em - #{rem(20)}) / 2);
     margin-right: rem(10);
     background-color: getmap($colour, primary, 450);
     -webkit-mask-size: contain;
