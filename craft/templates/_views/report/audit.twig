@@ -394,71 +394,31 @@
             {% endif %}
         </div>
 
-        {% set biggest = report.categories|first %}
-        {% set heaviest = report.weight ? report.weight.byType|first : null %}
+        {# CHOSEN IN lib/summary.mjs, NOT ASSEMBLED HERE, and the difference is what the
+           cover says. This was four fixed slots — biggest segment, weight, deferral,
+           duplicate colours — printing whatever they held. On a real comparison that gave
+           "69.3% of the page is routing, against 67.8% on gov.je", a point and a half
+           presented as a contrast, and "No two colours ... gov.je has none", a fault report
+           about an absence of faults. Half the cover said nothing, while the same captures
+           held a competitor with no hero at all that no slot could have noticed.
 
-        {# WITH A COMPETITOR, EVERY LINE IS A COMPARISON. A lead who named a rival did not
-           ask what their page is made of, they asked how it stands against somebody else's —
-           so the summary answers that question and the sections behind it still answer the
-           first one. Without a competitor these are the plain statements they always were.
+           The rules that replaced them are in that file: a comparison of two level numbers
+           is not a finding, a clean result is not a finding, and what survives is ranked by
+           how big the difference is. They are there rather than here for the reason
+           data.mjs exists — a template that assembled these would be a second place where
+           the arithmetic lives.
 
-           STATED, NOT SCORED. "52.1% against 11.6%" is two measurements side by side; which
-           is the right answer for this business is not something a capture can know. #}
-        {% set rivalHost = competitor ? r.host(competitor.url) : null %}
-        {% set rivalBiggest = competitor and biggest
-            ? competitor.categories|filter(c => c.category == biggest.category)|first
-            : null %}
-
-        <p class="r-scoreline__label r-findings__head">Summary</p>
-        <ul class="r-findings">
-            {% if biggest and biggest.share > 0 %}
-                <li>{{ r.pc(biggest.share) }} of the page is <b>{{ biggest.category }}</b>,
-                    across {{ biggest.blocks|length }}
-                    section{{ biggest.blocks|length == 1 ? '' : 's' }}{% if competitor %},
-                    against {{ r.pc(rivalBiggest ? rivalBiggest.share : 0) }}
-                    on {{ rivalHost }}{% endif %}.</li>
-            {% endif %}
-            {% if heaviest %}
-                <li>The page weighs {{ r.bytes(report.weight.afterScroll.bytes) }},
-                    {{ r.pc(heaviest.bytes / report.weight.afterScroll.bytes) }} of it
-                    <b>{{ heaviest.type }}</b>{% if competitor and competitor.weight %},
-                    against {{ r.bytes(competitor.weight.afterScroll.bytes) }}
-                    on {{ rivalHost }}{% endif %}.</li>
-            {% endif %}
-            {# A SECOND CLAUSE, NOT ", against X". These two lines are sentences rather than
-               figures — "little below the fold to defer" and "no two colours a person could
-               confuse" — and hanging a percentage off them with a comma produced the nonsense
-               "so there is little below the fold to defer, against 17.5%". #}
-            {% if report.technical %}
-                <li>
-                    {%- if report.technical.shortPage -%}
-                        The page is barely taller than a screen, so there is little below the fold to defer.
-                    {%- elseif report.technical.deferScore >= 4 -%}
-                        {{ r.pc(report.technical.deferred) }} of the weight waits until the visitor scrolls.
-                    {%- else -%}
-                        <b>Nothing is deferred</b>: the whole page loads before the visitor scrolls.
-                    {%- endif -%}
-                    {%- if competitor and competitor.technical %}
-                        {{ rivalHost }} defers {{ r.pc(competitor.technical.deferred) }}.
-                    {%- endif -%}
-                </li>
-            {% endif %}
-            {% if report.brand %}
-                <li>
-                    {%- if report.brand.groups -%}
-                        {{ report.brand.colours }} colours on the page are
-                        <b>{{ report.brand.groups == 1 ? 'a pair' : report.brand.groups ~ ' sets' }}</b>
-                        a person cannot tell apart.
-                    {%- else -%}
-                        No two colours on the page are ones a person could confuse.
-                    {%- endif -%}
-                    {%- if competitor and competitor.brand %}
-                        {{ rivalHost }} has
-                        {{ competitor.brand.groups ? competitor.brand.groups ~ (competitor.brand.groups == 1 ? ' such pair' : ' such sets') : 'none' }}.
-                    {%- endif -%}
-                </li>
-            {% endif %}
-        </ul>
+           EMPTY IS A REAL ANSWER. A page with nothing striking about it gets no bullets
+           rather than four dull ones, and the sections behind the cover still say
+           everything they always did. #}
+        {% if report.summary|default([])|length %}
+            <p class="r-scoreline__label r-findings__head">Summary</p>
+            <ul class="r-findings">
+                {% for finding in report.summary %}
+                    <li>{{ finding.text }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
         </div>
     </section>
 {% endif %}

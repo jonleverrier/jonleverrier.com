@@ -170,6 +170,23 @@ class Audit extends Component
     }
 
     /**
+     * Choose the cover's findings, once every site has been measured.
+     *
+     * SEPARATE FROM `measure`, WHICH RUNS PER SITE. The lead is measured before the
+     * competitor exists, so a comparison written there would be a comparison against
+     * nothing. This runs when both are on disk and patches the answer into the lead's
+     * report.json — see tools/audit/summary.mjs.
+     *
+     * A FAILURE HERE IS NOT FATAL and the caller is expected to step over it. The cover
+     * carried four fixed slots for months; a cover with none of them is a worse report
+     * than one with the old four, and neither is worth losing the whole document over.
+     */
+    public function summarise(int $entryId): array
+    {
+        return $this->node(['tools/audit/summary.mjs', $this->workDir($entryId)]);
+    }
+
+    /**
      * The document, printed from Craft's own template.
      *
      * WITHOUT `--url` THIS FALLS BACK TO THE STUB in lib/pdf.mjs, which is what it did for

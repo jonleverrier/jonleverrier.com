@@ -84,6 +84,14 @@ class RunAudit extends BaseJob
             }
         }
 
+        // THE COVER'S FINDINGS, now that every site it can compare is on disk. Stepped over
+        // on failure: a cover with no findings is a poorer report than this one, and not a
+        // reason to lose a document that is otherwise sound.
+        $chosen = $audit->summarise((int) $entry->id);
+        if (!$chosen['ok']) {
+            Craft::warning("[leadgenerator] audit {$entry->id} summary: {$chosen['why']}", __METHOD__);
+        }
+
         // PRINTED ONCE, AFTER BOTH. One lead, one document, however many sites it covers.
         $this->progress($queue, 0.8, 'printing the report');
         $result = $audit->print((int) $entry->id);

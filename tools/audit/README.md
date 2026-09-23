@@ -9,6 +9,7 @@ receives is not built yet.
 | `capture.mjs` | Phase 1 CLI. Loads a URL at 1440×900 and writes the screenshots, DOM rects and meta. |
 | `analyse.mjs` | Phases 2+3 CLI. Asks the model where the sections are, and writes `{notes, tree}` plus a debug image. |
 | `report.mjs` | Phase 4 CLI. The percentages, whole page and first viewport, with the caveats that apply. |
+| `summary.mjs` | Chooses the cover's findings once every site is on disk, and patches them into the lead's `report.json`. |
 | `sweep.mjs` | Every URL in a file, captured and analysed, one row each. The regression check. |
 | `lib/capture.mjs` | `capturePage()` — the Playwright run. The Craft job will import this, not the CLI. |
 | `lib/pinned.mjs` | Which elements hold the viewport, and which of those draw the same thing every time. |
@@ -25,6 +26,7 @@ receives is not built yet.
 | `lib/candidates.mjs` | Which element edges a boundary may snap to. |
 | `lib/signature.mjs` | Whether the stored answer still describes the page. A page is audited once. |
 | `lib/surface.mjs` | The percentages, whole page and first viewport. |
+| `lib/summary.mjs` | Which few facts go on the cover: level comparisons and clean results are not findings. |
 | `lib/overlay.mjs` | Chrome the DOM census cannot reach, found in the pixels. |
 | `lib/edges.mjs` | Greyscale → Sobel → non-max suppression → hysteresis. A Canny edge map. |
 | `lib/blocks.mjs` | The `Block` shape and `assertPartition()` — the invariant everything rests on. |
