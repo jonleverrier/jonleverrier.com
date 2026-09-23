@@ -24,6 +24,7 @@
 import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {summarise} from './lib/summary.mjs';
+import {compare} from './lib/expectations.mjs';
 import {printable} from './lib/printable.mjs';
 
 const outDir = process.argv[2];
@@ -44,12 +45,32 @@ try {
     const competitor = read(join(outDir, 'competitor', 'report.json'));
 
     const summary = summarise(report, competitor);
-    writeFileSync(path, JSON.stringify({...report, summary}, null, 1));
+    // THE COMPARISON'S OWN READING, written here for the same reason the findings are:
+    // this is the one step that has both records open. Null without a competitor, which is
+    // how the template knows there is no sheet to put it on.
+    const bare = (url) => {
+        try {
+            return new URL(url).host.replace(/^www\./i, '');
+        } catch {
+            return url;
+        }
+    };
+    const comparison = competitor
+        ? compare(report, competitor, {mine: bare(report.url), theirs: bare(competitor.url)})
+        : null;
+
+    writeFileSync(path, JSON.stringify({...report, summary, comparison}, null, 1));
 
     console.log(`against      ${competitor ? printable(competitor.url) : 'nobody'}`);
     console.log(`findings     ${summary.length}`);
     for (const f of summary) {
         console.log(`             ${printable(f.text, 200)}`);
+    }
+    if (comparison?.worth) {
+        console.log(`same purpose ${comparison.samePurpose ? 'yes' : 'NO — said out loud before the tables'}`);
+        for (const point of comparison.points) {
+            console.log(`             ${printable(point, 200)}`);
+        }
     }
     console.log(`written      ${path}`);
 } catch (e) {

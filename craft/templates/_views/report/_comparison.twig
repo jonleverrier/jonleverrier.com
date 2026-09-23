@@ -106,4 +106,28 @@
             </tr>
         </tbody>
     </table>
+
+    {# THE ONE THING THE TABLES CANNOT SAY. Every row above is two shares and a change; this
+       is a share against an ABSENCE, judged against what each page is for. gov.je having no
+       hero is the finding of this whole comparison and no row on this sheet states it.
+
+       AND WHETHER THE COMPARISON IS FAIR AT ALL. If one page is a directory and the other a
+       shop, 69% against 18% is not one beating the other, it is two different decisions —
+       and a reader left to assume otherwise draws the wrong conclusion from a table this
+       report handed them. See lib/expectations.mjs: when the purposes differ, the mismatch
+       is stated and nothing is set against anything.
+
+       Nothing at all when either page would not say what it is for. #}
+    {% set reading = report.comparison|default(null) %}
+    {% if reading and reading.worth %}
+        <h2>Summary</h2>
+        <p class="r-reading-lead">{{ reading.lead }}</p>
+        {% if reading.points|length %}
+            <ul class="r-reading">
+                {% for point in reading.points %}
+                    <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endif %}
 </section>

@@ -22,6 +22,7 @@
 import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {heroText, askPurpose} from './lib/purpose.mjs';
+import {read as readAgainstPurpose} from './lib/expectations.mjs';
 import {printable} from './lib/printable.mjs';
 
 const outDir = process.argv[2];
@@ -48,11 +49,25 @@ try {
     // they cannot disagree with the word "route".
     const purpose = {kind: answer.kind, confidence: answer.confidence, claim, from};
 
-    writeFileSync(path, JSON.stringify({...report, purpose}, null, 1));
+    // THE READING IS WRITTEN HERE TOO, rather than in a step of its own, because it is a
+    // pure function of the record this step has just completed — see lib/expectations.mjs,
+    // where no model runs and the same input gives the same answer every time. Splitting
+    // it out would buy a fourth CLI and a second read of the same file.
+    const withPurpose = {...report, purpose};
+    const reading = readAgainstPurpose(withPurpose);
+
+    writeFileSync(path, JSON.stringify({...withPurpose, reading}, null, 1));
 
     console.log(`read from    ${from ?? 'nothing readable'}`);
     console.log(`claim        ${claim ? printable(claim, 200) : '(none)'}`);
     console.log(`purpose      ${purpose.kind} (${Math.round(purpose.confidence * 100)}%)`);
+    console.log(`findings     ${reading.worth ? reading.findings.length : 'none — nothing will be printed'}`);
+    for (const f of reading.findings) {
+        console.log(`             ${printable(f.text, 200)}`);
+    }
+    if (reading.notGaps.length) {
+        console.log(`not gaps     ${reading.notGaps.join(', ')}`);
+    }
     if (answer.why) {
         console.log(`why          ${printable(answer.why, 200)}`);
     }

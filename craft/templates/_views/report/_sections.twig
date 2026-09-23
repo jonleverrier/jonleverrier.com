@@ -360,6 +360,41 @@
         </tfoot>
     </table>
 
+    {# THE READING OF THE TABLE ABOVE, and the only part of the report that says what a
+       number MEANS rather than what it is.
+
+       WHAT LICENSES IT IS THE PAGE'S OWN CLAIM. A share is not good or bad on its own:
+       routing at 69% is a directory doing exactly its job and a shop that forgot to sell,
+       and promotion at 1.7% is correct for one and a fault in the other. So the sentence
+       the page opens with is quoted first, the job it implies is named second, and
+       everything after that is read against it. A reader who thinks we have misread their
+       page can see the premise and reject it — the same discipline as naming the HTTP
+       Archive median beside the weight verdict.
+
+       IT NEVER MENTIONS THE OTHER SITE, even inside a comparison. This renders once per
+       site; setting the two against each other is the Executive Comparison's job, and a
+       reading that reached across would leave that page with nothing to say.
+
+       NOTHING AT ALL WHEN THE PURPOSE IS UNCLEAR — see lib/expectations.mjs. A page that
+       will not say what it is for gets the tables and no interpretation, rather than an
+       interpretation hedged into meaninglessness. #}
+    {% set reading = report.reading|default(null) %}
+    {% if reading and reading.worth %}
+        <h3>Summary</h3>
+        {% if reading.claim %}
+            <p class="r-claim">In its own words: <b>&ldquo;{{ reading.claim }}&rdquo;</b></p>
+        {% endif %}
+        <p>That is a page whose job is {{ reading.job }}.</p>
+        <ul class="r-reading">
+            {% for finding in reading.findings %}
+                <li>{{ finding.text }}</li>
+            {% endfor %}
+        </ul>
+        {% if reading.notGapsText %}
+            <p>{{ reading.notGapsText }}</p>
+        {% endif %}
+    {% endif %}
+
 
 
 
