@@ -134,6 +134,57 @@ fieldLayouts:
         elementCondition: null
         elements:
           -
+            dateAdded: '2026-09-23T14:29:17+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 00fcf05d-4b96-4b68-a24b-e8699a932153 # Custom Page Title
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 72c4f96b-85fb-4807-a17c-3b80b6d9821d
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-23T14:29:17+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 58bd7782-6a62-4253-8045-4bd40e0bf7a3 # Meta Description
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: f002847d-95bf-44b0-a4d1-5bdedd0ee4b5
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-23T14:29:17+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: f87acb59-ec2e-4031-aa6c-ad11069ba376 # Open Graph Image
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 71335f78-596b-4183-93d7-fab01ed6f2f8
+            userCondition: null
+            warning: null
+            width: 100
+          -
             dateAdded: '2026-09-20T22:49:55+00:00'
             editCondition: null
             elementCondition: null
