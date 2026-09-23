@@ -905,19 +905,37 @@
         </script>
     {% endfor %}
 {% endif %}
+{# LEGACY SERVICE WORKER CLEANUP. This site used to install a caching service
+   worker. It doesn't any more, and a stale one keeps serving its own cached copies
+   of pages until it is removed — so this unregisters whatever is installed and then
+   empties the caches it left behind.
+
+   THE PAGE DELETES THE CACHES ITSELF rather than asking the worker to. The previous
+   version messaged the controller with {command: 'removeCaches'} and relied on it
+   having a listener for that — which the workers most in need of clearing, the ones
+   that predate the handler, do not have. There was no way to find out, either: a
+   message to a worker that ignores it fails silently. It was also one-shot, because
+   after the first unregister there is no controller left to message. `caches` is on
+   `window` in any secure context, so none of that indirection buys anything.
+
+   UNREGISTERING IS NOT ENOUGH ON ITS OWN. CacheStorage is scoped to the ORIGIN, not
+   to the registration, so the caches outlive the worker that wrote them. Dropping
+   the registration stops stale pages being served; it leaves the bytes behind until
+   the browser evicts them under quota. Both halves are needed, and they are
+   independent — hence two blocks rather than one nested in the other. #}
 <script type="text/javascript">
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({'command': 'removeCaches'});
-            }
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            registrations.forEach(function (registration) {
+                registration.unregister();
+            });
         });
-        navigator.serviceWorker.getRegistrations().then(
-            function(registrations) {
-                for(let registration of registrations) {  
-                    registration.unregister();
-        
-                }
+    }
+    if ('caches' in window) {
+        caches.keys().then(function (keys) {
+            keys.forEach(function (key) {
+                caches.delete(key);
+            });
         });
     }
 </script>
