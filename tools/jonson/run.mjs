@@ -21,6 +21,8 @@
  * turn offered (default 0) and posts it as `fromChip`, so a scenario can follow the
  * route the chips lay down instead of only the one we thought to type. `noWorkChip`
  * asserts that none of a turn's chips is a generic offer to show the work.
+ * `linksTool` asserts the answer does (true) or does not (false) link the free
+ * homepage analysis.
  *
  * Output: a table per scenario (pass rate, and every failed assertion with its
  * count), a per-surface summary (missed when expected / shown when forbidden),
@@ -177,6 +179,15 @@ async function runScenario(s) {
         if (turn.noWorkChip) {
             const offers = r.chips.filter((c) => /\b(see|show|view|browse)\b[^?.]{0,40}\b(work|projects?|case stud(y|ies)|portfolio)\b/i.test(c));
             if (offers.length) fails.push(`T${i + 1} offered the work again: ${JSON.stringify(offers)}`);
+        }
+        // THE FREE REPORT, OFFERED OR NOT. It is the one thing on the site a stranger
+        // can be given, so the assistant should reach for it when someone asks about
+        // THEIR OWN homepage — and must not work it into answers about the work, the
+        // clients or the process, where it is an advert rather than an answer.
+        if (turn.linksTool !== undefined) {
+            const links = /\/tools\/homepage-analysis/.test(r.answer);
+            if (turn.linksTool && !links) fails.push(`T${i + 1} did not offer the homepage analysis`);
+            if (!turn.linksTool && links) fails.push(`T${i + 1} pushed the homepage analysis`);
         }
         if (s.singleTestimonial) {
             const html = (r.events.testimonial || []).map((d) => d.html || '').join('');

@@ -13,6 +13,7 @@
     "`maxWords: N` on a turn: the answer's prose (markers stripped) is at most N words — a card on screen means a lead-in, not an essay.",
     "`noRepeatStudies` on a turn: no case-study card in it was already on screen earlier in the conversation. The twin of noRepeatPhotos.",
     "`noWorkChip` on a turn: no chip it offers is a generic 'can I see your work?' — the assertion for a chip that leads nowhere.",
+    "`linksTool` on a turn: the answer does (true) or does not (false) link /tools/homepage-analysis — the free report, plus its decoys.",
     "`tap: n` on a turn REPLACES its `q` with the nth chip the previous turn offered (0 by default). A scenario that taps cannot know what it",
     "will ask, which is the point: the assertion is about where a chip LEADS, and that has to hold whatever the model chose to write."
   ],
@@ -408,6 +409,52 @@
           "forbid": [
             "context"
           ]
+        }
+      ]
+    },
+    {
+      "id": "tool-offer",
+      "_": [
+        "The free report is the one thing here a stranger can be given, so a visitor asking about THEIR OWN homepage",
+        "should be offered it. Turn 2 is the decoy in the same breath: once offered, it must not be offered again."
+      ],
+      "turns": [
+        {
+          "q": "Can you take a look at my homepage and tell me if it's any good?",
+          "expect": [],
+          "forbid": [
+            "context"
+          ],
+          "linksTool": true
+        }
+      ]
+    },
+    {
+      "id": "tool-decoy",
+      "_": [
+        "The same page turned into an advert is the failure mode. Neither of these questions is about the visitor's",
+        "own site, so neither is an occasion to sell the report."
+      ],
+      "turns": [
+        {
+          "q": "Who have you worked with?",
+          "expect": [
+            "clients"
+          ],
+          "forbid": [
+            "context"
+          ],
+          "linksTool": false
+        },
+        {
+          "q": "What is your process?",
+          "expect": [
+            "method"
+          ],
+          "forbid": [
+            "context"
+          ],
+          "linksTool": false
         }
       ]
     },

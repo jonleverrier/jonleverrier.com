@@ -129,7 +129,7 @@
     {% endif %}
 {% endif %}
 
-{% if listing or schemaSection in ['homepage', 'caseStudy', 'caseStudies', 'contact', 'about', 'pages', 'notes'] %}
+{% if listing or schemaSection in ['homepage', 'caseStudy', 'caseStudies', 'contact', 'about', 'pages', 'notes', 'tools'] %}
     {% set globals = craft.entries().section('globals').one() %}
     {% set strapline = globals ? (globals.strapline ?? '')|trim : '' %}
     {% set siteName = craft.app.sites.currentSite.name %}
@@ -811,6 +811,78 @@
                 image: shareImage,
                 breadcrumb: { '@id': pageId ~ '-breadcrumb' },
                 dateModified: schemaEntry.dateUpdated ? schemaEntry.dateUpdated|atom : null,
+            }|filter(v => v)],
+            BreadcrumbList: [{
+                '@type': 'BreadcrumbList',
+                '@id': pageId ~ '-breadcrumb',
+                itemListElement: crumbs|merge([
+                    { '@type': 'ListItem', position: 2, name: schemaEntry.title|trim, item: schemaEntry.url },
+                ]),
+            }],
+        } %}
+
+    {% elseif schemaSection == 'tools' %}
+        {# WebPage plus the thing the page actually offers. A tool page is not a
+           document like /pages — it is a service somebody can have, free, and the
+           Service + Offer pair is what says so to a machine.
+
+           BE CLEAR WHAT THIS BUYS. Google renders no snippet for Service or for a
+           zero-price Offer, so nothing new appears in a search result; the only
+           visibly rich node here is the BreadcrumbList. What it does buy is that
+           the page joins the graph — provider points at the same #person the rest
+           of the site declares — so a reader that already knows who Jon is can tell
+           this offer is his. That matters more than usual on this site, which
+           publishes /llms.txt and runs an assistant for exactly those readers.
+
+           NO AggregateRating, and no Product. Either would draw stars in a result
+           and both would be invented: nobody has rated this. Named and described
+           from the SEO tab, read the way the head reads it, as every branch above. #}
+        {% set heading = (schemaEntry.longTitle ?? '')|trim ?: schemaEntry.title|trim %}
+        {% set seoTitle = (schemaEntry.seoCustomPageTitle ?? '')|trim %}
+        {% set seoDescription = (schemaEntry.seoMetaDescription ?? '')|trim %}
+        {% set toolSummary = seoDescription ?: (schemaEntry.summary ?? '')|trim %}
+        {% set serviceId = pageId ~ '-service' %}
+        {% set shareAsset = craft.frontend.socialImage(schemaEntry) %}
+        {% set shareImage = shareAsset ? {
+            '@type': 'ImageObject',
+            url: craft.frontend.socialImageUrl(shareAsset),
+            width: 1200,
+            height: 630,
+            caption: (shareAsset.alt ?? '')|trim,
+        }|filter(v => v) : null %}
+
+        {% set schema = {
+            WebPage: [{
+                '@type': 'WebPage',
+                '@id': pageId,
+                url: schemaEntry.url,
+                name: seoTitle ?: heading,
+                headline: heading,
+                description: toolSummary,
+                inLanguage: language,
+                isPartOf: { '@id': websiteId },
+                about: { '@id': personId },
+                mainEntity: { '@id': serviceId },
+                image: shareImage,
+                breadcrumb: { '@id': pageId ~ '-breadcrumb' },
+                dateModified: schemaEntry.dateUpdated ? schemaEntry.dateUpdated|atom : null,
+            }|filter(v => v)],
+            Service: [{
+                '@type': 'Service',
+                '@id': serviceId,
+                name: heading,
+                description: toolSummary,
+                serviceType: 'Homepage analysis',
+                provider: { '@id': personId },
+                areaServed: 'Worldwide',
+                url: schemaEntry.url,
+                offers: {
+                    '@type': 'Offer',
+                    price: '0',
+                    priceCurrency: 'GBP',
+                    availability: 'https://schema.org/InStock',
+                    url: schemaEntry.url,
+                },
             }|filter(v => v)],
             BreadcrumbList: [{
                 '@type': 'BreadcrumbList',

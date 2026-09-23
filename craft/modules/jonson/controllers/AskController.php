@@ -1153,6 +1153,33 @@ class AskController extends Controller
                 . ($note !== '' ? ': ' . $note : '');
         }
 
+        // THE TOOLS, DESCRIBED BY THEIR OWN MEMORY CARD rather than by a sentence typed
+        // here. services\NoteMemory writes one per tools entry (shape 'tool': what the
+        // visitor hands over, what comes back, what it costs, how long), so the description
+        // the persona gives lives in the CMS beside the page and cannot drift from it — the
+        // hardcoded sentence that used to sit in the list below already disagreed with the
+        // page within a day of the copy being edited.
+        //
+        // Falls back to the entry's Summary while a card is still being written, and the
+        // whole line disappears when there is neither, because a path with nothing after it
+        // tells the model only that a page exists and not when it is the right answer.
+        $memory = Jonson::getInstance()->noteMemory;
+        $toolLines = '';
+        foreach (Entry::find()->section('tools')->status('live')->all() as $tool) {
+            $path = $tool->url ? (parse_url($tool->url, PHP_URL_PATH) ?: '') : '';
+            if ($path === '') {
+                continue;
+            }
+            $card = $memory->available($tool)
+                ? trim((string) $tool->getFieldValue(\modules\jonson\services\NoteMemory::FIELD))
+                : '';
+            $blurb = $card !== '' ? $card : trim((string) ($tool->summary ?? ''));
+            if ($blurb === '') {
+                continue;
+            }
+            $toolLines .= '- ' . $path . ' — ' . $blurb . "\n";
+        }
+
         return "Your case studies — full write-ups of specific projects the visitor can open "
             . "(PRIVATE background: use it to speak concretely, never read it out verbatim). The path "
             . "in parentheses on each line is THAT STUDY'S OWN PAGE — it is what you link when you "
@@ -1172,6 +1199,16 @@ class AskController extends Controller
             . "- /about — who you are\n"
             . "- /case-studies — the work in general\n"
             . "- /contact — getting in touch\n"
+            . $toolLines
+            // THE TOOL IS HERE BECAUSE IT IS THE ONE THING ON THIS SITE A STRANGER CAN BE
+            // GIVEN. This site is lead generation, and the door it opens is the free report,
+            // not the contact form — a visitor who wants their own homepage looked at wants
+            // the report and has no reason yet to write an email. Offer it when someone asks
+            // about their OWN site, about homepages, first impressions, or whether something
+            // of theirs is working; it is a real answer to those. It is not the answer to
+            // "who have you worked with" or "what is your process", and an assistant that
+            // works it into every reply is an advert, which is the one thing it must not be.
+            //
             // TWO INDEXES ARE DELIBERATELY ABSENT, and both would otherwise look obvious.
             //
             // /notes — Jon does not want people sent to the top of a list of hundreds of

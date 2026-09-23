@@ -94,6 +94,29 @@ fieldLayouts:
         elementCondition: null
         elements:
           -
+            dateAdded: '2026-09-23T23:38:54+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: e92bca2e-bd0c-44c9-b4ba-ed8c0f8a6f51 # Jonson Summary
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: ed5a666f-8b45-4b2f-bee2-e9f491cee3ac
+            userCondition: null
+            warning: null
+            width: 100
+        name: Wayfinding
+        uid: e4863668-ff4f-4254-b5d5-860db1ffbe3b
+        userCondition: null
+      -
+        elementCondition: null
+        elements:
+          -
             dateAdded: '2026-09-20T20:05:12+00:00'
             editCondition: null
             elementCondition: null

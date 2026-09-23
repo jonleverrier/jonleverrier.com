@@ -34,7 +34,7 @@ use yii\base\Component;
 class NoteMemory extends Component
 {
     /** The sections that get cards, and the shape of card each one gets. */
-    public const SECTIONS = ['notes' => 'note', 'caseStudies' => 'project'];
+    public const SECTIONS = ['notes' => 'note', 'caseStudies' => 'project', 'tools' => 'tool'];
     public const FIELD = 'jonsonSummary'; // the private AI-context field case studies already use
     // The "not sure what to ask?" questions for the page's own ask bar — the same
     // Table field the homepage's default set lives in, so an editor can rewrite
@@ -266,7 +266,28 @@ class NoteMemory extends Component
             . "them. Output the card and nothing else — no preamble, headings, bullets or "
             . "quotation marks.";
 
-        if ($shape === 'project') {
+        if ($shape === 'tool') {
+            // A TOOL PAGE IS MARKETING COPY, and that is the whole difficulty. A note and a
+            // case study are records of something that happened, so compressing them keeps
+            // them true; a page that exists to be persuasive compresses into a pitch unless
+            // it is told not to. The persona answering "can you look at my homepage?" needs
+            // the facts of the offer — what you hand over, what comes back, what it costs,
+            // how long — and none of the reasons the page gives for wanting it.
+            $system = "You extract the key points and facts from a page describing something Jon "
+                . "Leverrier offers — he is a designer — into a memory card, so a later conversation "
+                . "with somebody who could use it brings it to mind. The card stands in for the page: "
+                . "it must say only what the page says.\n\n"
+                . "A card is FAST FACTS, not a pitch: " . self::WORDS . " words of terse fragments, "
+                . "first person where a person is needed, separated by semicolons or short sentences. "
+                . "Lead with what the thing IS and who it is for. Then only what the text records: "
+                . "what the visitor hands over; what comes back and in what form; what it costs; how "
+                . "long it takes; what is measured, and how it is measured; and any limit the text "
+                . "states. Concrete nouns over adjectives.\n\n"
+                . "NO SELLING. Leave out benefit claims, reassurance, urgency and persuasion even "
+                . "where the page uses them — this card is read when answering a question, and a "
+                . "persona that recites marketing copy is an advert. " . $rules;
+            $user = $this->prose($entry);
+        } elseif ($shape === 'project') {
             $system = "You extract the key points and facts from Jon Leverrier's case studies — he is "
                 . "a designer — into a memory card, so that a later conversation about a related "
                 . "client, sector, problem or craft can bring the project to mind. The card stands in "

@@ -27,6 +27,7 @@
 {%- set caseStudyIndex = craft.entries().section('caseStudy').status('live').one() -%}
 {%- set notesIndex = craft.entries().section('note').status('live').one() -%}
 {%- set contact = craft.entries().section('contact').status('live').one() -%}
+{%- set tools = craft.entries().section('tools').status('live').all() -%}
 {%- set studies = craft.entries().section('caseStudies').status('live').all() -%}
 {%- set notes = craft.entries().section('notes').status('live').orderBy('postDate DESC').limit(10).all() -%}
 {%- set pages = craft.entries().section('pages').status('live').all() -%}
@@ -64,6 +65,14 @@ rather than a summary of it.
 {% endif %}
 {%- if contact %}- [{{ contact.title }}]({{ contact.url }}): how to get in touch.
 {% endif %}
+{#- THE TOOLS SIT IN "START HERE" rather than in a section of their own, because a free
+    report is the one thing on this site a stranger can be given, and a model answering
+    "who can look at my homepage?" should meet it in the first handful of lines rather
+    than below seven case studies. The note announcing the tool was already listed under
+    Notes while the tool itself was nowhere — so anything reading this file found the
+    announcement and never the page it announced. -#}
+{%- for tool in tools %}- [{{ tool.title }}]({{ tool.url }}): {{ f.line(tool.summary ?? '') }}
+{% endfor %}
 
 {% if studies|length %}## Case studies
 
