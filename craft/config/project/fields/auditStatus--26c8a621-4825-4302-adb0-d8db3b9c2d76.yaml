@@ -22,7 +22,7 @@ settings:
           - ''
         -
           - default
-          - ''
+          - '1'
     -
       __assoc__:
         -

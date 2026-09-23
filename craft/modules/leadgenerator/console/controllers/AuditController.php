@@ -51,7 +51,14 @@ class AuditController extends Controller
             'firstName' => 'Console',
             'email' => 'console@example.com',
         ]);
-        if (!Craft::$app->getElements()->saveElement($entry)) {
+        // Saving an audit normally queues one (LeadGenerator::watchStatus). Not here: this
+        // command runs it synchronously two lines down, and a queued copy would measure the
+        // same page again whenever a worker next looked.
+        LeadGenerator::$autoRun = false;
+        $saved = Craft::$app->getElements()->saveElement($entry);
+        LeadGenerator::$autoRun = true;
+
+        if (!$saved) {
             $this->stderr('could not save: ' . json_encode($entry->getErrors()) . "\n", Console::FG_RED);
 
             return ExitCode::UNSPECIFIED_ERROR;

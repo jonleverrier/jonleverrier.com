@@ -9,6 +9,7 @@ use craft\web\Controller;
 use modules\jonson\Jonson;
 use modules\leadgenerator\audit\jobs\RunAudit;
 use modules\leadgenerator\LeadGenerator;
+use yii\web\BadRequestHttpException;
 use yii\web\Response;
 
 /**
@@ -26,7 +27,16 @@ use yii\web\Response;
  */
 class AuditController extends Controller
 {
-    protected int|bool|array $allowAnonymous = true;
+    /**
+     * THE FORM ONLY. This was `true`, which is the whole controller, and `runNow` queues an
+     * audit against any entry id it is handed — an action that spends money and must never
+     * answer a stranger. Naming the one anonymous action leaves every action added later
+     * closed by default, which is the right way round.
+     *
+     * `['submit']` normalises to ALLOW_ANONYMOUS_LIVE, which is exactly what `true` meant,
+     * so nothing about the live form changes.
+     */
+    protected int|bool|array $allowAnonymous = ['submit'];
 
     public function actionSubmit(): ?Response
     {
@@ -117,10 +127,57 @@ class AuditController extends Controller
         // form makes, on the VISITOR id rather than the visit — see Analytics::convert.
         Jonson::getInstance()->analytics->convert((string) $request->getBodyParam('cid', ''), (int) $entry->id);
 
-        // QUEUED, so the visitor's thank-you never waits on a browser, a model and a PDF.
-        Queue::push(new RunAudit(['entryId' => (int) $entry->id]));
-
+        // NO PUSH HERE ANY MORE. Saving the entry is what queues the audit (see
+        // LeadGenerator::watchStatus), so the form and an entry made by hand in the control
+        // panel behave the same way. It is still queued, so the visitor's thank-you never
+        // waits on a browser, a model and a PDF.
         return $this->succeed();
+    }
+
+    /**
+     * Run, or run again, the audit on an entry — from the control panel.
+     *
+     * THE SAME JOB THE FORM PUSHES, and deliberately not a second path through the audit.
+     * The console has `leadgenerator/audit/rerun`, which runs it synchronously because the
+     * output is the point when you are working out why something failed; here the output
+     * would go to a browser waiting the best part of a minute, so it queues and the queue's
+     * own progress bar reports it.
+     *
+     * NO STATUS IS WRITTEN HERE. The job sets `in-review` or `failed` when it lands, and an
+     * entry moved to some interim value by this action would sit in it for good if the
+     * worker never picked the job up. What is on screen keeps saying what actually happened
+     * last until something new has happened.
+     */
+    public function actionRunNow(): Response
+    {
+        $this->requireCpRequest();
+        $this->requirePostRequest();
+        $this->requireLogin();
+
+        $entryId = (int) $this->request->getRequiredBodyParam('entryId');
+        $entry = Craft::$app->getEntries()->getEntryById($entryId);
+        $section = $entry?->getSection();
+
+        // The id arrives in a POST body, so it is a stranger's number until this passes:
+        // anything outside the audits section is not this action's to run.
+        if (!$entry || ($section?->handle ?? '') !== LeadGenerator::SECTION) {
+            throw new BadRequestHttpException("entry {$entryId} is not an audit");
+        }
+
+        // Running an audit spends a browser, a model call and a PDF on somebody else's
+        // behalf, so it takes the same permission as changing the entry would.
+        $this->requirePermission("saveEntries:{$section->uid}");
+
+        Queue::push(new RunAudit(['entryId' => $entryId]));
+
+        $this->setSuccessFlash(Craft::t('app', 'Audit queued. It takes about a minute.'));
+
+        // BACK TO THE ENTRY, NAMED RATHER THAN INFERRED. With no default,
+        // redirectToPostedUrl falls back to the request's own path — which happens to be
+        // right here, because Craft.submitForm posts to the page you are on, and would stop
+        // being right the moment this action is called from anywhere else. The menu item
+        // appears on index rows too, where landing on the entry is the useful answer anyway.
+        return $this->redirectToPostedUrl($entry, $entry->getCpEditUrl());
     }
 
     /**
