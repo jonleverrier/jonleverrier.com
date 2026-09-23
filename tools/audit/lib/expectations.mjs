@@ -114,6 +114,21 @@ export const EXPECTATIONS = {
 };
 
 /**
+ * What to call a page of each kind, as the tail of "the things ___ needs".
+ *
+ * A NOUN, because the closing sentence counts against it: "two of the three things an
+ * enquiry page needs are there". `enquire` and the rest are keys, not words anybody reads.
+ */
+const NOUN = {
+    route: 'a directory',
+    sell: 'a page that sells',
+    enquire: 'an enquiry page',
+    publish: 'a page that is read',
+};
+
+const COUNT = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+
+/**
  * What each job is, as the tail of "That is a page whose job is ___".
  *
  * The clause carries no subject of its own. It read "its job is to send people somewhere",
@@ -179,6 +194,47 @@ function sentenceForNotGaps(list) {
         + `so having little or none of ${one ? 'it' : 'them'} is not a gap.`;
 }
 
+/**
+ * The one sentence that judges the core segments, after they have each stated a number.
+ *
+ * SAID ONCE, however many cores a purpose has. It used to be a clause on the end of every
+ * core finding, which reads as a stuck record on any purpose with more than one — and
+ * every purpose except `route` has more than one.
+ */
+function verdictFor(kind, cores, otherGaps) {
+    if (!cores.length) {
+        return '';
+    }
+
+    const thin = cores.filter((c) => !c.healthy);
+    if (!thin.length) {
+        // NOTHING TO SAY WHEN SOMETHING ELSE IS MISSING. This counts core segments only,
+        // and gov.je put it straight after "The page has no hero." — a bullet naming a gap,
+        // answered by a sentence saying the page spends its space correctly. Both true,
+        // and together they read as the report waving its own finding away. The bullets
+        // already say what is absent; a summary that cannot see it should keep quiet.
+        return otherGaps ? '' : 'That is the page spending its space on what it says it is for.';
+    }
+
+    const noun = NOUN[kind] ?? 'a page like this';
+    const total = COUNT[cores.length] ?? cores.length;
+    if (thin.length === cores.length) {
+        return `None of the ${total} things ${noun} needs takes much of the page.`;
+    }
+
+    // Lower-cased and rejoined rather than printed as the table's own labels: "The hero
+    // and Trust" is two sentences fighting over one capital letter.
+    const names = thin.map((c) => PLAIN[c.category].subject.toLowerCase());
+    const joined = names.length === 1
+        ? names[0]
+        : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+    const healthy = cores.length - thin.length;
+
+    return `${COUNT[healthy] ?? healthy} of the ${total} things ${noun} needs `
+        + `${healthy === 1 ? 'is' : 'are'} there in quantity. `
+        + `${joined.charAt(0).toUpperCase() + joined.slice(1)} ${names.length === 1 ? 'is' : 'are'} not.`;
+}
+
 export function roleOf(purpose, category) {
     return EXPECTATIONS[purpose]?.[category] ?? null;
 }
@@ -227,37 +283,39 @@ export function read(report) {
 
     const findings = [];
     const notGaps = [];
+    // Which core segments cleared the floor, for the one sentence that judges them.
+    const cores = [];
 
     for (const [category, role] of Object.entries(table)) {
         const seg = at(category);
         const has = share(category);
 
         if (role === 'core') {
-            if (has >= CORE_FLOOR) {
-                const first = seg?.firstViewport ?? 0;
-                findings.push({
-                    id: `core-${category}`,
-                    category,
-                    role,
-                    kind: 'doing-its-job',
-                    weight: has,
-                    text: `${PLAIN[category].subject} takes ${pc(has)} of the page across `
-                        + `${sections(seg?.blocks?.length ?? 0)}`
-                        + (first > 0 ? `, and ${pc(first)} of the first screen` : '')
-                        + ', so the page is spending its space on what it says it is for.',
-                });
-            } else {
-                findings.push({
-                    id: `core-${category}`,
-                    category,
-                    role,
-                    kind: 'gap',
-                    weight: 1 - has,
-                    text: isPresent(category)
-                        ? `${PLAIN[category].subject} is what this page is for, and takes only ${pc(has)} of it.`
-                        : `The page has ${PLAIN[category].absence}, which is what it is for.`,
-                });
-            }
+            // THE MEASUREMENT ONLY. The conclusion used to ride on the end of every core
+            // finding — "so the page is spending its space on what it says it is for" —
+            // which was written when the only purpose being tested had ONE core segment.
+            // `enquire` has three, so a real report carried that clause twice in three
+            // bullets and each of the three announced itself as "what this page is for".
+            // `route` was the lucky case, not the normal one: every other purpose has two
+            // cores or more. The conclusion belongs to the reading, not to each line of
+            // it — see verdictFor.
+            const first = seg?.firstViewport ?? 0;
+            const measured = `${PLAIN[category].subject} takes ${pc(has)} of the page across `
+                + `${sections(seg?.blocks?.length ?? 0)}`
+                + (first > 0 ? `, and ${pc(first)} of the first screen` : '') + '.';
+
+            const healthy = has >= CORE_FLOOR;
+            cores.push({category, healthy});
+            findings.push({
+                id: `core-${category}`,
+                category,
+                role,
+                kind: healthy ? 'doing-its-job' : 'gap',
+                weight: healthy ? has : 1 - has,
+                text: healthy || isPresent(category)
+                    ? measured
+                    : `The page has ${PLAIN[category].absence}.`,
+            });
             continue;
         }
 
@@ -304,6 +362,7 @@ export function read(report) {
         // WRITTEN HERE, NOT IN THE TEMPLATE, for the reason the findings are: a Twig file
         // that assembled this sentence would be a second place the judgement lives.
         notGapsText: sentenceForNotGaps(notGaps),
+        verdict: verdictFor(kind, cores, findings.some((f) => f.kind === 'gap' && f.role !== 'core')),
     };
 }
 

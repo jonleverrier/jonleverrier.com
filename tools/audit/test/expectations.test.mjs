@@ -247,3 +247,82 @@ test('a page whose purpose is unknown is not compared at all', () => {
     b.purpose = {kind: 'unclear', confidence: 0, claim: null, from: null};
     assert.equal(compare(a, b, NAMES).worth, false);
 });
+
+/* ------------------------------------------------------- one verdict, not three */
+
+/**
+ * boondmanager.com's competitor, abas-erp.com/fr. `enquire` has three core segments, so
+ * the conclusion — "so the page is spending its space on what it says it is for" — landed
+ * on the end of two of the three bullets, and each of the three announced itself as "what
+ * this page is for". It read as a stuck record contradicting itself.
+ *
+ * `route` has one core, which is why gov.uk and gov.je never showed it. Every other
+ * purpose has two or more, so the single-core case was the lucky one.
+ */
+test('a core finding states its measurement and draws no conclusion', () => {
+    const agency = site('enquire', {
+        hero: {share: 0.076, firstViewport: 0.2, blocks: [{}]},
+        explainer: {share: 0.401, blocks: [{}, {}, {}, {}, {}]},
+        trust: {share: 0.258, blocks: [{}, {}, {}, {}]},
+        footer: 0.265,
+    });
+    for (const f of read(agency).findings) {
+        assert.equal(/spending its space/.test(f.text), false, `conclusion in a bullet: ${f.text}`);
+        assert.equal(/what this page is for/.test(f.text), false, `bullet claims to be the whole point: ${f.text}`);
+    }
+});
+
+test('…and the conclusion is one sentence, naming what is thin', () => {
+    const agency = site('enquire', {
+        hero: {share: 0.076, firstViewport: 0.2, blocks: [{}]},
+        explainer: {share: 0.401, blocks: [{}, {}, {}, {}, {}]},
+        trust: {share: 0.258, blocks: [{}, {}, {}, {}]},
+        footer: 0.265,
+    });
+    assert.equal(
+        read(agency).verdict,
+        'two of the three things an enquiry page needs are there in quantity. The hero is not.',
+    );
+});
+
+test('all cores healthy is still said, once', () => {
+    // A COMPLETE PAGE. Leave hero or navigation out and `route` reports them absent, which
+    // now withholds the verdict on purpose — see the gov.je case below.
+    const gov = site('route', {
+        routing: {share: 0.693, firstViewport: 0.459, blocks: [{}, {}]},
+        hero: 0.092, navigation: 0.014, footer: 0.183,
+    });
+    const said = read(gov);
+    assert.equal(said.verdict, 'That is the page spending its space on what it says it is for.');
+    assert.equal(said.findings.filter((f) => /spending its space/.test(f.text)).length, 0);
+});
+
+test('every core thin says so without counting', () => {
+    const shop = site('sell', {promotion: 0.01, hero: 0.02, routing: 0.7, footer: 0.27});
+    assert.match(read(shop).verdict, /^None of the two things a page that sells needs/);
+});
+
+test('the verdict agrees with the verb when one core is healthy', () => {
+    const shop = site('sell', {promotion: 0.4, hero: 0.02, routing: 0.3, footer: 0.28});
+    assert.match(read(shop).verdict, /^one of the two things a page that sells needs is there in quantity\./);
+});
+
+/**
+ * gov.je. Routing is the only core for `route` and it is healthy, so the verdict fired —
+ * directly under a bullet reading "The page has no hero." Both sentences true, and
+ * together they read as the report waving its own finding away.
+ */
+test('the all-clear is withheld when a bullet has named something missing', () => {
+    const je = site('route', {routing: {share: 0.726, firstViewport: 0.688, blocks: [{}, {}, {}, {}]}, navigation: 0.112});
+    const said = read(je);
+    assert.ok(said.findings.some((f) => /no hero/.test(f.text)), 'the hero gap is still reported');
+    assert.equal(said.verdict, '', 'and nothing contradicts it');
+});
+
+test('…and it is still said when nothing at all is missing', () => {
+    const gov = site('route', {
+        routing: {share: 0.693, firstViewport: 0.459, blocks: [{}, {}]},
+        hero: 0.092, navigation: 0.014, footer: 0.183,
+    });
+    assert.equal(read(gov).verdict, 'That is the page spending its space on what it says it is for.');
+});

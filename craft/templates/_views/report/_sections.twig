@@ -396,6 +396,13 @@
                     <li>{{ finding.text }}</li>
                 {% endfor %}
             </ul>
+            {# The conclusion, once. It used to ride on the end of every core bullet, which
+               on a purpose with more than one core said the same thing twice — see
+               lib/expectations.mjs. Capitalised here rather than there because it is a
+               counted sentence ("two of the three things...") that has to start a line. #}
+            {% if reading.verdict %}
+                <p>{{ reading.verdict|capitalize }}</p>
+            {% endif %}
             {% if reading.notGapsText %}
                 <p>{{ reading.notGapsText }}</p>
             {% endif %}
