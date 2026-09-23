@@ -121,13 +121,15 @@
     {% set reading = report.comparison|default(null) %}
     {% if reading and reading.worth %}
         <h2>Summary</h2>
-        <p class="r-reading-lead">{{ reading.lead }}</p>
-        {% if reading.points|length %}
-            <ul class="r-reading">
-                {% for point in reading.points %}
-                    <li>{{ point }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+        <div class="r-reading-block">
+            <p>{{ reading.lead }}</p>
+            {% if reading.points|length %}
+                <ul class="r-reading">
+                    {% for point in reading.points %}
+                        <li>{{ point }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
     {% endif %}
 </section>

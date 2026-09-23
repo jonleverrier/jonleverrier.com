@@ -381,18 +381,25 @@
     {% set reading = report.reading|default(null) %}
     {% if reading and reading.worth %}
         <h3>Summary</h3>
-        {% if reading.claim %}
-            <p class="r-claim">In its own words: <b>&ldquo;{{ reading.claim }}&rdquo;</b></p>
-        {% endif %}
-        <p>That is a page whose job is {{ reading.job }}.</p>
-        <ul class="r-reading">
-            {% for finding in reading.findings %}
-                <li>{{ finding.text }}</li>
-            {% endfor %}
-        </ul>
-        {% if reading.notGapsText %}
-            <p>{{ reading.notGapsText }}</p>
-        {% endif %}
+        {# THE MEASURE IS ON THE WRAPPER, not on each child. It was on three classes, and
+           the sentence about what is not a gap is a plain <p> that carried none of them —
+           so it ran the full 704px beside bullets set to 409 and the block read as two
+           different columns. One box, and anything put inside it later inherits the
+           measure rather than needing to remember it. #}
+        <div class="r-reading-block">
+            {% if reading.claim %}
+                <p>In its own words: <b>&ldquo;{{ reading.claim }}&rdquo;</b></p>
+            {% endif %}
+            <p>That is a page whose job is {{ reading.job }}.</p>
+            <ul class="r-reading">
+                {% for finding in reading.findings %}
+                    <li>{{ finding.text }}</li>
+                {% endfor %}
+            </ul>
+            {% if reading.notGapsText %}
+                <p>{{ reading.notGapsText }}</p>
+            {% endif %}
+        </div>
     {% endif %}
 
 
