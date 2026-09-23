@@ -6,6 +6,7 @@ use Craft;
 use craft\elements\Entry;
 use craft\helpers\Queue;
 use craft\web\Controller;
+use modules\jonson\jobs\NotifyNewLead;
 use modules\jonson\Jonson;
 use modules\leadgenerator\audit\jobs\RunAudit;
 use modules\leadgenerator\LeadGenerator;
@@ -127,10 +128,23 @@ class AuditController extends Controller
         // form makes, on the VISITOR id rather than the visit — see Analytics::convert.
         Jonson::getInstance()->analytics->convert((string) $request->getBodyParam('cid', ''), (int) $entry->id);
 
-        // NO PUSH HERE ANY MORE. Saving the entry is what queues the audit (see
+        // Tell Jon it landed, on the same job the contact form uses — one Telegram
+        // implementation, borrowed from jonson exactly as the disposable-email list and
+        // analytics->convert() already are. Queued, so the visitor's thank-you never waits
+        // on Telegram, and silent when the environment has no bot token, which is what
+        // keeps local and staging quiet.
+        //
+        // ON SUBMIT, NOT ON COMPLETION. The audit takes about a minute and can fail; this
+        // says a lead arrived, which is the thing worth knowing within seconds. Whether
+        // the report came out is what the control panel is for.
+        Queue::push(new NotifyNewLead([
+            'entryId' => (int) $entry->id,
+            'source' => 'the homepage analysis',
+        ]));
+
+        // NO RunAudit PUSH HERE. Saving the entry is what queues the audit (see
         // LeadGenerator::watchStatus), so the form and an entry made by hand in the control
-        // panel behave the same way. It is still queued, so the visitor's thank-you never
-        // waits on a browser, a model and a PDF.
+        // panel behave the same way.
         return $this->succeed();
     }
 

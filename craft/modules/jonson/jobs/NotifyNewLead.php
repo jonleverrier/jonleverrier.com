@@ -33,6 +33,20 @@ class NotifyNewLead extends BaseJob
 {
     public int $entryId;
 
+    /**
+     * Which form it came from, for the one sentence this sends.
+     *
+     * NOT A LINK AND NOT A SECTION HANDLE — words Jon reads on a lock screen. It
+     * defaults to the contact form's wording so the caller that has been pushing this
+     * job since before there was a second form does not have to say anything.
+     *
+     * It exists because the audit form needs the same notification and the difference
+     * is worth a word: a contact enquiry is somebody wanting to talk, and a homepage
+     * analysis is somebody who has handed over a URL and is now waiting for a report.
+     * They are answered differently.
+     */
+    public string $source = 'Jonson';
+
     public function execute($queue): void
     {
         $token = App::env('TELEGRAM_BOT_TOKEN');
@@ -87,14 +101,16 @@ class NotifyNewLead extends BaseJob
     private function body(Entry $entry): string
     {
         // THE TIME OF THE LEAD, NOT OF THE MESSAGE. These are the same only when the
-        // queue is running promptly, and production has no daemon — jobs wait for the
-        // next web request, which on a quiet night is hours. A message claiming "at
-        // 07:12" about something that happened at 03:40 would be worse than one with no
-        // time at all. Craft's own timezone, so it reads as the clock Jon is looking at.
+        // queue is running promptly. That was written when production had no daemon and
+        // jobs waited for the next web request, which on a quiet night is hours; there is
+        // a supervisor worker now, so the gap is usually seconds. The rule stands anyway —
+        // a message claiming "at 07:12" about something that happened at 03:40 would be
+        // worse than one with no time at all, and a stopped worker brings that back.
+        // Craft's own timezone, so it reads as the clock Jon is looking at.
         $when = $entry->dateCreated
             ? $entry->dateCreated->setTimezone(new \DateTimeZone(\Craft::$app->getTimeZone()))->format('H:i')
             : '';
 
-        return 'You got a new lead from Jonson' . ($when !== '' ? ' at ' . $when : '');
+        return 'You got a new lead from ' . $this->source . ($when !== '' ? ' at ' . $when : '');
     }
 }
