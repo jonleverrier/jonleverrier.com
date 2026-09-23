@@ -293,9 +293,13 @@
         .r-scoreline .r-score-bar { flex: 1; }
         /* The same label the scores carry, so the cover has one voice for its headings. */
         .r-findings__head { margin-top: 26px; }
-        /* THE READING, under the Segments table and at the foot of the comparison. Prose
-           rather than measurement, so it gets a measure: full-width lines of 11px mono are
-           a wall, and this is the one part of the sheet somebody reads rather than scans. */
+        /* THE READING, under the Segments table and at the foot of the comparison.
+           MEASURED, NOT FULL WIDTH. This is the one part of the sheet somebody reads rather
+           than scans, and the table's 704px is about 105 characters of 11px mono to a line,
+           which is roughly twice a comfortable measure. 62ch computes to 409px.
+
+           Tried at full width and reverted: it matches the table it sits under, and it
+           reads worse. */
         .r-claim, .r-reading-lead { margin: 0 0 10px; max-width: 62ch; }
         .r-reading { list-style: none; margin: 0 0 10px; padding: 0; max-width: 62ch; }
         .r-reading li { padding: 3px 0 3px 14px; text-indent: -14px; }
