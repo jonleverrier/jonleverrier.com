@@ -1,4 +1,4 @@
-dateModified: 1790206734
+dateModified: 1790249629
 elementSources:
   craft\elements\Entry:
     -
@@ -187,6 +187,7 @@ elementSources:
       page: Entries
       tableAttributes:
         - link
+        - 'field:994d5070-7163-4d97-8082-568fdabea3f5' # Email
         - 'field:26c8a621-4825-4302-adb0-d8db3b9c2d76' # Status
         - dateCreated
       type: native
