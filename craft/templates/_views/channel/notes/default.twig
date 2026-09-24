@@ -51,8 +51,9 @@
     }, with_context = false) %}
 
     {# Whisper is the section's name, so renaming it in the CMS carries here. The
-       title is the entry's own — a note has no long title. The standfirst is the
-       body; the blocks follow it, as on About. #}
+       h1 is `longTitle ?: title`, as every other section; the short title still
+       names the note in the <title>, the share link and the next/previous links.
+       The standfirst is the body; the blocks follow it, as on About. #}
     {# The meta row under the title: the note's Topic (one category from the
        Topics group) as a chip, the post date, and how long the note takes to read. #}
     {% set topic = entry.topicSelector.one() %}
@@ -97,7 +98,7 @@
 
     {% include '_components/content' with {
         whisper: entry.section.name,
-        title: entry.title,
+        title: (entry.longTitle ?? '')|trim ?: entry.title,
         topic: topic ? topic.title : null,
         topicUrl: topic ? topic.url : null,
         posted: posted,

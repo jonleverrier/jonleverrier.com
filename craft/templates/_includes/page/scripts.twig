@@ -644,13 +644,14 @@
     {% elseif schemaSection == 'notes' %}
         {# BlogPosting, the Article subtype for a personal post, as the page's
            mainEntity; the WebPage frames it, as on a case study. Headline is the
-           title; the description is the Summary the page opens with, falling back
-           to the Meta Description. Dates are the entry's own — postDate is what
-           the CMS calls the published date. Pictures are the note's imagery
-           blocks, in page order, as original asset URLs (a transform URL here
-           would have Craft render a file no visitor loads). #}
+           h1 (`longTitle ?: title`); the breadcrumb keeps the short title, as a
+           case study's does. The description is the Summary the page opens with,
+           falling back to the Meta Description. Dates are the entry's own —
+           postDate is what the CMS calls the published date. Pictures are the
+           note's imagery blocks, in page order, as original asset URLs (a
+           transform URL here would have Craft render a file no visitor loads). #}
         {% set postId = schemaEntry.url ~ '#post' %}
-        {% set headline = schemaEntry.title|trim %}
+        {% set headline = (schemaEntry.longTitle ?? '')|trim ?: schemaEntry.title|trim %}
         {% set summary = (schemaEntry.summary ?? '')|striptags|trim
             ?: (schemaEntry.seoMetaDescription ?? '')|striptags|trim %}
         {% set published = schemaEntry.postDate ? schemaEntry.postDate|atom : null %}
@@ -714,7 +715,7 @@
                 '@id': pageId ~ '-breadcrumb',
                 itemListElement: crumbs|merge([
                     { '@type': 'ListItem', position: 2, name: schemaEntry.section.name, item: siteUrl('notes') },
-                    { '@type': 'ListItem', position: 3, name: headline, item: schemaEntry.url },
+                    { '@type': 'ListItem', position: 3, name: schemaEntry.title|trim, item: schemaEntry.url },
                 ]),
             }],
         } %}
