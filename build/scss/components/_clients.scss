@@ -320,6 +320,21 @@ $c-clients-card-w--small: calc((#{$g-measure-wide} - 5 * #{$c-clients-gap}) / 6)
         }
         width: calc(100cqi + 2 * var(--c-clients-gutter));
         margin-inline: calc((100% - 100cqi) / 2 - var(--c-clients-gutter));
+
+        // The fade comes back as a MASK on the scroller itself. A mask is drawn in
+        // the element's own box, not its scrolled content, so it stays put while the
+        // logos move under it — which the ::after couldn't. The desktop objection to
+        // masking (re-rasterising under a forever-running transform) doesn't apply:
+        // the drift is off here. Fading to transparent shows whatever is behind, so
+        // it needs no band colour. Two gutters wide: one read as a smudged edge, not
+        // a fade; at rest it only softens the first card's leading edge.
+        mask-image: linear-gradient(
+            to right,
+            transparent 0,
+            #000 calc(2 * var(--c-clients-gutter)),
+            #000 calc(100% - 2 * var(--c-clients-gutter)),
+            transparent 100%
+        );
     }
 
     // At rest the first logo still lines up with the prose above it.
