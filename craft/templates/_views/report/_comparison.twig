@@ -21,11 +21,13 @@
     { label: 'Consistency', a: report.brand ? report.brand.score : null, b: competitor.brand ? competitor.brand.score : null }
 ] %}
 
-{# Every segment either page spends anything on, so a category one of them has and the
-   other does not still gets a row — an absence is a finding and must not be a gap. #}
+{# Every segment in the model, including ones neither page spends anything on — an absence
+   is a finding and must not be a gap. reportData() already pads `categories` with nought
+   rows (withEmptyCategories), so this only merges the two lists in the reader's order;
+   `unclassified` is only present when a page has some, and stays last. #}
 {% set names = [] %}
-{% for c in report.categories %}{% if c.share > 0 %}{% set names = names|merge([c.category]) %}{% endif %}{% endfor %}
-{% for c in competitor.categories %}{% if c.share > 0 and c.category not in names %}{% set names = names|merge([c.category]) %}{% endif %}{% endfor %}
+{% for c in report.categories %}{% set names = names|merge([c.category]) %}{% endfor %}
+{% for c in competitor.categories %}{% if c.category not in names %}{% set names = names|merge([c.category]) %}{% endif %}{% endfor %}
 
 <section class="r-sheet">
     <h1>Competitor Benchmark</h1>
@@ -56,7 +58,7 @@
         </tbody>
     </table>
 
-    <h2>Segments</h2>
+    <h2>Homepage Segmentation</h2>
     <table class="r-speed">
         <thead>
             <tr>
