@@ -414,16 +414,20 @@ export function mountJonson({warpOut} = {}) {
 
         const a = document.createElement('div');
         a.className = 'c-jonson__response';
-        // The thinking orb is a CANVAS, not a decorated element: it is a sphere of
-        // particles projected every frame (see thinking-orb.js), which is the one thing
-        // CSS cannot fake — points on the far side have to be smaller, dimmer and
-        // travelling the other way. aria-hidden because the status and its label are on
-        // the wrapper; the drawing says nothing a screen reader needs.
+        // The thinking orb is colour moving inside glass (see thinking-orb.js): a canvas
+        // of drifting blobs, blurred and masked to the middle of the ball, with the rim,
+        // the refracted band and the highlights painted around it in CSS. The canvas
+        // carries the part CSS cannot — five soft shapes overlapping in `screen`, never
+        // quite repeating. The .c-jonson__orb span is the SPHERE: it clips the canvas to
+        // a circle and owns the pseudo-elements the glass is made of, so it is structure
+        // rather than decoration. aria-hidden because the status and its label sit on the
+        // wrapper; the drawing says nothing a screen reader needs.
         a.innerHTML = '<span class="c-jonson__thinking" role="status" aria-label="Thinking">'
-            + '<canvas class="c-jonson__orb" aria-hidden="true"></canvas></span>';
+            + '<span class="c-jonson__orb" aria-hidden="true">'
+            + '<canvas class="c-jonson__orb-canvas"></canvas></span></span>';
         // No teardown kept: the orb stops itself once commit() empties this node, which
         // is the only way it ever ends.
-        mountThinkingOrb(a.querySelector('.c-jonson__orb'));
+        mountThinkingOrb(a.querySelector('.c-jonson__orb-canvas'));
 
         turn.append(q, a);
         thread.append(turn);

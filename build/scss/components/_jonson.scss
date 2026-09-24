@@ -570,6 +570,16 @@ $c-jonson-line: #383910;
 //
 // So the drawing moved to a canvas and this file kept only what surrounds it: the
 // space it occupies, and the halo it sits in.
+// THE ORB'S SIZE, AND THE ONLY PLACE IT IS WRITTEN. The halo and both blurs are
+// proportions of it, so the ball can be resized by this line alone — at the old 124
+// those were separate figures and getting them to agree by hand was several edits and
+// a chance to miss one. SIZE in thinking-orb.js must match $orb, as it sizes the
+// canvas backing store; that is the one pair a variable cannot bind.
+$orb: 75;
+$orb-halo: $orb * 1.18;   // light proud of the ball's edge
+$orb-blur: $orb * 0.045;  // the colour inside the glass
+$orb-refract: $orb * 0.03; // the band bending round the rim
+
 .c-jonson__thinking {
     display: flex;
     justify-content: center;
@@ -582,15 +592,18 @@ $c-jonson-line: #383910;
     // with a bottom margin here). Zero gives a symmetric 22px top and bottom.
     margin: 0;
 
-    // THE HALO. Cool blue rather than white: against the olive slab a white glow reads
-    // as haze, where a blue one reads as light with a source. It sits proud of the
-    // particle shell so the sphere's edge stays the edge.
+    // THE HALO — light leaving the ball. Cool blue rather than white: against the olive
+    // slab a white glow reads as haze, where a blue one reads as light with a source.
+    // It takes its strength from --orb-energy, written by thinking-orb.js, so the glow
+    // and the colour inside the glass are the same event rather than two timers that
+    // drift apart. The breathing is CSS, because opacity on one element is the cheapest
+    // thing a compositor does.
     &::before {
         content: '';
         position: absolute;
         top: 50%;
         left: 50%;
-        width: rem(146);
+        width: rem($orb-halo);
         aspect-ratio: 1;
         transform: translate(-50%, -50%);
         border-radius: 50%;
@@ -605,24 +618,113 @@ $c-jonson-line: #383910;
         animation: c-jonson-orb 2.4s ease-in-out infinite;
     }
 
-    // The canvas. Absolute and centred, so a 124px sphere costs nothing in a 72px line
-    // and the thread's rhythm is untouched. Its backing store is sized in JS from the
-    // device pixel ratio; these are the CSS dimensions it is painted into, and the two
-    // numbers must agree — SIZE in thinking-orb.js is this 124.
-    .c-jonson__orb {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: rem(124);
-        height: rem(124);
-        transform: translate(-50%, -50%);
-        z-index: 1;
-        pointer-events: none;
-    }
+    // NO OUTER SHADOW. There was one — an even ring cast straight back onto the slab,
+    // which is what a light behind the reader's eyes would actually throw, and it was
+    // consistent with the centred specular. It came out because it was fighting the
+    // halo for the same ring: 1.15x the ball against the halo's 1.18x, one subtracting
+    // navy where the other adds blue light, so neither read as itself and the edge sat
+    // in a murky band instead. Rendered side by side on the olive slab with the canvas
+    // frozen, so the shadow was the only difference, dropping it made the edge crisper
+    // and let the halo finally read as glow.
+    //
+    // What goes with it is the ball resting ON the slab; it now reads as floating in
+    // front of it, which is no loss in a thread where nothing else casts a shadow. If
+    // it ever wants grounding again, the fix is not to put this back as it was but to
+    // push the two apart — a tight shadow at ~1.05 and the halo out at ~1.3 — so each
+    // gets its own ring rather than cancelling the other.
 }
 
+// THE SPHERE. This span exists to be the ball: it clips the canvas to a circle and
+// carries the two pseudo-elements the glass is made of. Its own background is the
+// unlit body of it, which the colour inside then lights from within.
+//
+// SIZE: $orb must equal SIZE in thinking-orb.js, which sizes the backing store.
+.c-jonson__orb {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: rem($orb);
+    height: rem($orb);
+    // --orb-pulse is the breath, written per frame by thinking-orb.js. It multiplies
+    // the centring transform rather than replacing it, so the ball grows about its own
+    // middle instead of drifting down and right as it swells.
+    transform: translate(-50%, -50%) scale(var(--orb-pulse, 1));
+    border-radius: 50%;
+    overflow: hidden;
+    isolation: isolate; // keep the canvas's blending inside the ball
+    background: radial-gradient(
+        circle at 50% 42%,
+        rgba(getmap($colour, primary, 450), 0.6),
+        rgba(getmap($colour, primary, 700), 0.96) 72%
+    );
+    z-index: 1;
+    pointer-events: none;
+    // Safari paints a hairline of the layers below through a circular clip without it.
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    will-change: transform;
+}
 
+// THE COLOUR, INSIDE THE GLASS. The canvas is drawn edge to edge and then masked back
+// to the middle, which is what leaves clear thickness at the rim — colour that ran to
+// the edge would read as a printed disc rather than as something suspended in glass.
+// It is blurred here rather than in the canvas: one composited filter costs a fraction
+// of blurring five shapes per frame in script.
+.c-jonson__orb-canvas {
+    position: absolute;
+    inset: -8%;
+    width: 116%;
+    height: 116%;
+    filter: blur(rem($orb-blur)) saturate(1.7) contrast(1.1);
+    -webkit-mask-image: radial-gradient(circle, #000 30%, rgba(0, 0, 0, 0.6) 38%, transparent 44%);
+    mask-image: radial-gradient(circle, #000 30%, rgba(0, 0, 0, 0.6) 38%, transparent 44%);
+}
 
+// THE REFRACTED BAND — colour bending round the rim, the way it does through the thick
+// edge of a glass marble. A conic gradient turned by --orb-spin, masked to an annulus
+// so it only ever appears in the thickness, and screened so it adds light instead of
+// covering the body.
+.c-jonson__orb::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+        from var(--orb-spin, 0deg),
+        #{getmap($colour, primary, 430)},
+        #{getmap($colour, primary, 400)},
+        #{getmap($colour, primary, 600)},
+        #{getmap($colour, primary, 450)},
+        #{getmap($colour, primary, 410)},
+        #{getmap($colour, primary, 430)}
+    );
+    -webkit-mask-image: radial-gradient(circle, transparent 60%, #000 72%, #000 80%, transparent 96%);
+    mask-image: radial-gradient(circle, transparent 60%, #000 72%, #000 80%, transparent 96%);
+    filter: blur(rem($orb-refract)) saturate(1.3);
+    opacity: calc(0.35 + var(--orb-energy, 0.3) * 0.35);
+    mix-blend-mode: screen;
+    pointer-events: none;
+}
+
+// THE LIT SURFACE — rim, specular and glint in one layer, three stacked gradients plus
+// the hairline. One element because the glass has no more pseudo-elements to give and
+// an empty span for each would be decoration in the markup; they blend normally rather
+// than through `screen`, which over a body this dark is a difference you cannot see.
+//
+// THE HIGHLIGHT IS DEAD CENTRE, which is the whole read: the lamp is behind the
+// reader's eyes, not off to the upper left. The rim darkens outward because at the
+// edge the surface is turning away from that light.
+.c-jonson__orb::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 3.6%, rgba(255, 255, 255, 0) 6.5%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08) 18%, transparent 32%),
+        radial-gradient(circle, transparent 58%, rgba(4, 12, 22, 0.25) 80%, rgba(4, 12, 22, 0.6) 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+    pointer-events: none;
+}
 
 // The thinking orb's breathing glow. The BRIGHTNESS carries it — 0.25 to 1 is a
 // four-fold swing and that is what reads as breathing. The scale is deliberately

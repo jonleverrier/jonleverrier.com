@@ -1,241 +1,172 @@
 /**
  * THINKING ORB
  *
- * The wait between a question and its first token, drawn as a sphere of particles
- * turning in three dimensions.
+ * The wait between a question and its first token, drawn as colour moving inside a
+ * glass sphere.
  *
- * WHY CANVAS AND NOT CSS. This began as CSS — a lattice of box-shadow dots, then a
- * disc of the page's own dot field, then that disc with a rim, a specular and gradient
- * arcs turning inside it. Each step looked more like a ball and none of them WAS one:
- * every version was a flat circle with shading painted on, and the give-away is that
- * nothing ever passed behind anything else. A sphere reads as a sphere because points
- * on the far side are smaller, dimmer and moving the other way, and no amount of
- * radial-gradient gets you that. So the points are real: positions in 3D, rotated and
- * projected every frame.
+ * WHAT IT IS. Five soft blobs in the site's own palette drift and wobble on a canvas,
+ * composited with `screen` so where they overlap they brighten rather than cover.
+ * The canvas is blurred and masked to the middle of the ball, so the colour reads as
+ * something suspended INSIDE glass with clear thickness at the rim, rather than as a
+ * pattern printed on a disc. Everything around it — the refracted band bending round
+ * the edge, the rim shading, the specular, the halo and the contact shadow — is CSS,
+ * in _jonson.scss.
  *
- * It is a close cousin of what the site already does. jonson-grid.js fills a canvas
- * with cream dots on a 26px lattice and lifts them under the cursor; the hero is a
- * point cloud. This is the same material — the same cream, the same idea that a lit
- * dot gains BOTH radius and alpha — arranged on a sphere instead of a plane.
+ * WHY THIS REPLACED A PARTICLE SPHERE. The version before this projected 420 points in
+ * 3D so that the far side was smaller, dimmer and travelling the other way. It read as
+ * a sphere, which was the whole point of it, and it read as a MACHINE — a lattice, a
+ * scan, something counting. The wait it fills is a person thinking, and this one moves
+ * like weather instead: slow, unrepeating, with no structure to lock onto.
  *
- * NO LIBRARY. Four hundred points, one rotation, one projection: three.js would be
- * ~150KB to do arithmetic that fits in this file.
+ * THE LIGHT IS BEHIND YOUR EYES. The specular sits dead centre rather than up and to
+ * the left, so the sphere looks lit from where the reader is rather than from a lamp
+ * off to one side. That is also why the shadow is an even rim all the way round rather
+ * than a pool underneath: the light is frontal, so the shadow falls straight back.
  *
- * The loop stops itself. The thread replaces the thinking node with the answer the
+ * THE LOOP STOPS ITSELF. The thread replaces the thinking node with the answer the
  * moment the first token lands (see jonson-ask.js), so rather than plumbing a teardown
  * through the stream, each frame asks whether the canvas is still in the document and
- * gives up when it isn't. A thinking indicator that outlived its answer and kept a
- * rAF loop running would be invisible and permanent.
+ * gives up when it isn't. A thinking indicator that outlived its answer and kept a rAF
+ * loop running would be invisible and permanent.
  */
 
-// THREE COLOURS, ALL ALREADY IN THE THEME. One cream sphere read as washed out: every
-// point the same hue meant depth could only be carried by alpha, and alpha alone is
-// haze rather than distance.
-//
-//   NEAR  light-700  #f1eada — the cream the dot field is drawn in (DOT_RGB in
-//                    jonson-grid.js), so the front of the ball is the page's own material
-//   FAR   primary-430 #b6ddff — the same pale blue as the halo behind it. Distant things
-//                    going cool and blue is what atmosphere does, and borrowing the
-//                    halo's own hue means the back of the sphere dissolves into its glow
-//                    rather than into a different colour
-//   HOT   primary-430 #b6ddff — the site's light blue, the one the Jonson titles and the
-//                    footer strapline are set in, carried only by the travelling band.
-//
-// The band was amber (primary-400) for a moment and it worked optically — warm light
-// on a cool body is the sharpest possible read — but it was the one colour here that
-// belongs to nothing else on the page. The light blue is the site's own accent, so the
-// band now lights the sphere in a colour the rest of the design already speaks.
-//
-// Which means the FAR colour had to move: with the band and the far side both on 430
-// there was nothing between them and the depth went flat. It is now the deeper blue
-// (primary-450), so the sphere recedes into teal and the band arrives as the pale
-// version of that same hue — one colour family, lit and unlit, rather than two.
-const C_NEAR = [241, 234, 218];
-const C_FAR = [58, 100, 121];
-const C_HOT = [182, 221, 255];
+// THE PALETTE, AND THE ONE DELIBERATE DEPARTURE FROM IT. Four of these are the tokens
+// in theme/_setup.scss. The first is primary-450 as it was BEFORE that token was
+// darkened to #3a6479 — a change made so 12px whisper labels could clear AA on cream.
+// Nothing here is text, the orb is aria-hidden, and the darker blue disappears against
+// the sphere's own near-navy fill; the lighter one is what makes the body of the ball
+// read as lit. Same hue, and it is the only value in this file that is not a token.
+const BLOBS = [
+    {rgb: [78, 136, 164],  r: 0.44, orbit: 1.0, fx: 0.71, fy: 0.53, phase: 0.0},   // primary-450, pre-darkening
+    {rgb: [182, 221, 255], r: 0.30, orbit: 0.9, fx: 0.47, fy: 0.83, phase: 1.7},   // primary-430 #b6ddff
+    {rgb: [255, 185, 41],  r: 0.40, orbit: 1.1, fx: 0.93, fy: 0.61, phase: 3.1},   // primary-400 #ffb929
+    {rgb: [224, 46, 26],   r: 0.36, orbit: 1.2, fx: 0.59, fy: 1.07, phase: 4.4},   // primary-600 #e02e1a
+    {rgb: [232, 245, 255], r: 0.14, orbit: 1.3, fx: 1.13, fy: 0.77, phase: 5.6},   // primary-410 #e8f5ff
+];
 
-const COUNT = 420;      // enough that the shell reads as a surface, not as scattered dots
-const SIZE = 124;       // css px — matches the halo behind it in _jonson.scss
-const R = 0.86;         // sphere radius as a fraction of the half-box, leaving room for
-                        //   the perspective bulge at the near pole
+// css px. The backing store is this times the device ratio; the CSS box is `$orb` in
+// _jonson.scss, where the halo, the shadow and the blurs are all derived from it.
+// THE TWO NUMBERS MUST AGREE — it is the one pair the SCSS variable cannot bind.
+const SIZE = 75;
 
-// Perspective divisor. Small numbers exaggerate depth (a fish-eye ball); large ones
-// flatten it to an orthographic disc, which is exactly the look we are climbing out
-// of. 2.6 is enough that the near face clearly stands proud.
-const PERSP = 2.6;
+// How the orb behaves while it waits. There is only one state: the node is destroyed
+// the instant the answer arrives, so "speaking" and "idle" have nowhere to live here.
+const SPEED = 0.95;   // how fast the blobs travel
+const AMP = 0.15;     // how far each blob's outline wobbles from a circle
+const ORBIT = 0.26;   // how far from centre they wander, as a fraction of the box
+const ENERGY = 0.75;  // drives the halo and the refracted band, through --energy
+const PULSE = 0.022;  // how much the whole ball breathes
 
-// Both slowed by 30% together — 0.46/0.11 was a turn every 13.7s and read as busy for
-// something whose job is to say "thinking", not "working hard". 19.6s is slow enough to
-// look like it is holding still until you watch it.
-//
-// The RATIO is what matters and is kept: the two axes at 4.2:1 never come back into
-// phase, which is what stops the poles landing in the same place twice and the sphere
-// reading as a spinning label. Slowing one without the other would have traded the
-// speed for a visible repeat.
-const SPIN = 0.32;      // radians/sec about Y — the main turn
-const TUMBLE = 0.077;   // radians/sec about X — a second, slower axis, so the poles
-                        //   drift and the thing never looks like a spinning label
-const TILT = 0.38;      // radians of resting lean, so we never look straight down a pole
+const STEPS = 72;     // points around one blob's outline — smooth at this size, cheap
 
-const BREATHE_MS = 2400; // matches the halo's breathing in the stylesheet
-// Sweeps of the brightening plane per second. 0.55 (one pass every 1.8s) read as a
-// wipe hurrying across; 0.3 took about three and a third seconds, which was long
-// enough to watch it travel rather than catch it having travelled. 0.24 is a little
-// slower again — 4.2s — now that the sphere it crosses is smaller and the plane has
-// less distance to cover, so the same rate read faster than it did.
-//
-// Not 0.25, which would be a tidy 4.0s against the 2.4s breathe: a 5:3 ratio puts the
-// two back in phase every 12s, and a backdrop that visibly repeats is a backdrop you
-// start watching. 0.24 pushes that out to ~25s.
-const SCAN_HZ = 0.24;
-
-/**
- * Points spread evenly over a unit sphere by the Fibonacci spiral.
- *
- * Not random: random points clump, and the clumps read as texture rather than as a
- * surface. Not lat/long either, which crowds the poles and makes the ball look like a
- * wireframe globe. The golden angle lands each point in the largest remaining gap, so
- * the shell is even everywhere and has no seam to notice as it turns.
- */
-const sphere = (n) => {
-    const golden = Math.PI * (3 - Math.sqrt(5));
-    const pts = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-        const y = 1 - (i / (n - 1)) * 2;      // +1 down to -1
-        const r = Math.sqrt(Math.max(0, 1 - y * y));
-        const theta = golden * i;
-        pts[i * 3] = Math.cos(theta) * r;
-        pts[i * 3 + 1] = y;
-        pts[i * 3 + 2] = Math.sin(theta) * r;
-    }
-
-    return pts;
-};
-
-/**
- * @param {HTMLCanvasElement} canvas
- * @returns {() => void} teardown (also self-stops once the canvas leaves the document)
- */
+/** Colour moving inside glass. Returns a teardown, though nothing needs to call it. */
 export function mountThinkingOrb(canvas) {
     const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
-    if (!ctx) return () => {};
+    if (!ctx) {
+        return () => {};
+    }
 
-    // Cap at 2. Beyond that the backing store grows four-fold for dots a couple of
-    // pixels across, which nobody can see and every frame has to paint.
+    // The element the custom properties are written to: the sphere, which is also what
+    // the CSS layers hang off. Falls back to the canvas so a lone canvas still animates.
+    const host = canvas.closest('.c-jonson__orb') ?? canvas;
+
+    // Cap at 2. Beyond that the backing store grows four-fold for a blurred image a
+    // hundred pixels across, which nobody can see and every frame has to paint.
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.round(SIZE * dpr);
-    canvas.height = Math.round(SIZE * dpr);
+    const w = Math.round(SIZE * dpr);
+    canvas.width = w;
+    canvas.height = w;
 
-    const pts = sphere(COUNT);
-    const half = (SIZE * dpr) / 2;
-    const radius = half * R;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // Reused across frames so the per-point work allocates nothing.
-    const order = new Array(COUNT);
-    for (let i = 0; i < COUNT; i++) order[i] = {x: 0, y: 0, z: 0, s: 0, a: 0, r: 0, g: 0, b: 0};
+    const centre = w / 2;
 
     let raf = 0;
     let stopped = false;
-    const started = performance.now();
+    let last = performance.now();
+    let t = 0;      // blob travel, in its own time so speed can vary without a jump
+    let spin = 0;   // whole-canvas rotation, and the angle of the refracted band
+    let clock = 0;  // wall time, for the breath
+
+    const blob = (b, cx, cy, radius, time) => {
+        ctx.beginPath();
+        for (let i = 0; i <= STEPS; i++) {
+            const a = (i / STEPS) * Math.PI * 2;
+            // Three waves at different rates: one alone is a lobed circle that reads as
+            // a flower, and the beat between three never quite repeats.
+            const wobble = Math.sin(a * 3 + time * 1.3 + b.phase) * 0.55
+                + Math.sin(a * 5 - time * 0.9 + b.phase * 1.7) * 0.30
+                + Math.sin(a * 2 + time * 0.5 + b.phase * 0.6) * 0.15;
+            const rr = radius * (1 + AMP * wobble);
+            const x = cx + Math.cos(a) * rr;
+            const y = cy + Math.sin(a) * rr;
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.closePath();
+
+        const [r, g, bl] = b.rgb;
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 1.15);
+        grad.addColorStop(0, `rgba(${r},${g},${bl},0.95)`);
+        grad.addColorStop(0.55, `rgba(${r},${g},${bl},0.7)`);
+        grad.addColorStop(1, `rgba(${r},${g},${bl},0)`);
+        ctx.fillStyle = grad;
+        ctx.fill();
+    };
 
     const draw = (now) => {
-        const t = (now - started) / 1000;
-        const ay = reduced ? 0.7 : SPIN * t;
-        const ax = TILT + (reduced ? 0 : Math.sin(t * TUMBLE) * 0.5);
-
-        const cosY = Math.cos(ay);
-        const sinY = Math.sin(ay);
-        const cosX = Math.cos(ax);
-        const sinX = Math.sin(ax);
-
-        // THE SPHERE BREATHES FROM 64% TO 80% OF ITS RADIUS AND BACK.
-        //
-        // It was 4% either side of full — technically a pulse, and invisible; 4% of a
-        // 124px sphere is about two pixels. A fifth of the radius moves the whole
-        // shape, which is what makes it read as waiting rather than as a still picture
-        // with something twitching inside it. That fifth is kept here: 0.64 to 0.80 is
-        // the same 1.25x swell the 0.80-to-1.00 version had, moved down the scale.
-        //
-        // The CEILING is the part that changed — it used to reach 1.0, filling the box
-        // it is drawn into. At ~107px against a 124px canvas the sphere was the whole
-        // component, and the halo behind it had nothing to be a halo AROUND. Topping
-        // out at 0.80 (~85px) leaves the glow somewhere to sit.
-        //
-        // -cos rather than sin, so the cycle STARTS at the small end and grows: the orb
-        // appears the instant the question is sent, so the first frame is the one
-        // everybody actually sees, and it should be gathering itself rather than caught
-        // mid-deflate. 0.80 is now the ceiling, never more — overshooting would push
-        // points out through the halo.
-        //
-        // Reduced motion holds it at the CEILING, not at 1.0 — a still sphere should be
-        // the same size as the moving one at its fullest, and 1.0 stopped being that.
-        const breathe = reduced ? 0.8 : 0.72 - Math.cos((t * 1000 / BREATHE_MS) * Math.PI * 2) * 0.08;
-
-        // A plane of brightness travelling through the ball along x. Points it passes
-        // gain radius AND alpha together — the same pairing the canvas grid applies
-        // under the cursor, so a lit point here and a hovered dot on the page read as
-        // the same kind of event.
-        const wave = reduced ? 0 : Math.sin(t * Math.PI * 2 * SCAN_HZ);
-
-        for (let i = 0; i < COUNT; i++) {
-            const px = pts[i * 3];
-            const py = pts[i * 3 + 1];
-            const pz = pts[i * 3 + 2];
-
-            // Y then X. Order matters: the other way round the tumble would swing the
-            // whole ball rather than lean it.
-            const x1 = px * cosY + pz * sinY;
-            const z1 = pz * cosY - px * sinY;
-            const y2 = py * cosX - z1 * sinX;
-            const z2 = z1 * cosX + py * sinX;
-
-            const scale = PERSP / (PERSP - z2);         // nearer → larger
-            const depth = (z2 + 1) / 2;                  // 0 at the back, 1 at the front
-
-            const near = 1 - Math.min(1, Math.abs(x1 - wave) / 0.38);
-            const lit = near * near;                     // squared, so the band has an edge
-
-            const o = order[i];
-            o.x = half + x1 * radius * breathe * scale;
-            o.y = half + y2 * radius * breathe * scale;
-            o.z = z2;
-            // Back points stay visible but faint — a sphere you can see through is the
-            // difference between a ball of points and a disc of them.
-            // The lit lift is bigger than it was for the amber band: a pale blue among
-            // cream points has far less hue contrast to spend, so it has to win on
-            // brightness instead.
-            o.a = (0.12 + 0.70 * depth * depth) + lit * 0.50;
-            // Radius: a floor so the far side stays visible, plus a depth term so the
-            // near face is plainly bigger, times the perspective scale. The 0.66 is the
-            // overall gauge — it was 0.5, which drew the sphere honestly but read as
-            // grit at this size rather than as points you can see.
-            o.s = (0.8 + 1.6 * depth) * scale * dpr * 0.66 + lit * 1.1 * dpr;
-
-            // Colour carries depth as well as alpha: cool and blue at the back, cream
-            // at the front. Then the band warms whatever it is crossing — capped below
-            // full amber so the points read as heated rather than repainted.
-            const w = lit * 0.88;
-            o.r = (C_FAR[0] + (C_NEAR[0] - C_FAR[0]) * depth) * (1 - w) + C_HOT[0] * w;
-            o.g = (C_FAR[1] + (C_NEAR[1] - C_FAR[1]) * depth) * (1 - w) + C_HOT[1] * w;
-            o.b = (C_FAR[2] + (C_NEAR[2] - C_FAR[2]) * depth) * (1 - w) + C_HOT[2] * w;
+        // STOP WHEN THE NODE GOES. commit() in jonson-ask.js empties this answer node
+        // the moment the first token lands, which is the only way the orb ever ends.
+        if (stopped || !canvas.isConnected) {
+            stopped = true;
+            return;
         }
 
-        // Painter's algorithm: far points first, so the near face genuinely covers the
-        // far one where they overlap.
-        order.sort((a, b) => a.z - b.z);
+        const dt = Math.min(0.05, (now - last) / 1000); // a tab that slept must not jump
+        last = now;
+        clock += dt;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (let i = 0; i < COUNT; i++) {
-            const o = order[i];
-            ctx.beginPath();
-            ctx.arc(o.x, o.y, Math.max(0.35, o.s), 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${o.r | 0}, ${o.g | 0}, ${o.b | 0}, ${o.a.toFixed(3)})`;
-            ctx.fill();
+        // Reduced motion still paints — a frozen ball with a hard edge looks broken —
+        // but slowly enough that nothing sweeps or flickers.
+        const motion = reduced ? 0.3 : 1;
+        t += dt * SPEED * motion;
+        spin += dt * SPEED * 0.35 * motion;
+
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, w, w);
+        ctx.translate(centre, centre);
+        ctx.rotate(spin);
+        ctx.translate(-centre, -centre);
+
+        // SCREEN, NOT SOURCE-OVER. Overlapping blobs have to brighten where they cross,
+        // the way light through two filters does; painted normally the last one drawn
+        // simply hides the others and the ball reads as cut paper.
+        ctx.globalCompositeOperation = 'screen';
+        const orbit = w * ORBIT;
+        for (const b of BLOBS) {
+            const cx = centre + Math.cos(t * b.fx * 2 + b.phase) * orbit * b.orbit;
+            const cy = centre + Math.sin(t * b.fy * 2 + b.phase * 1.3) * orbit * b.orbit;
+            blob(b, cx, cy, w * 0.5 * b.r, t * 2);
         }
 
-        if (reduced || stopped) return;                  // one frame is the whole show
-        if (!canvas.isConnected) { stopped = true; return; } // the answer replaced us
+        // A faint core, so the middle of the ball stays the brightest part of it however
+        // the blobs happen to be arranged.
+        ctx.globalCompositeOperation = 'lighter';
+        const core = ctx.createRadialGradient(centre, centre, 0, centre, centre, w * 0.28);
+        core.addColorStop(0, `rgba(255,255,255,${(0.08 + ENERGY * 0.12).toFixed(3)})`);
+        core.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = core;
+        ctx.fillRect(0, 0, w, w);
+
+        // Three numbers the CSS layers read. Written every frame, which is cheap — they
+        // are custom properties on one element, not a style recalculation of a tree.
+        const breath = 1 + PULSE * Math.sin(clock * 2.6) * motion;
+        host.style.setProperty('--orb-pulse', breath.toFixed(4));
+        host.style.setProperty('--orb-spin', `${((spin * 180 / Math.PI) % 360).toFixed(2)}deg`);
+        host.style.setProperty('--orb-energy', ENERGY.toFixed(3));
+
         raf = requestAnimationFrame(draw);
     };
 
