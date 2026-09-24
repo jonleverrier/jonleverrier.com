@@ -351,7 +351,16 @@
 
                    The page template drops any testimonial placed here from that bottom
                    slider; without that the same quote appears twice on the page. #}
-                {% set quoted = block.testimonial.one() %}
+                {#- STATUS IGNORED HERE, AND ONLY HERE. Placing a quote in the flow is a
+                    deliberate act by the author: this block exists because somebody chose
+                    this quote for this spot in the argument. Disabling the testimonial
+                    withdraws it from the places that CHOOSE for you — the slider at the
+                    foot of a case study, and Jonson's [[testimonial]] pick, both of which
+                    ask for `live` — and it should not silently empty a block somebody
+                    placed by hand, which is what the default enabled-only query did.
+                    Soft-deleted entries are still excluded: `status(null)` lifts the
+                    status filter, not the trashed one. -#}
+                {% set quoted = block.testimonial.status(null).one() %}
                 {% if quoted and (quoted.blockquote ?? '') %}
                     <div class="c-case-content__quote">
                         {% include '_components/testimonials' with { items: [{

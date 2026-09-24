@@ -182,7 +182,10 @@ class NoteMemory extends Component
                         }
                         break;
                     case 'caseTestimonial':
-                        $quoted = $block->testimonial->one();
+                        // Same rule as the template that renders this block: a quote
+                        // placed by hand counts even when the testimonial is disabled,
+                        // so the card records what the page actually shows.
+                        $quoted = $block->testimonial->status(null)->one();
                         if ($quoted && ($q = $text($quoted->blockquote ?? '')) !== '') {
                             $who = trim(implode(', ', array_filter([
                                 trim((string) ($quoted->personName ?? '')),
