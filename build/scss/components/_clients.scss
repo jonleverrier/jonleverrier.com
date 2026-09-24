@@ -306,6 +306,25 @@ $c-clients-card-w--small: calc((#{$g-measure-wide} - 5 * #{$c-clients-gap}) / 6)
         &::after {
             content: none;
         }
+
+        // With no fade, the strip must not stop short of the slab: 100cqi is
+        // .c-jonson's CONTENT box, so the logos hard-cut a gutter in from the olive
+        // edge. Bleed on through .c-jonson's inline padding (same tokens, same
+        // breakpoints) so they scroll off the slab's real edge instead.
+        --c-clients-gutter: #{getmap($space, rhythm, 500)};
+        @include mq(from, md) {
+            --c-clients-gutter: #{getmap($space, rhythm, 600)};
+        }
+        @include mq(from, lg) {
+            --c-clients-gutter: #{getmap($space, rhythm, 800)};
+        }
+        width: calc(100cqi + 2 * var(--c-clients-gutter));
+        margin-inline: calc((100% - 100cqi) / 2 - var(--c-clients-gutter));
+    }
+
+    // At rest the first logo still lines up with the prose above it.
+    .c-jonson .c-clients__track {
+        padding-inline: var(--c-clients-gutter);
     }
 
     .c-jonson .c-clients.is-ready .c-clients__track {
