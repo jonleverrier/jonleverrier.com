@@ -19,7 +19,7 @@ import {existsSync, mkdtempSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {chromium} from 'playwright';
-import {capturePage, pngSize, PAGE_HEIGHT, VIEWPORT} from '../lib/capture.mjs';
+import {capturePage, plainUserAgent, pngSize, PAGE_HEIGHT, VIEWPORT} from '../lib/capture.mjs';
 
 // Network-gated: this one hits a real site, so it is opt-in and never runs in a
 // plain `node --test`. AUDIT_LIVE=1 node --test tools/audit/test/capture.test.mjs
@@ -110,4 +110,10 @@ test('meta records the URL actually captured beside the one requested', async ()
     assert.equal(meta.url, url);
     assert.equal(meta.capturedUrl, url, 'nothing should have moved the page');
     assert.equal(meta.consentNavigatedAway, false);
+});
+
+test('the capture announces itself as plain Chrome, never HeadlessChrome', () => {
+    const ua = plainUserAgent('151.0.7922.71', 'linux');
+    assert.equal(ua, 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36');
+    assert.doesNotMatch(plainUserAgent('151.0.1', 'darwin'), /Headless/);
 });

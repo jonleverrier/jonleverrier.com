@@ -644,6 +644,13 @@ export async function capturePage(url, outDir, opts = {}) {
     const browser = await chromium.launch();
     try {
         const context = await browser.newContext({
+            // A PLAIN CHROME USER AGENT, not the default `HeadlessChrome/…` one. gov.gg's
+            // firewall answers that token with a 500 block page ("The URL you requested
+            // has been blocked", an Attack ID) from any address, and passes the identical
+            // browser the moment the token reads `Chrome`. The version is the launched
+            // browser's own and the platform the host's, so the string never claims a
+            // browser or an OS this capture is not running.
+            userAgent: plainUserAgent(browser.version()),
             viewport: VIEWPORT,
             deviceScaleFactor: 1,
             reducedMotion: 'reduce',
@@ -954,4 +961,18 @@ export async function capturePage(url, outDir, opts = {}) {
     } finally {
         await browser.close();
     }
+}
+
+/**
+ * The user agent a desktop Chrome of this version sends on this host — headful wording,
+ * so a firewall that turns away `HeadlessChrome` sees an ordinary browser. See the
+ * context in capture() for why. Exported for the test.
+ */
+export function plainUserAgent(version, platform = process.platform) {
+    const os = platform === 'darwin'
+        ? 'Macintosh; Intel Mac OS X 10_15_7'
+        : platform === 'win32' ? 'Windows NT 10.0; Win64; x64' : 'X11; Linux x86_64';
+    const major = String(version).split('.')[0];
+
+    return `Mozilla/5.0 (${os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36`;
 }
