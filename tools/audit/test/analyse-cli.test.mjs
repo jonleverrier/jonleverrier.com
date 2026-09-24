@@ -53,3 +53,18 @@ test('a 5xx is refused on the same rule as a 403', async () => {
         (e) => /answered 503/.test(e.stdout + e.stderr),
     );
 });
+
+test('a block page is named as one, from the title phase 1 recorded', async () => {
+    // gov.gg: its firewall answers a headless browser with a 500 and this title.
+    const dir = dirWith({
+        url: 'https://gov.gg',
+        httpStatus: 500,
+        head: {title: 'The URL you requested has been blocked'},
+        image: {width: 1440, height: 900},
+    });
+    await assert.rejects(
+        run('node', ['tools/audit/analyse.mjs', dir]),
+        (e) => /firewall blocked the capture: it answered 500 with a page titled "The URL you requested has been blocked"/
+            .test(e.stdout + e.stderr),
+    );
+});

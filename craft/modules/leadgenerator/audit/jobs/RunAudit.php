@@ -79,7 +79,12 @@ class RunAudit extends BaseJob
             $this->progress($queue, 0.45, 'capturing the competitor');
             $measured = $audit->measure($rival, (int) $entry->id, self::COMPETITOR);
             if (!$measured['ok']) {
-                $rivalWhy = (string) $measured['why'];
+                // NAME THE SITE AND THE COST. This lands in auditFailure on an audit that
+                // otherwise succeeded, beside the lead's own URL — "competitor analyse:
+                // the server answered 500" read as the lead's site failing.
+                $host = parse_url($rival, PHP_URL_HOST) ?: $rival;
+                $rivalWhy = "Competitor {$host} could not be measured, so the report has no "
+                    . "comparison. {$measured['why']}";
                 Craft::warning("[leadgenerator] audit {$entry->id} {$rivalWhy}", __METHOD__);
             }
         }

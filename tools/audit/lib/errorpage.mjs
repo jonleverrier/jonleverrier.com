@@ -117,3 +117,31 @@ export function errorPageWarning(rects) {
         + 'The server answered 200, so nothing else about the capture looks wrong — but percentages '
         + 'taken from it describe whatever was served instead of the site';
 }
+
+/**
+ * A title a block page wears. Checked only on a page that already answered non-2xx, so
+ * the bar is lower than ERROR_PHRASES': the status has said this is not the site, and the
+ * title only decides whether to name WHO turned us away.
+ */
+const BLOCK_TITLE = /\bblock(ed)?\b|\bdenied\b|\bforbidden\b|attention required|captcha|verify you are human/i;
+
+/**
+ * WHY A NON-2xx CAPTURE IS REFUSED, in the words the entry shows.
+ *
+ * "The server answered 500" read as the site being down. gov.gg's 500 was its firewall's
+ * block page — titled "The URL you requested has been blocked", with an Attack ID — and
+ * the title phase 1 records says so. It is quoted whenever there is one, and when it reads
+ * as a block the sentence leads with that. `answered <status>` stays in every form.
+ */
+export function httpErrorReason(meta) {
+    const status = meta.httpStatus;
+    const title = printable(String(meta.head?.title ?? '').trim(), 120);
+    if (title && BLOCK_TITLE.test(title)) {
+        return `the site's firewall blocked the capture: it answered ${status} with a page titled "${title}"`;
+    }
+    if (title) {
+        return `the server answered ${status} with a page titled "${title}", so this is an error page rather than the site`;
+    }
+
+    return `the server answered ${status}, so this is an error page rather than the site`;
+}

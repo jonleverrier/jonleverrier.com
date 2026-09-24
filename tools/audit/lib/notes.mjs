@@ -49,7 +49,7 @@ import {MAX_IMAGE_HEIGHT} from './edges.mjs';
 import {printable} from './printable.mjs';
 import {overlayWarning} from './overlay.mjs';
 import {sameUrl} from './sameurl.mjs';
-import {errorPageEvidence, errorPageWarning} from './errorpage.mjs';
+import {errorPageEvidence, errorPageWarning, httpErrorReason} from './errorpage.mjs';
 import {blankRegionWarning, transparentWarning, unpaintedWarning} from './painted.mjs';
 
 /**
@@ -112,7 +112,7 @@ export function runNotes(meta, reason = 'missing', rects = null, unpainted = nul
         add(
             'httpError',
             'attribution',
-            `the server answered ${meta.httpStatus}, so this is an error page rather than the site — `
+            `${httpErrorReason(meta)} — `
                 + 'a CDN or firewall blocking the crawler looks exactly like this. Nothing measured here '
                 + 'describes the page that was asked for',
             {status: meta.httpStatus},

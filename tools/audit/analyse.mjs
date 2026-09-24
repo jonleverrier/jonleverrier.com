@@ -38,6 +38,7 @@ import {edgeCandidates} from './lib/candidates.mjs';
 import {leaves, totalArea} from './lib/blocks.mjs';
 import {anyUnmeasured, noteCodes, runNotes} from './lib/notes.mjs';
 import {loadRects} from './lib/rects.mjs';
+import {httpErrorReason} from './lib/errorpage.mjs';
 import {printable} from './lib/printable.mjs';
 import {renderDebug} from './lib/debug.mjs';
 import {overlaysInPng} from './lib/overlay.mjs';
@@ -74,7 +75,7 @@ try {
     // page we can still honestly report on; this one says the bytes belong to a CDN's
     // block page, so there is no percentage worth paying for.
     if (typeof meta.httpStatus === 'number' && (meta.httpStatus < 200 || meta.httpStatus >= 300)) {
-        throw new Error(`the server answered ${meta.httpStatus}, so this is an error page rather than the site`);
+        throw new Error(httpErrorReason(meta));
     }
 
     const {width, height} = meta.image;

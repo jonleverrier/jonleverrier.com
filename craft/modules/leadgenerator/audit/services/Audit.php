@@ -180,8 +180,8 @@ class Audit extends Component
         ] as [$step, $args]) {
             $result = $this->node($args);
             if (!$result['ok']) {
-                $step = $which !== '' ? $which . ' ' . $step : $step;
-
+                // The step only. WHICH SITE failed is the caller's to say, since only the
+                // caller knows what the failure costs — see RunAudit's competitor branch.
                 return ['ok' => false, 'why' => $step . ': ' . $result['why'], 'pdf' => null];
             }
         }
