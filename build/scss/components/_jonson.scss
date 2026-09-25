@@ -134,7 +134,7 @@ $c-jonson-line: #383910;
     content: '';
     display: block;
     width: $spine-width;
-    height: $spine-length;
+    height: $cap-line; // the same as the bottom cap's line (.c-jonson__thread::after)
     margin: rem(28) auto rem(22);
     background: $c-jonson-line;
 
@@ -176,7 +176,7 @@ $c-jonson-line: #383910;
 // line down to `100% - dot`, the dot painted at the base.
 .c-jonson__thread::after {
     content: '';
-    flex: 1 0 rem(58); // stretch to carry the line down to the footer
+    flex: 1 0 calc(#{$cap-line} + #{rem(16)}); // the line then the dot, stretching to carry it down to the footer
     width: rem(16);
     margin: rem(22) auto getmap($space, rhythm, 700); // gap between dot and footer
     background:

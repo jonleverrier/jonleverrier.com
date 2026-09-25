@@ -31,11 +31,16 @@ $spine-width: 0.3rem;
 
 // …and how LONG one segment of it is. Same reasoning as the width: every divider
 // between two beats draws at this, so the timeline can't step from one component
-// to the next. The lead-in above a page's whisper is deliberately longer (it caps
-// the line rather than joining two things) and scales with this — see
-// .c-content__whisper. A literal for the same reason as above: rem() isn't in
-// scope here, and the root is 10px.
+// to the next. A literal for the same reason as above: rem() isn't in scope here,
+// and the root is 10px.
 $spine-length: 5rem;
+
+// The line at each END of a page's timeline, between the content and its capping
+// dot. Top (the whisper's ::before) and bottom (.c-content::after,
+// .c-jonson__thread::after) draw at this, so the two caps match. The top was once
+// 1.6x a segment and the bottom this, and the pair read as two different drawings.
+// The bottom still stretches past it when the page has height to fill.
+$cap-line: 4.2rem;
 
 $space: (
 	rhythm: (

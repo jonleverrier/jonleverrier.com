@@ -163,7 +163,7 @@ $c-content-subheading: getmap($colour, light, 880); // the sub-heading grey — 
         content: '';
         display: block;
         width: $spine-width;
-        height: calc(#{$spine-length} * 1.6); // a longer lead-in than a joining segment — the cap dot sat too close to the slab edge; tracks $spine-length so the timeline stays in proportion
+        height: $cap-line; // the same as the bottom cap's line (.c-content::after)
         margin: rem(28) auto rem(22);
         background: $c-content-spine;
     }
@@ -650,7 +650,7 @@ $c-content-subheading: getmap($colour, light, 880); // the sub-heading grey — 
 // dot. Stretches to fill the remaining column height (line + dot in one paint).
 .c-content::after {
     content: '';
-    flex: 1 0 rem(58);
+    flex: 1 0 calc(#{$cap-line} + #{rem(16)}); // the line, then the dot
     width: rem(16);
     margin: rem(22) auto getmap($space, rhythm, 700);
     background:
