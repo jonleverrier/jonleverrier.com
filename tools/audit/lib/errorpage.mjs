@@ -37,11 +37,10 @@
  * server said 200 and the evidence is circumstantial, so the honest answer is to measure
  * the page and say loudly what it appears to be.
  *
- * THE H1, NOT THE BODY, and not the <title> — which would be a better second signal and
- * is not available: phase 1 does not record it, and keying on a field captures made
- * before today do not have would mean the check silently never fires on them. The h1 is
- * in `rects.json` for every capture ever taken. A page whose error wording is in a `<p>`
- * with no h1 at all is therefore missed; that is a false negative and it is declared.
+ * THE H1, NOT THE BODY. The h1 is in `rects.json` for every capture ever taken. A page
+ * whose error wording is in a `<p>` with no h1 at all is therefore missed; that is a false
+ * negative and it is declared. Phase 1 now records the <title> too, and that is a
+ * separate, stronger check — see blockedHeadReason, which refuses where this only notes.
  */
 import {printable} from './printable.mjs';
 
@@ -116,6 +115,56 @@ export function errorPageWarning(rects) {
         + `"${printable(evidence.heading, 120)}" and the page has only ${evidence.rectCount} elements on it. `
         + 'The server answered 200, so nothing else about the capture looks wrong — but percentages '
         + 'taken from it describe whatever was served instead of the site';
+}
+
+/**
+ * Wording a location block uses. Tested against the TITLE to decide, and against the
+ * description only to decide which kind of block a title has already admitted to — a
+ * description is marketing copy, and "only available in the UK" is how a florist
+ * describes its delivery.
+ */
+export const GEO_PHRASES = [
+    /(only|currently)\s+available\s+(in|to)\b/i,
+    /(not|isn'?t)\s+(yet\s+)?available\s+in\s+your\s+(country|region|location|area)/i,
+    /unavailable\s+in\s+your\s+(country|region|location|area)/i,
+    /\bgeo-?\s*(blocked|restricted)\b/i,
+];
+
+/**
+ * WHY A 200 CAPTURE IS REFUSED ANYWAY, from its head, or null.
+ *
+ * wahio.design, from a UK server: a geo block rendered INSIDE the site's own layout —
+ * header, footer, well over SPARSE_RECTS — answered 200, so neither the status check nor
+ * errorPageEvidence fired, and the report quoted "only available in the European Union"
+ * as the site's own words. Its <title> was "Service Unavailable". A homepage does not
+ * title itself with a sentence about this request failing, so unlike the h1 check this
+ * needs no sparseness to back it up, and it REFUSES rather than notes: the head is the
+ * page naming itself, not circumstantial evidence.
+ *
+ * THE TITLE DECIDES. The description is quoted when there is one, because it is usually
+ * the page explaining itself ("…only available in the European Union"), and a geo phrase
+ * in either one is what makes the sentence say "by location".
+ *
+ * Non-2xx is left to httpErrorReason, which words the firewall case.
+ */
+export function blockedHeadReason(meta) {
+    if (meta?.httpStatus !== 200) {
+        return null;
+    }
+    const title = String(meta.head?.title ?? '').trim();
+    const description = String(meta.head?.description ?? '').trim();
+    const geoTitle = GEO_PHRASES.some((p) => p.test(title));
+    if (!title || !(geoTitle || ERROR_PHRASES.some((p) => p.test(title)))) {
+        return null;
+    }
+    const quoted = `a page titled "${printable(title, 120)}"`
+        + (description ? ` ("${printable(description, 160)}")` : '');
+    if (geoTitle || GEO_PHRASES.some((p) => p.test(description))) {
+        return `the site blocked the capture by location: it answered 200 with ${quoted}, `
+            + 'so this is what a visitor from our capture server\'s country sees, not the homepage';
+    }
+
+    return `the server answered 200 with ${quoted}, so this is an error page rather than the homepage`;
 }
 
 /**

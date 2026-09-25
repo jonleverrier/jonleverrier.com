@@ -38,7 +38,7 @@ import {edgeCandidates} from './lib/candidates.mjs';
 import {leaves, totalArea} from './lib/blocks.mjs';
 import {anyUnmeasured, noteCodes, runNotes} from './lib/notes.mjs';
 import {loadRects} from './lib/rects.mjs';
-import {httpErrorReason} from './lib/errorpage.mjs';
+import {blockedHeadReason, httpErrorReason} from './lib/errorpage.mjs';
 import {printable} from './lib/printable.mjs';
 import {renderDebug} from './lib/debug.mjs';
 import {overlaysInPng} from './lib/overlay.mjs';
@@ -76,6 +76,11 @@ try {
     // block page, so there is no percentage worth paying for.
     if (typeof meta.httpStatus === 'number' && (meta.httpStatus < 200 || meta.httpStatus >= 300)) {
         throw new Error(httpErrorReason(meta));
+    }
+    // And a 200 whose own <title> says it is not the site (wahio.design's geo block).
+    const blocked = blockedHeadReason(meta);
+    if (blocked) {
+        throw new Error(blocked);
     }
 
     const {width, height} = meta.image;

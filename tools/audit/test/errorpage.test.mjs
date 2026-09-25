@@ -19,7 +19,7 @@ import {promisify} from 'node:util';
 import {mkdtempSync, copyFileSync, existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {errorPageEvidence, errorPageWarning, SPARSE_RECTS, ERROR_PHRASES} from '../lib/errorpage.mjs';
+import {errorPageEvidence, errorPageWarning, SPARSE_RECTS, ERROR_PHRASES, blockedHeadReason} from '../lib/errorpage.mjs';
 import {runNotes} from '../lib/notes.mjs';
 import {loadRects} from '../lib/rects.mjs';
 import {pageSignature} from '../lib/signature.mjs';
@@ -173,4 +173,66 @@ test('the CLI measures the page and says what it is', async () => {
     assert.match(stderr, /error page rather than the homepage/);
     assert.equal(written.notes.conditions.errorPageLikely.effect, 'attribution');
     assert.ok(written.tree.w > 0 && written.tree.h > 0);
+});
+
+// THE HEAD, on a page that answered 200. wahio.design, from a UK server: a full site
+// layout (header, footer, well over the sparse floor) around a geo-block message, so the
+// h1 check above never fires — and the report quoted the block as the site's own words.
+// The page's <title> says what it is.
+const WAHIO_BLOCK = {
+    title: 'Service Unavailable',
+    description: "Our service is currently only available in the European Union.",
+};
+
+test('a location block is named from the head, whatever the page body looks like', () => {
+    const why = blockedHeadReason({httpStatus: 200, head: WAHIO_BLOCK});
+
+    assert.match(why, /blocked the capture by location/);
+    assert.match(why, /answered 200 with a page titled "Service Unavailable"/);
+    assert.match(why, /only available in the European Union/, 'the page\'s own explanation is quoted');
+});
+
+test('an error title without geo wording is named as an error page', () => {
+    const why = blockedHeadReason({httpStatus: 200, head: {title: 'Access Denied'}});
+
+    assert.match(why, /error page rather than the homepage/);
+    assert.doesNotMatch(why, /location/);
+});
+
+test('geo wording in the title alone is enough', () => {
+    for (const title of ['Not available in your country', 'This site is not available in your region']) {
+        assert.match(blockedHeadReason({httpStatus: 200, head: {title}}), /by location/, title);
+    }
+});
+
+// The false positives decide the rule. A description is marketing copy and says
+// "only available in the UK" about delivery, so it is never evidence on its own — it is
+// only quoted once the title has already said the page is not the site.
+test('a real homepage is not refused, even one whose words come close', () => {
+    const real = [
+        {title: 'Your Custom Clothing Generated in Minutes | Wahio',
+            description: 'Create custom t-shirts, hoodies & more. Premium quality, EU shipping.'},
+        {title: 'Fresh flowers delivered | Bloom',
+            description: 'Next-day delivery, only available in the UK.'},
+        {title: 'Application Performance Monitoring & Error Tracking | Sentry'},
+        {title: 'Service Design Agency | Clearleft'},
+        {title: ''},
+        {},
+    ];
+    for (const head of real) {
+        assert.equal(blockedHeadReason({httpStatus: 200, head}), null, JSON.stringify(head));
+    }
+});
+
+test('a capture without a head, or not a 200, is left to the other checks', () => {
+    assert.equal(blockedHeadReason({httpStatus: 200}), null);
+    assert.equal(blockedHeadReason({}), null);
+    // Non-2xx is httpErrorReason's to word, with its firewall case.
+    assert.equal(blockedHeadReason({httpStatus: 403, head: WAHIO_BLOCK}), null);
+});
+
+test('the title and description are printable before they are quoted', () => {
+    const why = blockedHeadReason({httpStatus: 200, head: {title: 'Service Unavailable\u001b[2K'}});
+
+    assert.equal(why.includes('\u001b'), false);
 });

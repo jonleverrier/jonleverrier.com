@@ -68,3 +68,19 @@ test('a block page is named as one, from the title phase 1 recorded', async () =
             .test(e.stdout + e.stderr),
     );
 });
+
+test('a location block that answered 200 is refused before any API call', async () => {
+    // wahio.design from a UK server: 200, full layout, and this head.
+    const dir = dirWith({
+        url: 'https://wahio.design',
+        httpStatus: 200,
+        head: {title: 'Service Unavailable',
+            description: 'Our service is currently only available in the European Union.'},
+        image: {width: 1440, height: 900},
+    });
+    await assert.rejects(
+        run('node', ['tools/audit/analyse.mjs', dir]),
+        (e) => /blocked the capture by location: it answered 200 with a page titled "Service Unavailable"/
+            .test(e.stdout + e.stderr),
+    );
+});
