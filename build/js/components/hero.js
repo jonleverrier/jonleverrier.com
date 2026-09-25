@@ -775,21 +775,43 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
   // Re-fitting is expensive — 37k points projected, four passes — and a ResizeObserver
   // fires every frame while a window edge is dragged. Two guards:
   //
-  //  · the fit depends only on the ASPECT (fov is fixed), so a height-only change is
-  //    skipped outright. That covers a mobile browser collapsing its address bar,
-  //    which fires resize on every scroll and changes nothing about the framing.
+  //  · a height-only change never reaches the renderer (see HELD HEIGHT below).
   //  · when the aspect has genuinely changed, the fit is deferred until the size
   //    settles. The renderer and camera update immediately, so nothing looks broken
   //    mid-drag; the cloud simply holds its previous framing and re-frames once at
   //    the end, instead of once per frame.
+  //
+  // HELD HEIGHT. The section is 100svh, which holds still in Safari — but inside
+  // LinkedIn's iPhone in-app browser the web view itself shrinks and grows as its
+  // toolbars hide on scroll, so svh moves with it: measured 681-774px, 9 resizes in
+  // a few scrolls. Every one re-allocated the canvas (clearing it), changed the point
+  // size and the aspect, and re-framed the face 150ms later. That was the glitch.
+  //
+  // So at a given width the canvas keeps the tallest height it has seen, centred in
+  // the container, which clips it (.c-hero is overflow: hidden). A shorter view just
+  // crops the top and bottom of the slab; nothing redraws or moves. It only grows
+  // (once, to the new tallest) or re-sizes when the width changes. It must never be
+  // SHORTER than the container: the canvas is the olive slab, not a picture on it.
   const REFIT_DELAY = 150;
   const ASPECT_EPSILON = 0.001; // below this, the framing wouldn't visibly move
   let fittedAspect = 0;
   let refitTimer = 0;
+  let heldW = 0, heldH = 0;
+
+  Object.assign(renderer.domElement.style, {
+    position: 'absolute', inset: 'auto', left: '0', top: '50%',
+    width: '100%', transform: 'translateY(-50%)',
+  });
 
   function resize() {
-    const w = container.clientWidth, hgt = container.clientHeight;
+    const w = container.clientWidth;
+    let hgt = container.clientHeight;
     if (!w || !hgt) return;
+
+    if (w === heldW && hgt <= heldH) return;
+    if (w === heldW) hgt = Math.max(hgt, heldH);
+    heldW = w; heldH = hgt;
+    renderer.domElement.style.height = hgt + 'px';
 
     renderer.setSize(w, hgt, false);
     camera.aspect = w / hgt;
