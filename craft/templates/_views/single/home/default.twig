@@ -186,36 +186,3 @@
     </footer>
 </section>
 {% endblock %}
-{# Viewport probe, for the hero glitching inside LinkedIn's in-app browser on iPhone.
-   Only with ?debug=viewport. Shows whether the web view's height moves while you
-   scroll — if it does, the hero's canvas re-sizes and re-frames on every change. #}
-{% block siteScripts %}
-{% if craft.app.request.getQueryParam('debug') == 'viewport' %}
-<script>
-(function () {
-    var out = document.createElement('pre');
-    out.style.cssText = 'position:fixed;left:8px;top:8px;z-index:2147483647;margin:0;padding:8px;background:#000;color:#0f0;font:12px/1.4 monospace;pointer-events:none;';
-    document.body.appendChild(out);
-    var section = document.querySelector('[data-frontdoor]');
-    var canvas, resizes = 0, minH = Infinity, maxH = 0;
-    function draw() {
-        canvas = canvas || document.querySelector('.c-frontdoor canvas');
-        var h = window.innerHeight;
-        minH = Math.min(minH, h); maxH = Math.max(maxH, h);
-        out.textContent =
-            'innerHeight   ' + h + ' (min ' + minH + ', max ' + maxH + ')\n' +
-            'visualVP      ' + (window.visualViewport ? Math.round(visualViewport.height) : '-') + '\n' +
-            'hero section  ' + (section ? section.offsetHeight : '-') + '\n' +
-            'canvas height ' + (canvas ? canvas.height : '-') + '\n' +
-            'hero resizes  ' + resizes + '\n' +
-            'scrollY       ' + Math.round(window.scrollY);
-    }
-    if (section) new ResizeObserver(function () { resizes++; draw(); }).observe(section);
-    window.addEventListener('resize', draw);
-    window.addEventListener('scroll', draw, {passive: true});
-    setInterval(draw, 250);
-    draw();
-})();
-</script>
-{% endif %}
-{% endblock %}
