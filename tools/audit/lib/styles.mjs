@@ -190,9 +190,28 @@ export const COLLECT_STYLES = () => {
         if (known.has(value)) return known.get(value);
         let answer = null;
         try {
-            paint.clearRect(0, 0, 1, 1);
             paint.fillStyle = '#000';
             paint.fillStyle = value;
+            // THE CANVAS'S OWN DESCRIPTION FIRST, because it is exact. jonleverrier.com's
+            // microphone button is rgba(12, 36, 60, 0.08) and the painted pixel read back as
+            // rgba(13, 38, 64, 0.078) — a pixel at 8% opacity is stored premultiplied, so its
+            // channels lose precision — and the report called the page's own navy and that
+            // rounding error two colours nobody can tell apart. For an sRGB colour the
+            // canvas serialises `#rrggbb` or `rgba(r, g, b, a)` with the channels intact;
+            // only a syntax it cannot state that way (color(), oklch()) is painted.
+            const said = String(paint.fillStyle);
+            const hex = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(said);
+            const rgba = /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/i.exec(said);
+            if (hex || rgba) {
+                const [r, g, b] = (hex ? hex.slice(1, 4).map((h) => parseInt(h, 16)) : rgba.slice(1, 4).map(Number));
+                const alpha = rgba?.[4] === undefined ? 1 : Number(rgba[4]);
+                answer = alpha === 0 ? null
+                    : (alpha >= 1 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`);
+                known.set(value, answer);
+
+                return answer;
+            }
+            paint.clearRect(0, 0, 1, 1);
             paint.fillRect(0, 0, 1, 1);
             const [r, g, b, a] = paint.getImageData(0, 0, 1, 1).data;
             // ALPHA IS PRESERVED RATHER THAN BAKED OUT. getImageData is unpremultiplied,
