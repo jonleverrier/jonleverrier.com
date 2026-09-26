@@ -50,6 +50,13 @@ const MB = 1048576;
 
 const pc = (v) => `${(v * 100).toFixed(1)}%`;
 
+/**
+ * A mark to one place, rounding HALF UP as the cover's Twig `round` does. `toFixed` rounds
+ * the binary value, and vaiie.com's 8.95 is stored as 8.9499…: the cover said 9.0 and the
+ * summary line under it said 8.9.
+ */
+const mark = (v) => (Math.round(v * 10 + 1e-9) / 10).toFixed(1);
+
 /** As r.bytes() prints it in the report, so a cover and a table never disagree. */
 const bytes = (n) => (n >= MB ? `${(n / MB).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
 
@@ -66,15 +73,22 @@ const segment = (report, name) => (report?.categories ?? []).find((c) => c.categ
 const biggest = (report) => (report?.categories ?? []).filter((c) => c.share > 0)
     .sort((a, b) => b.share - a.share)[0] ?? null;
 
-/** The three marks averaged, as the cover prints it. Null unless all three are there. */
+/**
+ * The marks averaged, as the cover prints it. Null unless speed, technical and consistency
+ * are all there; PROPOSITION IS THE FOURTH when the report has one (26 Sep 2026), and an
+ * audit from before it existed keeps the three-way average it was sent with.
+ */
 export function overall(report) {
     const marks = [
         report?.speed ? report.speed.score / 10 : null,
         report?.technical ? report.technical.score : null,
         report?.brand ? report.brand.score : null,
     ];
+    if (!marks.every((m) => m !== null)) return null;
+    const proposition = report?.proposition?.score?.score;
+    if (typeof proposition === 'number') marks.push(proposition);
 
-    return marks.every((m) => m !== null) ? marks.reduce((s, m) => s + m, 0) / 3 : null;
+    return marks.reduce((s, m) => s + m, 0) / marks.length;
 }
 
 /**
@@ -94,11 +108,31 @@ export function candidates(report, competitor = null) {
     const mine = overall(report);
     const theirs = overall(competitor);
     if (mine !== null && theirs !== null) {
-        const gap = Math.abs(mine - theirs) / 10;
-        add('overall', gap * 10 >= 0.5, gap,
-            `${mine.toFixed(1)} out of 10, against ${theirs.toFixed(1)} for ${them}.`);
+        // ON THE PRINTED NUMBERS: gov.je and gov.gg are 7.975 and 8.45, shown as 8.0 and 8.5.
+        // Measured raw, 0.475 fell under the line and the cover summary came out empty
+        // while the reader could see half a point between the two scores above it.
+        const gap = Math.abs(Number(mark(mine)) - Number(mark(theirs))) / 10;
+        add('overall', gap * 10 >= 0.5 - 1e-9, gap,
+            `${mark(mine)} out of 10, against ${mark(theirs)} for ${them}.`);
     } else if (mine !== null) {
-        add('overall', true, 0.3, `${mine.toFixed(1)} out of 10 across speed, technical and consistency.`);
+        add('overall', true, 0.3, `${mark(mine)} out of 10 across speed, technical`
+            + `${typeof report?.proposition?.score?.score === 'number' ? ', consistency and proposition' : ' and consistency'}.`);
+    }
+
+    // ---- the proposition's most serious gap ------------------------------------------
+    //
+    // Its FIRST SENTENCE, because the cover has a line and the section has the rest:
+    // "Nothing visible on the first two screens asks visitors to get in touch." is the
+    // finding; the menu and the screen number are the working. Ranked by the finding's own
+    // weight, which lib/proposition-reading.mjs gives the first screen (1) above the asks.
+    // A proposition with no gap is a clean result, and a clean result is not news.
+    const gaps = (report?.proposition?.findings ?? []).filter((f) => f.kind === 'gap')
+        .sort((a, b) => b.weight - a.weight);
+    if (gaps.length) {
+        const first = gaps[0].text.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? gaps[0].text;
+        add('proposition', true, Math.min(1, gaps[0].weight * 0.9), first);
+    } else {
+        add('proposition', false, 0, null);
     }
 
     // ---- weight ----------------------------------------------------------------------

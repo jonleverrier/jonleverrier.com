@@ -131,6 +131,11 @@
             /* A heading stranded at the foot of a page is worse than a short page. */
             h2, h3 { break-after: avoid; }
             .r-score, table { break-before: avoid; }
+            /* A section's opening — its heading, its score and the first thing it says — is
+               one block. Proposition's score is followed by a sub-heading rather than a
+               table, and the kohde.agency print stranded "Proposition 6.3/10" at the foot
+               of page 2 with everything it scored on page 3. */
+            .r-keep { break-inside: avoid; }
             /* Carried on to the next page, a table still says what its columns are. */
             thead { display: table-header-group; }
         }
@@ -194,6 +199,26 @@
         .r-speed td:nth-child(1), .r-speed th:nth-child(1) { width: 32%; padding-right: 16px; }
         .r-speed td:nth-child(2), .r-speed th:nth-child(2) { width: 20%; padding-right: 16px; }
         .r-speed { margin-bottom: 26px; }
+        /* Proposition's checks: four columns, so the first two give room to the two that
+           carry sentences. Widths and a gap only; it is the same table. */
+        .r-checks td:nth-child(1), .r-checks th:nth-child(1) { width: 22%; }
+        .r-checks td:nth-child(2), .r-checks th:nth-child(2) { width: 14%; }
+        .r-checks td:nth-child(3), .r-checks th:nth-child(3) { width: 32%; padding-right: 16px; }
+        /* THE BENCHMARK'S TABLES SHARE ONE GRID, so each site's column sits in the same
+           place on every table down the sheet (Jon, 26 Sep 2026). Fixed widths, because
+           sized by content an empty column shrinks and the two sites' columns drift. */
+        .r-bench { table-layout: fixed; }
+        .r-bench td:nth-child(1), .r-bench th:nth-child(1) { width: 32%; }
+        .r-bench td:nth-child(2), .r-bench th:nth-child(2) { width: 22%; }
+        .r-bench td:nth-child(3), .r-bench th:nth-child(3) { width: 22%; }
+        .r-bench td:nth-child(4), .r-bench th:nth-child(4) { width: 24%; }
+        /* The status mark, drawn by the cell itself rather than an empty element: a green
+           circle for OK, a red square for Warning (Jon, 26 Sep 2026). The red is the one the
+           report already uses for a fault. */
+        .r-status::before { content: ''; display: inline-block; width: 8px; height: 8px;
+            margin-right: 6px; vertical-align: 0; }
+        .r-status--ok::before { background: #1f8a4c; border-radius: 50%; }
+        .r-status--warning::before { background: #b62515; }
         /* A swatch has to carry its own outline: a near-white chip on a white sheet is
            otherwise invisible, which is exactly the case this section is about. */
         .r-swatches, .r-drift { list-style: none; margin: 0 0 18px; padding: 0; }
@@ -309,6 +334,26 @@
         .r-reading { list-style: none; margin: 0 0 10px; padding: 0; }
         .r-reading li { padding: 3px 0 3px 14px; text-indent: -14px; }
         .r-reading li::before { content: '\2022'; margin-right: 8px; }
+        /* The ask map: a row of screens. Cells are data, one per screen, not decoration. */
+        .r-map__head { margin: 0 0 6px; color: #5e5e5e; }
+        .r-map { list-style: none; display: flex; gap: 3px; margin: 0 0 8px; padding: 0; }
+        .r-map__cell { flex: 1 1 0; min-width: 0; height: 26px; line-height: 26px; text-align: center;
+            font-size: 9px; border-radius: 3px; background: #f6f6f6; color: #8a8a8a;
+            box-shadow: inset 0 0 0 1px #e2e2e2; }
+        /* An address is one long word: boondmanager.com's "/boond_demo/fr/dashboard.html" ran
+           into the next column. Break it anywhere rather than push the table wider. */
+        .r-dest { overflow-wrap: anywhere; padding-right: 12px; }
+        .r-map__cell--ask { background: #0c243c; color: #fff; box-shadow: none; }
+        .r-map__cell--pinned { background: #b6ddff; color: #0c243c; box-shadow: none; }
+        .r-map__cell--menu { background: #fff; color: #0c243c; box-shadow: none; outline: 1px dashed #0c243c; outline-offset: -1px; }
+        .r-map-key { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 16px;
+            padding: 0; color: #5e5e5e; font-size: 9px; }
+        .r-map-key__item::before { content: ''; display: inline-block; width: 10px; height: 10px;
+            margin-right: 6px; vertical-align: -1px; border-radius: 2px; background: #f6f6f6;
+            box-shadow: inset 0 0 0 1px #e2e2e2; }
+        .r-map-key__item--ask::before { background: #0c243c; box-shadow: none; }
+        .r-map-key__item--pinned::before { background: #b6ddff; box-shadow: none; }
+        .r-map-key__item--menu::before { background: #fff; box-shadow: none; outline: 1px dashed #0c243c; outline-offset: -1px; }
 
         .r-findings { list-style: none; margin: 0; padding: 0; }
         .r-findings li { padding: 4px 0 4px 14px; text-indent: -14px; }
@@ -395,18 +440,26 @@
             competitor.technical ? competitor.technical.score : null,
             competitor.brand ? competitor.brand.score : null
         ]|filter(v => v is not null) : [] %}
+        {# PROPOSITION IS THE FOURTH MARK when the report has one, exactly as overall() in
+           tools/audit/lib/summary.mjs counts it; an audit from before it keeps three. #}
+        {% if marks|length == 3 and (report.proposition.score.score ?? null) is not null %}
+            {% set marks = marks|merge([report.proposition.score.score]) %}
+        {% endif %}
+        {% if rivalMarks|length == 3 and (competitor.proposition.score.score ?? null) is not null %}
+            {% set rivalMarks = rivalMarks|merge([competitor.proposition.score.score]) %}
+        {% endif %}
 
         {# ONE SCORE WHEN THERE IS ONE SITE, TWO WHEN THERE ARE TWO — and named, not
            "Overall" and "Theirs". A cover carrying a single unlabelled mark above two
            addresses cannot say whose it is, and the reader's first question about a
            comparison is which number is theirs. #}
         <div class="r-cover__scores">
-            {% if marks|length == 3 %}
-                {% if rivalMarks|length == 3 %}
-                    {{ r.scoreline(r.host(report.url), (marks|reduce((sum, v) => sum + v, 0) / 3)|round(1)) }}
-                    {{ r.scoreline(r.host(competitor.url), (rivalMarks|reduce((sum, v) => sum + v, 0) / 3)|round(1)) }}
+            {% if marks|length >= 3 %}
+                {% if rivalMarks|length >= 3 %}
+                    {{ r.scoreline(r.host(report.url), (marks|reduce((sum, v) => sum + v, 0) / marks|length)|round(1)) }}
+                    {{ r.scoreline(r.host(competitor.url), (rivalMarks|reduce((sum, v) => sum + v, 0) / rivalMarks|length)|round(1)) }}
                 {% else %}
-                    {{ r.scoreline('Overall', (marks|reduce((sum, v) => sum + v, 0) / 3)|round(1)) }}
+                    {{ r.scoreline('Overall', (marks|reduce((sum, v) => sum + v, 0) / marks|length)|round(1)) }}
                 {% endif %}
             {% endif %}
         </div>

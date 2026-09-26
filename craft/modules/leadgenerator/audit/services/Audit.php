@@ -186,6 +186,15 @@ class Audit extends Component
             }
         }
 
+        // PROPOSITION, COLLECTED AND NOT YET PRINTED: whether the first screen says what the
+        // company does, and every ask on the page with where it goes. Nothing reads
+        // proposition.json yet, so a failure costs the report nothing and is stepped over —
+        // see tools/audit/proposition.mjs.
+        $proposition = $this->node(['tools/audit/proposition.mjs', $dir]);
+        if (!$proposition['ok']) {
+            Craft::warning("[leadgenerator] audit {$entryId} proposition: {$proposition['why']}", __METHOD__);
+        }
+
         return ['ok' => true, 'why' => null, 'pdf' => null];
     }
 

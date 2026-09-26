@@ -166,3 +166,67 @@ test('a measurement that did not happen is never a finding', () => {
         assert.match(f.text, /\d/);
     }
 });
+
+// ---- Proposition on the cover (26 Sep 2026) ------------------------------------------
+import {overall} from '../lib/summary.mjs';
+
+const withProposition = (score, findings = []) => ({proposition: {score: {score}, findings}});
+
+test('overall: proposition is the fourth mark when the report has one', () => {
+    const three = site();
+    const base = overall(three);
+    const four = overall({...three, ...withProposition(2)});
+
+    assert.equal(four, (base * 3 + 2) / 4);
+});
+
+test('overall: an older report without proposition keeps its three-way average', () => {
+    const three = site();
+
+    assert.equal(overall({...three, proposition: null}), overall(three));
+});
+
+test('overall: the single-site sentence names proposition when it counted', () => {
+    const c = candidates({...site(), ...withProposition(6.3)}).find((x) => x.id === 'overall');
+
+    assert.match(c.text, /speed, technical, consistency and proposition/);
+});
+
+test('cover: the most serious proposition gap, first sentence only', () => {
+    const report = {...site(), ...withProposition(6.3, [
+        {id: 'ask-reachable', kind: 'gap', weight: 0.8, text: 'Nothing visible on the first two screens asks visitors to get in touch. "Contact" is behind the menu button.'},
+        {id: 'first-screen', kind: 'doing-its-job', weight: 0.2, text: 'The first screen says what you do in 28 words.'},
+    ])};
+    const c = candidates(report).find((x) => x.id === 'proposition');
+
+    assert.equal(c.worth, true);
+    assert.equal(c.text, 'Nothing visible on the first two screens asks visitors to get in touch.');
+});
+
+test('cover: a proposition with no gaps is not news', () => {
+    const report = {...site(), ...withProposition(10, [{id: 'first-screen', kind: 'doing-its-job', weight: 0.2, text: 'Fine.'}])};
+
+    assert.equal(candidates(report).find((x) => x.id === 'proposition')?.worth ?? false, false);
+});
+
+// vaiie.com: marks 9.8, 6, 10 and 10 average to 8.95. The cover (Twig, PHP's round) printed
+// 9.0 and the summary line (toFixed) printed 8.9 — one page, two overall scores.
+test('the summary rounds the overall as the cover does: 8.95 is 9.0', () => {
+    const report = site({speed: {score: 98, lab: {lcpMs: 1, tbtMs: 0, cls: 0}}, technical: {score: 6, deferred: 0.5, shortPage: false, medianMb: 2.3},
+        brand: {score: 10, colours: 6, groups: 0}, proposition: {score: {score: 10}, findings: []}});
+
+    assert.match(candidates(report).find((c) => c.id === 'overall').text, /^9\.0 out of 10/);
+});
+
+// gov.je against gov.gg, 26 Sep 2026: overall 7.975 and 8.45, printed on the cover as 8.0
+// and 8.5. The rule measured 0.475, under the 0.5 line, and the cover summary came out
+// empty while the reader could see half a point between the two numbers above it.
+test('the overall gap is measured on the numbers the cover prints', () => {
+    const at = (speed, prop) => site({speed: {score: speed, lab: {lcpMs: 1, tbtMs: 0, cls: 0}}, technical: {score: 8, deferred: 0.5, shortPage: false, medianMb: 2.3},
+        brand: {score: 8, colours: 6, groups: 0}, proposition: {score: {score: prop}, findings: []}});
+    // 8.1/8/8/7.8 = 7.975 -> 8.0; 8.6/8/8/9.2 = 8.45 -> 8.5
+    const c = candidates(at(81, 7.8), {...at(86, 9.2), url: 'https://gov.gg'}).find((x) => x.id === 'overall');
+
+    assert.equal(c.worth, true);
+    assert.equal(c.text, '8.0 out of 10, against 8.5 for gov.gg.');
+});

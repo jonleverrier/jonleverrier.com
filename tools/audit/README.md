@@ -10,6 +10,7 @@ receives is not built yet.
 | `analyse.mjs` | Phases 2+3 CLI. Asks the model where the sections are, and writes `{notes, tree}` plus a debug image. |
 | `report.mjs` | Phase 4 CLI. The percentages, whole page and first viewport, with the caveats that apply. |
 | `purpose.mjs` | Reads what a page says at the top of it, asks which of five jobs that makes it, and patches `report.json`. |
+| `proposition.mjs` | Whether the first screen says what the company does, whether its `<head>` does, and every ask with where it goes. Writes `proposition.json`; collection only, nothing prints it yet. |
 | `summary.mjs` | Chooses the cover's findings once every site is on disk, and patches them into the lead's `report.json`. |
 | `sweep.mjs` | Every URL in a file, captured and analysed, one row each. The regression check. |
 | `lib/capture.mjs` | `capturePage()` — the Playwright run. The Craft job will import this, not the CLI. |
@@ -28,6 +29,7 @@ receives is not built yet.
 | `lib/signature.mjs` | Whether the stored answer still describes the page. A page is audited once. |
 | `lib/surface.mjs` | The percentages, whole page and first viewport. |
 | `lib/purpose.mjs` | The page's own claim, extracted not generated, and the five jobs a homepage can have. |
+| `lib/proposition.mjs` | The in-page census of asks, headings and first-screen text, and the one fixed-choice question about them. |
 | `lib/summary.mjs` | Which few facts go on the cover: level comparisons and clean results are not findings. |
 | `lib/expectations.mjs` | Which segments matter given what the page is for. No model: the same input always answers the same. |
 | `lib/overlay.mjs` | Chrome the DOM census cannot reach, found in the pixels. |
@@ -47,6 +49,7 @@ export KEY_ANTHROPIC_API=$(grep -m1 '^KEY_ANTHROPIC_API' craft/.env | sed 's/^[^
 node tools/audit/capture.mjs https://example.com /tmp/audit   # phase 1
 node tools/audit/analyse.mjs /tmp/audit                       # phases 2+3 (--force to re-ask)
 node tools/audit/report.mjs /tmp/audit                        # phase 4
+node tools/audit/proposition.mjs /tmp/audit                   # first screen + asks (--force to re-ask)
 node tools/audit/sweep.mjs urls.txt /tmp/out                  # the whole corpus
 node --test tools/audit/test/*.test.mjs                        # unit + fixture tests
 AUDIT_LIVE=1 node --test tools/audit/test/*.test.mjs           # plus the network smoke test

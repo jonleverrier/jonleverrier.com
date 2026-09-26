@@ -206,3 +206,60 @@ test('CLAIM_MIN is the line between a slogan and a claim', () => {
     assert.ok(CLAIM_MIN > 'Work Smart, Grow Fast.'.length, 'the slogan has to fall below it');
     assert.ok(CLAIM_MIN < 'The best place to find government services and information'.length);
 });
+
+// ---- voting (26 Sep 2026) ---------------------------------------------------------------
+//
+// The confidence used to be the model's own rating, and pages that fit two jobs sat on the
+// 0.6 floor: vaiie.com came back "unclear" in one audit and "enquire, 58%" on a re-run, so
+// the reading under Segments was withheld both times. Now the question is asked VOTES times
+// and the confidence is how many agreed — a measurement, not a self-report.
+import {combinePurposes, PURPOSE_VOTES} from '../lib/purpose.mjs';
+
+test('votes: the confidence is the share of voters who agree', () => {
+    const got = combinePurposes([
+        {kind: 'enquire', confidence: 0.58}, {kind: 'enquire', confidence: 0.6}, {kind: 'sell', confidence: 0.55},
+        {kind: 'enquire', confidence: 0.5}, {kind: 'enquire', confidence: 0.62},
+    ]);
+
+    assert.deepEqual({kind: got.kind, confidence: got.confidence}, {kind: 'enquire', confidence: 0.8});
+    assert.deepEqual(got.votes, ['enquire', 'enquire', 'sell', 'enquire', 'enquire']);
+});
+
+test('votes: a split with no majority is unclear, with no confidence', () => {
+    const got = combinePurposes([
+        {kind: 'sell', confidence: 0.6}, {kind: 'enquire', confidence: 0.6}, {kind: 'route', confidence: 0.6},
+        {kind: 'sell', confidence: 0.6}, {kind: 'enquire', confidence: 0.6},
+    ]);
+
+    assert.deepEqual({kind: got.kind, confidence: got.confidence}, {kind: 'unclear', confidence: 0});
+});
+
+test('votes: a failed ask is a missing vote, not a vote for unclear', () => {
+    const got = combinePurposes([
+        {kind: 'unclear', confidence: 0, why: 'the model answered 529'},
+        {kind: 'enquire', confidence: 0.7}, {kind: 'enquire', confidence: 0.7}, {kind: 'enquire', confidence: 0.7},
+        {kind: 'sell', confidence: 0.7},
+    ]);
+
+    assert.equal(got.kind, 'enquire');
+    assert.equal(got.confidence, 0.75, 'three of the four that answered');
+});
+
+test('votes: every ask failing says why', () => {
+    const got = combinePurposes(Array.from({length: PURPOSE_VOTES}, () => ({kind: 'unclear', confidence: 0, why: 'down'})));
+
+    assert.deepEqual({kind: got.kind, confidence: got.confidence, why: got.why}, {kind: 'unclear', confidence: 0, why: 'down'});
+});
+
+// vaiie.com, three runs of five: [unclear, sell x4], [unclear x2, sell x3],
+// [enquire, unclear x2, sell x2]. "unclear" is a voter abstaining; the voters who chose,
+// chose sell every time. Counted as votes, the third run had no majority and the page lost
+// its reading. An abstention only wins when most voters abstain.
+test('votes: unclear is an abstention unless most voters give it', () => {
+    const v = (...kinds) => combinePurposes(kinds.map((kind) => ({kind, confidence: kind === 'unclear' ? 0 : 0.6})));
+
+    assert.deepEqual([v('unclear', 'sell', 'sell', 'sell', 'sell').kind, v('unclear', 'sell', 'sell', 'unclear', 'sell').kind,
+        v('enquire', 'unclear', 'unclear', 'sell', 'sell').kind], ['sell', 'sell', 'sell']);
+    assert.equal(v('enquire', 'unclear', 'unclear', 'sell', 'sell').confidence, 0.67, 'two of the three who chose');
+    assert.equal(v('unclear', 'unclear', 'unclear', 'sell', 'sell').kind, 'unclear', 'most abstained');
+});

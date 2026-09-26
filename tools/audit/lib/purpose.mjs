@@ -173,6 +173,11 @@ Decide what the page is FOR: what it is trying to make happen. Not what industry
 - "unclear"  - the words do not say. This is a real answer and is better than a wrong one,
                because everything downstream is read against whatever you choose here.
 
+A page that plainly wants a signup OR a conversation - "Get started" beside "Contact",
+"Start a trial" beside "Book a demo" - is NOT unclear: choose "sell" if its main ask ends in
+an account or a purchase, "enquire" if it ends in talking to someone. "unclear" is for a page
+whose words do not say what it is for at all.
+
 Judge only by the words you are given. Do not guess from the domain name.
 
 You may be given the page's title, its meta description, its social or structured-data
@@ -271,4 +276,52 @@ export async function askPurpose(context, opts = {}) {
     } catch (e) {
         return {kind: 'unclear', confidence: 0, why: e.message};
     }
+}
+
+/**
+ * How many times the purpose is asked. The confidence used to be the model's own rating,
+ * and a model rounds and hedges: pages that fit two jobs sat on the 0.6 floor — vaiie.com
+ * came back "unclear" in one audit and "enquire, 58%" on a re-run, abas-erp.com at exactly
+ * 60% — so the reading under Segments came and went between runs of the same page. Asked
+ * five times, the confidence is how many agreed: a measurement, not a self-report, and the
+ * same idea lib/proposition.mjs uses for its line labels.
+ */
+export const PURPOSE_VOTES = 5;
+
+/**
+ * Several answers reduced to one. A failed ask (it carries `why`) is a missing vote, and
+ * an `unclear` is an abstention unless most answers are `unclear`. The winner needs more
+ * than half of the votes that chose; its confidence is its share of them. No majority is
+ * `unclear` with no confidence. `votes` keeps each answer's kind, for the record.
+ */
+export function combinePurposes(answers) {
+    const answered = answers.filter((a) => a && !a.why);
+    const votes = answers.map((a) => (a && !a.why ? a.kind : null));
+    if (!answered.length) {
+        return {kind: 'unclear', confidence: 0, votes, why: answers.find((a) => a?.why)?.why ?? 'no answer came back'};
+    }
+
+    // "unclear" IS AN ABSTENTION, unless most voters give it. vaiie.com's runs were
+    // [unclear, sell x4], [unclear x2, sell x3], [enquire, unclear x2, sell x2]: the voters who
+    // chose chose sell every time, and counting the abstentions as votes left the third run
+    // with no majority at all. A page nobody can read still comes out unclear.
+    const decided = answered.filter((a) => a.kind !== 'unclear');
+    if (decided.length * 2 <= answered.length) {
+        return {kind: 'unclear', confidence: 0, votes};
+    }
+    const counts = new Map();
+    for (const a of decided) counts.set(a.kind, (counts.get(a.kind) ?? 0) + 1);
+    const [kind, n] = [...counts].sort((a, b) => b[1] - a[1])[0];
+    if (n * 2 <= decided.length) {
+        return {kind: 'unclear', confidence: 0, votes};
+    }
+
+    return {kind, confidence: Number((n / decided.length).toFixed(2)), votes};
+}
+
+/** The purpose, asked PURPOSE_VOTES times in parallel and reduced to the majority. */
+export async function askPurposeVoted(context, opts = {}) {
+    const answers = await Promise.all(Array.from({length: opts.votes ?? PURPOSE_VOTES}, () => askPurpose(context, opts)));
+
+    return combinePurposes(answers);
 }

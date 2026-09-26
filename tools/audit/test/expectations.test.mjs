@@ -357,9 +357,8 @@ test('…and one that is most of the first screen says that too', () => {
 });
 
 test('where the space actually went is named when the page’s job is not where it is', () => {
-    const found = read(boond()).findings.find((f) => f.id === 'space-elsewhere');
-    assert.ok(found, 'the 72% nobody mentioned');
-    assert.match(found.text, /^Explainer, trust and routing take 72\.1% of the page between them\.$/);
+    // IN THE LEAD NOW, not a bullet of its own (26 Sep 2026).
+    assert.match(read(boond()).lead, /: 72\.1% goes on explainer, trust and routing instead\.$/, 'the 72% nobody mentioned');
 });
 
 test('…and not when the cores are where the space is', () => {
@@ -384,4 +383,141 @@ test('the comparison says what each page opens with, which no table on that shee
     });
     const said = compare(uk, je, NAMES);
     assert.ok(said.points.some((p) => /gov\.uk opens with .*gov\.je opens with/.test(p)), said.points.join(' | '));
+});
+
+/* --------------------------------------------------- the lead sentence (26 Sep 2026) */
+//
+// One sentence under "Summary", the same shape as Proposition's: the kind of page, and the
+// judgement, with the evidence in the bullets under it. It replaces three lines — "In its
+// own words", "That is a page whose job is…", and a closing "one of the two things…".
+
+test('lead: vaiie — a page that sells with no promotion, and where the space went instead', () => {
+    const vaiie = site('sell', {hero: {share: 0.163, firstViewport: 0.593, blocks: [{}]}, routing: 0.257, brand: 0.205,
+        explainer: 0.151, footer: 0.148, navigation: 0.039, trust: 0.037, promotion: 0});
+
+    assert.equal(read(vaiie).lead, 'A page that sells, with no promotion on it: 61.3% goes on routing, brand and explainer instead.');
+});
+
+test('lead: a core that is present but thin says how thin, not that it is absent', () => {
+    const shop = site('sell', {promotion: 0.03, hero: 0.2, routing: 0.5, footer: 0.27});
+
+    assert.match(read(shop).lead, /^A page that sells, with promotion at 3\.0% of the page/);
+});
+
+test('lead: every core healthy and nothing else missing is said plainly', () => {
+    const gov = site('route', {routing: {share: 0.693, firstViewport: 0.459, blocks: [{}]}, hero: 0.1, navigation: 0.05, footer: 0.157});
+
+    assert.equal(read(gov).lead, 'A directory, spending its space on what it is for.');
+});
+
+test('lead: cores healthy but something expected missing does not claim all is well', () => {
+    const gov = site('route', {routing: 0.8, footer: 0.2});
+
+    assert.equal(read(gov).lead, 'A directory, with what it needs most in place.');
+});
+
+test('lead: two thin cores are both named, and the sentence starts with a capital and ends once', () => {
+    const agency = site('enquire', {hero: 0.2, explainer: 0.02, routing: 0.5, footer: 0.28});
+    const lead = read(agency).lead;
+
+    assert.match(lead, /^An enquiry page, with explainer at 2\.0% of the page and nothing from outside the company vouching for it/);
+    assert.match(lead, /[^.]\.$/);
+});
+
+test('lead: the bullet the lead already says is not repeated under it', () => {
+    const vaiie = site('sell', {hero: 0.163, routing: 0.257, brand: 0.205, explainer: 0.147, footer: 0.148, promotion: 0});
+
+    assert.equal(read(vaiie).findings.some((f) => f.id === 'space-elsewhere'), false);
+});
+
+// kohde.agency, 26 Sep 2026: "An enquiry page, with nothing from outside the company
+// vouching for it on it." — and the first bullet under it said the same thing again.
+test('lead: "on it" only follows a plain "no …", never a longer absence', () => {
+    const kohde = site('enquire', {hero: 0.124, explainer: 0.138, routing: 0.52, footer: 0.218});
+
+    assert.equal(read(kohde).lead.includes('vouching for it on it'), false);
+    assert.match(read(kohde).lead, /nothing from outside the company vouching for it\.$/);
+});
+
+test('lead: an absence the lead names is not repeated as the first bullet', () => {
+    const vaiie = site('sell', {hero: 0.163, routing: 0.257, brand: 0.205, explainer: 0.151, footer: 0.148, promotion: 0});
+    const promo = read(vaiie).findings.find((f) => f.id === 'core-promotion');
+
+    assert.equal(promo.inLead, true, 'the template skips it');
+    const thin = read(site('sell', {promotion: 0.03, hero: 0.2, routing: 0.5, footer: 0.27})).findings.find((f) => f.id === 'core-promotion');
+    assert.equal(thin.inLead ?? false, false, 'a thin one keeps its bullet: it carries the first-screen number');
+});
+
+/* ---------------------------------------- proposition in the benchmark (26 Sep 2026) */
+
+const withProp = (report, checks, firstCall = null) => ({...report, proposition: {
+    checks: checks.map(([id, status]) => ({id, status})), firstCall,
+}});
+const SELL = {promotion: 0.2, hero: 0.2, routing: 0.4, footer: 0.2};
+
+test('benchmark: a first-screen failure on only one side is named', () => {
+    const a = withProp(site('sell', SELL), [['says', 'fix'], ['ask-reachable', 'working']], 'Screen 1');
+    const b = withProp(site('sell', SELL), [['says', 'working'], ['ask-reachable', 'working']], 'Screen 1');
+
+    assert.ok(compare(a, b, NAMES).points.includes('Only gov.uk does not say what it sells on its first screen.'));
+});
+
+test('benchmark: a call to action out of reach on only one side is named, with its screen', () => {
+    const a = withProp(site('sell', SELL), [['says', 'working'], ['ask-reachable', 'fix']], 'Screen 7');
+    const b = withProp(site('sell', SELL), [['says', 'working'], ['ask-reachable', 'working']], 'Screen 1 (sticky)');
+
+    assert.ok(compare(a, b, NAMES).points.includes('Only gov.uk makes visitors wait until screen 7 for a call to action.'));
+});
+
+test('benchmark: the same failure on both sides is said once, as neither', () => {
+    const a = withProp(site('sell', SELL), [['says', 'fix']]);
+    const b = withProp(site('sell', SELL), [['says', 'fix']]);
+
+    assert.ok(compare(a, b, NAMES).points.includes('Neither page says what it sells on its first screen.'));
+});
+
+test('benchmark: proposition points survive when the purpose reading has nothing to say', () => {
+    const a = withProp(site('unclear', SELL), [['says', 'fix']]);
+    const b = withProp(site('unclear', SELL), [['says', 'working']]);
+    const got = compare(a, b, NAMES);
+
+    assert.equal(got.worth, true);
+    assert.deepEqual(got.points, ['Only gov.uk does not say what it sells on its first screen.']);
+});
+
+// mourant.com against bedellcristin.com, 26 Sep 2026: "Only mourant.com is without a hero."
+// It has one — "Hero Image and Tagline", 10.9% of the page and 87.1% of its first screen —
+// under the 12% an enquiry page's core wants, so it was a GAP, and the comparison said
+// "without" of every gap, thin or absent. A thin segment is given its numbers instead.
+test('benchmark: a thin segment is never called missing, and gets both numbers', () => {
+    const mourant = site('enquire', {hero: {share: 0.109, firstViewport: 0.871, blocks: [{}]}, explainer: 0.333, trust: 0.073, routing: 0.3, footer: 0.185});
+    // Absent the way a capture records it: no share AND no block (the helper gives every
+    // plain number a block).
+    const bedell = site('enquire', {hero: {share: 0.2, firstViewport: 0.777, blocks: [{}]}, explainer: {share: 0, blocks: []}, trust: 0.2, routing: 0.4, footer: 0.2});
+    const points = compare(mourant, bedell, {mine: 'mourant.com', theirs: 'bedellcristin.com'}).points;
+
+    assert.equal(points.some((p) => /without a hero/.test(p)), false);
+    assert.ok(points.includes('mourant.com gives the hero 10.9% of the page, against 20.0% on bedellcristin.com.'), points.join(' | '));
+    assert.ok(points.includes('Only bedellcristin.com is without an explainer.'), 'a real absence is still said as one');
+});
+
+test('benchmark: thin on both sides is said once, with both numbers', () => {
+    const a = site('enquire', {hero: 0.1, explainer: 0.3, trust: 0.3, routing: 0.3});
+    const b = site('enquire', {hero: 0.08, explainer: 0.3, trust: 0.3, routing: 0.32});
+
+    assert.ok(compare(a, b, NAMES).points.includes('Both pages give the hero little room: 10.0% of the page on gov.uk, 8.0% on gov.je.'));
+});
+
+test('benchmark: missing on one side and thin on the other says each', () => {
+    const a = site('enquire', {hero: 0.2, explainer: {share: 0, blocks: []}, trust: 0.3, routing: 0.5});
+    const b = site('enquire', {hero: 0.2, explainer: 0.064, trust: 0.3, routing: 0.436});
+
+    assert.ok(compare(a, b, NAMES).points.includes('gov.uk has no explainer; gov.je gives the explainer 6.4% of the page.'));
+});
+
+test('benchmark: a contact out of reach on one side only is named', () => {
+    const a = withProp(site('sell', SELL), [['get-in-touch', 'fix']]);
+    const b = withProp(site('sell', SELL), [['get-in-touch', 'working']]);
+
+    assert.ok(compare(a, b, NAMES).points.includes('Only gov.uk has no way to get in touch within reach.'));
 });

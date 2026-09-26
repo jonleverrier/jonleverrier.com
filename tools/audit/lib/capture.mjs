@@ -80,6 +80,7 @@ import {COLLECT_PINNED, heightGap} from './unrendered.mjs';
 import {countBytes} from './bytes.mjs';
 import {fetchPsi} from './psi.mjs';
 import {COLLECT_STYLES, styleRecord} from './styles.mjs';
+import {COLLECT_PROPOSITION} from './proposition.mjs';
 import {
     BEGIN_PIN, HIDE_PINNED, MARK_PINNED, MEASURE_BOXES, RESTORE_HIDDEN,
     decideChrome, markEarlyPinned, newCensus, recordStep,
@@ -912,6 +913,20 @@ export async function capturePage(url, outDir, opts = {}) {
             head = {...head, why: printable(e.message, 200)};
         }
 
+        // THE ASKS AND THE FIRST SCREEN'S WORDS, for lib/proposition.mjs. LAST, because it
+        // walks the page a screen at a time and everything above has to see it at rest; it
+        // leaves it back at the top. Never fatal, for the same reason as the head: an
+        // absence is declared, not reported as a page with nothing on it.
+        let proposition = {measured: false, why: 'the proposition census never ran'};
+        try {
+            proposition = await step('collecting the asks', () => page.evaluate(COLLECT_PROPOSITION, {
+                screen: VIEWPORT.height,
+                maxScreens: maxScrolls + 1,
+            }));
+        } catch (e) {
+            proposition = {measured: false, why: printable(e.message, 200)};
+        }
+
         const meta = {
             url,
             // THE PAGE WE ACTUALLY MEASURED, which is not always the one we asked for: a
@@ -941,6 +956,9 @@ export async function capturePage(url, outDir, opts = {}) {
             // What the page says about itself in its <head> — for classifying what the
             // page is FOR, never for quoting. See READ_HEAD.
             head,
+            // Every visible ask with where it goes, the headings and whether a visitor can see
+            // them, and the first screen's text in reading order. See lib/proposition.mjs.
+            proposition,
             httpStatus,
             consentDismissed: consent.dismissed,
             consentBannerSeen: consent.bannerSeen === true,

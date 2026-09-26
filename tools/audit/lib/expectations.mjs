@@ -247,6 +247,48 @@ function verdictFor(kind, cores, otherGaps) {
         + `${joined.charAt(0).toUpperCase() + joined.slice(1)} ${names.length === 1 ? 'is' : 'are'} not.`;
 }
 
+/**
+ * THE LEAD: one sentence under "Summary", the same shape as the Proposition's — what kind
+ * of page this is, and the judgement. It replaced three lines (26 Sep 2026): "In its own
+ * words", which Proposition now covers, "That is a page whose job is…", and the counted
+ * closing sentence, which the template's `capitalize` printed as "…promotion is not".
+ *
+ *   healthy, nothing else missing   "A directory, spending its space on what it is for."
+ *   healthy, something else missing "A directory, with what it needs most in place."
+ *   thin or absent cores            "A page that sells, with no promotion on it: 60.9% goes
+ *                                    on routing, brand and explainer instead."
+ */
+const LEAD = {
+    route: 'A directory',
+    sell: 'A page that sells',
+    enquire: 'An enquiry page',
+    publish: 'A page that is read',
+};
+
+function leadFor(kind, cores, otherGaps, elsewhere) {
+    const opening = LEAD[kind];
+    if (!opening || !cores.length) return '';
+
+    const thin = cores.filter((c) => !c.healthy);
+    if (!thin.length) {
+        return `${opening}, ${otherGaps ? 'with what it needs most in place' : 'spending its space on what it is for'}.`;
+    }
+
+    // Absent is named as an absence; present but thin is given its number, so "no
+    // promotion" is never said of a page with 3% of it.
+    const parts = thin.map((c) => (c.present && c.share > 0
+        ? `${PLAIN[c.category].subject.replace(/^The /, '').toLowerCase()} at ${pc(c.share)} of the page`
+        : PLAIN[c.category].absence));
+    const said = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+    // " on it" only after a plain "no …": kohde.agency read "…vouching for it on it".
+    const onIt = thin.length === 1 && /^no /.test(parts[0]) ? ' on it' : '';
+    const tail = elsewhere
+        ? `: ${pc(elsewhere.total)} goes on ${elsewhere.names.slice(0, -1).join(', ')} and ${elsewhere.names[elsewhere.names.length - 1]} instead`
+        : '';
+
+    return `${opening}, with ${said}${onIt}${tail}.`;
+}
+
 export function roleOf(purpose, category) {
     return EXPECTATIONS[purpose]?.[category] ?? null;
 }
@@ -332,6 +374,10 @@ export function read(report) {
                 text: healthy || isPresent(category)
                     ? measured
                     : `The page has ${PLAIN[category].absence}.`,
+                // AN ABSENT CORE IS SAID IN THE LEAD, so its bullet would only repeat it:
+                // vaiie.com read "…with no promotion on it" and then "The page has no
+                // promotion." A thin one keeps its bullet, which carries the first screen.
+                ...(!healthy && !(isPresent(category) && has > 0) ? {inLead: true} : {}),
             });
             continue;
         }
@@ -375,6 +421,7 @@ export function read(report) {
     // ONLY WHEN THE CORES ARE THIN. On gov.uk routing is 69.3% and the biggest thing that
     // is not core is the footer; "the footer takes 18.3%" is a fact, not a finding.
     const coreShare = cores.reduce((sum, c) => sum + share(c.category), 0);
+    let elsewhere = null;
     if (cores.length && coreShare < CORES_THIN) {
         const others = (report.categories ?? [])
             .filter((c) => c.share > 0 && !cores.some((k) => k.category === c.category))
@@ -382,20 +429,10 @@ export function read(report) {
             .slice(0, 3);
         const total = others.reduce((sum, c) => sum + c.share, 0);
         if (others.length >= 2 && total >= ELSEWHERE) {
-            const names = others.map((c) => c.category);
-            findings.push({
-                id: 'space-elsewhere',
-                category: null,
-                role: 'context',
-                kind: 'shape',
-                // Just above the thin cores it explains, and below anything worse.
-                weight: 0.9,
-                // Capitalised here: these are category keys, and the sentence they open
-                // is a bullet of its own rather than a clause inside one.
-                text: `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} take `
-                    .replace(/^./, (c) => c.toUpperCase())
-                    + `${pc(total)} of the page between them.`,
-            });
+            // SAID IN THE LEAD, not as a bullet of its own (26 Sep 2026): it is the second
+            // half of the one sentence that judges the page — "a page that sells, with no
+            // promotion on it: 60.9% goes on routing, brand and explainer instead".
+            elsewhere = {names: others.map((c) => c.category), total};
         }
     }
 
@@ -412,6 +449,8 @@ export function read(report) {
         // that assembled this sentence would be a second place the judgement lives.
         notGapsText: sentenceForNotGaps(notGaps),
         verdict: verdictFor(kind, cores, findings.some((f) => f.kind === 'gap' && f.role !== 'core')),
+        lead: leadFor(kind, cores.map((c) => ({...c, share: share(c.category), present: isPresent(c.category)})),
+            findings.some((f) => f.kind === 'gap' && f.role !== 'core'), elsewhere),
     };
 }
 
@@ -435,11 +474,44 @@ export const KNOWN = PURPOSES.filter((p) => p !== 'unclear');
  * `names` is `{mine, theirs}`, already reduced to bare hosts by the caller — this file has
  * no business parsing URLs.
  */
+/**
+ * PROPOSITION, SET SIDE BY SIDE (26 Sep 2026): the two checks a reader cares about most —
+ * does the first screen say what you sell, and is a call to action within reach — said
+ * only where the pages differ, or together as "neither" where both fail. The rest of the
+ * checklist is in the table above this summary.
+ */
+function propositionPoints(a, b, names) {
+    const status = (report, id) => report?.proposition?.checks?.find((c) => c.id === id)?.status ?? null;
+    const points = [];
+    const pair = (id, neither, only) => {
+        const x = status(a, id);
+        const y = status(b, id);
+        if (x === 'fix' && y === 'fix') points.push(neither);
+        else if (x === 'fix' && y === 'working') points.push(only(names.mine, a));
+        else if (y === 'fix' && x === 'working') points.push(only(names.theirs, b));
+    };
+    pair('says', 'Neither page says what it sells on its first screen.',
+        (who) => `Only ${who} does not say what it sells on its first screen.`);
+    const wait = (report) => /^Screen (\d+)$/.exec(report?.proposition?.firstCall ?? '')?.[1];
+    pair('ask-reachable', 'Neither page keeps a call to action within reach.',
+        (who, report) => (wait(report)
+            ? `Only ${who} makes visitors wait until screen ${wait(report)} for a call to action.`
+            : `Only ${who} has no call to action within reach.`));
+
+    pair('get-in-touch', 'Neither page has a way to get in touch within reach.',
+        (who) => `Only ${who} has no way to get in touch within reach.`);
+
+    return points;
+}
+
 export function compare(a, b, names) {
     const mine = read(a);
     const theirs = read(b);
+    const proposition = propositionPoints(a, b, names);
     if (!mine.worth || !theirs.worth) {
-        return {worth: false, samePurpose: null, lead: '', points: []};
+        // THE PROPOSITION POINTS STILL STAND: they do not depend on the purpose reading, and
+        // a benchmark with a checklist table and no summary under it hides the difference.
+        return {worth: proposition.length > 0, samePurpose: null, lead: '', points: proposition};
     }
 
     const same = mine.kind === theirs.kind;
@@ -474,17 +546,42 @@ export function compare(a, b, names) {
 
     // ONLY WHEN THEY ARE THE SAME KIND OF PAGE. "Only the magazine has no promotion" is
     // not a finding about the magazine, it is a finding about the comparison.
+    // ONLY WHEN THEY ARE THE SAME KIND OF PAGE. "Only the magazine has no promotion" is
+    // not a finding about the magazine, it is a finding about the comparison.
+    //
+    // MISSING AND SMALL ARE DIFFERENT, and are said differently (26 Sep 2026). This said
+    // "without" of every gap, and mourant.com — a hero at 10.9% of the page and 87.1% of its
+    // first screen, under the 12% an enquiry page's core wants — was reported "without a
+    // hero". A missing segment is an absence; a small one is given its numbers.
     if (same) {
+        const shareOf = (report, category) => (report.categories ?? []).find((c) => c.category === category) ?? null;
+        const missing = (report, category) => {
+            const seg = shareOf(report, category);
+
+            return !((seg?.share ?? 0) > 0 || (seg?.blocks?.length ?? 0) > 0);
+        };
         for (const category of [...new Set([...ours, ...yours])]) {
             const word = PLAIN[category];
             if (!word) continue;
-            if (ours.has(category) && yours.has(category)) {
-                points.push(`Neither page has ${word.bare}.`);
+            const name = word.subject.charAt(0).toLowerCase() + word.subject.slice(1);
+            const x = shareOf(a, category)?.share ?? 0;
+            const y = shareOf(b, category)?.share ?? 0;
+            const inBoth = ours.has(category) && yours.has(category);
+            if (inBoth) {
+                const [ma, mb] = [missing(a, category), missing(b, category)];
+                if (ma && mb) points.push(`Neither page has ${word.bare}.`);
+                else if (!ma && !mb) points.push(`Both pages give ${name} little room: ${pc(x)} of the page on ${names.mine}, ${pc(y)} on ${names.theirs}.`);
+                else if (ma) points.push(`${names.mine} has ${word.absence}; ${names.theirs} gives ${name} ${pc(y)} of the page.`);
+                else points.push(`${names.theirs} has ${word.absence}; ${names.mine} gives ${name} ${pc(x)} of the page.`);
             } else {
-                points.push(`Only ${ours.has(category) ? names.mine : names.theirs} is without ${word.bare}.`);
+                const [who, other, report, own, theirShare] = ours.has(category)
+                    ? [names.mine, names.theirs, a, x, y] : [names.theirs, names.mine, b, y, x];
+                points.push(missing(report, category)
+                    ? `Only ${who} is without ${word.bare}.`
+                    : `${who} gives ${name} ${pc(own)} of the page, against ${pc(theirShare)} on ${other}.`);
             }
         }
     }
 
-    return {worth: true, samePurpose: same, lead, points};
+    return {worth: true, samePurpose: same, lead, points: [...points, ...proposition]};
 }

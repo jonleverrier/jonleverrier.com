@@ -180,12 +180,42 @@
                                 {{ report.weight.afterScroll.requests }} requests</td>
                         </tr>
                     {% endif %}
+                    {# FONTS, IN TECHNICAL (Jon, 26 Sep 2026): what they cost to load is
+                       weight, not consistency. One row, not a section of their own. What
+                       survived scrutiny is the weight and the number of typefaces actually
+                       drawn with; "faces declared" counted @font-face blocks, which nobody can
+                       check against a network tab and which double-counts a stylesheet that
+                       declares the same face twice.
+
+                       NO FILE COUNT, because the census counts RESPONSES. kohde returns 13
+                       font responses for 8 distinct files: reCAPTCHA's Roboto arrives six
+                       times, five of them from cache at nought bytes. Printing "13 files"
+                       would be wrong, and deduplicating by URL is a change to lib/bytes.mjs
+                       rather than something to fudge here. The bytes are right either way. #}
+                    {% set fontBytes = report.weight.byType|filter(t => t.type == 'font')|first %}
+                    {% if fontBytes %}
+                        <tr>
+                            <td>Fonts</td>
+                            <td>{{ r.bytes(fontBytes.bytes) }}</td>
+                            <td>
+                                {%- if report.styles and report.styles.fonts.rendered|length -%}
+                                    {{ report.styles.fonts.rendered|length }}
+                                    {{- report.styles.fonts.rendered|length == 1 ? ' family' : ' families' }}
+                                    on the page ({{ report.styles.fonts.rendered|map(f => f.family)|join(', ') }})
+                                {%- else -%}
+                                    No typeface was measured on the page
+                                {%- endif -%}
+                            </td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         {% endif %}
     {% endif %}
 
-    {% if report.styles or report.weight %}
+    {# ON STYLES ALONE since Fonts moved to Technical (26 Sep 2026): every row left in this
+       table is a colour, and weight without styles would print an empty table. #}
+    {% if report.styles %}
         <h2>Brand</h2>
         {# ONE TABLE UNDER ONE HEADING. Only the duplicates row feeds the score: a palette of
            eleven is not worse than one of six, and nothing here marks a page for the size of
@@ -201,42 +231,6 @@
                 </tr>
             </thead>
             <tbody>
-                    {# FONTS AS ONE ROW, not a section of their own. What survived scrutiny is
-               the weight and the number of typefaces actually drawn with; "faces
-               declared" counted @font-face blocks, which nobody can check against a
-               network tab and which double-counts a stylesheet that declares the same
-               face twice.
-
-               NO FILE COUNT, because the census counts RESPONSES. kohde returns 13
-               font responses for 8 distinct files: reCAPTCHA's Roboto arrives six
-               times, five of them from cache at nought bytes. Printing "13 files"
-               would be wrong, and deduplicating by URL is a change to lib/bytes.mjs
-               rather than something to fudge here. The bytes are right either way. #}
-            {# GUARDED, BECAUSE THIS SECTION OPENS ON `styles OR weight`. A page whose byte
-               census came back unmeasured has styles and no weight, and the unguarded
-               version 500d the whole report on `byType` of null — which reaches a lead as
-               "pdf failed: the report page answered 500" and no report at all.
-
-               It is a small page that does this: the census declares itself unmeasured
-               below CENSUS_MIN_BYTES, on the grounds that a page which recorded almost
-               nothing was not really measured. example.com is under a kilobyte and trips it
-               every time. #}
-            {% set fontBytes = report.weight ? report.weight.byType|filter(t => t.type == 'font')|first : null %}
-            {% if fontBytes %}
-                <tr>
-                    <td>Fonts</td>
-                    <td>{{ r.bytes(fontBytes.bytes) }}</td>
-                    <td>
-                {%- if report.styles and report.styles.fonts.rendered|length -%}
-                    {{ report.styles.fonts.rendered|length }}
-                    {{- report.styles.fonts.rendered|length == 1 ? ' family' : ' families' }}
-                    on the page ({{ report.styles.fonts.rendered|map(f => f.family)|join(', ') }})
-                {%- else -%}
-                    No typeface was measured on the page
-                {%- endif -%}
-                    </td>
-                </tr>
-            {% endif %}
                 {% if report.styles and report.styles.colours.palette|length %}
                     {# THE COUNT IS ONE CELL, THE PALETTE IS THE NEXT. A number on its own
                        cannot tell a palette from an accretion: eleven colours where three
@@ -303,6 +297,95 @@
                 {% endif %}
             </tbody>
         </table>
+    {% endif %}
+
+    {# PROPOSITION: does the first screen say what the company does, and does the page ask.
+       Every sentence here was written in tools/audit/lib/proposition-reading.mjs from facts
+       it carries with it — this prints, it does not judge. Absent (an older audit, or a
+       capture that could not collect it) means the section is not printed at all. #}
+    {% set prop = report.proposition|default(null) %}
+    {% if prop and prop.score %}
+        {# VERDICT, THEN THE CHECKS, THEN THE EVIDENCE (Jon, 26 Sep 2026). The same five
+           rows on every report, so two reports read row by row. The existing table and
+           paragraph styles only — nothing here is styled for this section. #}
+        <div class="r-keep">
+            <h2>Proposition</h2>
+            {# The small title over the score, as Consistency sits over Brand's. #}
+            <h3>Messaging and calls to action</h3>
+            {{ r.scorebar(prop.score.score) }}
+            {% if prop.verdict ?? null %}
+                <h3>Summary</h3>
+                <p>{{ prop.verdict }}</p>
+            {% endif %}
+
+            {% if (prop.checks ?? []) is not empty %}
+                <h3>Checklist</h3>
+                <table class="r-speed r-checks">
+                    <thead>
+                        <tr>
+                            <th>Check</th>
+                            <th>Status</th>
+                            <th>Result</th>
+                            <th>Suggestion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in prop.checks %}
+                            <tr>
+                                <td>{{ c.check }}</td>
+                                <td class="r-status r-status--{{ c.status == 'fix' ? 'warning' : 'ok' }}">{{ c.status == 'fix' ? 'Warning' : 'OK' }}</td>
+                                <td>{{ c.found }}</td>
+                                <td>{{ c.fix ?? '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+
+        {# ONLY ON A PAGE WHOSE ASKS ARE JUDGED — everything but a confident portal or
+           publication. #}
+        {% if prop.score.asksJudged %}
+            <h3>Call to action audit</h3>
+            {% if (prop.map ?? []) is not empty %}
+                <p class="r-map__head">Each box is one screen of your homepage, top to bottom, shown left to right.</p>
+                <ol class="r-map">
+                    {% for cell in prop.map %}
+                        <li class="r-map__cell r-map__cell--{{ cell.state }}">{{ cell.screen }}</li>
+                    {% endfor %}
+                </ol>
+                <ul class="r-map-key">
+                    <li class="r-map-key__item r-map-key__item--ask">Call to action on this screen</li>
+                    <li class="r-map-key__item r-map-key__item--pinned">Sticky call to action (always visible)</li>
+                    <li class="r-map-key__item r-map-key__item--menu">Only through the menu</li>
+                    <li class="r-map-key__item r-map-key__item--none">No call to action</li>
+                </ul>
+            {% endif %}
+            {% if prop.asks|length %}
+                <table class="r-speed">
+                    <thead>
+                        <tr>
+                            <th>Call to action</th>
+                            <th>Type</th>
+                            <th>Count</th>
+                            <th>Destination</th>
+                            <th>First seen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in prop.asks %}
+                            <tr>
+                                <td>“{{ row.label }}”</td>
+                                <td>{{ row.type ?? '' }}</td>
+                                <td>{{ row.count }}</td>
+                                <td class="r-dest">{{ row.destination }}</td>
+                                <td>{{ row.where }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        {% endif %}
     {% endif %}
 
     <h2>Homepage Segmentation</h2>
@@ -387,22 +470,18 @@
            different columns. One box, and anything put inside it later inherits the
            measure rather than needing to remember it. #}
         <div class="r-reading-block">
-            {% if reading.claim %}
-                <p>In its own words: <b>&ldquo;{{ reading.claim }}&rdquo;</b></p>
+            {# ONE SENTENCE, THEN THE EVIDENCE — the same shape as Proposition's summary
+               (26 Sep 2026). What the page says about itself is Proposition's to show now,
+               and the counted closing sentence is gone with its `capitalize`, which printed
+               "…promotion is not". See leadFor in lib/expectations.mjs. #}
+            {% if reading.lead ?? null %}
+                <p>{{ reading.lead }}</p>
             {% endif %}
-            <p>That is a page whose job is {{ reading.job }}.</p>
             <ul class="r-reading">
-                {% for finding in reading.findings %}
+                {% for finding in reading.findings|filter(f => not (f.inLead ?? false)) %}
                     <li>{{ finding.text }}</li>
                 {% endfor %}
             </ul>
-            {# The conclusion, once. It used to ride on the end of every core bullet, which
-               on a purpose with more than one core said the same thing twice — see
-               lib/expectations.mjs. Capitalised here rather than there because it is a
-               counted sentence ("two of the three things...") that has to start a line. #}
-            {% if reading.verdict %}
-                <p>{{ reading.verdict|capitalize }}</p>
-            {% endif %}
             {% if reading.notGapsText %}
                 <p>{{ reading.notGapsText }}</p>
             {% endif %}

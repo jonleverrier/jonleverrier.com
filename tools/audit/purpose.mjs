@@ -14,14 +14,15 @@
  * AFTER `data.mjs`, which owns report.json, and patching rather than rewriting for the
  * same reason `summary.mjs` does: one place works the numbers out.
  *
- * The limitation worth knowing: this asks the model one more question per site. It is a
- * text-only request answered in a dozen tokens, which is why it can run on every audit
- * rather than on demand — but it is not free, and a re-run pays it again because there is
- * nothing here keyed on the page's signature the way lib/vision.mjs is.
+ * The limitation worth knowing: this asks the model PURPOSE_VOTES (five) short questions per
+ * site, in parallel — text-only, answered in a dozen tokens each, which is why it can run on
+ * every audit — and a re-run pays them again because nothing here is keyed on the page's
+ * signature the way lib/vision.mjs is. Five and not one because the confidence is how many
+ * agreed; see lib/purpose.mjs.
  */
 import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
-import {heroText, askPurpose} from './lib/purpose.mjs';
+import {heroText, askPurposeVoted} from './lib/purpose.mjs';
 import {read as readAgainstPurpose} from './lib/expectations.mjs';
 import {printable} from './lib/printable.mjs';
 
@@ -48,11 +49,12 @@ try {
     // being asked here — but it is not words a visitor reads, and the report prints the
     // claim under "In its own words". See lib/capture.mjs READ_HEAD.
     const meta = read(join(outDir, 'meta.json'));
-    const answer = await askPurpose(context, {head: meta?.head ?? {}});
+    // ASKED FIVE TIMES, and the confidence is how many agreed — see PURPOSE_VOTES.
+    const answer = await askPurposeVoted(context, {head: meta?.head ?? {}});
     // THE WORDS TRAVEL WITH THE KIND. The report quotes the claim and never prints the
     // kind on its own: a reader can disagree with a sentence from their own page in a way
     // they cannot disagree with the word "route".
-    const purpose = {kind: answer.kind, confidence: answer.confidence, claim, from};
+    const purpose = {kind: answer.kind, confidence: answer.confidence, votes: answer.votes, claim, from};
 
     // THE READING IS WRITTEN HERE TOO, rather than in a step of its own, because it is a
     // pure function of the record this step has just completed — see lib/expectations.mjs,

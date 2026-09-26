@@ -18,11 +18,12 @@
 {% set scores = [
     { label: 'Speed', a: report.speed ? report.speed.score / 10 : null, b: competitor.speed ? competitor.speed.score / 10 : null },
     { label: 'Technical', a: report.technical ? report.technical.score : null, b: competitor.technical ? competitor.technical.score : null },
-    { label: 'Consistency', a: report.brand ? report.brand.score : null, b: competitor.brand ? competitor.brand.score : null }
+    { label: 'Consistency', a: report.brand ? report.brand.score : null, b: competitor.brand ? competitor.brand.score : null },
+    { label: 'Proposition', a: (report.proposition.score.score ?? null), b: (competitor.proposition.score.score ?? null) }
 ] %}
 
-{# Every segment in the model, including ones neither page spends anything on — an absence
-   is a finding and must not be a gap. reportData() already pads `categories` with nought
+{# Every segment either page spends anything on — one side at nought is a finding, and
+   stays; a row where neither has any is left out (see the table). reportData() already pads `categories` with nought
    rows (withEmptyCategories), so this only merges the two lists in the reader's order;
    `unclassified` is only present when a page has some, and stays last. #}
 {% set names = [] %}
@@ -37,7 +38,7 @@
     <p class="r-meta"><b>{{ mine }}</b> versus <b>{{ theirs }}</b></p>
 
     <h2>Scores</h2>
-    <table class="r-speed">
+    <table class="r-speed r-bench">
         <thead>
             <tr>
                 <th>&nbsp;</th>
@@ -58,8 +59,65 @@
         </tbody>
     </table>
 
+    {# PROPOSITION, CHECK BY CHECK — the same five rows each site's own checklist has, so
+       the two read across. A row a site was not judged on (a confident portal's calls to
+       action) is a dash, never a pass. #}
+    {% set checkIds = ['says', 'ask-first-screen', 'ask-reachable', 'get-in-touch', 'one-name', 'screen-readers'] %}
+    {% set checkNames = {
+        'says': 'Says what you do',
+        'ask-first-screen': 'Call to action on the first screen',
+        'ask-reachable': 'Call to action within reach',
+        'get-in-touch': 'Way to get in touch',
+        'one-name': 'Consistent button labels',
+        'screen-readers': 'Screen readers'
+    } %}
+    {% if (report.proposition.checks ?? null) or (competitor.proposition.checks ?? null) %}
+        <h2>Proposition</h2>
+        <table class="r-speed r-bench">
+            <thead>
+                {# FOUR COLUMNS, as Scores has, so the two sites' columns line up down the
+                   sheet; the last is empty because a check has no "change". #}
+                <tr>
+                    <th>Check</th>
+                    <th class="r-n">{{ mine }}</th>
+                    <th class="r-n">{{ theirs }}</th>
+                    <th class="r-n">&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id in checkIds %}
+                    {% set a = (report.proposition.checks ?? [])|filter(c => c.id == id)|first %}
+                    {% set b = (competitor.proposition.checks ?? [])|filter(c => c.id == id)|first %}
+                    {% if a or b %}
+                        <tr>
+                            {# The row's own name when a site has one: "Way to buy or sign up" on a page that sells. #}
+                            <td><b>{{ a.check ?? b.check ?? checkNames[id] }}</b></td>
+                            {% for c in [a, b] %}
+                                {% if c %}
+                                    <td class="r-n r-status r-status--{{ c.status == 'fix' ? 'warning' : 'ok' }}">{{ c.status == 'fix' ? 'Warning' : 'OK' }}</td>
+                                {% else %}
+                                    <td class="r-n">—</td>
+                                {% endif %}
+                            {% endfor %}
+                            <td></td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                {# Only when at least one side was judged on it: two portals printed "— / —". #}
+                {% if (report.proposition.firstCall ?? null) or (competitor.proposition.firstCall ?? null) %}
+                    <tr>
+                        <td><b>First visible call to action</b></td>
+                        <td class="r-n">{{ report.proposition.firstCall ?? '—' }}</td>
+                        <td class="r-n">{{ competitor.proposition.firstCall ?? '—' }}</td>
+                        <td></td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    {% endif %}
+
     <h2>Homepage Segmentation</h2>
-    <table class="r-speed">
+    <table class="r-speed r-bench">
         <thead>
             <tr>
                 <th>Segment</th>
@@ -72,12 +130,16 @@
             {% for name in names %}
                 {% set a = report.categories|filter(c => c.category == name)|first %}
                 {% set b = competitor.categories|filter(c => c.category == name)|first %}
+                {# NOT WHEN NEITHER HAS ANY (Jon, 26 Sep 2026): "0.0% against 0.0%, no change"
+                   says nothing. One side at nought stays — that absence is the finding. #}
+                {% if (a ? a.share : 0) > 0 or (b ? b.share : 0) > 0 %}
                 <tr>
                     <td><b>{{ name|title }}</b></td>
                     <td class="r-n">{{ r.pc(a ? a.share : 0) }}</td>
                     <td class="r-n">{{ r.pc(b ? b.share : 0) }}</td>
                     <td class="r-n">{{ r.change(a ? a.share : 0, b ? b.share : 0, 'share') }}</td>
                 </tr>
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
@@ -87,7 +149,7 @@
        than how much is said — a page of type reads as almost empty because letters are
        mostly the gaps between them. So the arrows are grey and the figures do the talking. #}
     <h2>Page</h2>
-    <table class="r-speed">
+    <table class="r-speed r-bench">
         <thead>
             <tr>
                 <th>Metric</th>
@@ -127,7 +189,7 @@
     {% if reading and reading.worth %}
         <h2>Summary</h2>
         <div class="r-reading-block">
-            <p>{{ reading.lead }}</p>
+            {% if reading.lead %}<p>{{ reading.lead }}</p>{% endif %}
             {% if reading.points|length %}
                 <ul class="r-reading">
                     {% for point in reading.points %}
