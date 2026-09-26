@@ -215,7 +215,7 @@ test('two pages with the same purpose are two answers to one question', () => {
     const b = site('route', {routing: 0.726, navigation: 0.312});
     const said = compare(a, b, NAMES);
     assert.equal(said.samePurpose, true);
-    assert.match(said.lead, /same thing/);
+    assert.match(said.lead, /like for like/);
 });
 
 test('an absence on one page and not the other is the finding of the whole comparison', () => {
@@ -223,7 +223,7 @@ test('an absence on one page and not the other is the finding of the whole compa
     // and a change, and this is a share against an absence.
     const a = site('route', {routing: 0.693, hero: 0.092, footer: 0.183});
     const b = site('route', {routing: 0.726, navigation: 0.312});
-    assert.ok(compare(a, b, NAMES).points.some((p) => /Only gov\.je is without a hero/.test(p)));
+    assert.ok(compare(a, b, NAMES).points.some((p) => /^gov\.je has no hero\b/.test(p)), 'with its footer, in one sentence');
 });
 
 test('two pages with different purposes are said to be different, before the numbers', () => {
@@ -231,8 +231,8 @@ test('two pages with different purposes are said to be different, before the num
     const mag = site('publish', {editorial: 0.6, routing: 0.3, footer: 0.1});
     const said = compare(shop, mag, NAMES);
     assert.equal(said.samePurpose, false);
-    assert.match(said.lead, /not trying to do the same thing/);
-    assert.match(said.lead, /two different decisions/);
+    assert.match(said.lead, /^These pages are doing different jobs/);
+    assert.match(said.lead, /two different choices, not one page doing better/);
 });
 
 test('…and nothing is compared across them, because the comparison would mislead', () => {
@@ -382,7 +382,7 @@ test('the comparison says what each page opens with, which no table on that shee
         navigation: {share: 0.112, firstViewport: 0.312, blocks: [{}, {}]},
     });
     const said = compare(uk, je, NAMES);
-    assert.ok(said.points.some((p) => /gov\.uk opens with .*gov\.je opens with/.test(p)), said.points.join(' | '));
+    assert.ok(said.points.some((p) => /^On the first screen, gov\.uk is .*; gov\.je is /.test(p)), said.points.join(' | '));
 });
 
 /* --------------------------------------------------- the lead sentence (26 Sep 2026) */
@@ -497,22 +497,22 @@ test('benchmark: a thin segment is never called missing, and gets both numbers',
     const points = compare(mourant, bedell, {mine: 'mourant.com', theirs: 'bedellcristin.com'}).points;
 
     assert.equal(points.some((p) => /without a hero/.test(p)), false);
-    assert.ok(points.includes('mourant.com gives the hero 10.9% of the page, against 20.0% on bedellcristin.com.'), points.join(' | '));
-    assert.ok(points.includes('Only bedellcristin.com is without an explainer.'), 'a real absence is still said as one');
+    assert.ok(points.includes("The hero takes 10.9% of mourant.com's page and 20.0% of bedellcristin.com's."), points.join(' | '));
+    assert.ok(points.includes('bedellcristin.com has no explainer.'), 'a real absence is still said as one');
 });
 
 test('benchmark: thin on both sides is said once, with both numbers', () => {
     const a = site('enquire', {hero: 0.1, explainer: 0.3, trust: 0.3, routing: 0.3});
     const b = site('enquire', {hero: 0.08, explainer: 0.3, trust: 0.3, routing: 0.32});
 
-    assert.ok(compare(a, b, NAMES).points.includes('Both pages give the hero little room: 10.0% of the page on gov.uk, 8.0% on gov.je.'));
+    assert.ok(compare(a, b, NAMES).points.includes("The hero is small on both pages: 10.0% of gov.uk's and 8.0% of gov.je's."));
 });
 
 test('benchmark: missing on one side and thin on the other says each', () => {
     const a = site('enquire', {hero: 0.2, explainer: {share: 0, blocks: []}, trust: 0.3, routing: 0.5});
     const b = site('enquire', {hero: 0.2, explainer: 0.064, trust: 0.3, routing: 0.436});
 
-    assert.ok(compare(a, b, NAMES).points.includes('gov.uk has no explainer; gov.je gives the explainer 6.4% of the page.'));
+    assert.ok(compare(a, b, NAMES).points.includes("gov.uk has no explainer; on gov.je it takes 6.4% of the page."));
 });
 
 test('benchmark: a contact out of reach on one side only is named', () => {
@@ -520,4 +520,28 @@ test('benchmark: a contact out of reach on one side only is named', () => {
     const b = withProp(site('sell', SELL), [['get-in-touch', 'working']]);
 
     assert.ok(compare(a, b, NAMES).points.includes('Only gov.uk has no way to get in touch within reach.'));
+});
+
+/* ------------------------------------ the benchmark in plain words (26 Sep 2026) */
+
+test('benchmark wording: the same job, said plainly', () => {
+    const a = site('enquire', {hero: 0.2, explainer: 0.3, trust: 0.3, routing: 0.2});
+
+    assert.equal(compare(a, a, NAMES).lead, 'Both pages are trying to start a conversation, so the numbers above compare like for like.');
+});
+
+test('benchmark wording: several absences on one site are one sentence', () => {
+    const mourant = site('enquire', {hero: 0.2, explainer: 0.3, trust: 0.2, promotion: 0.1, footer: 0.1, routing: 0.1});
+    const ogier = site('enquire', {hero: 0.8, explainer: {share: 0, blocks: []}, trust: 0.1, promotion: {share: 0, blocks: []},
+        footer: {share: 0, blocks: []}, routing: 0.1});
+    const points = compare(mourant, ogier, {mine: 'mourant.com', theirs: 'ogier.com'}).points;
+
+    assert.ok(points.includes('ogier.com has no explainer, promotion or footer.'), points.join(' | '));
+    assert.equal(points.filter((p) => p.startsWith('ogier.com has no')).length, 1);
+});
+
+test('benchmark wording: missing outside proof is named as client logos, testimonials or ratings', () => {
+    const a = site('enquire', {hero: 0.3, explainer: 0.3, trust: {share: 0, blocks: []}, routing: 0.4});
+
+    assert.ok(compare(a, a, NAMES).points.includes('Neither page shows any outside proof, such as client logos, testimonials or ratings.'));
 });

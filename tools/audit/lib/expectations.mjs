@@ -474,6 +474,12 @@ export const KNOWN = PURPOSES.filter((p) => p !== 'unclear');
  * `names` is `{mine, theirs}`, already reduced to bare hosts by the caller — this file has
  * no business parsing URLs.
  */
+/** The benchmark's plain names for segments, and the order it lists them in. */
+const SHORT = {hero: 'hero', explainer: 'explainer', promotion: 'promotion', routing: 'routing',
+    navigation: 'navigation', editorial: 'editorial', brand: 'brand imagery', footer: 'footer'};
+const ORDER = ['hero', 'explainer', 'promotion', 'trust', 'routing', 'navigation', 'editorial', 'brand', 'footer'];
+const PROOF = 'outside proof, such as client logos, testimonials or ratings';
+
 /**
  * PROPOSITION, SET SIDE BY SIDE (26 Sep 2026): the two checks a reader cares about most —
  * does the first screen say what you sell, and is a call to action within reach — said
@@ -514,13 +520,12 @@ export function compare(a, b, names) {
         return {worth: proposition.length > 0, samePurpose: null, lead: '', points: proposition};
     }
 
+    // PLAIN WORDS (Jon, 26 Sep 2026: "make it sound more natural").
     const same = mine.kind === theirs.kind;
     const lead = same
-        ? `Both pages are trying to do the same thing: ${mine.job.replace(/^to /, '')}. `
-            + 'So the shares above are two answers to one question.'
-        : `These two pages are not trying to do the same thing. ${names.mine} is a page whose job is `
-            + `${mine.job}; ${names.theirs} is one whose job is ${theirs.job}. The shares above are `
-            + 'two different decisions rather than two answers to one question.';
+        ? `Both pages are trying ${mine.job}, so the numbers above compare like for like.`
+        : `These pages are doing different jobs: ${names.mine} is trying ${mine.job}, and ${names.theirs} `
+            + `${theirs.job}. The numbers above show two different choices, not one page doing better.`;
 
     const gapsIn = (reading) => new Set(reading.findings.filter((f) => f.kind === 'gap').map((f) => f.category));
     const ours = gapsIn(mine);
@@ -540,8 +545,8 @@ export function compare(a, b, names) {
     const opensMine = opening(a);
     const opensTheirs = opening(b);
     if (opensMine.length && opensTheirs.length) {
-        points.push(`${names.mine} opens with ${opensMine.join(' and ')}; `
-            + `${names.theirs} opens with ${opensTheirs.join(' and ')}.`);
+        points.push(`On the first screen, ${names.mine} is ${opensMine.join(' and ')}; `
+            + `${names.theirs} is ${opensTheirs.join(' and ')}.`);
     }
 
     // ONLY WHEN THEY ARE THE SAME KIND OF PAGE. "Only the magazine has no promotion" is
@@ -560,26 +565,46 @@ export function compare(a, b, names) {
 
             return !((seg?.share ?? 0) > 0 || (seg?.blocks?.length ?? 0) > 0);
         };
-        for (const category of [...new Set([...ours, ...yours])]) {
-            const word = PLAIN[category];
-            if (!word) continue;
-            const name = word.subject.charAt(0).toLowerCase() + word.subject.slice(1);
+        // Each segment as a noun a reader would use: "outside proof" for trust, which is
+        // what the table means by it; the rest are the table's own names.
+        const noun = (category) => (category === 'trust' ? 'outside proof' : SHORT[category] ?? category);
+        const Title = (category) => (category === 'trust' ? 'Outside proof' : PLAIN[category].subject);
+        const absentBy = {[names.mine]: [], [names.theirs]: []};
+        const categories = [...new Set([...ours, ...yours])].filter((c) => PLAIN[c])
+            .sort((p, q) => ORDER.indexOf(p) - ORDER.indexOf(q));
+        for (const category of categories) {
             const x = shareOf(a, category)?.share ?? 0;
             const y = shareOf(b, category)?.share ?? 0;
-            const inBoth = ours.has(category) && yours.has(category);
-            if (inBoth) {
+            if (ours.has(category) && yours.has(category)) {
                 const [ma, mb] = [missing(a, category), missing(b, category)];
-                if (ma && mb) points.push(`Neither page has ${word.bare}.`);
-                else if (!ma && !mb) points.push(`Both pages give ${name} little room: ${pc(x)} of the page on ${names.mine}, ${pc(y)} on ${names.theirs}.`);
-                else if (ma) points.push(`${names.mine} has ${word.absence}; ${names.theirs} gives ${name} ${pc(y)} of the page.`);
-                else points.push(`${names.theirs} has ${word.absence}; ${names.mine} gives ${name} ${pc(x)} of the page.`);
+                if (ma && mb) {
+                    points.push(category === 'trust'
+                        ? `Neither page shows any ${PROOF}.`
+                        : `Neither page has ${PLAIN[category].bare}.`);
+                } else if (!ma && !mb) {
+                    points.push(`${Title(category)} is small on both pages: ${pc(x)} of ${names.mine}'s and ${pc(y)} of ${names.theirs}'s.`);
+                } else {
+                    const [gone, kept, share] = ma ? [names.mine, names.theirs, y] : [names.theirs, names.mine, x];
+                    points.push(`${gone} has no ${noun(category)}; on ${kept} it takes ${pc(share)} of the page.`);
+                }
             } else {
                 const [who, other, report, own, theirShare] = ours.has(category)
                     ? [names.mine, names.theirs, a, x, y] : [names.theirs, names.mine, b, y, x];
-                points.push(missing(report, category)
-                    ? `Only ${who} is without ${word.bare}.`
-                    : `${who} gives ${name} ${pc(own)} of the page, against ${pc(theirShare)} on ${other}.`);
+                if (missing(report, category)) {
+                    absentBy[who].push(category);
+                } else {
+                    points.push(`${Title(category)} takes ${pc(own)} of ${who}'s page and ${pc(theirShare)} of ${other}'s.`);
+                }
             }
+        }
+        // SEVERAL ABSENCES ON ONE SITE ARE ONE SENTENCE: "ogier.com has no explainer,
+        // promotion or footer", not three bullets each starting "Only ogier.com is without".
+        for (const [who, list_] of Object.entries(absentBy)) {
+            const rest = list_.filter((c) => c !== 'trust').map(noun);
+            if (rest.length) {
+                points.push(`${who} has no ${rest.length === 1 ? rest[0] : `${rest.slice(0, -1).join(', ')} or ${rest[rest.length - 1]}`}.`);
+            }
+            if (list_.includes('trust')) points.push(`${who} shows no ${PROOF}.`);
         }
     }
 

@@ -169,6 +169,26 @@ export const READ_HEAD = () => {
 export const VIEWPORT = {width: 1440, height: 900};
 
 /**
+ * SMOOTH SCROLLING, SWITCHED OFF FOR THE CAPTURE. ogier.com sets `scroll-behavior: smooth`,
+ * so every `scrollTo` here ANIMATED: 0px moved when read straight after the call, 2000px
+ * 1.5s later. The slicer read "stopped scrolling at y=0" and photographed one screen of a
+ * 7032px page, and the report printed that page's missing explainer, promotion and footer
+ * as findings. `scroll-behavior` changes how a scroll moves, never what is on the page,
+ * so overriding it costs the measurement nothing. `!important` in an author sheet beats the
+ * page's own rules and an inline `style`, wherever either is.
+ */
+export const NO_SMOOTH_SCROLL = () => {
+    const add = () => {
+        const style = document.createElement('style');
+        style.setAttribute('data-audit', 'no-smooth-scroll');
+        style.textContent = 'html, body, *, *::before, *::after { scroll-behavior: auto !important; }';
+        (document.head || document.documentElement).appendChild(style);
+    };
+    if (document.documentElement) add();
+    else document.addEventListener('DOMContentLoaded', add, {once: true});
+};
+
+/**
  * The whole wall-clock budget for one capture, and the reason it exists.
  *
  * bakerandpartners.com blocked a capture for FOURTEEN MINUTES on 0.60s of CPU before it
@@ -684,6 +704,8 @@ export async function capturePage(url, outDir, opts = {}) {
         // In EVERY frame, and before the page builds its components: every walk this
         // capture takes calls it, including the consent finder inside a CMP's iframe.
         await page.addInitScript(SHADOW_INIT);
+        // Before anything scrolls: the consent pass, the census and the slicer all do.
+        await page.addInitScript(NO_SMOOTH_SCROLL);
         // THE STATUS WAS THROWN AWAY, and a blocked request looks exactly like a page.
         // webreality.co.uk answers a headless browser with a CloudFront 403: the capture
         // succeeded, wrote its artefacts, segmented into two blocks with area conserved

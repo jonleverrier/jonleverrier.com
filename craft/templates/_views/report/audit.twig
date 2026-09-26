@@ -343,6 +343,13 @@
         /* An address is one long word: boondmanager.com's "/boond_demo/fr/dashboard.html" ran
            into the next column. Break it anywhere rather than push the table wider. */
         .r-dest { overflow-wrap: anywhere; padding-right: 12px; }
+        /* The call to action table: five columns, not the two-and-a-note the other tables
+           are sized for, which pressed Count against Destination. Widths and gaps only. */
+        .r-ctas td:nth-child(1), .r-ctas th:nth-child(1) { width: 27%; padding-right: 12px; }
+        .r-ctas td:nth-child(2), .r-ctas th:nth-child(2) { width: 13%; padding-right: 12px; }
+        .r-ctas td:nth-child(3), .r-ctas th:nth-child(3) { width: 9%; padding-right: 16px; }
+        .r-ctas td:nth-child(4), .r-ctas th:nth-child(4) { width: 31%; }
+        .r-ctas td:nth-child(5), .r-ctas th:nth-child(5) { width: 20%; }
         .r-map__cell--ask { background: #0c243c; color: #fff; box-shadow: none; }
         .r-map__cell--pinned { background: #b6ddff; color: #0c243c; box-shadow: none; }
         .r-map__cell--menu { background: #fff; color: #0c243c; box-shadow: none; outline: 1px dashed #0c243c; outline-offset: -1px; }
