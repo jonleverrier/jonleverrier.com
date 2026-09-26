@@ -207,6 +207,27 @@ const URLS = {
     // `<my-cookie-banner style="position:fixed">` shape. The ancestor walk hits
     // `parentElement === null` at the top of the shadow tree, so before it crossed to the
     // host it concluded that an accept button sitting in a fixed banner was page furniture.
+    // COOKIESCAN (ogier.com, 26 Sep 2026): a centred modal in an open shadow root whose
+    // buttons are <a class="cookiescan_btn"> with NO href and no role. CLICKABLE had no
+    // selector for them, so the banner was seen and never dismissed, and the modal sat over
+    // the first screen of the report.
+    cookiescan: page$(
+        'cookiescan.html',
+        HOME + component(
+            'position:fixed;inset:0;background:rgba(0,0,0,.5)',
+            '<div id="banner" style="width:340px;margin:200px auto;background:#fff;padding:20px">'
+            + '<p>COOKIE PREFERENCES. We use necessary cookies to make our site work.</p>'
+            + '<a class="cookiescan_btn">Adjust</a> <a class="cookiescan_btn">Reject all</a> '
+            + '<a class="cookiescan_btn" onclick="this.getRootNode().host.remove()">Accept all</a></div>',
+        ),
+    ),
+    // The same banner whose accept is a REAL link: a link with somewhere to go can take the
+    // capture off the page, so it stays out of the clickable set.
+    realLinkAccept: page$(
+        'real-link-accept.html',
+        HOME + '<div id="banner" style="position:fixed;left:0;right:0;bottom:0;background:#eee;padding:20px">'
+            + '<p>We use cookies.</p><a href="/elsewhere">Accept all</a></div>',
+    ),
     shadowBanner: page$(
         'shadow-banner.html',
         HOME + component(
@@ -580,6 +601,18 @@ test('an accept button inside a component is reached through the shadow boundary
 // The other half, and the more damaging one: a wall we cannot get past still has to be
 // SEEN. `textContent` on a host returns its light DOM only — nothing — so the card is
 // findable only by walking INTO the shadow root.
+test('a CookieScan accept — an <a> with no href, in a shadow root — is clicked', async () => {
+    const {consent, state} = await attempt(URLS.cookiescan);
+    assert.equal(consent.dismissed, true);
+    assert.match(consent.via, /Accept all/);
+    assert.equal(state.bannerStillThere, false);
+});
+
+test('an accept that is a real link is still never clicked', async () => {
+    const {consent} = await attempt(URLS.realLinkAccept);
+    assert.equal(consent.dismissed, false, 'a link with an href can navigate');
+});
+
 test('a consent card inside a component with no accept control is still seen', async () => {
     const {consent, state} = await attempt(URLS.shadowCard, {pinned: true});
     assert.equal(consent.bannerSeen, true, 'a banner in a component is still a banner');

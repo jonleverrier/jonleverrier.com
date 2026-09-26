@@ -208,7 +208,13 @@ export const DENY_TEXT = new RegExp(
  * is page furniture. `[role="button"]` is not scoped to `a` on purpose — a div or span
  * carrying the role is a perfectly ordinary way to build a banner button.
  */
-export const CLICKABLE = 'button, [role="button"], input[type="button"], input[type="submit"]';
+// A LINK THAT GOES NOWHERE IS A BUTTON (26 Sep 2026). CookieScan — ogier.com — builds its
+// Accept, Reject and Adjust as <a class="cookiescan_btn"> with no href and no role, so the
+// banner was seen and never dismissed, and sat over the report's first screen. An <a> with
+// no href, "#" or javascript: cannot take the capture anywhere; one with a real destination
+// still can, and stays out, as the bare-`a` test in test/consent.test.mjs requires.
+export const CLICKABLE = 'button, [role="button"], input[type="button"], input[type="submit"], '
+    + 'a:not([href]), a[href="#"], a[href^="javascript:" i]';
 
 /**
  * The `position` values that take an element out of the flow so it can sit over the page.

@@ -54,6 +54,8 @@ test('an ordinary anchor is not in the clickable set, but a role="button" is', (
     assert.doesNotMatch(CLICKABLE, /(^|,)\s*a\s*(,|$)/, 'a bare `a` selector is back');
     assert.match(CLICKABLE, /\[role="button"\]/);
     assert.match(CLICKABLE, /button/);
+    // …and a link that cannot go anywhere IS, because CookieScan builds its buttons that way.
+    assert.match(CLICKABLE, /a:not\(\[href\]\)/);
 });
 
 test('non-Latin accept wording', () => {
