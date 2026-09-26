@@ -348,18 +348,22 @@
         {% if prop.score.asksJudged %}
             <h3>Call to action audit</h3>
             {% if (prop.map ?? []) is not empty %}
-                <p class="r-map__head">Each box is one screen of your homepage, top to bottom, shown left to right.</p>
-                <ol class="r-map">
-                    {% for cell in prop.map %}
-                        <li class="r-map__cell r-map__cell--{{ cell.state }}">{{ cell.screen }}</li>
-                    {% endfor %}
-                </ol>
-                <ul class="r-map-key">
-                    <li class="r-map-key__item r-map-key__item--ask">Call to action on this screen</li>
-                    <li class="r-map-key__item r-map-key__item--pinned">Sticky call to action (always visible)</li>
-                    <li class="r-map-key__item r-map-key__item--menu">Only through the menu</li>
-                    <li class="r-map-key__item r-map-key__item--none">No call to action</li>
-                </ul>
+                {# ONE PIECE: the line saying what the boxes are, the boxes, and the key. A page
+                   break between them left the key alone on the next sheet (26 Sep 2026). #}
+                <div class="r-keep">
+                    <p class="r-map__head">Each box is one screen of your homepage, top to bottom, shown left to right.</p>
+                    <ol class="r-map">
+                        {% for cell in prop.map %}
+                            <li class="r-map__cell r-map__cell--{{ cell.state }}">{{ cell.screen }}</li>
+                        {% endfor %}
+                    </ol>
+                    <ul class="r-map-key">
+                        <li class="r-map-key__item r-map-key__item--ask">Call to action on this screen</li>
+                        <li class="r-map-key__item r-map-key__item--pinned">Sticky call to action (always visible)</li>
+                        <li class="r-map-key__item r-map-key__item--menu">Only through the menu</li>
+                        <li class="r-map-key__item r-map-key__item--none">No call to action</li>
+                    </ul>
+                </div>
             {% endif %}
             {% if prop.asks|length %}
                 <table class="r-speed">
