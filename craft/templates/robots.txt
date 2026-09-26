@@ -32,3 +32,5 @@ User-agent: *
    not access control and must never be relied on as any. What keeps these private is that
    nobody can guess the address. #}
 Disallow: /assets/lead-generator/
+
+Disallow: /jonson/ask
