@@ -1,5 +1,5 @@
 defaultPlacement: end
-enableVersioning: true
+enableVersioning: false
 entryTypes:
   -
     uid: 919d677c-b107-4ca3-a622-1c8cd7361763 # Audit Entry
