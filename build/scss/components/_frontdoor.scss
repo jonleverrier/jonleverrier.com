@@ -299,11 +299,13 @@ $prompt-band-h: rem(46);
     }
 }
 
+// The backdrop is NOT hidden under reduced motion — it used to be (display: none),
+// from when it was only ever the tunnel. Reduced motion means no motion, not no
+// picture: hero-mount.js gives these visitors the point cloud as one still frame, and
+// the tunnel never mounts for them anyway (tunnel.js). Hiding the box also left it
+// 0x0, so the still was never given a size to draw at — which is why the audit
+// tool's captures, which force reduced motion, showed a blank slab.
 @media (prefers-reduced-motion: reduce) {
-    .c-frontdoor__bg {
-        display: none;
-    }
-
     .is-warping .c-frontdoor__meta {
         animation: none;
     }

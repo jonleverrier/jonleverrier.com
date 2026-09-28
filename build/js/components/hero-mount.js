@@ -1,7 +1,7 @@
 // Decides what the homepage hero is on this machine, and mounts it:
 //
 //   · a GPU       → the animated point cloud (hero.js, which brings three);
-//   · no GPU      → one still frame, drawn in a worker (hero-still.worker.js);
+//   · no GPU, or reduced motion → one still frame, drawn in a worker (hero-still.worker.js);
 //   · no WebGL    → the plain olive slab.
 //
 // Kept apart from hero.js so that three is only downloaded when it will animate.
@@ -133,6 +133,14 @@ async function createStill(container, binUrl) {
   return {
     warpOut(cb) {
       if (failed) { if (cb) cb(); return; }
+      // Reduced motion: a cut, not a fade — the same as the front door's own exit,
+      // which drops its animation under the same query (_frontdoor.scss).
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        canvas.style.transition = "none";
+        canvas.style.opacity = "0";
+        if (cb) cb();
+        return;
+      }
       canvas.style.transition = `opacity ${STILL_EXIT_MS}ms ease-in`;
       canvas.style.opacity = "0";
       clearTimeout(exitTimer);
@@ -154,7 +162,12 @@ export async function mountHero(container) {
   // where it cannot answer.
   const tier = (await probeOffMainThread()) ?? probeTier(document.createElement("canvas"));
   if (tier === "none") return slab();
-  if (tier === "software") return createStill(container, HERO_BIN_URL);
+  // Reduced motion gets the still on ANY machine, GPU or not: the portrait without
+  // the drift, the sweep, the pointer parallax or the fly-through. The still worker
+  // draws with whatever is behind WebGL, so on a GPU it is simply quick.
+  if (tier === "software" || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return createStill(container, HERO_BIN_URL);
+  }
   const {createHero} = await import("./hero.js");
   return createHero(container, HERO_BIN_URL);
 }
