@@ -545,3 +545,68 @@ test('benchmark wording: missing outside proof is named as client logos, testimo
 
     assert.ok(compare(a, a, NAMES).points.includes('Neither page shows any outside proof, such as client logos, testimonials or ratings.'));
 });
+
+/* ------------------------------------------------------------------ the checklist */
+
+const checks = (report) => Object.fromEntries(read(report).checks.map((c) => [c.id, c.status]));
+const check = (report, id) => read(report).checks.find((c) => c.id === id);
+
+test('a core segment is green at the floor, amber when thin, red when absent', () => {
+    const at = (promotion) => check(site('sell', {promotion, hero: 0.3}), 'promotion');
+    assert.equal(at(CORE_FLOOR).status, 'good');
+    assert.equal(at(0.059).status, 'work');
+    assert.equal(at(0).status, 'poor');
+    assert.equal(at(0).found, 'Not on the page');
+    assert.equal(at(CORE_FLOOR).fix, null);
+});
+
+/** boondmanager.com: promotion 5.9% of the page and none of the first screen. */
+test('a thin core segment is told to start on the first screen when it is not there', () => {
+    const thin = check(site('sell', {promotion: 0.059, hero: 0.3}), 'promotion');
+    assert.equal(thin.found, '5.9% of the page, none of the first screen');
+    assert.equal(thin.fix, 'Make more of your offer, with a button beside it. Bring some of it onto the first screen.');
+    const up = check(site('sell', {promotion: {share: 0.059, firstViewport: 0.2}, hero: 0.3}), 'promotion');
+    assert.equal(up.fix, 'Make more of your offer, with a button beside it.');
+});
+
+/** gov.je has no hero; for a directory that is expected, so amber, not red. */
+test('a missing expected segment is amber, and a present one green however small', () => {
+    const je = site('route', {routing: 0.7, navigation: 0.004, footer: 0.1});
+    assert.equal(check(je, 'hero').status, 'work');
+    assert.match(check(je, 'hero').fix, /^Open with a hero/);
+    assert.equal(check(je, 'navigation').status, 'good', 'presence, not share');
+});
+
+test('optional segments get no row; irrelevant ones only when they are a surprise', () => {
+    const quiet = read(site('route', {routing: 0.7, promotion: 0.05, brand: 0.2})).checks.map((c) => c.id);
+    assert.ok(!quiet.includes('brand') && !quiet.includes('promotion'));
+    const odd = check(site('route', {routing: 0.5, promotion: SURPRISE}), 'promotion');
+    assert.equal(odd.status, 'work');
+    assert.match(odd.fix, /give the room to routing\.$/);
+});
+
+test('the rows come in one fixed order, whatever the shares', () => {
+    const a = read(site('enquire', {trust: 0.5, hero: 0.2, explainer: 0.2})).checks.map((c) => c.id);
+    const b = read(site('enquire', {hero: 0.5, explainer: 0.3, trust: 0.2})).checks.map((c) => c.id);
+    assert.deepEqual(a, b);
+    assert.deepEqual(a, ['navigation', 'hero', 'explainer', 'promotion', 'trust', 'footer']);
+});
+
+test('no purpose, no checklist', () => {
+    assert.deepEqual(read(site('unclear', {hero: 0.5})).checks, []);
+    assert.deepEqual(read(site('sell', {hero: 0.5}, {purpose: {kind: 'sell', confidence: 0.2}})).checks, []);
+});
+
+test('every segment a purpose can need has a name and a suggestion', () => {
+    for (const table of Object.values(EXPECTATIONS)) {
+        const all = site('route', {});
+        for (const category of Object.keys(table)) {
+            assert.doesNotThrow(() => read({...all, purpose: {...all.purpose, kind: 'sell'}}), category);
+        }
+    }
+    for (const kind of Object.keys(EXPECTATIONS)) {
+        for (const c of read(site(kind, {})).checks) {
+            assert.ok(c.check && (c.status === 'good' || c.fix), `${kind}/${c.id} needs a suggestion`);
+        }
+    }
+});

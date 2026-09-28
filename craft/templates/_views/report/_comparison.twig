@@ -71,8 +71,11 @@
         'one-name': 'Consistent button labels',
         'screen-readers': 'Screen readers'
     } %}
+    {# ONE HEADING OVER THE SIDE-BY-SIDE TABLES (Jon, 28 Sep 2026), each of which is an
+       h3 under it, down to the Summary, which is a heading of its own again. #}
+    <h2>Comparison</h2>
     {% if (report.proposition.checks ?? null) or (competitor.proposition.checks ?? null) %}
-        <h2>Proposition</h2>
+        <h3>Proposition</h3>
         <table class="r-speed r-bench">
             <thead>
                 {# FOUR COLUMNS, as Scores has, so the two sites' columns line up down the
@@ -116,7 +119,7 @@
         </table>
     {% endif %}
 
-    <h2>Homepage Segmentation</h2>
+    <h3>Homepage Segmentation</h3>
     <table class="r-speed r-bench">
         <thead>
             <tr>
@@ -148,7 +151,7 @@
        a longer page is not a worse one, and ink is how much of the surface is painted rather
        than how much is said — a page of type reads as almost empty because letters are
        mostly the gaps between them. So the arrows are grey and the figures do the talking. #}
-    <h2>Page</h2>
+    <h3>Page</h3>
     <table class="r-speed r-bench">
         <thead>
             <tr>

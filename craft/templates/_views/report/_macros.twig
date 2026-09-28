@@ -120,3 +120,49 @@
         {%- endif -%}
     {%- endif -%}
 {% endmacro %}
+
+{# A TRAFFIC-LIGHT CHECKLIST: Speed, Technical and Consistency, one row per check from
+   tools/audit/lib/checks.mjs, which wrote every word of it. This prints, it does not judge.
+   Proposition has its own table because its statuses are still two (working/fix).
+   A row carrying `groups` is the duplicate-colours check, drawn as chips rather than
+   described. #}
+{% macro checklist(rows) %}
+    {%- set lights = { good: 'Good', work: 'Needs work', poor: 'Poor' } -%}
+    <table class="r-speed r-checks">
+        <thead>
+            <tr>
+                <th>Check</th>
+                <th>Status</th>
+                <th>Result</th>
+                <th>Suggestion</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in rows %}
+                <tr>
+                    <td>{{ c.check }}</td>
+                    <td class="r-status r-status--{{ c.status }}">{{ lights[c.status] ?? c.status }}</td>
+                    <td>
+                        {%- if (c.groups ?? []) is not empty -%}
+                            {{ c.found }}
+                            <ul class="r-drift r-drift--wrap">
+                                {% for group in c.groups %}
+                                    <li>
+                                        {#- The palette's own swatch, which is nowrap: a
+                                            value never breaks mid-colour in this narrow cell. -#}
+                                        {% for colour in group %}
+                                            <span class="r-swatch-inline" style="--c: {{ colour }}">{{ colour }}</span>{% if not loop.last %}<b>~</b> {% endif %}
+                                        {% endfor %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {%- else -%}
+                            {{ c.found }}
+                        {%- endif -%}
+                    </td>
+                    <td>{{ c.fix ?? '—' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}

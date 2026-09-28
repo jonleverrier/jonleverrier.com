@@ -39,6 +39,7 @@ import {titleCase} from './debug.mjs';
 import {noteCodes} from './notes.mjs';
 import {bytesSummary} from './bytes.mjs';
 import {clusterColours, SAME_COLOUR_DE} from './styles.mjs';
+import {checks} from './checks.mjs';
 
 /** A4 at 96dpi, less a 12mm margin: the box an image has to fit inside. */
 export const PAGE = {width: 794, height: 1123, margin: 45};
@@ -214,7 +215,7 @@ export function reportData(outDir, viewportHeight = 900) {
         blocksByCategory.set(key, held);
     });
 
-    return {
+    const data = {
         url: meta.url,
         capturedUrl: meta.capturedUrl,
         capturedAt: meta.capturedAt,
@@ -254,6 +255,10 @@ export function reportData(outDir, viewportHeight = 900) {
         caveats: Object.values(notes?.conditions ?? {}).map((c) => ({effect: c.effect, message: c.message})),
         noteCodes: noteCodes(notes),
     };
+
+    // The traffic lights, read off the fields above so a report on disk can be given them
+    // without a recapture — see lib/checks.mjs.
+    return {...data, checks: checks(data)};
 }
 
 /**

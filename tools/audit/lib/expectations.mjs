@@ -298,6 +298,46 @@ export function describe(purpose) {
 }
 
 const pc = (v) => `${(v * 100).toFixed(1)}%`;
+
+/**
+ * THE CHECKLIST'S NAME FOR EACH SEGMENT, and what to add when it is missing or thin.
+ *
+ * WHOLE SENTENCES, one for a missing segment and one for a thin one: composing advice out of
+ * fragments read as fragments ("An offer, a price or a reason to act now, with a button to
+ * act on it."). Each is an instruction.
+ *
+ * WHAT GOES IN THE SUGGESTION IS THE CATEGORY'S OWN DEFINITION, turned round into advice —
+ * lib/vision.mjs defines trust as evidence from outside the company, promotion as asking
+ * the visitor to act now — so the advice is for exactly the thing that was measured, and a
+ * reader who adds client logos will find them counted as trust next time.
+ */
+const CHECK = {
+    hero: {name: 'Hero',
+        missing: 'Open with a hero that says what you do and where to go next.',
+        thin: 'Make the hero bigger, and say plainly what you do.'},
+    explainer: {name: 'Explainer',
+        missing: 'After the hero, explain what you do, who it is for and how it works.',
+        thin: 'Say more about what you do, who it is for and how it works.'},
+    trust: {name: 'Trust',
+        missing: 'Show proof from outside the company: client logos, a testimonial, an award or an accreditation.',
+        thin: 'Show more proof from outside the company: client logos, testimonials, awards or accreditations.'},
+    promotion: {name: 'Promotion',
+        missing: 'Make visitors an offer, such as a price, a trial or a reason to buy today, with a button beside it.',
+        thin: 'Make more of your offer, with a button beside it.'},
+    routing: {name: 'Routing',
+        missing: 'Link to the main areas of the site, so visitors reach what they came for in one click.',
+        thin: 'Link to more of the site, so visitors reach what they came for in one click.'},
+    navigation: {name: 'Navigation', missing: 'Add a navigation bar to the top of the page.'},
+    footer: {name: 'Footer', missing: 'Add a footer with contact details, key links and legal information.'},
+    editorial: {name: 'Editorial',
+        missing: 'Publish your latest articles or news on the page itself.',
+        thin: 'Give your articles and news more room on the page.'},
+    brand: {name: 'Brand imagery', missing: 'Use imagery that is recognisably yours.'},
+};
+
+/** One fixed order, so two reports — and the benchmark's two sites — read row by row. */
+const ROW_ORDER = ['navigation', 'hero', 'explainer', 'brand', 'promotion', 'trust', 'routing', 'editorial', 'footer'];
+
 const sections = (n) => `${n} section${n === 1 ? '' : 's'}`;
 
 /**
@@ -320,7 +360,7 @@ export function read(report) {
     const table = EXPECTATIONS[kind];
 
     if (!table || !confident) {
-        return {worth: false, kind: 'unclear', claim: null, job: '', findings: [], notGaps: []};
+        return {worth: false, kind: 'unclear', claim: null, job: '', findings: [], notGaps: [], checks: []};
     }
 
     const share = (category) => (report.categories ?? [])
@@ -438,6 +478,39 @@ export function read(report) {
 
     findings.sort((a, b) => b.weight - a.weight);
 
+    // THE CHECKLIST (28 Sep 2026): the same judgements as the findings, one row per segment
+    // the page's purpose needs, in one fixed order so every report reads alike.
+    // Core: green at CORE_FLOOR, amber when there but thin, red when absent. Expected:
+    // green when there, amber when not — a missing footer is not a missing hero. An
+    // irrelevant segment only gets a row when it is a surprise. Optional ones never do.
+    const checks = [];
+    const coreNames = cores.map((c) => CHECK[c.category].name.toLowerCase());
+    for (const category of ROW_ORDER) {
+        const role = table[category];
+        const seg = at(category);
+        const has = share(category);
+        const first = seg?.firstViewport ?? 0;
+        const there = isPresent(category) && has > 0;
+        const found = there
+            ? `${pc(has)} of the page, ${first > 0 ? pc(first) : 'none'} of the first screen`
+            : `Not on the page`;
+        const {name, missing, thin} = CHECK[category];
+
+        if (role === 'core') {
+            const status = has >= CORE_FLOOR ? 'good' : there ? 'work' : 'poor';
+            checks.push({id: category, check: name, role, status, found,
+                fix: status === 'good' ? null
+                    : status === 'poor' ? missing
+                    : `${thin}${first > 0 ? '' : ' Bring some of it onto the first screen.'}`});
+        } else if (role === 'expected') {
+            const status = isPresent(category) ? 'good' : 'work';
+            checks.push({id: category, check: name, role, status, found, fix: status === 'good' ? null : missing});
+        } else if (role === 'irrelevant' && has >= SURPRISE) {
+            checks.push({id: category, check: name, role, status: 'work', found,
+                fix: `A page like this does not need it. Cut it back and give the room to ${coreNames.join(' and ')}.`});
+        }
+    }
+
     return {
         worth: findings.length > 0,
         kind,
@@ -445,6 +518,7 @@ export function read(report) {
         job: describe(kind),
         findings,
         notGaps,
+        checks,
         // WRITTEN HERE, NOT IN THE TEMPLATE, for the reason the findings are: a Twig file
         // that assembled this sentence would be a second place the judgement lives.
         notGapsText: sentenceForNotGaps(notGaps),

@@ -12,7 +12,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
-    ENDPOINT, STRATEGY, fetchPsi, labMetrics, parsePsi, psiKey, worthRetrying,
+    ENDPOINT, STRATEGY, fetchPsi, labMetrics, parsePsi, pointsLost, psiKey, worthRetrying,
 } from '../lib/psi.mjs';
 
 const fixture = (name) => JSON.parse(readFileSync(`tools/audit/fixtures/psi-${name}.fixture.json`, 'utf8'));
@@ -173,4 +173,38 @@ test('only the answers that could change are asked again', () => {
     assert.equal(worthRetrying(400), false);
     assert.equal(worthRetrying(403), false);
     assert.equal(worthRetrying(404), false);
+});
+
+/* ------------------------------------------------------------------ where the points went */
+
+/**
+ * furious-squad.com, live on 28 Sep 2026: 92, and every Core Web Vital under Google's line.
+ * The weights and scores are the response's own — Lighthouse 13.5.0 — trimmed to the five
+ * that carry weight.
+ */
+test('the points each metric cost are read off the response, weights and all', () => {
+    const lh = {
+        categories: {performance: {score: 0.92, auditRefs: [
+            {id: 'first-contentful-paint', weight: 10},
+            {id: 'largest-contentful-paint', weight: 25},
+            {id: 'total-blocking-time', weight: 30},
+            {id: 'cumulative-layout-shift', weight: 25},
+            {id: 'speed-index', weight: 10},
+            {id: 'interactive', weight: 0},
+        ]}},
+        audits: {
+            'first-contentful-paint': {score: 1},
+            'largest-contentful-paint': {score: 0.7},
+            'total-blocking-time': {score: 0.98},
+            'cumulative-layout-shift': {score: 1},
+            'speed-index': {score: 0.98},
+            interactive: {score: 0.5},
+        },
+    };
+    assert.deepEqual(pointsLost(lh), {fcpMs: 0, lcpMs: 7.5, tbtMs: 0.6, cls: 0, speedIndexMs: 0.2});
+});
+
+test('no weights in the response is null, not a page that lost nothing', () => {
+    assert.equal(pointsLost(kohde.lighthouseResult), null);
+    assert.equal(parsePsi(kohde).lost, null);
 });

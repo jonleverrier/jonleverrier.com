@@ -99,6 +99,44 @@ export function labMetrics(audits = {}) {
     };
 }
 
+/** Lighthouse's audit ids, as labMetrics names them. */
+const LAB_KEYS = {
+    'first-contentful-paint': 'fcpMs',
+    'largest-contentful-paint': 'lcpMs',
+    'total-blocking-time': 'tbtMs',
+    'cumulative-layout-shift': 'cls',
+    'speed-index': 'speedIndexMs',
+};
+
+/**
+ * The points out of 100 each metric cost, read off Lighthouse's own weights and scores.
+ *
+ * GOOGLE'S PASS LINE IS NOT THE SCORE'S CURVE. furious-squad.com's Largest Contentful Paint
+ * is 1,781ms, under the 2,500ms Core Web Vitals line, and Lighthouse's desktop curve still
+ * scores it 0.7 — at a weight of 25 that is 7.5 of the 8 points the page was missing. Without
+ * this a report can only say every metric passed and the score is 92, which explains nothing.
+ *
+ * READ, NOT HARD-CODED: the weights move between Lighthouse versions, and the response says
+ * which ones it used. Null when the response does not carry them.
+ */
+export function pointsLost(lh) {
+    const refs = lh?.categories?.performance?.auditRefs;
+    if (!Array.isArray(refs)) {
+        return null;
+    }
+    const weighted = refs.filter((r) => r.weight > 0);
+    const total = weighted.reduce((sum, r) => sum + r.weight, 0);
+    const lost = {};
+    for (const r of weighted) {
+        const score = lh.audits?.[r.id]?.score;
+        if (typeof score === 'number' && total > 0) {
+            lost[LAB_KEYS[r.id] ?? r.id] = Number(((r.weight / total) * 100 * (1 - score)).toFixed(1));
+        }
+    }
+
+    return Object.keys(lost).length ? lost : null;
+}
+
 /**
  * A PSI payload reduced to what a report needs, or an error with a reason.
  *
@@ -128,6 +166,7 @@ export function parsePsi(payload) {
         fetchedAt: lh.fetchTime ?? null,
         score: Math.round(score * 100),
         lab: labMetrics(lh.audits),
+        lost: pointsLost(lh),
     };
 }
 
