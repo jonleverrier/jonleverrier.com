@@ -186,8 +186,10 @@ if (hero) {
             po.observe({type: 'paint', buffered: true});
         });
         firstPaint
-            .then(() => import('./components/hero.js'))
-            .then(({createHero}) => createHero(heroCloud))
+            // hero-mount decides GPU / no GPU / no WebGL first, and only the GPU branch
+            // downloads three — see the top of hero-mount.js.
+            .then(() => import('./components/hero-mount.js'))
+            .then(({mountHero}) => mountHero(heroCloud))
             .then((cloud) => {
                 window.addEventListener('beforeunload', cloud.dispose, {once: true});
                 // Whichever backdrop is live owns the exit beat. Swapping the function
