@@ -714,7 +714,13 @@ $c-content-subheading: getmap($colour, light, 880); // the sub-heading grey — 
     font-family: $g-font-primary; // JonSonSans — it's a button, and buttons are sans; the mono is for the labels beside it
     font-weight: 600;
     text-decoration: none;
-    transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+    // NO TRANSITION, and this is a Safari bug, not a taste (29 Sep 2026). Swept fast
+    // over the chip, Safari resolved its `rem` lengths against the wrong base and it
+    // grew to 30.72px text in a 349px box — and often STAYED that size after the
+    // pointer left. Reproduced with a real pointer: every run with a colour fade on
+    // the chip (or on a ::before overlay inside it) blew up; every run with none did
+    // not. The hover still darkens; it just does it at once.
+    transition: none;
 
     &:hover,
     &:focus-visible {
