@@ -59,6 +59,8 @@ const BOOND_SHAPE = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <header>
   <a href="/">Boond</a>
   <p class="tagline">ERP for consulting firms</p>
+  <ul class="roles"><li>AI Product Designer</li></ul>
+  <ul class="menu-list"><li>Services<ul style="display: none"><li><a href="/services/branding">Branding</a></li></ul></li></ul>
   <nav><div class="menu-label">Produits</div><a href="/tarifs">Tarifs</a>
     <div class="menu"><button>Solutions</button>
       <div class="panel"><a href="/demande-de-demo">Découvrez Boond — Demander une démo</a></div></div>
@@ -219,15 +221,20 @@ test('the page is walked back to the top afterwards', async () => {
 // gov.je says what it is in a tagline beside its logo — "Information and public services for
 // the Island of Jersey" — and dropping all header text took it out of the question. Only the
 // header's links and buttons are navigation; any other words in it are read like the rest.
+// jonleverrier.com's strapline is a <ul> of roles that cycle, and every <li> used to count as
+// navigation, so the one line saying what the page is was never asked about.
 test('first-screen lines keep a header tagline and leave the navigation out', async () => {
     const {firstScreen} = await collect();
     const read = firstScreen.filter((l) => !(l.inHeader && l.inNav)).map((l) => l.text);
 
     assert.equal(read[0], 'ERP for consulting firms', 'the tagline, read first');
+    assert.equal(read[1], 'AI Product Designer',
+        'a strapline built as a list is still read: an <li> is navigation only when it holds a link (jonleverrier.com)');
+    assert.equal(read.includes('Services'), false, 'a list item whose submenu holds links is navigation, <nav> or not');
     assert.equal(read.includes('Tarifs'), false, 'a header link is navigation');
     assert.equal(read.includes('Produits'), false, 'so is a menu label in a <nav>, link or not (abas-erp.com)');
     assert.equal(read.some((t) => /Skip to main/.test(t)), false, 'Tailwind sr-only: clip-path inset(50%) (wahio.design)');
-    const content = read.slice(1);
+    const content = read.slice(2);
 
     assert.equal(content[0], 'Work Smart, Grow Fast.', 'one line, though every word is its own box (kohde.agency)');
     assert.match(content[1], /^Boond libère le potentiel/);
@@ -285,7 +292,7 @@ test('the record quotes the page, not the model, and groups asks by destination'
     const collected = await collect();
     const meta = {capturedUrl: base, head: {title: 'Boond : Logiciel ERP pour ESN'}, fullHeight: 3600, proposition: collected};
     const record = buildProposition(meta, {
-        lines: {1: 'other', 2: 'other', 3: 'context'},
+        lines: {1: 'other', 2: 'other', 3: 'other', 4: 'context'},
         head: 'yes',
         headSources: ['title', 'hidden heading'],
         ctas: {},

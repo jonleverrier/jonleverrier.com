@@ -268,7 +268,14 @@ export const COLLECT_PROPOSITION = async ({screen = 900, settleMs = 150, maxScre
             // header that is navigation; outside one it is still read, as a CTA is.
             inControl: control,
             // Navigation that is not a link: abas-erp.com's "Produits" is a menu label <div>.
-            inNav: control || !!parent.closest('nav, [role="navigation"], menu, [role="menu"], [role="menubar"], li'),
+            //
+            // A list item only when it HOLDS a link or a button — a menu label whose submenu
+            // does. Any <li> used to count, and jonleverrier.com's strapline is a <ul> of
+            // roles with no link in it: the one line on its first screen saying what the
+            // page is was dropped before the question was asked, and it read as "no".
+            inNav: control
+                || !!parent.closest('nav, [role="navigation"], menu, [role="menu"], [role="menubar"]')
+                || !!parent.closest('li')?.querySelector('a, button, [role="button"]'),
         };
         // A space between pieces, except before punctuation that is its own element:
         // vaiie.com sets the full stop of "One platform." in a span, and read "One platform .".
