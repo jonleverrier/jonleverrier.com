@@ -21,7 +21,7 @@
     /case-study/{slug}    WebPage (named and described from the entry's SEO tab,
                           heading and Bio as fallbacks, the OG image as its image)
                           + CreativeWork (the work), Organization (the client),
-                          Review (its testimonials)
+                          Quotation (its testimonials)
     /contact              ContactPage   → the Person is who you'd be contacting,
                           named and described from the entry's SEO tab
     /about                AboutPage     → the Person again, named and described
@@ -41,10 +41,10 @@
   Everything but the homepage also carries a BreadcrumbList. The homepage is the
   root, and a one-item trail says nothing.
 
-  ONE <script> PER TYPE, tagged `data-schema="Review"` and so on, so a given
+  ONE <script> PER TYPE, tagged `data-schema="Quotation"` and so on, so a given
   block can be found and read on its own rather than by scrolling one long blob.
   Each block is a standalone document: it carries its own @context, and a type
-  with several nodes (Review, on a study with more than one quote) wraps them in
+  with several nodes (Quotation, on a study with more than one quote) wraps them in
   a @graph.
 
   The cross-block @id references rely on the consumer merging every ld+json
@@ -426,37 +426,42 @@
            doesn't show, or miss one it does. The Case Study Link relation still
            says WHOSE quote it is — that's the author's Organization below — it
            just no longer decides which quotes are here. A quote placed twice is
-           one Review.
+           one Quotation.
 
-           `reviewBody` is plain text: the field is CKEditor, and schema.org
-           wants the words, not the markup wrapping them.
+           QUOTATION, NOT REVIEW. These were Reviews with `itemReviewed` pointing
+           at the CreativeWork, and Google validates every Review it finds against
+           its review-snippet rules: CreativeWork isn't a type it takes reviews on,
+           so Search Console marked each one invalid ("Invalid object type for
+           field '<parent_node>'"). They could never earn a snippet anyway — no
+           rating field, and inventing stars is what gets penalised. Quotation has
+           no rich result, so Google leaves it alone, and it still says who said
+           what about which project for every other reader. Don't switch back to
+           Review, or retype the work to a type Google does accept, without a real
+           rating to go with it.
+
+           `text` is plain text: the field is CKEditor, and schema.org wants the
+           words, not the markup wrapping them.
 
            The author works for the client Organization already in the graph, so
            `worksFor` points at that @id instead of restating the name.
 
-           No `reviewRating`: there's no rating field on a testimonial, and
-           inventing five stars nobody gave is exactly the kind of thing
-           structured data gets penalised for. That makes these ineligible for a
-           review rich result but perfectly valid as review data. Add a rating
-           field and they qualify.
-
-           No `datePublished` either. The only date a testimonial carries is its
+           No `datePublished`. The only date a testimonial carries is its
            entry's Post Date — the day the quote was added to the CMS, which is
            not the day it was given. Close enough to look right and wrong often
            enough to mislead, so it's better left unsaid than approximated. #}
-        {% set reviews = [] %}
-        {% set reviewed = [] %}
+        {% set quotes = [] %}
+        {% set quoted = [] %}
         {% for block in schemaEntry.caseContent.all()|filter(b => b.type.handle == 'caseTestimonial') %}
             {% set t = block.testimonial.one() %}
             {% set body = t ? (t.blockquote ?? '')|striptags|trim : '' %}
-            {% if body and t.id not in reviewed %}
-                {% set reviewed = reviewed|merge([t.id]) %}
-                {% set reviews = reviews|merge([{
-                    '@type': 'Review',
-                    '@id': schemaEntry.url ~ '#review-' ~ t.id,
-                    itemReviewed: { '@id': workId },
-                    reviewBody: body,
-                    author: {
+            {% if body and t.id not in quoted %}
+                {% set quoted = quoted|merge([t.id]) %}
+                {% set quotes = quotes|merge([{
+                    '@type': 'Quotation',
+                    '@id': schemaEntry.url ~ '#quote-' ~ t.id,
+                    about: { '@id': workId },
+                    text: body,
+                    creator: {
                         '@type': 'Person',
                         name: (t.personName ?? '')|trim,
                         jobTitle: (t.jobTitle ?? '')|trim,
@@ -465,11 +470,6 @@
                 }|filter(v => v)]) %}
             {% endif %}
         {% endfor %}
-
-        {# CreativeWork points at the quotes by @id rather than nesting them:
-           they are their own block, and a node can only be spelled out in one
-           place without the two copies drifting. #}
-        {% set reviewRefs = reviews|length ? reviews|map(r => { '@id': r['@id'] })|values : null %}
 
         {% set schema = {
             WebPage: [{
@@ -501,7 +501,6 @@
                 about: client ? { '@id': clientId } : null,
                 keywords: keywords|length ? keywords : null,
                 image: images|length ? images : null,
-                review: reviewRefs,
                 datePublished: published,
                 dateModified: modified,
                 isPartOf: { '@id': pageId },
@@ -517,7 +516,7 @@
                     height: logo.height,
                 }|filter(v => v) : null,
             }|filter(v => v)] : null,
-            Review: reviews,
+            Quotation: quotes,
             BreadcrumbList: [{
                 '@type': 'BreadcrumbList',
                 '@id': pageId ~ '-breadcrumb',
@@ -964,7 +963,7 @@
     {# One block per type. A single node is emitted as itself with @context in
        front; several of a type get wrapped in a @graph, since a JSON-LD document
        is one node or a graph of them, never a bare array. A type whose list is
-       empty (Review, on a study with no quotes) gets no block at all.
+       empty (Quotation, on a study with no quotes) gets no block at all.
 
        JSON_HEX_TAG so a stray `</script>` in any field is encoded rather than
        closing the block early; JSON_UNESCAPED_UNICODE so accented client names
