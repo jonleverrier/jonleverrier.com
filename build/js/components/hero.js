@@ -8,6 +8,11 @@
 //   // hero.dispose() when you tear the section down
 
 import * as THREE from "three";
+import {probeTier} from "./hero-tier.js";
+import {
+  BASE, PHI, R_EXPORTED, CLEAR_COLOUR,
+  buildCloud, createCamera, frameCloud, loadCloudBuffer, placeCamera, projectedBounds,
+} from "./hero-cloud.js";
 
 // HAND-EDITED, not from the exporter — re-apply if hero.js is regenerated.
 //
@@ -20,487 +25,140 @@ import * as THREE from "three";
 // it, so the URL is always one network-tab glance away. It just isn't handed over.
 import HERO_BIN_URL from "../../assets/hero.bin?url";
 
-export const CONFIG = {
-  "generated": "2026-08-05T16:19:10.956Z",
-  "source": "2026-08-05--16-22-43.mp4",
-  "intrinsics": {
-    "fx": 431.31998,
-    "encodedDepth": [
-      0.26937503,
-      1.3607501
-    ]
-  },
-  "filters": {
-    "nearCut": 0.259,
-    "farCut": 0.594,
-    "minSaturation": 0.55,
-    "nearClampGuard": 0.001,
-    "farClampGuard": 0,
-    "edgeRejection": 0.06,
-    "smoothing": 10,
-    "median": true,
-    "cluster": 0,
-    "sampleEvery": 2,
-    "flipX": false,
-    "flipY": false,
-    "swapHalves": false,
-    "rotate": 0,
-    "frameTime": 0
-  },
-  "look": {
-    "mode": "photo",
-    "colourA": "#ff5c39",
-    "colourB": "#1b1f4b",
-    "background": "#4a5030",
-    "transparent": false,
-    "depthFade": 0,
-    "dispersion": 0,
-    "scanlines": 1,
-    "contrast": 1.2,
-    "brightness": -0.13,
-    "pointSize": 0.009,
-    "roundPoints": true
-  },
-  "motion": {
-    "mode": "off",
-    "sweepArc": 5,
-    "speed": 0.25,
-    "edgeAmount": 0.06,
-    "edgeBand": 4, // BAKE-TIME ONLY — the weighting is in hero.bin's aEdge attribute,
-                   // never read here. Re-export to change it; 6 was asked for.
-    "shimmer": 0,
-    "twinkle": 0.02
-  },
-  "camera": {
-    "target": [
-      -0.2534357042331708,
-      -0.13721163450820476,
-      -0.5521363908617877
-    ],
-    "radius": 1.0886811708277748,
-    "theta": 0.7507295925794125,
-    "phi": 1.4567963267948965,
-    "fov": 50
-  }
-};
-
-// uBurst is HAND-ADDED, not from the exporter — re-apply if hero.js is regenerated.
-// Everything the exporter shipped drives a SINE: raising uAmpAll makes a point wobble
-// harder about where it already is, with no net travel. Fine for idle shimmer, useless
-// for an exit — the scatter grew and grew and the cloud just sat there vibrating.
-// uBurst displaces monotonically along the same outward direction, so points actually
-// leave. Scaled per point by its hash so they don't all move in lockstep.
-// Reveal stagger. HAND-ADDED, not from the exporter.
+// What is behind WebGL, asked in a worker: 'hardware' or 'software', or null when the
+// worker could not tell — no module workers, no OffscreenCanvas, or no WebGL on one
+// (Safari 16.4 has OffscreenCanvas but only 2D), in which case the caller asks on the
+// main thread as it always did.
 //
-// SPREAD is how far apart the earliest and latest points are born, WINDOW is how long
-// one point takes to go from invisible to solid. They should add up to 1.0 — that's
-// the last point starting exactly as late as it can and still finishing on time.
-//
-// Trading one for the other is the whole dial: a wide spread with a narrow window
-// means points blink in individually over a long period (very staggered), a narrow
-// spread with a wide window means they all drift up together (barely staggered).
-const REVEAL_SPREAD = 0.82;
-const REVEAL_WINDOW = 0.18;
-
-// A scatter of oversized points among the ones that drift. Hand-added, not from the
-// exporter.
-//
-// The boost rides `aEdge` — the same weight `uAmp` rides — so it lands on the points
-// that visibly orbit the silhouette. Spread evenly instead, the fattest dots sit in
-// the middle of a face, where they read as scan artefacts rather than motion.
-//
-// SCATTER is the top slice of the hash that grows at all; BOOST is what the very
-// largest reach, as a multiple of the resting size. smoothstep between them gives a
-// spread of sizes rather than two discrete populations.
-const SIZE_SCATTER = 0.19;
-const SIZE_BOOST = 3.5;
-
-const VERT = `
-attribute float aEdge;
-attribute float aAmbient;
-uniform float uSize, uScale, uTime, uAmp, uAmpAll, uTwinkle, uSpeed, uBurst, uReveal;
-uniform float uOrbit, uAmbientSize, uAmbientAlpha, uNearFade, uMaxSize, uMinSize;
-uniform vec3 uBurstAxis, uOrbitC;
-varying vec3 vCol;
-varying float vAlpha;
-float hash(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
-void main() {
-  float ph = hash(position) * 6.2831853;
-  vec3 p = position;
-  // Ambient debris circles the scan's vertical axis. Each point keeps its own rate
-  // (hash offset 3.1), so the shell shears as it turns instead of rotating rigidly —
-  // a solid-body spin reads as the whole scene being on a turntable.
-  if (aAmbient > 0.5) {
-    float a = uTime * uOrbit * (0.45 + hash(position + 3.1) * 0.75);
-    float ca = cos(a), sa = sin(a);
-    vec3 rel = position - uOrbitC;
-    p = uOrbitC + vec3(rel.x * ca - rel.z * sa, rel.y, rel.x * sa + rel.z * ca);
-  }
-  vec3 dir = normalize(position + vec3(1e-6));
-  float amt = uAmpAll + uAmp * aEdge;
-  if (amt > 0.0) {
-    p += dir * (sin(uTime * uSpeed + ph) * amt);
-    p.y += sin(uTime * uSpeed * 0.73 + ph * 1.7) * amt * 0.45;
-    p.x += cos(uTime * uSpeed * 0.61 + ph * 2.3) * amt * 0.45;
-  }
-  if (uBurst > 0.0) {
-    // Radial by default: every point leaves along its own outward direction, which
-    // spreads the cloud sideways — ear to ear. Set uBurstAxis and they all travel
-    // along ONE axis instead, so the cloud stretches front-to-back rather than
-    // opening out. The intro uses the view axis for that; the exit leaves it zero
-    // and keeps the radial blow-apart.
-    vec3 bdir = dot(uBurstAxis, uBurstAxis) > 0.0 ? uBurstAxis : dir;
-    // 0.55–1.45 of the burst, so the cloud opens out rather than expanding as a shell.
-    p += bdir * (uBurst * (0.55 + hash(position + 1.7) * 0.9));
-  }
-  // Staggered reveal. uReveal walks 0 -> 1 across the intro; each point gets its own
-  // birth threshold from its hash, so they solidify at different moments instead of
-  // the whole cloud stepping up together. See REVEAL_SPREAD / REVEAL_WINDOW above.
-  //
-  // A DIFFERENT hash offset from the one the burst uses (5.3 vs 1.7), so how far a
-  // point travels and when it appears are uncorrelated. Sharing an offset would tie
-  // them together — the near points would also be the early ones, and the reveal
-  // would read as a plane sweeping through rather than as a scatter.
-  //
-  // >= 1.0 short-circuits to fully opaque so the resting cloud costs nothing extra.
-  vAlpha = 1.0;
-  if (uReveal < 1.0) {
-    float born = hash(position + 5.3) * ${REVEAL_SPREAD.toFixed(2)};
-    vAlpha = clamp((uReveal - born) / ${REVEAL_WINDOW.toFixed(2)}, 0.0, 1.0);
-  }
-  // Debris sits back from the scan. It crosses the face with nothing to sort it in
-  // front or behind (depthWrite is off), so at full opacity a passing speck reads as
-  // a hole punched in him rather than something drifting past.
-  if (aAmbient > 0.5) vAlpha *= uAmbientAlpha;
-  float tw = 1.0;
-  if (uTwinkle > 0.0) tw = 1.0 + uTwinkle * sin(uTime * uSpeed * 2.1 + ph * 3.7);
-  vCol = color * tw;
-  vec4 mv = modelViewMatrix * vec4(p, 1.0);
-  gl_Position = projectionMatrix * mv;
-  // The shell's near side passes very close to the camera — closer than the scan ever
-  // gets, because the camera sits only just outside it — and point size goes as
-  // 1/distance, so one of them projects as a dinner plate stuck to the lens. Fade it
-  // out over the last stretch of its approach rather than clamping alone: a clamped
-  // point is still a flat opaque disc sitting there, it just stops growing.
-  if (aAmbient > 0.5) vAlpha *= smoothstep(uNearFade * 0.35, uNearFade, -mv.z);
-  // Per-point size scatter. Its OWN hash offset (9.1), uncorrelated with the burst's
-  // (1.7) and the reveal's (5.3) — share one and the big points are also the early
-  // ones, which the eye picks out as a pattern immediately.
-  float grow = smoothstep(${(1 - SIZE_SCATTER).toFixed(2)}, 1.0, hash(position + 9.1)) * aEdge;
-  float sizeMul = 1.0 + grow * ${(SIZE_BOOST - 1).toFixed(2)};
-  // Debris carries its own size spread. It can't use the boost above: that rides
-  // aEdge, which is 0 out here, so every speck would land at exactly the resting size
-  // and the shell would read as a uniform grid of dots laid over the scene.
-  if (aAmbient > 0.5) sizeMul = uAmbientSize * (0.45 + hash(position + 9.1) * 1.70);
-  gl_PointSize = uSize * sizeMul * (uScale / max(-mv.z, 0.0001)) * (1.0 + (tw - 1.0) * 0.6);
-  // A FLOOR, in framebuffer pixels, and it is the scan that needs it.
-  //
-  // Size is uScale/distance with uScale = clientHeight * 0.5 — a CSS-pixel number
-  // driving a framebuffer-pixel output. On a wide screen the camera sits close, the
-  // points land around 4-5px, and they overlap into a continuous surface. Frame the
-  // same cloud into a phone's width and the camera pulls back until they are nearer
-  // 2px, which a soft-edged round sprite cannot make solid: at that size it is almost
-  // all falloff and no core, so the gaps between points open and whatever is behind
-  // shows through. Where the scan samples a seam sparsely — the hairline above the
-  // temple — those gaps join up and read as a dark gash across the forehead.
-  //
-  // Raising it by a hair costs nothing where points are already bigger (the max is a
-  // no-op there, so the desktop look is untouched) and closes the seam where they are
-  // not. Ambient specks are excluded: they are meant to be small, and the line below
-  // caps them anyway.
-  // SCALED BY (1 - aEdge), so it never touches the silhouette band.
-  //
-  // The first cut floored every scan point, and that made things worse where it
-  // mattered: the edge band carries dark, background-contaminated colour, and lifting
-  // those points off sub-pixel turned a thin dark line down the silhouette into a
-  // wide smear. Interior points are the ones that need the help — they are the
-  // surface — so the floor fades out as aEdge rises and the fringe keeps the size the
-  // bake gave it.
-  if (aAmbient < 0.5) gl_PointSize = max(gl_PointSize, uMinSize * (1.0 - aEdge));
-  // Backstop for the same case: the fade handles the approach, this catches anything
-  // that slips past it (a resize mid-orbit re-solves the camera distance under it).
-  if (aAmbient > 0.5) gl_PointSize = min(gl_PointSize, uMaxSize);
-}`;
-
-const FRAG = `
-uniform float uRound, uContrast, uBright;
-varying vec3 vCol;
-varying float vAlpha;
-void main() {
-  if (uRound > 0.5 && length(gl_PointCoord - vec2(0.5)) > 0.5) discard;
-  // Nothing to draw yet — cheaper than blending a fully transparent point.
-  if (vAlpha <= 0.0) discard;
-  vec3 c = (vCol - 0.5) * uContrast + 0.5 + uBright;
-  gl_FragColor = vec4(clamp(c, 0.0, 1.0), vAlpha);
-}`;
-
-/**
- * Is there a real GPU behind WebGL, or has the browser fallen back to software?
- *
- * A throwaway context, read and immediately released — cents of work, and it runs
- * BEFORE the 373kB binary is fetched and 37k points are unpacked, which is the whole
- * point of doing it here rather than after the renderer exists.
- *
- * Returns false for no WebGL at all, which is also correct: there is nothing to
- * render with.
- */
-function hasHardwareWebGL() {
+// WHY A WORKER. Creating the first WebGL context blocks until the GPU process has a
+// renderer ready, and on a machine with no GPU that means SwiftShader starting up.
+// Measured on this homepage (SwiftShader, 4x CPU throttle, Long Tasks API): on the
+// main thread the probe was a single 1.2-2.0s task, every run, starting ~230ms in. In
+// a worker the page logged no long tasks at all — the worker does the waiting. On a
+// real GPU the probe is a few milliseconds either way.
+function probeOffMainThread() {
+  if (typeof Worker !== "function" || typeof OffscreenCanvas !== "function") return Promise.resolve(null);
+  let worker;
   try {
-    const c = document.createElement('canvas');
-    const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
-    if (!gl) return false;
-    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
-    const name = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '') : '';
-    // Hand the context back rather than waiting for GC — browsers cap how many are
-    // live at once, and the real renderer wants one straight after this.
-    gl.getExtension('WEBGL_lose_context')?.loseContext();
-    return !/swiftshader|llvmpipe|software|basic render/i.test(name);
+    worker = new Worker(new URL("./hero-probe.worker.js", import.meta.url), {type: "module"});
   } catch {
-    return false;
+    return Promise.resolve(null);
   }
+  return new Promise((resolve) => {
+    const done = (tier) => {
+      worker.terminate();
+      resolve(tier === "hardware" || tier === "software" ? tier : null);
+    };
+    worker.onmessage = (e) => done(e.data);
+    worker.onerror = () => done(null);
+    worker.onmessageerror = () => done(null);
+  });
+}
+
+// Neither animation nor still: the olive slab behind the hero, which is the canvas's
+// clear colour anyway, so its absence reads as a plain backdrop.
+//
+// warpOut still has to call back. app.js hands it the function that reveals the
+// thread, and the no-op this used to be stranded a visitor on a fading front door with
+// no conversation behind it — every visitor without a GPU, on their first question.
+const slab = () => ({warpOut(cb) { if (cb) cb(); }, dispose() {}});
+
+// Matches WARP_MS below — the still fades over the time the animation would have
+// taken to fly through, so the conversation arrives on the same beat either way.
+const STILL_EXIT_MS = 700;
+
+// NO GPU: ONE FRAME, DRAWN IN A WORKER.
+//
+// 37k points redrawn every frame is a few milliseconds on a GPU and 75ms without one —
+// measured against production under SwiftShader, i.e. 13fps, with Lighthouse logging
+// twenty consecutive 220-266ms main-thread tasks from this file. So there is no
+// animation here: the settled portrait is drawn once and left on the canvas.
+//
+// It used to decline outright, which left a hole where the hero belongs in every
+// headless capture — PageSpeed Insights' screenshots and the audit tool's both run on
+// SwiftShader — and a blank slab for real visitors with no GPU (old drivers, a
+// blocklisted GPU, a VM, hardware acceleration off).
+//
+// Drawn in a worker, NOT here, because a still on the main thread was measured and was
+// not free: the shader link in software blocks whichever thread asks about it, and
+// three asks on first use — ~100ms of main thread held in one getProgramParameter,
+// in about half the runs. In a worker that wait is the worker's. The main thread only
+// fetches the binary (which head.twig preloads for every visitor regardless) and hands
+// it over, zero-copy.
+//
+// No OffscreenCanvas transfer (Safari before 17) falls back to the slab: the main-thread
+// still is the thing this exists to avoid.
+async function createStill(container, binUrl) {
+  if (!("transferControlToOffscreen" in HTMLCanvasElement.prototype)) return slab();
+  let worker;
+  try {
+    worker = new Worker(new URL("./hero-still.worker.js", import.meta.url), {type: "module"});
+  } catch {
+    return slab();
+  }
+  const buf = await loadCloudBuffer(binUrl);
+
+  // Laid out exactly as the animated canvas is — see resize() in createHero for why
+  // it is centred and holds the tallest height it has seen at a given width.
+  const canvas = document.createElement("canvas");
+  Object.assign(canvas.style, {
+    position: "absolute", inset: "auto", left: "0", top: "50%",
+    width: "100%", transform: "translateY(-50%)",
+    opacity: "0", transition: "opacity 80ms linear",
+  });
+  container.appendChild(canvas);
+  const offscreen = canvas.transferControlToOffscreen();
+
+  let heldW = 0, heldH = 0;
+  function resize() {
+    const w = container.clientWidth;
+    let hgt = container.clientHeight;
+    if (!w || !hgt) return;
+    if (w === heldW && hgt <= heldH) return;
+    if (w === heldW) hgt = Math.max(hgt, heldH);
+    heldW = w; heldH = hgt;
+    canvas.style.height = hgt + "px";
+    worker.postMessage({type: "size", width: w, height: hgt});
+  }
+
+  let failed = false;
+  worker.onmessage = (e) => {
+    if (e.data === "drawn") canvas.style.opacity = "1";
+    else if (e.data === "failed") { failed = true; canvas.remove(); worker.terminate(); }
+  };
+  worker.onerror = () => { failed = true; canvas.remove(); worker.terminate(); };
+
+  worker.postMessage({type: "init", canvas: offscreen, buf, dpr: Math.min(devicePixelRatio, 2)}, [offscreen, buf]);
+  const ro = new ResizeObserver(resize); ro.observe(container); resize();
+
+  let exitTimer = 0;
+  return {
+    warpOut(cb) {
+      if (failed) { if (cb) cb(); return; }
+      canvas.style.transition = `opacity ${STILL_EXIT_MS}ms ease-in`;
+      canvas.style.opacity = "0";
+      clearTimeout(exitTimer);
+      exitTimer = setTimeout(() => { if (cb) cb(); }, STILL_EXIT_MS);
+    },
+    dispose() {
+      ro.disconnect();
+      clearTimeout(exitTimer);
+      worker.terminate();
+      canvas.remove();
+    },
+  };
 }
 
 export async function createHero(container, binUrl = HERO_BIN_URL) {
-  // DECLINE BEFORE SPENDING ANYTHING. 37k points redrawn every frame is a few
-  // milliseconds on a GPU and 75ms without one — measured against production under
-  // SwiftShader, i.e. 13fps, with Lighthouse logging twenty consecutive 220-266ms
-  // main-thread tasks from this file.
-  //
-  // Not only a benchmark artefact: old drivers, a blocklisted GPU, a VM, or hardware
-  // acceleration switched off all land here, on the one page where a visitor is meant
-  // to be typing a question.
-  //
-  // Checked FIRST, so the 373kB fetch, the two passes over 37k points and the
-  // geometry build are all skipped rather than done and discarded. The hero is an
-  // enhancement, so it declines rather than degrades — and .b-slab--p500 behind it is
-  // already the same olive as this canvas's clear colour, so its absence reads as a
-  // plain backdrop, which is what a visitor with no WebGL saw anyway.
-  if (!hasHardwareWebGL()) return { warpOut() {}, dispose() {} };
+  // DECIDE BEFORE SPENDING ANYTHING. Checked FIRST, so on a machine that is not going
+  // to animate, the 37k-point unpack and the geometry build never run on this thread.
+  // The worker is asked first; the main-thread probe is only the fallback for browsers
+  // where it cannot answer.
+  const tier = (await probeOffMainThread()) ?? probeTier(document.createElement("canvas"));
+  if (tier === "none") return slab();
+  if (tier === "software") return createStill(container, binUrl);
 
-  // A plain fetch, deliberately. This used to force revalidation with
-  // `{cache: 'no-cache'}`, from when the binary was served under a fixed name and
-  // a swapped-in cloud would otherwise keep rendering the old one out of cache.
-  // The filename carries a content hash now, so a new binary is a new URL and
-  // there is nothing stale to catch — while the revalidation itself would defeat
-  // the <link rel="preload"> in head.twig, which is the whole point of preloading
-  // 373kB that a dynamic import can't even ask for until it has parsed.
-  // Mode and credentials have to keep matching that preload's `crossorigin`.
-  // HAND-EDITED, not from the exporter — re-apply if hero.js is regenerated.
-  //
-  // THE COMPRESSED COPY FIRST. The build writes a .gz beside the binary (see
-  // vite.config.js) because nothing compresses it in flight — gzip is selected by
-  // content type, and application/octet-stream is in no sensible gzip_types list.
-  // 373kB becomes 291kB, and the inflating costs a few milliseconds off the main
-  // thread in a stream.
-  //
-  // Falls back to the raw binary if DecompressionStream is missing (Safari before
-  // 16.4) or the .gz is not there — an older build, or a deploy that copied only the
-  // files it recognised. The fallback is the file that was always being fetched, so
-  // the worst case is exactly today's behaviour.
-  const buf = await (async () => {
-      if (typeof DecompressionStream === "function") {
-          try {
-              const gz = await fetch(binUrl + ".gz");
-              if (gz.ok) {
-                  return await new Response(
-                      gz.body.pipeThrough(new DecompressionStream("gzip")),
-                  ).arrayBuffer();
-              }
-          } catch (e) {
-              // fall through to the plain binary
-          }
-      }
-
-      return (await fetch(binUrl)).arrayBuffer();
-  })();
-  const dv = new DataView(buf);
-  if (dv.getUint32(0, false) !== 0x52334844) throw new Error("Not a hero.bin file");
-  if (dv.getUint16(4, true) !== 2) throw new Error("Unsupported hero.bin version");
-  const hasEdge = (dv.getUint16(6, true) & 1) === 1;
-  const n = dv.getUint32(8, true);
-  const lo = [dv.getFloat32(12, true), dv.getFloat32(16, true), dv.getFloat32(20, true)];
-  const sc = [dv.getFloat32(24, true), dv.getFloat32(28, true), dv.getFloat32(32, true)];
-  const HEAD = 36;
-  // Positions are 16-bit offsets from the bounding box corner.
-  const q = new Uint16Array(buf.slice(HEAD, HEAD + n * 6));
-  const rgb = new Uint8Array(buf, HEAD + n * 6, n * 3);
-  const ed = hasEdge ? new Uint8Array(buf, HEAD + n * 9, n) : null;
-  const _tmpV = new THREE.Vector3(); // scratch for the bounds loops below
-  const pos = new Float32Array(n * 3), col = new Float32Array(n * 3), edge = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    pos[i * 3] = lo[0] + q[i * 3] * sc[0];
-    pos[i * 3 + 1] = lo[1] + q[i * 3 + 1] * sc[1];
-    pos[i * 3 + 2] = lo[2] + q[i * 3 + 2] * sc[2];
-    col[i * 3] = rgb[i * 3] / 255;
-    col[i * 3 + 1] = rgb[i * 3 + 1] / 255;
-    col[i * 3 + 2] = rgb[i * 3 + 2] / 255;
-    edge[i] = ed ? ed[i] / 255 : 0;
-  }
-
-  // ── Ambient debris ────────────────────────────────────────────────────────
-  // HAND-ADDED, not from the exporter — re-apply if hero.js is regenerated.
-  //
-  // A shell of points orbiting the scan, so the whole canvas carries motion and not
-  // just the silhouette. They live in the SAME buffer as the scan rather than in a
-  // second THREE.Points, for one reason: the material is transparent with depthWrite
-  // off, so points composite in BUFFER ORDER and nothing occludes anything. A separate
-  // object would draw entirely in front of the cloud or entirely behind it — a flat
-  // starfield over the face, or a backdrop nothing ever crosses. Interleaved into one
-  // buffer at a fixed stride, roughly half land in front of the face and half behind,
-  // which is what makes it read as an orbit.
-  //
-  // They are kept OUT of every framing measurement. `pos` stays scan-only and is what
-  // projectedBounds() walks; scanBox / scanRadius below are measured from it before
-  // the shell exists. Let the shell into the fit and the solver zooms out to contain
-  // it, shrinking the portrait to nothing.
-  const AMBIENT_COUNT = 2600;
-  const AMBIENT_NEAR = 1.05, AMBIENT_FAR = 2.30; // as multiples of the scan's radius
-  const AMBIENT_RISE = 1.15;                     // taller than wide — the frame is portrait
-  // What the specks are made of. "debris" lifts each one's colour from the scan, so
-  // the shell reads as the cloud shedding material and the hero stays one effect.
-  // "dust" gives them a pale neutral instead, unrelated to his palette, which reads as
-  // air and depth — a separate layer the portrait sits inside. Colour is the ONLY
-  // difference: everything else about the shell is shared, so the two are comparable.
-  const AMBIENT_LOOK = "dust"; // "dust" | "debris"
-  const AMBIENT_DUST = [0.910, 0.886, 0.835]; // #e8e2d5 — the site's cream, light 600
-  // Each look carries its own weight, because they are not the same material. Dust is
-  // air: finer and fainter, or it stops being atmosphere and becomes a dot screen over
-  // the portrait. Debris is matter off the scan and can hold more presence. Sharing one
-  // pair of numbers left whichever look wasn't tuned for looking wrong.
-  const AMBIENT_TUNING = {
-    dust:   { size: 0.55, alpha: 0.26 },
-    debris: { size: 0.70, alpha: 0.78 },
-  };
-  const ambientTune = AMBIENT_TUNING[AMBIENT_LOOK];
-
-  // The scan's own bounds, measured here so the shell can be placed around them and
-  // the framing solver can read them back untouched.
-  const scanBox = new THREE.Box3();
-  for (let i = 0; i < pos.length; i += 3) {
-    scanBox.expandByPoint(_tmpV.set(pos[i], pos[i + 1], pos[i + 2]));
-  }
-  const scanCentre = scanBox.getCenter(new THREE.Vector3());
-  let scanRadius = 0;
-  for (let i = 0; i < pos.length; i += 3) {
-    scanRadius = Math.max(scanRadius, _tmpV.set(pos[i], pos[i + 1], pos[i + 2]).distanceTo(scanCentre));
-  }
-
-  const total = n + AMBIENT_COUNT;
-  const posAll = new Float32Array(total * 3);
-  const colAll = new Float32Array(total * 3);
-  const edgeAll = new Float32Array(total);
-  const ambAll = new Float32Array(total);
-  // Every STRIDE-th slot is an ambient point, so the shell is spread evenly through
-  // the draw order rather than sitting in a block at one end of it.
-  const STRIDE = total / AMBIENT_COUNT;
-  let si = 0, ai = 0;
-  for (let i = 0; i < total; i++) {
-    const wantAmbient = ai < AMBIENT_COUNT && (i >= ai * STRIDE || si >= n);
-    if (wantAmbient) {
-      // A direction on the unit sphere, then a radius out in the shell.
-      const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2;
-      const r = Math.sqrt(1 - u * u);
-      const rad = scanRadius * (AMBIENT_NEAR + Math.random() * (AMBIENT_FAR - AMBIENT_NEAR));
-      posAll[i * 3] = scanCentre.x + Math.cos(th) * r * rad;
-      posAll[i * 3 + 1] = scanCentre.y + u * rad * AMBIENT_RISE;
-      posAll[i * 3 + 2] = scanCentre.z + Math.sin(th) * r * rad;
-      if (AMBIENT_LOOK === "dust") {
-        // One neutral, varied in BRIGHTNESS only. A hue spread would start arguing
-        // with the olive; a flat single value reads as a printed halftone rather than
-        // as air.
-        const v = 0.70 + Math.random() * 0.42;
-        colAll[i * 3] = Math.min(1, AMBIENT_DUST[0] * v);
-        colAll[i * 3 + 1] = Math.min(1, AMBIENT_DUST[1] * v);
-        colAll[i * 3 + 2] = Math.min(1, AMBIENT_DUST[2] * v);
-      } else {
-        // Two candidates, lighter one wins: the scan runs from pale shirt to near-black
-        // hair, and a dark speck on the olive is invisible, so an even sample would
-        // silently waste a third of the shell.
-        const a = (Math.random() * n) | 0, b = (Math.random() * n) | 0;
-        const src = (col[a * 3] + col[a * 3 + 1] + col[a * 3 + 2]) >= (col[b * 3] + col[b * 3 + 1] + col[b * 3 + 2]) ? a : b;
-        colAll[i * 3] = col[src * 3];
-        colAll[i * 3 + 1] = col[src * 3 + 1];
-        colAll[i * 3 + 2] = col[src * 3 + 2];
-      }
-      edgeAll[i] = 0; // no silhouette drift: the orbit below is their motion
-      ambAll[i] = 1;
-      ai++;
-    } else {
-      posAll[i * 3] = pos[si * 3];
-      posAll[i * 3 + 1] = pos[si * 3 + 1];
-      posAll[i * 3 + 2] = pos[si * 3 + 2];
-      colAll[i * 3] = col[si * 3];
-      colAll[i * 3 + 1] = col[si * 3 + 1];
-      colAll[i * 3 + 2] = col[si * 3 + 2];
-      edgeAll[i] = edge[si];
-      si++;
-    }
-  }
-
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.BufferAttribute(posAll, 3));
-  geo.setAttribute("color", new THREE.BufferAttribute(colAll, 3));
-  geo.setAttribute("aEdge", new THREE.BufferAttribute(edgeAll, 1));
-  geo.setAttribute("aAmbient", new THREE.BufferAttribute(ambAll, 1));
-
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uSize:     { value: 0.009 },
-      uScale:    { value: container.clientHeight * 0.5 },
-      uRound:    { value: 1 },
-      uTime:     { value: 0 },
-      uAmp:      { value: 0.06 },
-      uAmpAll:   { value: 0 },
-      uTwinkle:  { value: 0.02 },
-      uBurst:    { value: 0 }, // hand-added: monotonic outward travel, driven by the warp
-      // Zero = travel radially (the exit's blow-apart). Non-zero = travel along this
-      // one axis (the intro's front-to-back assemble). Hand-added.
-      uBurstAxis: { value: new THREE.Vector3(0, 0, 0) },
-      // Ambient debris (hand-added). uOrbitC is the axis it turns about — filled in
-      // once the scan's centre is known, a few lines below.
-      uOrbit:        { value: 0.055 }, // radians/sec at the median rate: ~2min a lap
-      uAmbientSize:  { value: ambientTune.size },  // of the scan's resting point size
-      uAmbientAlpha: { value: ambientTune.alpha },
-      uOrbitC:       { value: new THREE.Vector3() },
-      uNearFade:     { value: 0 },  // set from the scan's radius once it's measured
-      uMaxSize:      { value: 14 }, // device px, before pixel ratio
-      // Framebuffer px. Below this the scan stops being a surface and becomes a sieve
-      // — see the floor in the vertex shader. Only ever binds on a narrow viewport.
-      uMinSize:      { value: 3.0 },
-      uContrast: { value: 1.2 },
-      uBright:   { value: -0.13 },
-      uSpeed:    { value: 0.25 },
-      // 1 = every point solid. The intro walks this 0 -> 1 so points materialise as
-      // they fly in, each on its own hash-derived threshold. Hand-added.
-      uReveal:   { value: 1 }
-    },
-    // `transparent` so the reveal's per-point alpha is actually blended — without it
-    // the fragment alpha is ignored and points snap from discarded to solid.
-    //
-    // depthWrite off with it: transparent points are drawn in buffer order, not
-    // sorted back-to-front, so a nearer point written to the depth buffer while still
-    // faint would punch a hole in whatever solid point lands behind it later. The
-    // cloud is a shell of same-coloured points, so losing depth ordering costs
-    // nothing visible — a hole would have been obvious.
-    transparent: true,
-    depthWrite: false,
-    vertexShader: VERT, fragmentShader: FRAG, vertexColors: true
-  });
-
-  mat.uniforms.uOrbitC.value.copy(scanCentre);
-  // Debris is fully solid once it is this far down the view axis, and gone by ~a third
-  // of it. Scaled off the scan's own radius so it tracks the camera distance, which is
-  // solved from the same number.
-  mat.uniforms.uNearFade.value = scanRadius * 1.25;
-
-  const scene = new THREE.Scene();
-  const points = new THREE.Points(geo, mat);
-  // The geometry's own bounding sphere would be the SCAN's (set above), while the
-  // ambient shell reaches more than twice as far — three would cull the whole object
-  // the moment that small sphere left the frustum. Nothing here is ever off-camera
-  // anyway: the camera orbits this exact cloud and always looks at it.
-  points.frustumCulled = false;
-  scene.add(points);
+  const {geo, mat, scene, ...cloud} = buildCloud(await loadCloudBuffer(binUrl), container.clientHeight);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 
@@ -512,7 +170,7 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
   // the context and later restores it, and three (r184) rebuilds its state on
   // restore with a fresh background whose clear colour is the default black. The
   // points re-upload and draw fine — so the portrait came back on a black slab.
-  const applyClearColor = () => renderer.setClearColor(new THREE.Color("#4a5030"), 1);
+  const applyClearColor = () => renderer.setClearColor(new THREE.Color(CLEAR_COLOUR), 1);
   applyClearColor();
   const onContextRestored = () => applyClearColor();
   // Three's own restore handler runs first (it registered at construction), so by
@@ -535,16 +193,10 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
   renderer.domElement.style.transition = "opacity 80ms linear";
   container.appendChild(renderer.domElement);
 
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.001, 100);
-  // The exporter's look-at point. Superseded by `frameTarget` below, which centres on
-  // the cloud itself — kept only so a regenerated file's value is easy to compare.
-  const target = new THREE.Vector3(-0.25344, -0.13721, -0.55214); // eslint-disable-line no-unused-vars
-  const R_EXPORTED = 1.08868, PHI = 1.45680;
-  // Yaw, in radians. HAND-TUNED past the exporter's 0.75073 to turn the face a little
-  // further toward the viewer — lower brings it round to camera, higher turns it away.
-  const BASE = 0.67;
-  // Yaw the warp turns to. Declared up here with BASE, not down in the warp block,
-  // because the framing solve below needs it — it centres the cloud for BOTH angles.
+  const camera = createCamera();
+
+  // Yaw the warp turns to. Declared up here, not down in the warp block, because the
+  // framing solve below needs it — it centres the cloud for BOTH angles.
   const WARP_FACE_ON = 0.00; // lower is more square to camera
   // HAND-EDITED, not from the exporter — re-apply if hero.js is regenerated.
   // The exporter left this "off" with a 5° arc. A slow, shallow sweep either side of
@@ -567,69 +219,13 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
   const MOTION = "sweep";
   const ARC = 0.0698, SPEED = 0.55; // 4° either side; ~23s per cycle
 
-  // ── Height fit ────────────────────────────────────────────────────────────
-  // HAND-EDITED, not from the exporter — re-apply if hero.js is regenerated.
-  //
-  // The exported radius framed the cloud as it sat in the Record3D viewer, which left
-  // the subject floating small in the middle of a full-height section. This pulls the
-  // camera in until the cloud fills the frame vertically without clipping.
-  //
-  // The camera ORBITS AND LOOKS AT the cloud's own centre, not the exported `target`,
-  // which sits about a third of a unit off it — looking at a point to one side puts
-  // the cloud off-centre and clips whatever falls past the edge.
-  //
-  // The distance is MEASURED, not predicted. Deriving it from the cloud's world-space
-  // height — (height/2)/tan(fov/2) — assumes you're looking straight down an axis at a
-  // flat object. This camera views from about 50° and the cloud is 0.2 units deep, so
-  // perspective makes the near points project larger than their world offset implies:
-  // the true on-screen height is bigger than the bounding box suggests, and the head
-  // clipped top and bottom. Instead: project every point, find how far the furthest
-  // reaches up or down the frame, and scale the distance by exactly that overshoot.
-  // On-screen size is proportional to 1/distance, so each pass lands very close and a
-  // couple of passes settle it.
-  // CENTRING IS DONE IN SCREEN SPACE, not world space. The cloud's world X extent is
-  // near enough symmetric (-0.229 to 0.223), so pointing the camera at its centre
-  // ought to centre it — but the camera views from about 50°, which turns depth into
-  // horizontal displacement. Points further from the camera sit nearer the middle of
-  // the frame than their world position suggests, and the composition came out
-  // right-heavy. So each pass measures where the cloud actually lands on screen and
-  // slides the look-at point until the margins match.
-  // NOT geo.computeBoundingBox() / computeBoundingSphere(): the geometry now carries
-  // the ambient shell as well, and every number here has to describe the SCAN alone.
-  // scanBox and scanRadius were measured from `pos` before the shell was generated.
+  // ── Framing ───────────────────────────────────────────────────────────────
+  // The solve itself is frameCloud() in hero-cloud.js, shared with the still. What lives
+  // here is the animation's own state: where the camera is aimed and how far out it
+  // sits right now, both of which the warp moves frame by frame.
   const frameTarget = new THREE.Vector3();
-  scanBox.getCenter(frameTarget);
-  // Start from the bounding sphere, which can't clip whatever the view angle — the
-  // measured passes then tighten it to what's actually on screen.
-  const cloudRadius = scanRadius;
-
-  // 1 touches top and bottom exactly. Under 1 leaves margin — a point has size, which
-  // the geometry doesn't account for, so the very topmost one would sit half cut.
-  const FILL = 0.96;
-  const FIT_PASSES = 4;
-
   let R = R_EXPORTED;
-
-  // Where the cloud lands on screen, in normalised device coordinates: -1 is the left
-  // or bottom edge, +1 the right or top.
-  const _v = new THREE.Vector3();
-  const _m = new THREE.Matrix4();
-  function projectedBounds() {
-    camera.updateMatrixWorld();
-    _m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    for (let i = 0; i < pos.length; i += 3) {
-      _v.set(pos[i], pos[i + 1], pos[i + 2]).applyMatrix4(_m);
-      if (_v.x < minX) minX = _v.x;
-      if (_v.x > maxX) maxX = _v.x;
-      if (_v.y < minY) minY = _v.y;
-      if (_v.y > maxY) maxY = _v.y;
-    }
-    return {minX, maxX, minY, maxY};
-  }
-
-  const _right = new THREE.Vector3();
-  const _up = new THREE.Vector3();
+  const _v = new THREE.Vector3(); // scratch for the flight below
 
   // Solved per view ANGLE, because both answers depend on it: turning the camera
   // changes which points sit at the frame's edges, so the distance that fits and the
@@ -639,63 +235,20 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
   const frameRest = {target: new THREE.Vector3(), R: 0};
   const frameFaceOn = {target: new THREE.Vector3(), R: 0};
 
-  function solveFrame(theta, out) {
-    const halfFov = (camera.fov * Math.PI) / 180 / 2;
-    R = cloudRadius / Math.sin(halfFov); // safe starting point: nothing can clip
-    scanBox.getCenter(frameTarget); // re-centre before re-solving (SCAN bounds, not geo's)
-
-    for (let i = 0; i < FIT_PASSES; i++) {
-      place(theta);
-      const b = projectedBounds();
-
-      // Slide the look-at point so the cloud's screen bounds straddle the centre.
-      // An NDC offset converts to world units through the frame's visible size at
-      // this distance: half-height is R·tan(fov/2), half-width that times the aspect.
-      const halfH = R * Math.tan(halfFov);
-      const halfW = halfH * camera.aspect;
-      camera.matrixWorld.extractBasis(_right, _up, _v);
-      frameTarget
-        .addScaledVector(_right, ((b.minX + b.maxX) / 2) * halfW)
-        .addScaledVector(_up, ((b.minY + b.maxY) / 2) * halfH);
-
-      // Then scale the distance so the (now centred) cloud fits the frame. Whichever
-      // axis overflows most decides it: on a wide window that's the height, and the
-      // cloud fills top to bottom; on a tall narrow one it's the width, and the cloud
-      // sits smaller with margin above and below.
-      //
-      // Fitting height alone — which is what this did first — pushed the face off both
-      // sides of a phone, because a portrait frame is narrower than the cloud is wide.
-      // NDC runs -1 to 1 on both axes, so the two reaches compare directly.
-      const reach = Math.max((b.maxY - b.minY) / 2, (b.maxX - b.minX) / 2);
-      if (reach) R *= reach / FILL;
-    }
-
-    out.target.copy(frameTarget);
-    out.R = R;
-  }
-
   // Both angles the camera ever sits at, solved together whenever the frame changes.
   // Two solves rather than one: cheap here (it only runs on a settled resize), and it
   // means the warp can interpolate between two correct framings instead of drifting
   // away from a single one.
   function fitRadius() {
-    solveFrame(BASE, frameRest);
-    solveFrame(WARP_FACE_ON, frameFaceOn);
+    frameCloud(camera, cloud, BASE, frameRest);
+    frameCloud(camera, cloud, WARP_FACE_ON, frameFaceOn);
     frameTarget.copy(frameRest.target);
     R = frameRest.R;
     solvePointerHeadroom();
   }
 
-  // `phi` is a parameter and not the constant so the pointer can tilt the camera.
-  // It DEFAULTS to PHI on purpose: the framing solve above calls this while measuring,
-  // and a fit that moved with the cursor would re-frame the cloud every time the mouse
-  // did — the fit has to describe one fixed viewpoint.
   function place(theta, phi = PHI) {
-    camera.position.set(
-      frameTarget.x + R * Math.sin(phi) * Math.sin(theta),
-      frameTarget.y + R * Math.cos(phi),
-      frameTarget.z + R * Math.sin(phi) * Math.cos(theta));
-    camera.lookAt(frameTarget);
+    placeCamera(camera, frameTarget, R, theta, phi);
   }
 
   // ── Pointer parallax ──────────────────────────────────────────────────────
@@ -745,7 +298,7 @@ export async function createHero(container, binUrl = HERO_BIN_URL) {
     let reach = 0;
     for (const s of [-1, 1]) {
       place(BASE + s * dTheta, PHI + s * dPhi);
-      const b = projectedBounds();
+      const b = projectedBounds(camera, cloud.pos);
       reach = Math.max(reach,
         Math.abs(b.minX), Math.abs(b.maxX), Math.abs(b.minY), Math.abs(b.maxY));
     }
