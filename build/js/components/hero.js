@@ -91,18 +91,21 @@ export async function createHero(container, binUrl) {
   // look-at point that centres are different at the resting angle and at face-on.
   // Solving once for the resting angle and reusing it through the warp is what left
   // the head off-centre when it turned to camera.
-  const frameRest = {target: new THREE.Vector3(), R: 0};
-  const frameFaceOn = {target: new THREE.Vector3(), R: 0};
+  const frameRest = {target: new THREE.Vector3(), R: 0, fov: 50, pointScale: 1};
+  const frameFaceOn = {target: new THREE.Vector3(), R: 0, fov: 50, pointScale: 1};
+  let heldHeight = 0; // the canvas height uScale is built from; set in resize()
 
   // Both angles the camera ever sits at, solved together whenever the frame changes.
   // Two solves rather than one: cheap here (it only runs on a settled resize), and it
   // means the warp can interpolate between two correct framings instead of drifting
   // away from a single one.
   function fitRadius() {
-    frameCloud(camera, cloud, BASE, frameRest);
     frameCloud(camera, cloud, WARP_FACE_ON, frameFaceOn);
+    // Resting solve LAST, so the lens it leaves on the camera is the resting one.
+    frameCloud(camera, cloud, BASE, frameRest);
     frameTarget.copy(frameRest.target);
     R = frameRest.R;
+    mat.uniforms.uScale.value = heldHeight * 0.5 * frameRest.pointScale;
     solvePointerHeadroom();
   }
 
@@ -228,7 +231,10 @@ export async function createHero(container, binUrl) {
     renderer.setSize(w, hgt, false);
     camera.aspect = w / hgt;
     camera.updateProjectionMatrix();
-    mat.uniforms.uScale.value = hgt * 0.5;
+    heldHeight = hgt;
+    // The lens and pointScale are the fit's; until the deferred refit lands, keep the
+    // current ones so a resize mid-drag does not jump the point size.
+    mat.uniforms.uScale.value = hgt * 0.5 * frameRest.pointScale;
 
     if (Math.abs(camera.aspect - fittedAspect) < ASPECT_EPSILON) return;
 
@@ -551,6 +557,12 @@ export async function createHero(container, binUrl) {
       // time it faced camera. Both were solved at fit time; this walks between them.
       frameTarget.lerpVectors(frameRest.target, frameFaceOn.target, turn);
       const framedR = frameRest.R + (frameFaceOn.R - frameRest.R) * turn;
+      // The lens walks with them — each angle has its own on a narrow frame — and the
+      // point scale with the lens, so the picture turns without changing grain.
+      const fov = frameRest.fov + (frameFaceOn.fov - frameRest.fov) * turn;
+      if (camera.fov !== fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
+      mat.uniforms.uScale.value = heldHeight * 0.5
+        * (frameRest.pointScale + (frameFaceOn.pointScale - frameRest.pointScale) * turn);
 
       // Then come apart. Rebased so the scatter runs its full curve in the time it
       // has left, instead of starting part-way up it.

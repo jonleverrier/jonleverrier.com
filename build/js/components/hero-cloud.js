@@ -511,9 +511,34 @@ export function placeCamera(camera, target, R, theta, phi = PHI) {
   camera.lookAt(target);
 }
 
-// The distance and look-at point that frame the cloud at one view angle, written into
-// `out` ({target: Vector3, R}). The camera's aspect must already be current.
+// ── One picture at every width (29 Sep 2026) ─────────────────────────────
+// A phone used to be framed by pulling the camera BACK until the shoulders fitted the
+// narrow width. Perspective depends only on where the camera stands, so that changed
+// the picture itself: from further off, the head read at its full yaw, the side of it
+// came round to camera, and the fold where the face's front meets its side crossed the
+// forehead as a crack that desktop never showed.
+//
+// So every frame narrower than REF_ASPECT stands the camera exactly where a
+// REF_ASPECT frame would, and fits the width by widening the LENS instead. The picture
+// is the desktop one, scaled down. `pointScale` keeps the points the same size
+// relative to it: the shader sizes points by uScale/distance, which knows nothing of
+// the lens, so a wider lens would otherwise shrink the image under points that did
+// not shrink with it.
+//
+// REF_ASPECT is the desktop hero's shape (1440x900 lands at ~1.62). Wider frames are
+// fitted exactly as before.
+export const REF_ASPECT = 1.6;
+export const LENS_FOV = 50; // createCamera's, and every landscape frame's
+
+// The distance, look-at point and lens that frame the cloud at one view angle, written
+// into `out` ({target: Vector3, R, fov, pointScale}), and applied to the camera. The
+// camera's aspect must already be current.
 export function frameCloud(camera, cloud, theta, out) {
+  const aspect = camera.aspect;
+  const narrow = aspect < REF_ASPECT;
+  camera.fov = LENS_FOV;
+  if (narrow) camera.aspect = REF_ASPECT; // stand where the desktop frame stands
+  camera.updateProjectionMatrix();
   const halfFov = (camera.fov * Math.PI) / 180 / 2;
   // Start from the bounding sphere, which can't clip whatever the view angle — the
   // measured passes then tighten it to what's actually on screen.
@@ -548,5 +573,23 @@ export function frameCloud(camera, cloud, theta, out) {
   }
 
   out.R = R;
+  out.fov = LENS_FOV;
+  out.pointScale = 1;
+  if (narrow) {
+    // Where the cloud lands through the desktop lens, as slopes off the view axis
+    // (NDC x slope-units: x runs to tan·aspect, y to tan). Then the narrowest lens
+    // that holds those slopes in THIS frame, with the same margin the fit leaves.
+    placeCamera(camera, target, R, theta);
+    const b = projectedBounds(camera, cloud.pos);
+    const t0 = Math.tan(halfFov);
+    const sx = Math.max(Math.abs(b.minX), Math.abs(b.maxX)) * t0 * REF_ASPECT;
+    const sy = Math.max(Math.abs(b.minY), Math.abs(b.maxY)) * t0;
+    const t = Math.max(t0, Math.max(sy, sx / aspect) / FILL);
+    out.fov = (2 * Math.atan(t) * 180) / Math.PI;
+    out.pointScale = t0 / t;
+    camera.aspect = aspect;
+  }
+  camera.fov = out.fov;
+  camera.updateProjectionMatrix();
   return out;
 }

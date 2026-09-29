@@ -27,8 +27,10 @@ function draw() {
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    cloud.mat.uniforms.uScale.value = height * 0.5;
     frameCloud(camera, cloud, BASE, frame);
+    // After the fit, which sets the lens: points keep their size relative to the
+    // picture — see REF_ASPECT in hero-cloud.js.
+    cloud.mat.uniforms.uScale.value = height * 0.5 * frame.pointScale;
     placeCamera(camera, frame.target, frame.R, BASE);
     renderer.render(cloud.scene, camera);
     postMessage('drawn');
