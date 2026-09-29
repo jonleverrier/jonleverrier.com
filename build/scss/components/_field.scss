@@ -109,7 +109,15 @@
     // zero-width item still pushes the mic 8px off the edge, which is exactly the kind
     // of "nearly aligned" that looks like a mistake rather than a gap.
     width: 0;
-    margin-left: rem(-8); // the field shell's own gap (see field-shell)
+    // The field shell's own gap (see field-shell), undone while the button is shut.
+    // PX, NOT rem(-8), and on purpose (29 Sep 2026): Safari mis-resolves a `rem`
+    // length on an element with a running transition when a hover changes above it —
+    // the same bug as .c-content__topic's. As the pointer crossed the bar this margin
+    // came out at -8.8px for a frame and eased back to -8px, the input (flex: 1)
+    // grew and shrank with it, and the mic beside it visibly wiggled. Measured with a
+    // real pointer in Safari: rem moved the mic in 2 of 2 runs, px in 0 of 2. Keep it
+    // in step with the shell's gap if that ever moves.
+    margin-left: -8px;
     padding: 0;
     opacity: 0;
     transform: scale(0.7);
