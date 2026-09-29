@@ -122,6 +122,50 @@ test('starring a screenshot pins it, and says so to a screen reader', async () =
     await done(page);
 });
 
+/** Each solid screen in a flat-lay PNG, as {colour index, centre x, centre y}. */
+async function screensIn(path) {
+    const {data, info} = await sharp(path).resize({width: 800}).removeAlpha().raw().toBuffer({resolveWithObject: true});
+    const rgb = SHOTS.map(({colour}) => [1, 3, 5].map((o) => parseInt(colour.slice(o, o + 2), 16)));
+    const W = info.width, H = info.height, seen = new Uint8Array(W * H), out = [];
+    const which = (p) => rgb.findIndex((c) => Math.abs(c[0] - data[p * 3]) + Math.abs(c[1] - data[p * 3 + 1]) + Math.abs(c[2] - data[p * 3 + 2]) < 40);
+    for (let p = 0; p < W * H; p++) {
+        if (seen[p]) continue;
+        const k = which(p);
+        if (k < 0) continue;
+        let sx = 0, sy = 0, count = 0;
+        const stack = [p];
+        seen[p] = 1;
+        while (stack.length) {
+            const q = stack.pop(), x = q % W, y = (q - x) / W;
+            sx += x; sy += y; count++;
+            for (const r of [x > 0 && q - 1, x < W - 1 && q + 1, y > 0 && q - W, y < H - 1 && q + W]) {
+                if (r !== false && !seen[r] && which(r) === k) { seen[r] = 1; stack.push(r); }
+            }
+        }
+        if (count > 30) out.push({k, x: sx / count - W / 2, y: sy / count - H / 2});
+    }
+    return out;
+}
+
+// With a set repeated, the star pins ONE copy to the middle. The rest are dealt like
+// any other screen — before, all ten copies took the middle cells (Jon, 29 Sep 2026).
+test('a starred screenshot puts one copy in the middle, not every repeat', async () => {
+    const page = await openTool();
+    await addShots(page);
+    await page.$eval('#sb-repeat', (el) => { el.value = '10'; el.dispatchEvent(new Event('input', {bubbles: true})); });
+    await page.check('#sb-shuffle');
+    await page.click('.c-showboard__shot:has(.c-showboard__shot-name:text-is("shot-0.png")) .c-showboard__shot-btn--pin');
+    const file = await download(page, '#sb-png');
+    const screens = await screensIn(file.path);
+    const starred = screens.filter((s) => s.k === 0);
+    assert.equal(starred.length, 10, 'all ten copies of the starred screenshot are drawn');
+    const byCentre = screens.slice().sort((a, b) => Math.hypot(a.x, a.y) - Math.hypot(b.x, b.y));
+    assert.equal(byCentre[0].k, 0, 'the screen nearest the middle is the starred one');
+    const middleStarred = byCentre.slice(0, 10).filter((s) => s.k === 0).length;
+    assert.ok(middleStarred <= 4, `the ten most central screens hold ${middleStarred} starred copies`);
+    await done(page);
+});
+
 test('removing the last screenshot hides the controls again', async () => {
     const page = await openTool();
     await addShots(page, SHOTS.slice(0, 1));

@@ -153,22 +153,25 @@ export function mountShowboard(root) {
   var seqCache = { key:'', seq:null };
 
   // Decides which screenshot lands in which cell.
-  // Pinned screens claim the cells nearest the centre of the arrangement;
-  // shuffling avoids putting the same screen in neighbouring cells.
+  // ONE copy of each pinned screenshot claims a cell nearest the centre; its other
+  // copies are dealt with everything else (29 Sep 2026: with Repeat ×10 all ten copies
+  // were pinned, so they clumped in the middle and the shuffle could not move them).
+  // Which cells hold the pinned copy is kept in seqCache.pin, per cell.
+  // Shuffling avoids putting the same screen in neighbouring cells.
   function makeSequence(n, base, repeat, cols){
     var key = [n, base, repeat, cols, S.shuffle ? S.seed : 0, S.shuffle].join('|') +
               '|' + shots.map(function(s){ return s.hero ? 1 : 0; }).join('');
     if (seqCache.key === key) return seqCache.seq;
 
-    var assign = [], i;
-    for (i=0;i<n;i++) assign.push(-1);
+    var assign = [], pin = [], i;
+    for (i=0;i<n;i++){ assign.push(-1); pin.push(0); }
 
     var heroes = [], fills = [];
     for (var b=0;b<base;b++){ (shots[b].hero ? heroes : fills).push(b); }
 
     if (!heroes.length && !S.shuffle){
       for (i=0;i<n;i++) assign[i] = i % base;
-      seqCache = { key:key, seq:assign };
+      seqCache = { key:key, seq:assign, pin:pin };
       return assign;
     }
 
@@ -184,19 +187,28 @@ export function mountShowboard(root) {
     var rng = mulberry32(S.seed * 2654435761 + n * 7919 + cols * 104729);
     var pending = cells.slice(); // still-free cells, most central first
 
-    function placePool(pool){
+    // `copies` maps screenshot -> how many of it this pool deals.
+    function placePool(copies, pinIt){
+      var pool = Object.keys(copies).map(Number).filter(function(s){ return copies[s] > 0; });
       if (!pool.length) return;
-      var need = pool.length * repeat;
+      var need = 0;
+      pool.forEach(function(s){ need += copies[s]; });
 
       if (!S.shuffle){
+        // In screenshot order, round and round, skipping any that have run out.
+        var order = [], left = {}, r;
+        pool.forEach(function(s){ left[s] = copies[s]; });
+        while (order.length < need){
+          for (r=0;r<pool.length;r++) if (left[pool[r]] > 0){ order.push(pool[r]); left[pool[r]]--; }
+        }
         var take = pending.splice(0, need);
         take.sort(function(a,b){ return a.i - b.i; });
-        take.forEach(function(cell, k){ assign[cell.i] = pool[k % pool.length]; });
+        take.forEach(function(cell, k){ assign[cell.i] = order[k]; if (pinIt) pin[cell.i] = 1; });
         return;
       }
 
       var remain = {}, skipped = [];
-      pool.forEach(function(s){ remain[s] = repeat; });
+      pool.forEach(function(s){ remain[s] = copies[s]; });
 
       while (need > 0 && pending.length){
         var cell = pending.shift();
@@ -224,22 +236,23 @@ export function mountShowboard(root) {
 
         var pick = +best[Math.floor(rng() * best.length)];
         assign[at] = pick;
+        if (pinIt) pin[at] = 1;
         remain[pick] -= 1;
         need--;
       }
       pending = skipped.concat(pending);
     }
 
-    placePool(heroes);
-    placePool(fills);
+    var heroCopies = {}, fillCopies = {};
+    heroes.forEach(function(s){ heroCopies[s] = 1; fillCopies[s] = repeat - 1; });
+    fills.forEach(function(s){ fillCopies[s] = repeat; });
+    placePool(heroCopies, true);
+    placePool(fillCopies, false);
 
     for (i=0;i<n;i++) if (assign[i] < 0) assign[i] = i % base;
 
     // Greedy tidy-up: swap same-pool cells while it reduces touching twins.
     if (S.shuffle && base > 1){
-      var isHero = {};
-      heroes.forEach(function(s){ isHero[s] = 1; });
-
       var clashAt = function(a, at){
         var c = 0, v = a[at];
         if (at % cols && a[at-1] === v) c++;
@@ -261,7 +274,7 @@ export function mountShowboard(root) {
           if (!clashAt(assign, i)) continue;
           for (var j=0;j<n;j++){
             if (j === i || assign[j] === assign[i]) continue;
-            if (!!isHero[assign[i]] !== !!isHero[assign[j]]) continue; // keep pinned screens central
+            if (pin[i] || pin[j]) continue; // keep pinned screens central
             var tmp = assign[i]; assign[i] = assign[j]; assign[j] = tmp;
             var next = totalClash(assign);
             if (next < score){ score = next; moved = true; break; }
@@ -272,7 +285,7 @@ export function mountShowboard(root) {
       }
     }
 
-    seqCache = { key:key, seq:assign };
+    seqCache = { key:key, seq:assign, pin:pin };
     return assign;
   }
 
@@ -287,6 +300,7 @@ export function mountShowboard(root) {
     var cols = columnsFor(n);
     var rows = Math.ceil(n / cols);
     var seq = makeSequence(n, base, repeat, cols);
+    var pin = seqCache.pin.slice(); // which cells hold a pinned copy; moves with its screen
     var tilt = S.tilt * Math.PI/180;
     var spin = S.spin * Math.PI/180;
     var ct = Math.cos(tilt);
@@ -350,12 +364,16 @@ export function mountShowboard(root) {
     // the real layout is run, and it keeps the cell that lands nearest the centre —
     // one pinned screen at a time, each locking its cell. The distance weights depth
     // as makeSequence does (front-to-back centring reads stronger).
-    if (S.masonry && shots.some(function(sh){ return sh.hero; })){
+    if (S.masonry && pin.some(Boolean)){
       seq = seq.slice(); // makeSequence's result is cached; never edit it in place
       var locked = {};
+      var swapCell = function(x, y){
+        var t = seq[x]; seq[x] = seq[y]; seq[y] = t;
+        t = pin[x]; pin[x] = pin[y]; pin[y] = t;
+      };
       for (;;){
         var h = -1, q;
-        for (q=0;q<n;q++) if (!locked[q] && shots[seq[q]].hero){ h = q; break; }
+        for (q=0;q<n;q++) if (!locked[q] && pin[q]){ h = q; break; }
         if (h < 0) break;
         var bestJ = h, bestD = Infinity;
         for (q=0;q<n;q++){
@@ -366,7 +384,7 @@ export function mountShowboard(root) {
           if (dq < bestD - 1e-9){ bestD = dq; bestJ = q; }
           t = seq[h]; seq[h] = seq[q]; seq[q] = t;
         }
-        var t2 = seq[h]; seq[h] = seq[bestJ]; seq[bestJ] = t2;
+        swapCell(h, bestJ);
         locked[bestJ] = 1;
       }
     }
@@ -401,7 +419,7 @@ export function mountShowboard(root) {
         return out;
       };
       nbrs = buildNbrs();
-      var pinned = function(x){ return shots[seq[x]].hero; };
+      var pinned = function(x){ return pin[x]; };
       var clashes = function(x, sh){ var t3 = 0; nbrs[x].forEach(function(y){ if (seq[y] === sh) t3++; }); return t3; };
       var total = function(){ var t5 = 0; for (var z=0;z<n;z++) t5 += clashes(z, seq[z]); return t5; };
       var sameShape = function(x, y){
@@ -466,7 +484,7 @@ export function mountShowboard(root) {
       if (bestScore > 0){
         var heroSpread = function(){
           var mp2 = masonryPos(dimsOf(seq)), t6 = 0;
-          for (var z=0;z<n;z++) if (shots[seq[z]].hero) t6 += mp2[z].x*mp2[z].x + mp2[z].z*mp2[z].z*1.4;
+          for (var z=0;z<n;z++) if (pin[z]) t6 += mp2[z].x*mp2[z].x + mp2[z].z*mp2[z].z*1.4;
           return t6;
         };
         nbrs = buildNbrs();
