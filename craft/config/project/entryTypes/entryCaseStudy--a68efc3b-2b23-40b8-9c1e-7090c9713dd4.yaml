@@ -45,6 +45,7 @@ fieldLayouts:
             handle: null
             instructions: null
             label: null
+            oldFieldUid: null
             required: false
             tip: null
             type: craft\fieldlayoutelements\CustomField
@@ -61,6 +62,7 @@ fieldLayouts:
             handle: null
             instructions: null
             label: null
+            oldFieldUid: null
             required: false
             tip: null
             type: craft\fieldlayoutelements\CustomField
@@ -74,6 +76,40 @@ fieldLayouts:
       -
         elementCondition: null
         elements:
+          -
+            dateAdded: '2026-09-29T16:07:55+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 00fcf05d-4b96-4b68-a24b-e8699a932153 # Custom Page Title
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 4618c5b8-6044-4cc7-a4dc-09865980ce45
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-09-29T16:07:55+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 58bd7782-6a62-4253-8045-4bd40e0bf7a3 # Meta Description
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: e6747ed8-59ec-406c-92f0-5e6ac9018a52
+            userCondition: null
+            warning: null
+            width: 100
           -
             dateAdded: '2026-09-05T22:33:05+00:00'
             editCondition: null
