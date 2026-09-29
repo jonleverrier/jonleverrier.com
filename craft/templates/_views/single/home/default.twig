@@ -17,9 +17,14 @@
 
    The LABEL keeps no ellipsis: it is read aloud, where trailing dots are noise rather
    than an invitation. #}
+{# The wording itself is the Globals single's jonsonPlaceholderDefault, falling back to
+   the line this always said when the field is empty; the label is the same words with
+   any trailing ellipsis taken off. Same source as _components/ask.twig. #}
 {% set jonson = craft.app.getModule('jonson') %}
-{% set askPlaceholder = jonson.vip.personalise('Ask me any question...') %}
-{% set askLabel = jonson.vip.personalise('Ask me any question') %}
+{% set globals = craft.entries().section('globals').one() %}
+{% set placeholderLine = (globals ? (globals.jonsonPlaceholderDefault ?? '')|trim : '') ?: 'Ask me any question...' %}
+{% set askPlaceholder = jonson.vip.personalise(placeholderLine) %}
+{% set askLabel = jonson.vip.personalise(placeholderLine|replace('/(\\.{3}|…)$/u', '')|trim) %}
 
 {# Which backdrop the hero section draws behind the title and ask bar.
 

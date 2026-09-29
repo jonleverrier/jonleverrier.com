@@ -42,6 +42,23 @@ fieldLayouts:
             userCondition: null
             warning: null
             width: 100
+          -
+            dateAdded: '2026-09-29T09:14:15+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: b09afdbe-3009-4604-af59-de3bf2f4cf44 # Jonson Placeholder Default
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: cfdcd073-e133-46aa-b60a-d0463aae32c7
+            userCondition: null
+            warning: null
+            width: 100
         name: Content
         uid: 0f062d27-7490-4fc0-a36a-5dd5de8c5596
         userCondition: null

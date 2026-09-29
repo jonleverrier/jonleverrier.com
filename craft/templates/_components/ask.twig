@@ -18,7 +18,8 @@
   the visitor to the homepage, which asks it on arrival. Jonson only exists there, so
   a form posting from here would have nowhere to render.
 
-  Optional: placeholder — defaults to the conversation's own wording.
+  Optional: placeholder — defaults to the Globals single's jonsonPlaceholderDefault,
+                          then to the conversation's own wording.
             up          — a URL: adds a back button after the home one that goes up a
                           level (a note → the notes index). Plain navigation, no wipe:
                           going up a level isn't leaving the site's conversation.
@@ -33,6 +34,8 @@
    `prompts` rows, written on publish by the jonson module — see
    services\NoteMemory) and nothing else: the homepage's default set is the
    fallback for a page that has none (too thin to have been given any). #}
+{% set globals = craft.entries().section('globals').one() %}
+{% set askPlaceholder = placeholder ?? ((globals ? (globals.jonsonPlaceholderDefault ?? '')|trim : '') ?: 'Ask me any question...') %}
 {% set home = craft.entries().section('homepage').status('live').one() %}
 {% set own = (entry ?? null) and (entry.prompts ?? null) ? entry.prompts|map(row => row.prompt|trim)|filter(p => p) : [] %}
 {% set defaults = home ? (home.prompts ?? [])|map(row => row.prompt|trim)|filter(p => p) : [] %}
@@ -70,10 +73,10 @@
             class="c-jonson__input"
             type="text"
             name="question"
-            placeholder="{{ placeholder ?? 'Ask me any question...' }}"
+            placeholder="{{ askPlaceholder }}"
             {# No ellipsis on the label — it's read aloud, where trailing dots are
                noise rather than an invitation. #}
-            aria-label="{{ placeholder ?? 'Ask me any question' }}"
+            aria-label="{{ askPlaceholder|replace('/(\\.{3}|…)$/u', '')|trim }}"
             {# Matches AskController::MAX_QUESTION_CHARS. A courtesy, not a control —
                the server truncates regardless, since anything can post to the endpoint.
                This just stops an honest paste from being silently cut later. #}
