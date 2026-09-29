@@ -1058,24 +1058,20 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     }
 }
 
-// Out on hover of the BAR, and on focus anywhere in the field — so it's reachable by
-// keyboard too. :focus-within covers the band's own focus, which is what keeps it
-// out once a tabbing visitor lands on the words.
+// Out on FOCUS anywhere in the field — the input, the words, a chip — and nothing
+// else (Jon, 29 Sep 2026). It used to come out on hover of the bar as well, and a
+// pointer that happened to be resting where the bar loads opened it with nobody doing
+// anything: landing on the homepage could show the nudge before a visitor had so much
+// as looked at the box. Focus is the one signal that means "I'm about to ask".
 //
-// Deliberately NOT `.c-jonson__field:hover`, which is what this was. The field's box
-// includes the strip the band will occupy — padding-bottom on the front door, padding
-// -top on the light bar, both there so the pointer can travel between the input and
-// the words without leaving the field — and that strip is live even while the band is
-// clipped away. So approaching the input from the band's side revealed the words
-// BEFORE the pointer ever reached the bar: the panel appeared to open at nothing.
-//
-// The form is the visible bar (input + submit), which is the thing being pointed at.
-// The band is listed with it so the travel still works: once it's out it's no longer
-// clipped, so it can be hovered in its own right and holds itself open. While it's
-// clipped it can't trigger anything — clip-path removes a region from hit-testing —
-// which is exactly the property that makes this safe to write.
+// THE BAND'S OWN HOVER STAYS, and it has to. It can only be hovered once it is out
+// (clip-path removes a clipped region from hit-testing), so it can never OPEN the
+// band — it only holds it open while the pointer travels onto the words. Without it,
+// Safari closes the band under the click: pressing a button there does not focus it,
+// so the input blurs on mousedown, :focus-within drops, and the words clip away before
+// the click lands.
 :is(.c-jonson__field, .c-frontdoor__field):is(
-    :has(:is(.c-jonson__form, .c-frontdoor__form, .c-jonson__band):hover),
+    :has(.c-jonson__band:hover),
     :focus-within
 ) .c-jonson__band {
     clip-path: inset(0);
