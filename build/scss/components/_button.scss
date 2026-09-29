@@ -57,6 +57,26 @@
     }
 }
 
+// SECONDARY — the house button in the mic's clothes (.c-voice in _field.scss, which
+// .c-case-toc__mode borrows too): a tinted wash of the navy instead of the red, with
+// the same raised bottom edge in the same navy at a heavier alpha — not black, which
+// lands as a hard grey rule over a tint this pale. For the action beside a primary one
+// (Surface's "Reset everything" beside "Save PNG"). Made for the light slabs: on the
+// olive the wash all but disappears, so it is not given the olive ring below.
+.c-button--secondary {
+    background: rgba(getmap($colour, primary, 700), 0.08);
+    color: getmap($colour, primary, 700);
+    box-shadow: inset 0 rem(-3) 0 rgba(getmap($colour, primary, 700), 0.18);
+
+    &:hover {
+        background: rgba(getmap($colour, primary, 700), 0.16);
+    }
+
+    &:focus-visible {
+        outline-color: getmap($colour, primary, 700);
+    }
+}
+
 // ON THE OLIVE SLAB, the button gets a cream ring.
 //
 // The red fill is 1.84:1 against that olive — the two are almost the same luminance,
@@ -104,6 +124,13 @@
 }
 
 // sizes
+// XS — for secondary actions packed into a tool's panel (Showboard's Reset and Export),
+// a step under sm. Same shape and edge; smaller type and inset.
+.c-button--xs {
+    font-size: rem(13);
+    padding: rem(8) rem(12);
+}
+
 .c-button--sm {
     @include typography(p-sm);
     padding: rem(12) rem(16);

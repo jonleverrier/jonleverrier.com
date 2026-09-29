@@ -407,3 +407,13 @@ finaliseRestore();
 // A question handed over from an ask bar on another page. After finaliseRestore, so
 // it lands on top of any restored conversation rather than racing it.
 consumePendingQuestion();
+
+// Showboard, the screenshot stage at /tools/showboard (components/showboard.js). Imported
+// only where the page carries it: it pulls in three, which no other page outside the hero pays for.
+const showboardRoot = document.querySelector('[data-showboard]');
+if (showboardRoot) {
+    import('./components/showboard.js').then(({mountShowboard}) => {
+        const dispose = mountShowboard(showboardRoot);
+        window.addEventListener('beforeunload', dispose, {once: true});
+    });
+}

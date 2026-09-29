@@ -1,0 +1,195 @@
+/**
+ * SHOWBOARD — the screenshot stage at /tools/showboard (showboard.twig, showboard.js).
+ *
+ * Only what is Showboard's own: the drop zone, the screenshot list and its buttons, and
+ * the preview frame with its canvas and empty-state invitation. The frame around it —
+ * panel, sections, stage, toast, dialog, the shared controls — is the generic tool in
+ * _tool.scss, whose colours this borrows.
+ */
+@use '../mixins' as *;
+@use '../theme' as *;
+@use 'tool' as *;
+
+// The drop zone. `is-hot` while a file is dragged anywhere over the page.
+.c-showboard__drop {
+    padding: 18px 14px;
+    border: 1px dashed $c-tool-line-2;
+    border-radius: $b-radius-100;
+    background: $c-tool-field;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease;
+
+    &:hover,
+    &.is-hot {
+        border-color: $c-tool-ink;
+        background: getmap($colour, primary, 410);
+    }
+}
+
+.c-showboard__drop-title {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.c-showboard__drop-hint {
+    display: block;
+    margin-top: 3px;
+    color: $c-tool-muted;
+    font-family: $g-font-secondary;
+    font-size: 11px;
+}
+
+// The loaded screenshots — rows built by showboard.js (renderShotList).
+.c-showboard__shots {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.c-showboard__shot {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 9px;
+    align-items: center;
+    padding: 5px 6px 5px 5px;
+    border: 1px solid $c-tool-line;
+    border-radius: $b-radius-100;
+    background: $c-tool-field;
+
+    &--pinned {
+        border-color: $c-tool-accent;
+        box-shadow: inset 2px 0 0 $c-tool-accent;
+    }
+}
+
+.c-showboard__shot-thumb {
+    display: block;
+    width: 38px;
+    height: 26px;
+    object-fit: cover;
+    border: 1px solid $c-tool-line-2;
+    background: getmap($colour, light, 100);
+}
+
+.c-showboard__shot-name {
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.c-showboard__shot-meta {
+    display: block;
+    color: $c-tool-muted;
+    font-family: $g-font-secondary;
+    font-size: 10px;
+
+    .c-showboard__shot--pinned & {
+        color: $c-tool-accent-deep;
+    }
+}
+
+.c-showboard__shot-actions {
+    display: flex;
+    gap: 2px;
+}
+
+.c-showboard__shot-btn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid $c-tool-line-2;
+    border-radius: 4px;
+    background: getmap($colour, light, 600);
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+
+    // A red stroke under the pointer (Jon, 29 Sep 2026) — the site red, as the
+    // pinned star's fill is.
+    &:hover:not([disabled]) {
+        border-color: $c-tool-accent;
+        background: getmap($colour, light, 100);
+    }
+
+    &[disabled] {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    // Remove goes red all through, glyph too: it is the one that throws work away.
+    &--remove:hover:not([disabled]) {
+        color: $c-tool-accent-deep;
+    }
+
+    // Pinned. Its hover is restated: the plain hover above outranks `--pin.is-on` on
+    // specificity, and a pinned star went white under the pointer — including the
+    // moment it was clicked. Hovered, it deepens to the site's red-hover instead.
+    &--pin.is-on {
+        border-color: $c-tool-accent;
+        background: $c-tool-accent;
+        color: getmap($colour, light, 100);
+
+        &:hover:not([disabled]) {
+            border-color: $c-tool-accent-deep;
+            background: $c-tool-accent-deep;
+            color: getmap($colour, light, 100);
+        }
+    }
+}
+
+.c-showboard__frame {
+    position: relative;
+    // THE EXPORT'S SHAPE, set by showboard.js from the Size fields (--sb-aspect as
+    // "W / H", --sb-ratio as W÷H). On desktop the box is the largest of that shape the
+    // stage holds: full width for a wide export, full height for a tall one. On a
+    // phone it is simply the full width.
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: var(--sb-aspect, 16 / 9);
+
+    @media (min-width: $c-tool-wide) {
+        width: min(100cqw, 100cqh * var(--sb-ratio, 1.7778));
+    }
+    // Soft, so the preview lifts off the stage without a heavy halo (Jon, 29 Sep 2026;
+    // was 0 18px 40px at 0.22).
+    box-shadow: 0 8px 20px rgba(getmap($colour, primary, 700), 0.12);
+    // The transparency checkerboard, visible when the export is set to transparent.
+    background:
+        linear-gradient(45deg, #bbb 25%, transparent 25%, transparent 75%, #bbb 75%),
+        linear-gradient(45deg, #bbb 25%, #ccc 25%, #ccc 75%, #bbb 75%);
+    background-position: 0 0, 11px 11px;
+    background-size: 22px 22px;
+}
+
+.c-showboard__canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.c-showboard__empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;
+}
+
+.c-showboard__empty-text {
+    margin: 0;
+    padding: 14px 20px;
+    border-radius: $b-radius-100;
+    background: rgba(getmap($colour, primary, 700), 0.88);
+    color: getmap($colour, light, 700);
+    font-family: $g-font-secondary;
+    font-size: 11.5px;
+    line-height: 1.7;
+}

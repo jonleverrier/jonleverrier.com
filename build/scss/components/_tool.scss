@@ -1,0 +1,618 @@
+/**
+ * TOOL — the frame of a full-window tool page, shared by every tool that is one.
+ *
+ * A control column on the left in collapsible sections, a stage filling the right, a
+ * message toast along the bottom of the stage and an "Are you sure?" dialog — plus the
+ * controls a tool's settings are made of (labels, values, sliders, checks, swatches,
+ * chips, a size pair) and the action rows. Showboard (/tools/showboard) is the first;
+ * what is Showboard's own is in _showboard.scss, mixed onto the same element
+ * (`class="c-tool c-showboard"`).
+ *
+ * BEM throughout: parts are elements (__panel, __sec, __head…), variants modifiers
+ * (--success), transient state the site's own `is-*` classes (is-visible).
+ */
+@use '../mixins' as *;
+@use '../theme' as *;
+
+$c-tool-ink: getmap($colour, primary, 700);
+$c-tool-muted: getmap($colour, light, 850);
+$c-tool-line: rgba(getmap($colour, primary, 700), 0.14);
+$c-tool-line-2: getmap($colour, light, 750);
+$c-tool-field: getmap($colour, light, 700);
+$c-tool-accent: getmap($colour, primary, 600);
+$c-tool-accent-deep: getmap($colour, primary, 650);
+// The palette has no green; this is the tool's own, for the success tick only. On the
+// navy toast it measures well above the 3:1 a graphic needs.
+$c-tool-ok: #36c26f;
+$c-tool-panel-w: 332px;
+$c-tool-wide: 900px;
+
+// FULL HEIGHT: the slab is the window (less the wrap's own gutter, as the front door
+// does it), laid out as a column the tool fills. There is no site header on this page
+// (the tool's template sets hideHeader and hideFooter). svh for the same reason as .c-frontdoor: dvh jumps
+// as mobile chrome moves.
+.b-slab--app {
+    @media (min-width: $c-tool-wide) {
+        display: flex;
+        flex-direction: column;
+        // Less the sign-off row under it (.c-tool__foot), so tool and logo together
+        // are exactly the window.
+        height: calc(100vh - 2 * #{getmap($space, rhythm, 500)} - var(--c-tool-foot-h, 0px));
+        height: calc(100svh - 2 * #{getmap($space, rhythm, 500)} - var(--c-tool-foot-h, 0px));
+        min-height: 640px;
+    }
+}
+
+// The block's form reset — controls take the tool's font and ink rather than the
+// browser's. ZERO SPECIFICITY (:where), so any real component class wins over it: the
+// house .c-button on Save PNG keeps its white label instead of inheriting navy.
+:where(.c-tool) :where(button, input, select) {
+    font-family: inherit;
+    color: inherit;
+}
+
+.c-tool {
+    // Controls down the left, the stage filling the right — no wrapper around either.
+    // The right column's tint is the block's own background, and the control column
+    // lays the slab's cream back over its side.
+    display: grid;
+    grid-template-columns: $c-tool-panel-w minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    column-gap: 22px;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 20px 22px 18px 0;
+    background: getmap($colour, light, 650);
+    color: $c-tool-ink;
+    font-family: $g-font-primary;
+    font-size: 13px;
+
+
+    :focus-visible {
+        outline: 2px solid $c-tool-ink;
+        outline-offset: 2px;
+    }
+
+    // A phone stacks it: the controls first (their own order in the markup), then the
+    // stage under them (Jon, 29 Sep 2026).
+    @media (max-width: #{$c-tool-wide - 1px}) {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+        padding: 0 0 14px;
+    }
+}
+
+// ── The control column ─────────────────────────────────────────────────────────
+.c-tool__panel {
+    grid-row: 1 / -1;
+    overflow-y: auto;
+    // Back to the slab's own cream: the block's tint is for the stage side.
+    // Runs to the top and bottom edges, through the block's own padding.
+    margin-top: -20px;
+    margin-bottom: -18px;
+    border-right: 1px solid $c-tool-line;
+    background: getmap($colour, light, 600);
+
+    @media (max-width: #{$c-tool-wide - 1px}) {
+        grid-row: auto;
+        overflow: visible;
+        margin-top: 0;
+        margin-bottom: 0;
+        border-right: 0;
+        border-bottom: 1px solid $c-tool-line;
+    }
+}
+
+.c-tool__logo {
+    padding: 18px 20px;
+    border-bottom: 1px solid $c-tool-line;
+}
+
+.c-tool__brand {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid $c-tool-line;
+}
+
+.c-tool__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+}
+
+.c-tool__summary {
+    margin: 6px 0 0;
+    color: $c-tool-muted;
+    font-family: $g-font-secondary;
+    font-size: 11.5px;
+    line-height: 1.5;
+}
+
+.c-tool__sec {
+    padding: 16px 20px;
+    border-bottom: 1px solid $c-tool-line;
+
+    &:last-child {
+        border-bottom: 0;
+    }
+}
+
+.c-tool__head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 0 0 12px;
+    color: $c-tool-muted;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    // The section's disclosure (a <summary>): the whole row is the control.
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+
+    &::-webkit-details-marker {
+        display: none;
+    }
+
+    // THE CARET — .c-case-toc__title's, copied: a border triangle in the brand red,
+    // pointing down at what it will open, half a turn to point up once open. A border
+    // triangle rather than a glyph so the turn is about its own ink (see the note on
+    // .c-case-toc__title::after). A little smaller here, 10 by 6 against the TOC's 14
+    // by 9, to sit beside 10px capitals.
+    &::after {
+        content: '';
+        flex: none;
+        align-self: center;
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid $c-tool-accent;
+        transition: transform 160ms ease, border-top-color 200ms ease;
+    }
+
+    &:hover {
+        color: $c-tool-ink;
+
+        &::after {
+            border-top-color: $c-tool-accent-deep;
+        }
+    }
+
+    .c-tool__sec[open] > &::after {
+        transform: rotate(180deg);
+    }
+
+    .c-tool__sec:not([open]) > & {
+        margin-bottom: 0;
+    }
+}
+
+.c-tool__head-title {
+    // Type, case and weight come from .u-font-whisper in the markup — the site's
+    // section whisper, as .c-content__whisper wears it; what stays here is this
+    // whisper's colour (the content-page whisper blue) and its place in the row.
+    flex: 1;
+    margin: 0;
+    color: getmap($colour, primary, 450);
+}
+
+.c-tool__head-meta {
+    font-family: $g-font-secondary;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: none;
+}
+
+// Rows, sliders, checks.
+.c-tool__row {
+    margin-bottom: 13px;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+}
+
+// Every control's label is in the mono (Jon, 29 Sep 2026) — sliders, swatches and
+// checks alike (.c-tool__check below) — so the column reads as instrument settings
+// beside the sans headings and buttons.
+.c-tool__label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 5px;
+    font-family: $g-font-secondary;
+    font-size: 11.5px;
+    font-weight: 500;
+}
+
+.c-tool__value {
+    color: $c-tool-muted;
+    font-family: $g-font-secondary;
+    font-size: 11px;
+}
+
+.c-tool__range {
+    width: 100%;
+    height: 16px;
+    margin: 0;
+    background: transparent;
+    cursor: ew-resize;
+    -webkit-appearance: none;
+    appearance: none;
+
+    &::-webkit-slider-runnable-track {
+        height: 2px;
+        background: $c-tool-line-2;
+    }
+
+    &::-moz-range-track {
+        height: 2px;
+        background: $c-tool-line-2;
+    }
+
+    // The thumbs are the site red, always — no hover change (Jon, 29 Sep 2026).
+    &::-webkit-slider-thumb {
+        width: 12px;
+        height: 12px;
+        margin-top: -5px;
+        border: 0;
+        border-radius: 50%;
+        background: $c-tool-accent;
+        -webkit-appearance: none;
+    }
+
+    &::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border: 0;
+        border-radius: 50%;
+        background: $c-tool-accent;
+    }
+}
+
+.c-tool__check {
+    display: flex;
+    // TOP, so a label that wraps keeps its box beside the first line rather than
+    // floating between the two (Jon, 29 Sep 2026). The box's own margin-top below
+    // centres it on that first line: (line-height 17.25px - box 14px) / 2.
+    align-items: flex-start;
+    gap: 8px;
+    font-family: $g-font-secondary;
+    font-size: 11.5px;
+    line-height: 1.5;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+}
+
+.c-tool__check-box {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    margin: 1.625px 0 0;
+    accent-color: $c-tool-ink;
+}
+
+.c-tool__swatch {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.c-tool__swatch-colour {
+    width: 34px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid $c-tool-line-2;
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+
+    &::-webkit-color-swatch-wrapper {
+        padding: 2px;
+    }
+
+    &::-webkit-color-swatch {
+        border: 0;
+        border-radius: 2px;
+    }
+}
+
+.c-tool__swatch-hex {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 7px;
+    border: 1px solid $c-tool-line-2;
+    border-radius: 4px;
+    background: $c-tool-field;
+    font-family: $g-font-secondary;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.c-tool__size {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin-bottom: 14px; // above the drop zone, in the Setup section
+}
+
+.c-tool__size-field {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.c-tool__size-label {
+    font-family: $g-font-secondary;
+    font-size: 11.5px;
+    font-weight: 500;
+}
+
+// The hex fields' look (.c-tool__swatch-hex), for the same kind of typed value.
+.c-tool__size-input {
+    width: 100%;
+    padding: 6px 7px;
+    border: 1px solid $c-tool-line-2;
+    border-radius: 4px;
+    background: $c-tool-field;
+    font-family: $g-font-secondary;
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.c-tool__size-by {
+    padding-bottom: 6px;
+    color: $c-tool-muted;
+    font-family: $g-font-secondary;
+    font-size: 11.5px;
+}
+
+.c-tool__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.c-tool__chip {
+    padding: 6px 10px;
+    border: 1px solid $c-tool-line-2;
+    border-radius: 999px;
+    background: $c-tool-field;
+    font-family: $g-font-secondary; // mono, as the labels are
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+
+    // The same red stroke on hover as the screenshot list's buttons.
+    &:hover:not([disabled]) {
+        border-color: $c-tool-accent;
+        background: getmap($colour, light, 100);
+    }
+
+    &[disabled] {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+}
+
+.c-tool__exports {
+    display: grid;
+    margin-bottom: 12px; // the space above Reset everything
+}
+
+// Reset and Export: two house secondary buttons (.c-button--secondary), sharing the
+// width under Save PNG.
+.c-tool__actions {
+    // Their own width, side by side from the left: stretched across the panel at the
+    // xs height they read as flat slabs.
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+// ── The stage ─────────────────────────────────────────────────────────────────
+.c-tool__stage {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+
+    // A size container on desktop, so the frame can be the largest box of the export's
+    // shape that fits — see .c-showboard__frame. Not on a phone: there the stage has no
+    // height of its own (the column grows to fit) and a size container would collapse.
+    @media (min-width: $c-tool-wide) {
+        container-type: size;
+    }
+
+    @media (max-width: #{$c-tool-wide - 1px}) {
+        margin: 14px 14px 0;
+    }
+}
+
+// CENTRED ALONG THE BOTTOM OF THE STAGE (Jon, 29 Sep 2026), not the bottom of the
+// window. The stage is its positioning box.
+.c-tool__toast {
+    position: absolute;
+    bottom: 26px;
+    left: 50%;
+    z-index: 20;
+    white-space: nowrap;
+    padding: 10px 16px;
+    border-radius: $b-radius-100;
+    background: $c-tool-ink;
+    color: getmap($colour, light, 700);
+    font-family: $g-font-secondary;
+    font-size: 11.5px;
+    opacity: 0;
+    transform: translate(-50%, 14px);
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+
+    &.is-visible {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+
+    // A finished action ("Settings loaded"): the circled tick ahead of the words, drawn
+    // by the toast itself through the spritemap's icon_mode_on as a mask, so its colour
+    // is this green and the tick is cut out of the circle to show the navy through.
+    &--success {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        &::before {
+            content: '';
+            flex: none;
+            width: 16px;
+            height: 16px;
+            background-color: $c-tool-ok;
+            @include icon($name: icon_mode_on, $include-size: false, $type: $sprite-type, $mode: -webkit-mask);
+            @include icon($name: icon_mode_on, $include-size: false, $type: $sprite-type, $mode: mask);
+            -webkit-mask-size: contain;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            mask-position: center;
+        }
+    }
+}
+
+// The "Are you sure?" before Reset — a native <dialog> in the top layer.
+.c-tool__confirm {
+    width: min(360px, calc(100vw - 32px));
+    padding: 0;
+    border: 0;
+    border-radius: $b-radius-200;
+    background: getmap($colour, light, 600);
+    color: $c-tool-ink;
+    box-shadow: 0 24px 60px rgba(getmap($colour, primary, 700), 0.35);
+
+    &::backdrop {
+        background: rgba(getmap($colour, primary, 700), 0.45);
+    }
+}
+
+.c-tool__confirm-form {
+    padding: 24px;
+}
+
+.c-tool__confirm-title {
+    margin: 0 0 8px;
+    font-family: $g-font-primary;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.c-tool__confirm-text {
+    margin: 0 0 20px;
+    color: $c-tool-muted;
+    font-family: $g-font-secondary;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.c-tool__confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-tool * {
+        transition: none !important;
+    }
+}
+
+// THE SIGN-OFF under a tool: a small logo (.b-logo--small), on the left in the white
+// margin below the slab — the way home on a page with no header or footer. Its height
+// is subtracted from the slab (above) so the two fill the window between them.
+// 72 = 16 of white space above the logo (Jon, 29 Sep 2026) + a 56px row it centres in.
+$c-tool-foot-h: 72px;
+
+body:has(.c-tool__foot) {
+    --c-tool-foot-h: #{$c-tool-foot-h};
+}
+
+.c-tool__foot {
+    display: flex;
+    align-items: center;
+    // The credit and Contact on the right, on the line the panel's contents end on
+    // (its 20px inset).
+    justify-content: flex-end;
+    gap: 20px;
+    height: $c-tool-foot-h;
+    padding: 16px 20px 0; // the white space between the tool and the logo, then the inset
+
+    // No fixed height to keep on a phone (the slab grows to fit there): from the left.
+    @media (max-width: #{$c-tool-wide - 1px}) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        height: auto;
+    }
+
+    // No gap above: the wrap spaces whatever follows the main (`body > .b-wrap > * + *`
+    // in _wrap.scss), and here the row's own height already is the space — with it,
+    // the page ran 17px past the window. Two classes, to outrank that rule.
+    .b-wrap > & {
+        margin-top: 0;
+    }
+
+    // On the white margin, so the logo's words take the ink, as they do on the
+    // eggshell slab (.b-slab--l600 in _logo.scss).
+    .b-logo__title,
+    .b-logo__item {
+        color: $c-tool-ink;
+    }
+}
+
+// The credit: who made the tool, and the copyright — the site footer's line, the year
+// today's.
+.c-tool__credit {
+    margin: 0;
+    color: $c-tool-muted;
+    font-family: $g-font-secondary;
+    font-size: 11px;
+    line-height: 1.6;
+    text-align: right;
+
+    @media (max-width: #{$c-tool-wide - 1px}) {
+        text-align: left;
+    }
+}
+
+// The credit and the Contact button, side by side at the right of the foot.
+.c-tool__foot-end {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    @media (max-width: #{$c-tool-wide - 1px}) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
+
+.c-tool__credit-line {
+    display: block;
+}
+
+.c-tool__credit-line--lead {
+    font-weight: 700;
+}

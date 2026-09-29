@@ -3,6 +3,8 @@ enableVersioning: false
 entryTypes:
   -
     uid: 0ee05d4c-0e04-432a-9efa-e4f84b9ec1c2 # Audit
+  -
+    uid: dfa81085-a2a4-4227-b4ff-945038cbd6e3 # Showboard
 handle: tools
 maxAuthors: 1
 minAuthors: 1

@@ -1,4 +1,6 @@
-<div class="b-logo">
+{# `logoModifier` for a variant (e.g. `b-logo--small`, under a tool page). The header
+   passes none and gets the logo as it always was. #}
+<div class="b-logo{{ (logoModifier ?? '') ? ' ' ~ logoModifier }}">
     <div class="b-logo__roundel">
         {# The logo means "take me to the homepage", and the homepage is the front
            door — tunnel, clean slate. So it resets the conversation rather than

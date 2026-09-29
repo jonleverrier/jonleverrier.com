@@ -168,6 +168,26 @@ $b-logo-ticker-ease: cubic-bezier(0.65, 0, 0.35, 1);
     }
 }
 
+// SMALL — the logo as a sign-off rather than a masthead: under a tool page, where it
+// is the way home (Jon, 29 Sep 2026). Same marks, same link, same cycling titles; half
+// the type a step down (14px), and the roundel at 48px, a touch taller than the two lines
+// beside it, so it holds its own beside the words. Colour is the context's to set, as the
+// slab rule below does for the header.
+.b-logo--small {
+    gap: rem(10);
+
+    .b-logo__roundel {
+        max-width: rem(48);
+    }
+
+    // Both lines a step under the header's p-sm, the pair together a little shorter
+    // than the 48px roundel. On the ITEM, not the list: each item sets its own size.
+    .b-logo__title,
+    .b-logo__item {
+        font-size: rem(14);
+    }
+}
+
 // On the eggshell slab the white logo text washes out — switch the title and
 // description to the logo navy. Scoped to the slab, so dark pages keep white
 // and any future light page inherits this automatically.

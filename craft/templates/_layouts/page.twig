@@ -18,12 +18,18 @@
         <main class="b-main" id="main">
             <div class="b-slab {{ slabModifier ?? 'b-slab--p500' }}">
                 {% block siteAlerts %}{% endblock %}
-                {% include '_includes/page/header.twig' %}
+                {# `hideHeader` (and `hideFooter` below) for a page that is a full-window app
+                   rather than a page of the site — /tools/surface. #}
+                {% if not (hideHeader ?? false) %}
+                    {% include '_includes/page/header.twig' %}
+                {% endif %}
                 {% block siteHeader %}{% endblock %}
                 {% block siteContent %}{% endblock %}
             </div>
         </main>
-        {% include '_includes/page/footer.twig' %}
+        {% if not (hideFooter ?? false) %}
+            {% include '_includes/page/footer.twig' %}
+        {% endif %}
         {% block siteFooter %}{% endblock %}
         {# Last thing in the wrap, so it is the last thing on the last sheet. Prints
            only — see the include and theme/_print.scss. #}

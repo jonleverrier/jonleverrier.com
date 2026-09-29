@@ -1,0 +1,246 @@
+{#
+  Showboard — the screenshot stage. The `tools` structure at /tools/{slug}, entry type
+  `showboard` (the structure router tries the type before `default`; see audit.twig).
+
+  FULL SCREEN, NO SITE HEADER. The slab takes the window's height and the tool fills it:
+  controls in a column on the left, the stage on the right. On a
+  narrow screen it stacks — stage first, controls under it — and the slab grows to fit.
+
+  EVERYTHING HAPPENS IN THE BROWSER. Screenshots are read with FileReader, drawn with
+  three, and exported from the canvas; nothing is uploaded. The script is
+  build/js/components/showboard.js, loaded only when [data-showboard] is on the page.
+
+  EACH SECTION IS A <details>, open to start: collapsible with no script, and the
+  keyboard and a screen reader get the disclosure for free. Order (Jon, 29 Sep 2026):
+  Setup (size and screenshots), Arrangement, Camera, Screens, Surface, Export — and
+  everything after Setup is `hidden` until a screenshot is loaded (data-showboard-needs-shots;
+  showboard.js reveals them), so an empty tool asks for one thing: images.
+
+  IDs ARE PREFIXED `sb-` because they share a document with the site's header, panels and
+  footer, and names like `file`, `reset` and `toast` are exactly the ones that collide.
+#}
+{% extends '_layouts/page.twig' %}
+
+{% set tplPath = _self %}
+{% set slabModifier = 'b-slab--l600 b-slab--app' %}
+{# No site header and no footer: the tool is the whole window (Jon, 29 Sep 2026). Its own
+   title sits at the top of the control column. #}
+{% set hideHeader = true %}
+{% set hideFooter = true %}
+
+{# The credit and a Contact button in the white margin under the tool. The logo moved to
+   the top of the panel (Jon, 29 Sep 2026). Outside the slab, in the layout's siteFooter block. #}
+{% block siteFooter %}
+    <div class="c-tool__foot">
+        {# The year is today's, so the line cannot go stale. #}
+        <div class="c-tool__foot-end">
+            <p class="c-tool__credit">
+                <span class="c-tool__credit-line c-tool__credit-line--lead">A creative tool by Jon Leverrier</span>
+                <span class="c-tool__credit-line">Copyright &copy; 2003 - {{ now|date('Y') }} Jon Leverrier. All rights reserved.</span>
+            </p>
+            {# The header's Contact link: contact-panel.js catches it and slides the panel in. #}
+            {% include '_components/button.twig' with {
+                label: 'Contact',
+                href:  '/contact',
+                size:  'sm',
+            } only %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block siteContent %}
+    {% set summary = (entry.summary ?? '')|trim %}
+    <div class="c-tool c-showboard" data-showboard>
+        <aside class="c-tool__panel" aria-label="Showboard controls">
+            {# The way home at the top of the controls, ruled off from the tool's own name (Jon, 29 Sep 2026). #}
+            <div class="c-tool__logo">
+                {% include '_includes/page/logo.twig' with { logoModifier: 'b-logo--small' } %}
+            </div>
+            <header class="c-tool__brand">
+                <h1 class="c-tool__title">{{ entry.longTitle ?: entry.title }}</h1>
+                {% if summary %}<p class="c-tool__summary">{{ summary }}</p>{% endif %}
+            </header>
+
+            <details class="c-tool__sec" open>
+                <summary class="c-tool__head"><h2 class="c-tool__head-title u-font-whisper">Setup</h2><span class="c-tool__head-meta" id="sb-count"></span></summary>
+                {# The canvas first — it is short and it decides the shape of everything —
+                   then where screenshots come in, with the list of them right under it. #}
+                <div class="c-tool__size">
+                    <label class="c-tool__size-field">
+                        <span class="c-tool__size-label">Width</span>
+                        <input class="c-tool__size-input" type="number" id="sb-outw" min="320" max="5000" step="1" value="3200" inputmode="numeric">
+                    </label>
+                    <span class="c-tool__size-by" aria-hidden="true">×</span>
+                    <label class="c-tool__size-field">
+                        <span class="c-tool__size-label">Height</span>
+                        <input class="c-tool__size-input" type="number" id="sb-outh" min="320" max="5000" step="1" value="1800" inputmode="numeric">
+                    </label>
+                </div>
+                <div class="c-showboard__drop" id="sb-drop" tabindex="0" role="button" aria-label="Add screenshots">
+                    <strong class="c-showboard__drop-title">Drop images here</strong>
+                    <span class="c-showboard__drop-hint">or click · or paste ⌘V</span>
+                </div>
+                <input type="file" id="sb-file" accept="image/*,application/json,.json" multiple hidden>
+                <ul class="c-showboard__shots" id="sb-shots"></ul>
+            </details>
+            <details class="c-tool__sec" open hidden data-showboard-needs-shots>
+                <summary class="c-tool__head"><h2 class="c-tool__head-title u-font-whisper">Arrangement</h2></summary>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-repeat">Repeat set <output class="c-tool__value" id="sb-repeat-o">×1</output></label>
+                    <input class="c-tool__range" type="range" id="sb-repeat" min="1" max="10" step="1" value="1">
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__check"><input class="c-tool__check-box" type="checkbox" id="sb-masonry" checked> Masonry packing (tight rows)</label>
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__check"><input class="c-tool__check-box" type="checkbox" id="sb-matchw"> Match widths (keep true relative scale)</label>
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__check"><input class="c-tool__check-box" type="checkbox" id="sb-shuffle"> Shuffle order (no repeats side by side)</label>
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-cols">Columns <output class="c-tool__value" id="sb-cols-o">Auto</output></label>
+                    <input class="c-tool__range" type="range" id="sb-cols" min="0" max="12" step="1" value="0">
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-gap">Spacing <output class="c-tool__value" id="sb-gap-o">0.22</output></label>
+                    <input class="c-tool__range" type="range" id="sb-gap" min="0" max="1.6" step="0.02" value="0.22">
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-depth">Row spacing <output class="c-tool__value" id="sb-depth-o">1.00×</output></label>
+                    <input class="c-tool__range" type="range" id="sb-depth" min="0.4" max="2.2" step="0.05" value="1">
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-stagger">Stagger rows <output class="c-tool__value" id="sb-stagger-o">0%</output></label>
+                    <input class="c-tool__range" type="range" id="sb-stagger" min="0" max="1" step="0.02" value="0">
+                </div>
+                <div class="c-tool__chips">
+                    <button class="c-tool__chip" type="button" id="sb-reshuffle" disabled>Shuffle again</button>
+                </div>
+            </details>
+            <details class="c-tool__sec" open hidden data-showboard-needs-shots>
+                <summary class="c-tool__head"><h2 class="c-tool__head-title u-font-whisper">Camera</h2></summary>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-yaw">Angle <output class="c-tool__value" id="sb-yaw-o">0°</output></label>
+                    <input class="c-tool__range" type="range" id="sb-yaw" min="-180" max="180" step="1" value="0">
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-pitch">Height <output class="c-tool__value" id="sb-pitch-o">89°</output></label>
+                    <input class="c-tool__range" type="range" id="sb-pitch" min="1" max="89" step="1" value="89">
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-fov">Lens <output class="c-tool__value" id="sb-fov-o">22 mm</output></label>
+                    <input class="c-tool__range" type="range" id="sb-fov" min="8" max="70" step="1" value="22">
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-zoom">Fill frame <output class="c-tool__value" id="sb-zoom-o">1.02×</output></label>
+                    <input class="c-tool__range" type="range" id="sb-zoom" min="0.5" max="6" step="0.02" value="1.02">
+                </div>
+                <div class="c-tool__chips">
+                    <button class="c-tool__chip" type="button" data-preset="flat">Flat lay</button>
+                    <button class="c-tool__chip" type="button" data-preset="angle">Angled</button>
+                    <button class="c-tool__chip" type="button" data-preset="stand">Standing</button>
+                    <button class="c-tool__chip" type="button" data-preset="iso">Isometric</button>
+                </div>
+            </details>
+            <details class="c-tool__sec" open hidden data-showboard-needs-shots>
+                <summary class="c-tool__head"><h2 class="c-tool__head-title u-font-whisper">Screens</h2></summary>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-tilt">Stand up <output class="c-tool__value" id="sb-tilt-o">0°</output></label>
+                    <input class="c-tool__range" type="range" id="sb-tilt" min="0" max="90" step="1" value="0">
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-spin">Turn <output class="c-tool__value" id="sb-spin-o">0°</output></label>
+                    <input class="c-tool__range" type="range" id="sb-spin" min="-45" max="45" step="1" value="0">
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-radius">Corner radius <output class="c-tool__value" id="sb-radius-o">2%</output></label>
+                    <input class="c-tool__range" type="range" id="sb-radius" min="0" max="18" step="0.5" value="2">
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-shadow">Shadow <output class="c-tool__value" id="sb-shadow-o">0%</output></label>
+                    <input class="c-tool__range" type="range" id="sb-shadow" min="0" max="100" step="1" value="0">
+                </div>
+            </details>
+            <details class="c-tool__sec" open hidden data-showboard-needs-shots>
+                <summary class="c-tool__head"><h2 class="c-tool__head-title u-font-whisper">Surface</h2></summary>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-bg">Background</label>
+                    <div class="c-tool__swatch">
+                        <input class="c-tool__swatch-colour" type="color" id="sb-bg" value="#ffffff">
+                        <input class="c-tool__swatch-hex" type="text" id="sb-bg-hex" value="#FFFFFF" spellcheck="false" aria-label="Background hex">
+                    </div>
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__check"><input class="c-tool__check-box" type="checkbox" id="sb-alpha"> Transparent background</label>
+                </div>
+            </details>
+            <details class="c-tool__sec" open hidden data-showboard-needs-shots>
+                <summary class="c-tool__head"><h2 class="c-tool__head-title u-font-whisper">Export</h2><span class="c-tool__head-meta" id="sb-out-meta">3200 × 1800</span></summary>
+                <div class="c-tool__exports">
+                    {# The house button (_components/button.twig), as every other call to
+                       action on the site. Starts disabled; showboard.js enables it once there
+                       is something to export. #}
+                    {% include '_components/button.twig' with {
+                        label: 'Save PNG',
+                        size: 'sm',
+                        attrs: { id: 'sb-png', disabled: 'disabled' },
+                    } only %}
+                </div>
+                {# Reset and Export side by side, both the house secondary. Export downloads
+                   the settings as JSON (see showboard.js, exportSettings). #}
+                <div class="c-tool__actions">
+                    {% include '_components/button.twig' with {
+                        label: 'Reset',
+                        size: 'xs',
+                        classes: 'c-button--secondary',
+                        attrs: { id: 'sb-reset' },
+                    } only %}
+                    {% include '_components/button.twig' with {
+                        label: 'Export',
+                        size: 'xs',
+                        classes: 'c-button--secondary',
+                        title: 'Download these settings as JSON',
+                        attrs: { id: 'sb-settings' },
+                    } only %}
+                </div>
+            </details>
+        </aside>
+
+        <div class="c-tool__stage">
+            <div class="c-showboard__frame" id="sb-frame">
+                <canvas class="c-showboard__canvas" id="sb-view" aria-label="Preview of the export"></canvas>
+                <div class="c-showboard__empty" id="sb-empty"><p class="c-showboard__empty-text">Drop screenshots or settings from a previous session here to begin...</p></div>
+            </div>
+            {# Messages appear centred along the bottom of the stage. #}
+            <div class="c-tool__toast" id="sb-toast" role="status" aria-live="polite"></div>
+        </div>
+
+        {# RESET ASKS FIRST, because it throws the work away: every screenshot, every
+           setting. A native <dialog> opened with showModal() — the top layer, a backdrop,
+           Escape to cancel and focus held inside come with it. Cancel is focused first,
+           so a reflex Enter keeps the work. The buttons submit the dialog's own form,
+           and showboard.js reads which one from its returnValue. #}
+        <dialog class="c-tool__confirm" id="sb-confirm" aria-labelledby="sb-confirm-title" aria-describedby="sb-confirm-text">
+            <form class="c-tool__confirm-form" method="dialog">
+                <h2 class="c-tool__confirm-title" id="sb-confirm-title">Are you sure?</h2>
+                <p class="c-tool__confirm-text" id="sb-confirm-text">Reset removes every screenshot and puts every setting back to how it started.</p>
+                <div class="c-tool__confirm-actions">
+                    {% include '_components/button.twig' with {
+                        label: 'Cancel',
+                        size: 'sm',
+                        type: 'submit',
+                        classes: 'c-button--secondary',
+                        attrs: { value: 'cancel', autofocus: 'autofocus' },
+                    } only %}
+                    {% include '_components/button.twig' with {
+                        label: 'Reset',
+                        size: 'sm',
+                        type: 'submit',
+                        attrs: { value: 'reset' },
+                    } only %}
+                </div>
+            </form>
+        </dialog>
+    </div>
+{% endblock %}
