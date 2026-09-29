@@ -76,7 +76,7 @@
 
     // `> ul > li`, not `> ul li`: a nested list's items take their own pairing below,
     // and an unscoped descendant rule would hand them the outer list's.
-    > ul { list-style: disc; padding-left: $prose-bullet-offset; }
+    > ul { list-style: none; padding-left: 0; }
     // A NUMBER THIS SIDE PLACES ITSELF. `list-style-position: outside` leaves the
     // marker's x to the engine, and the engines disagree: measured on
     // /tools/homepage-analysis at 1440, Chrome sets "1." flush at the content edge
@@ -94,7 +94,30 @@
         counter-reset: prose-item;
     }
 
-    > ul > li { padding-left: $prose-list-indent - $prose-bullet-offset; }
+    // The WHOLE indent on the item, as for a number: the disc is drawn in ::before below.
+    > ul > li {
+        position: relative;
+        padding-left: $prose-list-indent;
+    }
+
+    // A DISC THIS SIDE DRAWS ITSELF, for the same reason as the numbers. The engine's
+    // disc is placed by the font's metrics, and JonSonMono's sat high: measured on
+    // /notes/introducing-showboard at 23px, its centre was 14.4px down the line while
+    // the lowercase letters' middle was 19.7px, so every bullet read a few pixels
+    // above its text (Jon, 29 Sep 2026). This one is centred on the x-height of the
+    // FIRST line: half the line box, plus the 0.06em this face's x-height sits below
+    // it. Size and left edge match the old marker (a 10px disc 7px in at 23px).
+    > ul > li::before {
+        content: '';
+        position: absolute;
+        left: rem(7);
+        top: calc(0.5lh + 0.06em);
+        width: 0.45em;
+        height: 0.45em;
+        margin-top: -0.225em;
+        border-radius: 50%;
+        background: $marker;
+    }
     // The WHOLE indent, where before it was split between the list and the item: with
     // no marker to leave behind, there is nothing for padding on the list to move.
     > ol > li {
