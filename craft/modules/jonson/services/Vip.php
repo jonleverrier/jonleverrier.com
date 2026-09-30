@@ -34,15 +34,15 @@ class Vip extends Component
     /**
      * Why Jon made the door — the entry's `purpose` dropdown. Each purpose carries
      * the framing Jonson speaks from (who the visitor is to Jon, what the natural
-     * next step is) and the question the contact copy asks in place of the contact
-     * single's default. Keyed by the dropdown's option VALUE.
+     * next step is). It does NOT change the contact copy: that's the entry's own
+     * customContactTitle or the contact single's (see contactLine()). Keyed by the
+     * dropdown's option VALUE.
      *
      * Kept abstract on purpose: no names, no specifics — those live in the note.
      */
     public const PURPOSES = [
         'lookingForAJob' => [
             'label' => 'Looking for a job',
-            'contact' => 'Want to talk?',
             'prompt' => "You made this door because you'd like to work for them — but that's YOUR hope, "
                 . "not something they've said. They haven't told you they're hiring, and there may be "
                 . "no open role at all. So never assume a position exists: don't interview for it, "
@@ -59,7 +59,6 @@ class Vip extends Component
         ],
         'lookingToWinWork' => [
             'label' => 'Looking to win work',
-            'contact' => null, // the contact single's own question already asks this
             'prompt' => "You made this door because you'd like to win work from them — a prospective "
                 . "client, though they may not have a brief, a budget or a project in mind yet. Don't "
                 . "assume one: be curious about their business and where the friction is, and let how "
@@ -69,7 +68,6 @@ class Vip extends Component
         ],
         'lookingToFormAPartnership' => [
             'label' => 'Looking to form a partnership',
-            'contact' => 'Want to talk about working together?',
             'prompt' => "You made this door because you'd like to form a partnership with them — a peer, "
                 . "a studio, an agency, a complementary business — though they may not have thought "
                 . "about it yet. Speak as a potential collaborator, not a supplier and not a "
@@ -80,8 +78,8 @@ class Vip extends Component
     ];
 
     /**
-     * A contact question written for this ONE person, on their own vip entry — the
-     * narrowest of the three sources contactLine() reads. Held without a name on the
+     * A contact question written for this ONE person, on their own vip entry — used
+     * by contactLine() in place of the contact single's. Held without a name on the
      * end; personalise() adds that.
      */
     public const CONTACT_TITLE_FIELD = 'customContactTitle';
@@ -420,8 +418,8 @@ class Vip extends Component
     }
 
     /**
-     * The question the contact copy asks this visitor: the purpose's own line when
-     * it has one ("Want to talk about the role?"), else $default (the contact
+     * The question the contact copy asks this visitor: their entry's own
+     * customContactTitle when Jon has written one, else $default (the contact
      * single's), either way with the first name worked in. $default unchanged for
      * anyone who isn't a VIP — every caller passes its copy through blind.
      */
@@ -432,14 +430,12 @@ class Vip extends Component
             return trim($default);
         }
 
-        // Three sources, narrowest first. `customContactTitle` is what Jon wrote for THIS
-        // person on their own entry, so it outranks the purpose's line, which is written
-        // for a kind of person, which in turn outranks the contact single's, written for
-        // anyone. Each is only consulted when the one above it is empty.
+        // Two sources: what Jon wrote for THIS person on their own entry, else the
+        // contact single's, written for anyone. The door's purpose has no say — it
+        // shapes how Jonson talks, not the contact copy; a line for a kind of person
+        // read as presumptuous when Jon hadn't written it for them.
         $custom = $this->field($entry, self::CONTACT_TITLE_FIELD);
-        $line = $custom !== ''
-            ? $custom
-            : (self::PURPOSES[$this->purpose($entry)]['contact'] ?? null);
+        $line = $custom !== '' ? $custom : null;
 
         // personalise() is what puts the name on the end — "Fancy a chat" becomes "Fancy a
         // chat, Lucie", and tucks it before a closing ? or . when there is one. So the
