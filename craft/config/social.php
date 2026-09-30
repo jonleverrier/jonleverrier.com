@@ -28,7 +28,7 @@
 
 return [
     ['handle' => 'linkedin', 'name' => 'LinkedIn', 'url' => 'https://www.linkedin.com/in/jonleverrier'],
+    ['handle' => 'github', 'name' => 'Github', 'url' => 'https://github.com/jonleverrier'],
     ['handle' => 'instagram', 'name' => 'Instagram', 'url' => 'https://www.instagram.com/jonleverrier'],
     ['handle' => 'flickr', 'name' => 'Flickr', 'url' => 'https://www.flickr.com/photos/jonleverrier'],
-    ['handle' => 'github', 'name' => 'Github', 'url' => 'https://github.com/jonleverrier'],
 ];
