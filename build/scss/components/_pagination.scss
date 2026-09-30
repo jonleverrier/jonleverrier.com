@@ -37,8 +37,26 @@
     align-items: center;
     gap: rem(8);
     margin: 0;
-    padding: 0;
+    // Set in a box of the ask bar's cream (.c-jonson__footer--light), a step down
+    // from the slab, so the row reads as one control rather than loose discs under
+    // the last card. Rounded, not flush like the footer — it sits inside the page.
+    padding: getmap($space, rhythm, 400) getmap($space, rhythm, 500); // a step more at the sides
+    border-radius: $b-radius-200;
+    background-color: getmap($colour, light, 650);
     list-style: none;
+
+    // Below lg, centred: the page numbers on one row, the arrows as a pair under
+    // them (see the items below).
+    @include mq(until, lg) {
+        justify-content: center;
+    }
+
+    // The mq mixin's `until` and `from` both include the breakpoint itself, so at
+    // exactly 1024px both layouts apply at once. Every `from, lg` rule in this file
+    // therefore undoes its `until, lg` twin, and comes after it, so lg wins there.
+    @include mq(from, lg) {
+        justify-content: flex-start;
+    }
 }
 
 .c-pagination__item {
@@ -52,19 +70,22 @@
 // The arrows sit after the pages, as a pair at the trailing end. Below lg the
 // row can't hold pages and arrows together, and left to wrap on its own the
 // "next" arrow landed alone on a second row at the leading edge, under
-// "previous". So there the pair takes its own row: previous is a full-width
-// item less the next button's width, with its arrow pushed to its end, and next
-// is exactly that width — together they fill the row and can never split.
+// "previous". So there the pair takes its own row, centred: each arrow's item is
+// half the row less half the gap, previous with its button pushed to its end
+// and next to its start — together they fill the row exactly, so they can never
+// split, and they meet at the middle.
 .c-pagination__item--prev {
     order: 1;
 
     @include mq(until, lg) {
         display: flex;
         justify-content: flex-end;
-        flex: 0 0 calc(100% - #{rem(52)}); // the row less next's 44 + the 8 gap
+        flex: 0 0 calc(50% - #{rem(4)}); // half the row less half the 8 gap
     }
 
     @include mq(from, lg) {
+        display: block;
+        flex: 0 0 auto;
         margin-left: auto;
     }
 }
@@ -73,7 +94,11 @@
     order: 2;
 
     @include mq(until, lg) {
-        flex: 0 0 rem(44);
+        flex: 0 0 calc(50% - #{rem(4)});
+    }
+
+    @include mq(from, lg) {
+        flex: 0 0 auto;
     }
 }
 

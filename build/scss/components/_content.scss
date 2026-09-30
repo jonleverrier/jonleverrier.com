@@ -846,21 +846,36 @@ $c-content-foot-wide: 1440px; // the viewport at which the space beside the meas
     }
 }
 
-// The share block: from md its own row, starting where the measure starts (the
-// row is the content's full width, so the margin is the difference — never
-// negative where the content is narrower than the measure); from wide, the
-// middle column, which IS the measure.
+// The share block: from md its own row, the full measure wide and centred on it
+// (the row is the content's full width; where the content is narrower than the
+// measure, the box takes the content's width); from wide, the middle column,
+// which IS the measure.
+//
+// Boxed in the ask bar's cream and filling the measure, as the pagination is, so
+// the two sit as the same kind of thing. On a phone its contents centre.
 .c-content__share {
+    padding: getmap($space, rhythm, 400) getmap($space, rhythm, 500); // a step more at the sides
+    border-radius: $b-radius-200;
+    background-color: getmap($colour, light, 650);
+
+    @include mq(until, md) {
+        text-align: center;
+
+        .b-social__items {
+            justify-content: center;
+        }
+    }
+
     @include mq(from, md) {
         grid-column: 1 / -1;
         grid-row: 2;
-        justify-self: start;
-        margin-left: max(0px, calc((100% - #{$c-content-measure}) / 2));
+        justify-self: center;
+        width: 100%;
+        max-width: $c-content-measure;
     }
 
     @media (min-width: $c-content-foot-wide) {
         grid-column: 2;
-        margin-left: 0;
         align-self: center;
     }
 }
@@ -936,7 +951,7 @@ $c-content-foot-wide: 1440px; // the viewport at which the space beside the meas
 .c-share__whisper {
     // Type, case and weight come from .u-font-whisper in the markup; what stays here
     // is this whisper's own colour and placing.
-    margin: 0 0 getmap($space, rhythm, 600);
+    margin: 0 0 getmap($space, rhythm, 400); // inside the box now, so tighter to its icons
     color: $c-content-whisper;
 }
 
