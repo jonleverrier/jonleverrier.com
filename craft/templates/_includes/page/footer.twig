@@ -63,7 +63,7 @@
                             {% set notesIndex = craft.entries().section('note').status('live').one() %}
                             {% if notesIndex %}
                                 <li class="c-footer__item">
-                                    <a class="c-footer__link" href="{{ notesIndex.url }}"><span>{{ notesIndex.title }}</span></a>
+                                    <a class="c-footer__link" href="{{ notesIndex.url }}"><span>{{ notesIndex.title }}</span>{% include '_components/notes-badge.twig' with { class: 'c-footer__badge' } only %}</a>
                                 </li>
                             {% endif %}
                             <li class="c-footer__item">

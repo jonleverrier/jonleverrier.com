@@ -300,6 +300,31 @@ $c-header-rest-sm: $c-header-top-sm;
 // to the centre line — rather than six CSS pixels of the rendered element. Without it
 // the origin is each path's own tight bounding box, and a 24x0 line has no vertical
 // centre to rotate about.
+// New notes since the visitor's last look (notes-new.js): a plain dot, no number —
+// the count waits inside the menu. A pseudo-element, since it's decoration; the
+// meaning is in the button's aria-label. Gone while open: the cross is a close
+// button, and the list it covers shows the count itself.
+.b-header__burger {
+    position: relative;
+
+    &.has-notes-new::after {
+        content: '';
+        position: absolute;
+        top: rem(8);
+        right: rem(6);
+        width: rem(9);
+        height: rem(9);
+        border-radius: 50%;
+        // The footer links' yellow. Faint on the cream slabs (about 1.4:1 on the
+        // eggshell) — fine for a decoration whose meaning is in the aria-label.
+        background-color: getmap($colour, primary, 400);
+    }
+
+    &[aria-expanded='true']::after {
+        display: none;
+    }
+}
+
 .b-header__burger-icon {
     display: block;
     overflow: visible; // the rotated arms reach past the box's corners

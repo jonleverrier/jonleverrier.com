@@ -1,0 +1,11 @@
+{#
+  A "new notes" count, shipped hidden. notes-new.js fills the number and unhides it
+  when there is something new since the visitor's last look at Notes; with no JS it
+  never shows, which is the right answer when nobody can know what's new.
+
+  Sits INSIDE the link, so the link reads "Notes 3 new" to a screen reader — the
+  visible number alone would be announced as a bare "3".
+
+  `class` is the placement's own look: a superscript in the nav, a pill in the footer.
+#}
+<span class="{{ class }}" data-notes-badge hidden><span data-notes-badge-count></span><span class="u-visually-hidden"> new</span></span>

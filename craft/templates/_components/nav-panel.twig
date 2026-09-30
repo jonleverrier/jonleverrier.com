@@ -49,7 +49,7 @@
     key: 'c',
 }]) %}
 {% if notesIndex %}
-    {% set items = items|merge([{ label: notesIndex.title, url: notesIndex.url, uri: notesIndex.uri, owns: [notesIndex.uri], key: 'n' }]) %}
+    {% set items = items|merge([{ label: notesIndex.title, url: notesIndex.url, uri: notesIndex.uri, owns: [notesIndex.uri], key: 'n', notesBadge: true }]) %}
 {% endif %}
 
 {# Contact, PHONES ONLY — the one item that isn't a plain page in this list.
@@ -114,7 +114,7 @@
                             href="{{ item.url }}"
                             accesskey="{{ item.key }}"
                             {% if active %}aria-current="page"{% endif %}
-                        >{{ item.label }}</a>
+                        >{{ item.label }}{% if item.notesBadge ?? false %}{% include '_components/notes-badge.twig' with { class: 'c-nav-panel__badge' } only %}{% endif %}</a>
                     </li>
                 {% endfor %}
             </ul>

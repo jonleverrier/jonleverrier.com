@@ -1,0 +1,23 @@
+{#
+  New-notes data — what the "new since you were last here" badges count from.
+
+  The SAME for every visitor, so the page stays cacheable: the post dates of the
+  latest live notes, newest first, and whether this page is under Notes. Who has
+  seen what lives in the browser (notes-new.js), compared against these dates —
+  server timestamps on both sides, so a visitor's wrong clock can't skew the count.
+
+  Ten dates, because the badge caps at "9+": the tenth is what tells 9 from more.
+
+  Rendered once per page from _layouts/page.twig. The badges themselves are
+  _components/notes-badge.twig, placed by the footer and the nav panel.
+#}
+{% set notesIndex = craft.entries().section('note').status('live').one() %}
+{% if notesIndex %}
+    {% set latest = craft.entries().section('notes').status('live').orderBy('postDate DESC').limit(10).all() %}
+    {% set currentPath = craft.app.request.getPathInfo()|trim('/') %}
+    {% set here = currentPath == notesIndex.uri or currentPath starts with notesIndex.uri ~ '/' %}
+    <script type="application/json" data-notes-new>{{ {
+        latest: latest|map(n => n.postDate|date('U') + 0),
+        here: here,
+    }|json_encode|raw }}</script>
+{% endif %}

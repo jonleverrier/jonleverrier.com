@@ -30,6 +30,7 @@ import {mountPauseOffscreen} from './components/pause-offscreen.js';
 import {mountContactForm} from './components/contact-form.js';
 import {mountContactPanel} from './components/contact-panel.js';
 import {mountNavPanel} from './components/nav-panel.js';
+import {mountNotesNew} from './components/notes-new.js';
 import {mountJonsonExit} from './components/jonson-exit.js';
 import {mountPictures} from './components/picture.js';
 import {mountFooterSections} from './components/footer-sections.js';
@@ -285,6 +286,9 @@ const disposeContactForm = () => disposeContactForms.forEach((d) => d());
 // The contact side panel: opens on any click through to the contact page.
 const disposeContactPanel = mountContactPanel();
 const disposeNavPanel = mountNavPanel();
+// "New since you were last here" on the Notes links, and a dot on the burger.
+const disposeNotesNew = mountNotesNew();
+window.addEventListener('beforeunload', disposeNotesNew, {once: true});
 // Records how a conversation ended — and whether it ended by going somewhere.
 // Mounted on every page, not just the homepage: a thread survives navigation, so the
 // exit can happen anywhere. It does nothing until a conversation exists.

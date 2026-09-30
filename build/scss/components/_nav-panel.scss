@@ -261,3 +261,38 @@ $c-nav-panel-item-step: 100ms;
 .c-nav-panel__link[aria-current='page'] {
     color: getmap($colour, primary, 600);
 }
+
+// New notes since the visitor's last look (notes-new.js). A count circle in the
+// burger dot's yellow, so the dot outside and the count inside read as one signal.
+// Navy on the yellow, 9.6:1. Sized in em so it follows the h1 across breakpoints;
+// min-width rather than width, so "9+" stretches it to a pill instead of spilling.
+//
+// Absolute, hung off the word's right edge: the list is centred, and an inline
+// badge adds its width to the line and nudges "Notes" off the column's centre.
+.c-nav-panel__link:has(.c-nav-panel__badge) {
+    position: relative;
+}
+
+.c-nav-panel__badge {
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2em;
+    height: 2em;
+    margin-left: 0.6em;
+    padding: 0 0.55em;
+    border-radius: 1em;
+    background-color: getmap($colour, primary, 400);
+    color: getmap($colour, primary, 700);
+    font-family: $g-font-secondary; // JonSonMono
+    font-size: 0.22em;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1;
+    transform: translateY(-50%);
+
+    &[hidden] { display: none; }
+}
