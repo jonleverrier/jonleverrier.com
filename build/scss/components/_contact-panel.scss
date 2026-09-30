@@ -166,6 +166,48 @@ $c-contact-panel-exit: 260ms; // the exit — softer, so a dismiss is the panel 
     color: getmap($colour, primary, 700);
 }
 
+// A glimmer across the title as the panel opens: one soft, angled band of lighter
+// blue, left to right, once. Painted as the title's OWN background clipped to its
+// glyphs, so there's no extra markup, and a title on two lines is swept as one
+// block — the angle carries the band across both lines in turn.
+//
+// The gradient is 250% of the title's width with the band at its middle, so
+// background-position 100% parks the band past the left edge and 0% past the
+// right; the animation runs between the two. Navy either side of the band, so at
+// rest (before and after, `both`) the title is exactly its usual ink.
+//
+// Once per open, not a loop: .is-open comes off on close, so the next open
+// replays it. Waits for most of the slide — a glimmer on a moving panel is lost.
+//
+// Behind @supports: without text clipping, transparent text would be no text.
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .c-contact-panel.is-open .c-contact-panel__title {
+        background-image: linear-gradient(
+            110deg,
+            getmap($colour, primary, 700) 42%,
+            getmap($colour, primary, 450) 50%,
+            getmap($colour, primary, 700) 58%
+        );
+        background-size: 250% 100%;
+        background-position: 100% 0;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: c-contact-panel-glimmer 1400ms ease-in-out 300ms both;
+    }
+}
+
+@keyframes c-contact-panel-glimmer {
+    from { background-position: 100% 0; }
+    to { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-contact-panel.is-open .c-contact-panel__title {
+        animation: none;
+    }
+}
+
 // The CTA card and the form take the panel's width in turn.
 .c-contact-panel .c-ctas,
 .c-contact-panel .c-form {
