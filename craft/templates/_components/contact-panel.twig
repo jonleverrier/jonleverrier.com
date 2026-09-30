@@ -58,7 +58,7 @@
                    between repeats the introduction rather than adding one. ctas.twig only
                    renders the whisper when it is given a heading, so omitting it is the whole
                    of the change. #}
-                {% include '_components/ctas' with { ctas: ctas } only %}
+                {% include '_components/ctas' with { ctas: ctas, hop: true } only %}
                 {% if not sent %}
                     <div class="c-contact-panel__write">
                         {% include '_components/button.twig' with {

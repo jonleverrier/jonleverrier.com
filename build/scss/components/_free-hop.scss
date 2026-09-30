@@ -1,0 +1,72 @@
+/**
+ * COMPONENT: FREE HOP
+ *
+ * "free" on an offer, given a small hop: the four letters rise and settle one after
+ * another, once, to draw the eye without shouting. Markup from _macros/text.twig
+ * (freeHop), used by the footer's CTA list and the contact panel's CTAs only — not
+ * running text, where "free" is rarely an offer.
+ *
+ * Kept in check: two fifths of an em up and a small dip on landing, no squash. A
+ * hop, not a bounce — it plays once and the word is still.
+ *
+ * WHEN it plays is the placement's call, so the triggers live here together:
+ *  · contact panel — on open (.is-open), after the slide has mostly landed and the
+ *    title's glimmer has started, so the two arrive in turn. Replays on every open.
+ *  · footer — once, as it scrolls into view (js-observe → is-inview). On a phone
+ *    the column is folded shut, so it plays when the section is opened instead.
+**/
+
+@use '../mixins' as *;
+@use '../theme' as *;
+
+// The letters as one unbreakable run: inline-blocks are a wrap opportunity each, so
+// without this a narrow line could split the word between its letters.
+.c-free-hop {
+    white-space: nowrap;
+}
+
+.c-free-hop__l {
+    display: inline-block; // a transform needs a box
+}
+
+@keyframes c-free-hop {
+    0%   { transform: none; }
+    40%  { transform: translateY(-0.4em); }
+    72%  { transform: translateY(0.06em); }
+    100% { transform: none; }
+}
+
+// 80ms between letters, so the hop runs through the word rather than lifting it.
+@mixin c-free-hop-play($delay) {
+    .c-free-hop__l {
+        animation: c-free-hop 480ms cubic-bezier(0.33, 0, 0.2, 1) both;
+        animation-delay: $delay;
+    }
+
+    @for $i from 2 through 4 {
+        .c-free-hop__l:nth-child(#{$i}) {
+            animation-delay: calc(#{$delay} + #{($i - 1) * 80ms});
+        }
+    }
+}
+
+.c-contact-panel.is-open {
+    @include c-free-hop-play(700ms);
+}
+
+.c-free-hop.is-inview {
+    @include c-free-hop-play(200ms);
+}
+
+// The footer link underlines on hover, and an underline doesn't reach into inline-
+// blocks — "free" would be the one gap in it. The letters draw their own.
+.c-footer__link:hover .c-free-hop__l {
+    text-decoration: underline;
+    text-underline-offset: rem(4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .c-free-hop__l {
+        animation: none !important;
+    }
+}

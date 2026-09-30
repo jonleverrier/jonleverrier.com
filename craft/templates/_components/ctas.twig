@@ -3,6 +3,7 @@
   Styling takes cues from .c-jonson__suggestion (solid fill, JonSonMono, the
   pop-in arrow + spinning border on hover). See build/scss/components/_ctas.scss.
 #}
+{% import '_macros/text' as text %}
 {% if ctas ?? false %}
     <div class="c-ctas">
       {# The inner wrapper carries the stack; the outer one carries the panel. On the
@@ -34,7 +35,9 @@
             <a class="c-ctas__item" data-cta-kind="{{ kind }}"{% if href %} href="{{ href }}"{% endif %}
                {%- if target %} target="{{ target }}"{% if target == '_blank' %} rel="noopener"{% endif %}{% endif %}>
                 <span class="c-ctas__icon c-ctas__icon--{{ kind }}" aria-hidden="true"></span>
-                <span class="c-ctas__label">{{ cta.title }}</span>
+                {# `hop` gives "free" its little jump — the contact panel asks for it,
+                   the contact page doesn't (see _macros/text.twig). #}
+                <span class="c-ctas__label">{{ (hop ?? false) ? text.freeHop(cta.title) : cta.title }}</span>
             </a>
         {% endfor %}
       </div>

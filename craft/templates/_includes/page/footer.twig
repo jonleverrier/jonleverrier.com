@@ -6,6 +6,7 @@
    a VIP door with that purpose (see craft.frontend.ctas()). Untagged ones show to
    everyone, as they always have. #}
 {% set discussCtas = craft.frontend.ctas() %}
+{% import '_macros/text' as text %}
 {% set strapline = globals ? (globals.strapline ?? '')|trim : '' %}
 <footer class="b-footer">
     <div class="b-slab b-slab--p700">
@@ -86,7 +87,7 @@
                                     {% if href %}
                                         <li class="c-footer__item">
                                             <a class="c-footer__link" href="{{ href }}"
-                                               {%- if target %} target="{{ target }}"{% if target == '_blank' %} rel="noopener"{% endif %}{% endif %}><span>{{ cta.title }}</span></a>
+                                               {%- if target %} target="{{ target }}"{% if target == '_blank' %} rel="noopener"{% endif %}{% endif %}><span>{{ text.freeHop(cta.title, true) }}</span></a>
                                         </li>
                                     {% endif %}
                                 {% endfor %}

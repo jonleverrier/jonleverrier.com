@@ -81,3 +81,22 @@
 {%- endfor -%}
 {{- out|join('<br>')|raw -}}
 {% endmacro %}
+
+{#
+  "free", given a little hop — the letters rise one after another, once, to catch
+  the eye on an offer (see components/_free-hop.scss for when it plays).
+
+  Whole word only, any case, and the author's own case is kept. The label is escaped
+  first; the only raw markup is what's generated here.
+
+  The letters are spans because each needs its own transform; a screen reader would
+  risk spelling them out, so they're aria-hidden and the word is said once from a
+  visually hidden copy. `observe` adds js-observe, for a place with no event of its
+  own to trigger it (the footer plays it as it scrolls into view).
+#}
+{% macro freeHop(label, observe = false) %}
+{%- set l = '<span class="c-free-hop__l">' -%}
+{{- label|e|replace({
+    '/\\b(f)(r)(e)(e)\\b/i': '<span class="c-free-hop' ~ (observe ? ' js-observe') ~ '"><span class="u-visually-hidden">$1$2$3$4</span><span aria-hidden="true">' ~ l ~ '$1</span>' ~ l ~ '$2</span>' ~ l ~ '$3</span>' ~ l ~ '$4</span></span></span>'
+})|raw -}}
+{% endmacro %}
