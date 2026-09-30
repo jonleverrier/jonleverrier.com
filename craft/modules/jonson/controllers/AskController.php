@@ -647,6 +647,7 @@ class AskController extends Controller
             $railHtml = null;
             $panels = []; // handle => rendered html, for the cache bundle + replay
             $panelSlots = []; // handle => once-slot claimed, so a replay claims the same
+            $cardSlugs = []; // studies whose cards show this turn — not auto-linked (see linkStudies)
             $suggestions = [];
             if ($answer !== '') {
                 $clean = $this->stripMarkers($answer);
@@ -731,6 +732,9 @@ class AskController extends Controller
                     if (isset($surface['onShown'])) {
                         ($surface['onShown'])($payload, $session);
                     }
+                    if ($handle === 'casestudies') {
+                        $cardSlugs = array_column($payload, 'slug');
+                    }
                     if ($handle === 'context') {
                         $railHtml = $html;
                     } else {
@@ -739,6 +743,12 @@ class AskController extends Controller
                     }
                     yield $this->sse($handle, ['html' => $html]);
                 }
+
+                // LINK THE WORK IT NAMES, in code rather than by asking: told it could
+                // link, the model did about one time in five. Studies whose card shows
+                // under this answer are skipped — the card is the link. The client
+                // renders only on `done`, so this is what the visitor sees.
+                $answer = $ctx->linkStudies($answer, $cardSlugs);
 
                 // Read the exchange for the two signals that shape the slate: the
                 // funnel stage (which roles fill it; whether the lead path leads),
@@ -1595,7 +1605,17 @@ class AskController extends Controller
                 // follow-up about a client named two questions ago is still about
                 // them (the DECISION note in FindContext::testimonials says why this
                 // and not a model-named key).
-                'data' => fn(string $text, ?string $modifier, string $question, array $hits, $session) => $ctx->testimonials($text, $this->recentTurnsText($session, self::SUBJECT_WINDOW_TURNS)),
+                // A VIP's relevant studies order the quotes (see FindContext::testimonials).
+                'data' => function (string $text, ?string $modifier, string $question, array $hits, $session) use ($ctx): array {
+                    $vip = Jonson::getInstance()->vip;
+                    $entry = $vip->current();
+
+                    return $ctx->testimonials(
+                        $text,
+                        $this->recentTurnsText($session, self::SUBJECT_WINDOW_TURNS),
+                        $entry ? array_column($vip->relevantStudies($entry), 'slug') : [],
+                    );
+                },
             ],
             [
                 'handle' => 'clients',
@@ -1637,67 +1657,38 @@ class AskController extends Controller
                 // $question is still passed separately, and still decides the pick when
                 // the answer named nothing at all.
                 'data' => function (string $text, ?string $modifier, string $question, array $hits, $session, string $answer) use ($ctx): array {
+                    $shown = $this->shownStudies($session);
+
+                    // A VIP'S OWN WORK LEADS: what the note names ("I designed
+                    // Urban.co.uk"), then what Claude judged relevant from it (see
+                    // Vip::relevantStudies). Urban used to be dropped as one of four in
+                    // a "sweep" when the answer also mentioned Vaiie. Once per
+                    // conversation: already on screen, a study stops leading.
+                    $vip = Jonson::getInstance()->vip;
+                    $entry = $vip->current();
+                    $lead = $entry
+                        ? $ctx->withoutShown($vip->relevantStudies($entry), $shown)
+                        : [];
+
                     $picked = $ctx->caseStudies(
                         $answer,
                         $modifier === 'all' && !$ctx->studiesNamedIn($question),
                         $question,
+                        $lead,
                     );
 
-                    // THE BUDGET DECIDES WHETHER TO SHOW THE PANEL, NEVER WHAT IS IN IT.
-                    //
-                    // Filtering already-seen studies out of the selection itself put the
-                    // rail back in the business of contradicting the prose: a turn whose
-                    // answer led with White Paper showed a lone StreetPal card, because
-                    // White Paper's card had appeared earlier for a different reason.
-                    //
-                    // So the whole selection stands, and history only answers a narrower
-                    // question — "is there anything here the visitor has not already
-                    // seen?" If not, the panel is skipped and the turn says nothing it
-                    // has already said. If so, it shows in full, White Paper included.
-                    $shown = $this->shownStudies($session);
-                    if (!$shown) {
-                        return $picked;
-                    }
-                    $seen = static function (array $study) use ($shown): bool {
-                        foreach ([$study['client'] ?? '', $study['title'] ?? ''] as $name) {
-                            $name = mb_strtolower(trim((string) $name));
-                            if ($name !== '' && !in_array($name, $shown, true)) {
-                                return false;
-                            }
-                        }
-
-                        return true;
-                    };
-
-                    // THE CATALOGUE IS FILTERED. A CURATED PICK IS NOT.
-                    //
-                    // The paragraph above is right about a pick: it is evidence for the
-                    // sentence beside it, and dropping a card out of it leaves the prose
-                    // naming work the strip doesn't show. So a pick still stands whole or
-                    // not at all.
-                    //
-                    // `:all` is not making a point. It is "here is the lot", and nothing
-                    // in the prose is contradicted by the lot arriving minus what is
-                    // already on screen. Left unfiltered it does the opposite of what the
-                    // visitor asked: they tapped to see MORE and got a second strip
-                    // carrying the first one's cards — measured, six runs out of six, by
-                    // the work-repeat scenario. The directive has promised the other
-                    // behaviour the whole time ("a study's card appears ONCE per
-                    // conversation"); this is the code keeping that promise.
-                    if ($modifier === 'all') {
-                        return array_values(array_filter($picked, static fn(array $study): bool => !$seen($study)));
-                    }
-
-                    foreach ($picked as $study) {
-                        if (!$seen($study)) {
-                            return $picked;
-                        }
-                    }
-
-                    return [];
+                    // A STUDY'S CARD SHOWS ONCE PER CONVERSATION — out of every pick, not
+                    // only :all. It used to be whole-pick-or-nothing, so one new card
+                    // dragged the old ones back: Allan asked "What did you do on
+                    // Urban.co.uk?" with Urban already in the rail, the answer's "a logo
+                    // device" picked Logo Design too, and Urban showed a second time. Jon's
+                    // call (2026-09-30): work is never shown twice. Nothing new → no panel.
+                    return $ctx->withoutShown($picked, $shown);
                 },
                 // More than a couple of studies is a strip, not a stack of cards.
-                'present' => static fn(array $studies, ?string $modifier) => count($studies) > 2 ? 'all' : $modifier,
+                // Up to three stand as large cards; past that it's the rail. The template
+                // has the same threshold (featureMax) — this used to say 2 and overrode it.
+                'present' => static fn(array $studies, ?string $modifier) => count($studies) > 3 ? 'all' : $modifier,
                 // Which studies are on screen, so a later chip can't offer one again.
                 'onShown' => fn(array $studies, $session) => $this->rememberShownStudies($session, $studies),
             ],
@@ -2675,8 +2666,13 @@ class AskController extends Controller
         $order = 0;
         // A prose paragraph nobody has used to introduce a panel yet.
         $frameFree = false;
+        // The last paragraph of prose — what a stack of markers below it sits under.
+        $lastProse = '';
         foreach (preg_split('/\n{2,}/', $answer) ?: [] as $paragraph) {
             $hasProse = trim($this->stripMarkers($paragraph)) !== '';
+            if ($hasProse) {
+                $lastProse = $this->stripMarkers($paragraph);
+            }
             if (!preg_match_all('/\[\[([a-z0-9][a-z0-9-]*)(?::([a-z0-9-]+))?\]\]/i', $paragraph, $m, PREG_SET_ORDER)) {
                 $frameFree = $frameFree || $hasProse;
                 continue;
@@ -2691,6 +2687,14 @@ class AskController extends Controller
                 }
                 $isPhoto = isset($photos[$handle]);
                 $framed = $isPhoto ? ($frameFree || $hasProse) : $frameFree;
+                // STACKED UNDER ONE PARAGRAPH. One paragraph introduces one panel, so a
+                // sentence can't dump a stack of them — but a paragraph that NAMES what
+                // a second panel shows has introduced that one too. "Oliver Atkinson,
+                // who I rebranded Urban.co.uk for, put it as…" then [[casestudies]]
+                // [[testimonial]] lost the quote it was about (2026-09-30).
+                if (!$isPhoto && !$framed && $lastProse !== '') {
+                    $framed = $this->paragraphNamesPanel($handle, $lastProse);
+                }
                 if (!$isPhoto && $framed) {
                     $frameFree = false; // this panel has taken the paragraph
                 }
@@ -2707,6 +2711,21 @@ class AskController extends Controller
         }
 
         return $marks;
+    }
+
+    /** Whether a paragraph names what this panel would show — see markersIn(). */
+    private function paragraphNamesPanel(string $handle, string $paragraph): bool
+    {
+        $ctx = Jonson::getInstance()->findContext;
+
+        return match ($handle) {
+            'testimonial' => $ctx->testimonialNamedIn($paragraph),
+            'casestudies' => (bool) array_filter(
+                $ctx->caseStudies(),
+                static fn(array $s) => in_array($ctx->studyMatchTier($paragraph, $s), [1, 2], true),
+            ),
+            default => false,
+        };
     }
 
     /**
@@ -2857,6 +2876,17 @@ class AskController extends Controller
      * it shapes what Jonson leads with and how he reads the questions, and is
      * never recited, quoted or acknowledged as a briefing. Empty for anyone else.
      */
+    /**
+     * How a VIP greeting may and may not use the note. Measured 2026-09-30: asked
+     * anything, Allan was greeted with the note turned into a label for him ("— a
+     * fellow Jersey soul who's spent time in PropTech") in ~1 answer in 3 — reciting
+     * the note, and with the subject dropped it read as though it described him.
+     */
+    private const VIP_GREETING_RULE = "Never describe them to themselves using your note — not where they're "
+        . "from, not what they've worked in, not what the two of you have in common as a label for them. Speak "
+        . "to what they're doing now. If there is genuine common ground, say it as a plain fact about YOURSELF, "
+        . "with \"I\" as its subject, and only if it earns its place.";
+
     private function vipPrompt($session): string
     {
         $vip = Jonson::getInstance()->vip;
@@ -2898,12 +2928,12 @@ class AskController extends Controller
                 ? ($returning
                     ? "This is your first reply in THIS conversation, but they've been here before — "
                         . "greet them by first name ({$first}) as someone coming back, not a stranger, "
-                        . "in one brief line. Don't pretend to recall what you talked about last time "
+                        . "in one brief line. " . self::VIP_GREETING_RULE . " Don't pretend to recall what you talked about last time "
                         . "(you don't have it) and don't make a thing of the return — then answer what "
                         . "they asked. Warm and brief, never gushing. "
                     : "This is your FIRST reply to them, so greet them: open with their first name "
-                        . "({$first}) and one line that shows you know who they are and why they're likely "
-                        . "here — then answer what they asked. Warm and brief, never gushing. THE GREETING "
+                        . "({$first}) and one line about what THEY are doing now — their work, their company — "
+                        . "then answer what they asked. Warm and brief, never gushing. " . self::VIP_GREETING_RULE . " THE GREETING "
                         . "IS THE FIRST THING IN THE REPLY, before the answer — never a line at the end and "
                         . "never a sign-off. Asked something short and practical, the pull is to answer it "
                         . "and greet afterwards; that lands the welcome as an afterthought, which is the "
@@ -2928,6 +2958,35 @@ class AskController extends Controller
         // block has to SAY so: the wording below promised a note and then handed over an
         // empty string, which is an invitation to fill the gap with an invented one.
         $hasNote = $text !== '';
+
+        // THEIR WORK, BY NAME. The note named it; the model named it in prose and then
+        // half the time placed no card, so they heard about Urban and never saw it.
+        // Not session-filtered — this sits in the cached prompt and stays byte-stable.
+        $relevant = $vip->relevantStudies($entry);
+        $theirs = array_map(static fn(array $s): string => $s['name'], $relevant);
+        // THEIR QUOTES, IN ORDER. "Reach for the clients of this work" sent the model to
+        // Vaiie (three of Allan's four studies) and Lee's quote showed alone, 7 runs in
+        // 12. Naming the people, most relevant first, is what makes Urban's CEO lead.
+        $quotes = $relevant
+            ? array_map(
+                static fn(array $t): string => trim($t['name'] . ($t['company'] !== '' ? " ({$t['company']})" : '')),
+                Jonson::getInstance()->findContext->testimonials('', '', array_column($relevant, 'slug')),
+            )
+            : [];
+        $theirQuotes = $quotes
+            ? '- WHAT CLIENTS OF THAT WORK SAID ABOUT YOU, most relevant first: ' . implode(', then ', $quotes)
+                . ". When you reach for what a client said, start with the first.\n"
+            : '';
+        $theirWork = $theirs
+            ? '- WORK OF YOURS RELEVANT TO THEM, most relevant first: ' . implode(', ', $theirs) . '. These are '
+                . 'YOUR projects for OTHER clients, picked because they speak to this person\'s situation — they '
+                . 'had no part in them. Never suggest they worked on, built, owned or were a client of any of '
+                . 'these unless the note says so in as many words; a note that mentions one of your projects '
+                . 'beside their name is telling you what you have in common, not what they did. When a question '
+                . 'opens the door to your work — what sets you apart, why you, your experience, examples, fit — '
+                . 'say how each speaks to what THEY are doing and place [[casestudies]]: these cards lead. Naming '
+                . "work without the marker tells them about it and shows them nothing.\n"
+            : '';
         $background = $hasNote
             ? "Below is your own private note on them: who they are, what they're likely weighing up, "
                 . "what of your work and experience speaks to them.\n"
@@ -2953,6 +3012,8 @@ class AskController extends Controller
             . "- The work you show is chosen FOR THEM: when work fits the question, pick the case studies, "
             . "clients and sectors that speak to their situation and name those in your reply — the cards "
             . "follow what you name, so naming the right ones is how the right cards appear.\n"
+            . $theirWork
+            . $theirQuotes
             . "- Your [[next:]] onward prompts are the questions THIS person would ask next, given who they "
             . "are and what they're weighing up — never generic ones. Tailoring them doesn't lift the "
             . "citation rule: each still ends with its @source, or it's dropped before they see it.\n"

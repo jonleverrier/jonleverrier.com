@@ -35,7 +35,7 @@
    services\NoteMemory) and nothing else: the homepage's default set is the
    fallback for a page that has none (too thin to have been given any). #}
 {% set globals = craft.entries().section('globals').one() %}
-{% set askPlaceholder = placeholder ?? ((globals ? (globals.jonsonPlaceholderDefault ?? '')|trim : '') ?: 'Ask me any question...') %}
+{% set askPlaceholder = placeholder ?? ((globals ? (globals.jonsonPlaceholderDefault ?? '')|trim : '') ?: 'Ask me anything...') %}
 {% set home = craft.entries().section('homepage').status('live').one() %}
 {% set own = (entry ?? null) and (entry.prompts ?? null) ? entry.prompts|map(row => row.prompt|trim)|filter(p => p) : [] %}
 {% set defaults = home ? (home.prompts ?? [])|map(row => row.prompt|trim)|filter(p => p) : [] %}

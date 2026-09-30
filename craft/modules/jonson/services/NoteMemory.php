@@ -521,8 +521,8 @@ class NoteMemory extends Component
         return Craft::$app->getElements()->saveElement($entry, true, true, false);
     }
 
-    /** One completion; the text that came back, or null (logged) on any failure. */
-    private function complete(string $apiKey, string $model, string $system, string $user, string $what, int $maxTokens = 1024): ?string
+    /** One completion; the text that came back, or null (logged) on any failure. Also used by Vip::pickStudies. */
+    public function complete(string $apiKey, string $model, string $system, string $user, string $what, int $maxTokens = 1024): ?string
     {
         try {
             $client = new Client(['timeout' => 90, 'http_errors' => false]);

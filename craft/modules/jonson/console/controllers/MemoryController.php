@@ -20,6 +20,7 @@ use yii\console\ExitCode;
  *   craft jonson/memory/rebuild                       every note AND study, rewritten — the
  *                                                     same as generate --section=all --force
  *   craft jonson/memory/show [--section=…]            print every card the persona sees
+ *   craft jonson/memory/vip-studies [--entry-id=…]    pick every live VIP's relevant case studies now
  *
  * Runs the model call directly rather than queueing, so the result is on
  * screen — this is the backfill and the "let me see it" tool.
@@ -129,6 +130,30 @@ class MemoryController extends Controller
         $this->force = true;
 
         return $this->actionGenerate();
+    }
+
+    /**
+     * Pick each live VIP's relevant case studies now, in the foreground — the backfill
+     * for doors saved before the picker existed, and the "what did it pick?" check.
+     * Re-picks only where the note or the catalogue changed since the last pick.
+     */
+    public function actionVipStudies(): int
+    {
+        $vip = Jonson::getInstance()->vip;
+        $query = Entry::find()->section($vip::SECTION)->status('live');
+        if ($this->entryId) {
+            $query->id($this->entryId);
+        }
+        foreach ($query->all() as $entry) {
+            if ($vip->pickStudies($entry) === null) {
+                $this->stderr("{$entry->title}: pick failed (see the log)\n", Console::FG_RED);
+                continue;
+            }
+            $names = array_map(static fn(array $s) => $s['name'], $vip->relevantStudies($entry));
+            $this->stdout("{$entry->title}: " . ($names ? implode(' · ', $names) : '(none)') . "\n");
+        }
+
+        return ExitCode::OK;
     }
 
     public function actionShow(): int

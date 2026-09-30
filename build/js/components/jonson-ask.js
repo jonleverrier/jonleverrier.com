@@ -528,12 +528,20 @@ export function mountJonson({warpOut} = {}) {
                     } else if (event === 'error') {
                         errorText = JSON.parse(data).message;
                     } else if (event === 'done') {
+                        const doneData = JSON.parse(data);
+                        // THE FINAL ANSWER WINS over the streamed text. The server edits
+                        // the answer after the model finishes — dead links unlinked
+                        // (groundLinks), case studies linked (linkStudies) — and only
+                        // `done` carries that. Rendering the raw stream showed neither.
+                        if (typeof doneData.answer === 'string' && doneData.answer !== '') {
+                            answerText = doneData.answer;
+                        }
                         // The model couldn't be reached. Take the follow-up INPUT away:
                         // it can only produce the same answer again, and the point of
                         // this reply is to send them to the work instead. The footer
                         // around it stays, so the "start over" circle is still there —
                         // hiding the whole bar took the one API-free way out with it.
-                        if (JSON.parse(data).apiError && followForm) {
+                        if (doneData.apiError && followForm) {
                             followForm.hidden = true;
                         }
                         if (errorText || stripMarkers(answerText)) {

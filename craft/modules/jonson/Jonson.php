@@ -67,6 +67,11 @@ class Jonson extends BaseModule
                 if ($this->noteMemory->needs($entry) || $this->noteMemory->needsPrompts($entry)) {
                     Queue::push(new GenerateNoteMemory(['entryId' => $entry->id]));
                 }
+                // A VIP's relevant work, picked once from the note (services\Vip::relevantStudies).
+                // No-op unless it's a live vip entry whose note+catalogue has no pick yet.
+                if (!$entry->getIsDraft() && !$entry->getIsRevision()) {
+                    $this->vip->queuePick($entry);
+                }
             }
         );
 

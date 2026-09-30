@@ -1,0 +1,74 @@
+{
+  "_": [
+    "Case-study card selection, replayed with NO API calls: each case feeds a recorded",
+    "(question, answer) — and optionally a VIP door — through FindContext::caseStudies,",
+    "the same call the ask endpoint makes. Run: ddev exec \"php tools/jonson/selection.php\".",
+    "`first` = the slug the first card must be; `has` / `hasNot` = slugs that must / must",
+    "not be on screen; `min` = fewest cards. A VIP's lead is Vip::relevantStudies — the",
+    "note-named studies plus Claude's cached pick (run craft jonson/memory/vip-studies first).",
+    "`shown` = slugs already on screen this conversation (filtered out, as live).",
+    "`kind: links` cases replay FindContext::linkStudies: `cards` skipped, `linked` / `notLinked` slugs, `text` exact.",
+    "`kind: markers` cases replay AskController::markersIn: `framed` / `unframed` handles.",
+    "`kind: testimonial` cases replay FindContext::testimonials and match quotes by person name."
+  ],
+  "cases": [
+    {
+      "id": "vip-allan-urban-and-vaiie",
+      "_": "The reported answer, 2026-09-30: named Urban and Vaiie, showed two Vaiie cards and no Urban.",
+      "vip": "allan-wood",
+      "q": "What makes you different?",
+      "answer": "Allan — good to have you here, and given what you're doing with Hiizzy, \"different\" is probably the honest thing to press me on. The short version: I work across strategy, design and development, which is rare in one person, and I've spent 25 years in the messy middle of getting products actually shipped and used.\n\nWhere that shows: I've done proptech from a founder's angle before — I rebranded Urban.co.uk ahead of their pre-seed raise — and I've spent years untangling genuinely complex, multi-party regulatory products at Vaiie, where the whole challenge was making layered ownership and compliance legible to real people. That's the kind of \"sits between agents, portals and conveyancers\" complexity you're wrestling with.",
+      "first": "urban-co-uk-product-branding",
+      "has": ["urban-co-uk-product-branding", "vaiie-identify-product-design"],
+      "max": 3
+    },
+    {
+      "id": "vip-allan-answer-names-nothing",
+      "_": "A generic answer that names no work still leads with the VIP's own study.",
+      "vip": "allan-wood",
+      "q": "What makes you different?",
+      "answer": "I work across the whole life cycle — strategy, design and development — which is rare for a designer. And I stick around: clients tend to stay for over a decade.",
+      "first": "urban-co-uk-product-branding",
+      "min": 2,
+      "max": 3
+    },
+    {
+      "id": "vip-allan-asks-about-vaiie",
+      "_": "The question names other work: answer that, and don't push the note's study into it.",
+      "vip": "allan-wood",
+      "q": "Have you worked for Vaiie?",
+      "answer": "Yes — I've worked with Vaiie for years, across their product branding and the Identify and Onboard products.",
+      "hasNot": ["urban-co-uk-product-branding"]
+    },
+    {
+      "id": "anonymous-no-lead",
+      "_": "No VIP door: nothing leads, the answer's own pick stands.",
+      "q": "What makes you different?",
+      "answer": "I work across strategy, design and development, and I've spent years untangling complex, multi-party regulatory products at Vaiie.",
+      "hasNot": ["urban-co-uk-product-branding"]
+    },
+    {
+      "id": "vip-no-note-falls-back",
+      "_": "A door with no note has nothing to lead with: the generic featured pick stands.",
+      "vip": "james-allen",
+      "q": "What makes you different?",
+      "answer": "I work across the whole life cycle — strategy, design and development — which is rare for a designer.",
+      "has": ["white-paper-booking-engine-design-development", "vaiie-identify-product-design"]
+    },
+    {"id": "quote-vip-allan-both-named", "_": "Reported 2026-09-30: Lee (Vaiie) led, Oliver (Urban's CEO) second, on CMS order alone.", "kind": "testimonial", "vip": "allan-wood", "q": "What makes you different?", "answer": "Where that shows: I rebranded Urban.co.uk ahead of their pre-seed raise, and I've spent years on complex regulatory products at Vaiie. The other thing clients tend to say is that I stick around.", "first": "Oliver Atkinson", "has": ["Lee Bosio"]},
+    {"id": "quote-vip-allan-generic", "_": "Names nobody: his own work's quotes, not the featured White Paper one.", "kind": "testimonial", "vip": "allan-wood", "q": "What makes you different?", "answer": "The other thing clients tend to say is that I stick around — many relationships have run over ten years.", "first": "Oliver Atkinson", "hasNot": ["James Hirst", "Aaron Chatterley"]},
+    {"id": "quote-vip-allan-names-other", "_": "The answer's subject still decides which quote; the lead only orders.", "kind": "testimonial", "vip": "allan-wood", "q": "What did you do for White Paper?", "answer": "At White Paper I built the booking engine and have supported it for over a decade.", "first": "James Hirst", "hasNot": ["Oliver Atkinson"]},
+    {"id": "quote-anonymous-generic", "_": "No VIP: the featured quotes, unchanged.", "kind": "testimonial", "q": "What makes you different?", "answer": "The other thing clients tend to say is that I stick around — many relationships have run over ten years.", "has": ["Lee Bosio", "James Hirst"]},
+    {"id": "no-repeat-urban-follow-up", "_": "Reported 2026-09-30: Allan's rail had shown Urban; the chip 'What did you do on Urban.co.uk?' showed Logo Design + Urban again. Work never shows twice, and 'a logo device' is Urban's logo, not the Logo Design study.", "vip": "allan-wood", "q": "What did you do on Urban.co.uk?", "answer": "I rebranded Urban.co.uk ahead of their pre-seed raise back in 2016 — the UK's first online estate agency. I took it the opposite way to how estate agency branding usually plays it safe — bold colours, a friendly rounded typeface, a logo device that stands without the wordmark, and illustration instead of stock photos. I did the competitor analysis, personas, the brand, IA, wireframes, UI and the front-end in Craft.", "shown": ["urban-co-uk-product-branding", "vaiie-onboard-product-design", "vaiie-identify-product-design", "vaiie-product-branding"], "hasNot": ["urban-co-uk-product-branding", "logos"]},
+    {"id": "logo-singular-is-not-the-collection", "_": "Same answer, nothing on screen yet: Urban alone.", "q": "What did you do on Urban.co.uk?", "answer": "I rebranded Urban.co.uk ahead of their pre-seed raise back in 2016 — the UK's first online estate agency. I took it the opposite way to how estate agency branding usually plays it safe — bold colours, a friendly rounded typeface, a logo device that stands without the wordmark, and illustration instead of stock photos. I did the competitor analysis, personas, the brand, IA, wireframes, UI and the front-end in Craft.", "first": "urban-co-uk-product-branding", "hasNot": ["logos"]},
+    {"id": "logos-plural-names-the-collection", "_": "'my logos' still names the Logo Design study.", "q": "Can I see some logos?", "answer": "Here are some of my logos from over the years.", "has": ["logos"]},
+    {"id": "vip-allan-rest-next-turn", "_": "The relevant study that didn't fit the first turn's three leads the next turn that shows work.", "vip": "allan-wood", "q": "Can I see more of your work?", "answer": "Sure — here's more of what I've done.", "shown": ["urban-co-uk-product-branding", "vaiie-onboard-product-design", "vaiie-identify-product-design"], "first": "vaiie-product-branding", "hasNot": ["urban-co-uk-product-branding"]},
+    {"id": "markers-stacked-named-quote", "_": "Reported 2026-09-30: the paragraph named Oliver and Urban, then [[casestudies]] [[testimonial]] stacked below; the quote was dropped as unframed.", "kind": "markers", "answer": "Allan — good to have you here, and what you're doing with Hiizzy is genuinely interesting. As for what clients say: the thread that comes up most is that I challenge the thinking and then stick around.\n\nOliver Atkinson, who I rebranded Urban.co.uk for ahead of their pre-seed raise, put it as going way beyond expectations — probably the most relevant one to look at.\n\n[[casestudies]]\n[[testimonial]]\n\n[[next: how did you approach the Urban.co.uk rebrand? @study:urban-co-uk-product-branding]]", "framed": ["casestudies", "testimonial"]},
+    {"id": "markers-stack-unnamed-dump", "_": "One generic paragraph can't introduce a stack: only the first marker renders.", "kind": "markers", "answer": "I've worked across lots of sectors and clients over the years, and people tend to stay.\n\n[[casestudies]]\n[[testimonial]]\n[[clients]]", "framed": ["casestudies"], "unframed": ["testimonial", "clients"]},
+    {"id": "links-intro-urban", "_": "Reported 2026-09-30: 'Tell me about yourself' named Urban.co.uk, no card, no link.", "kind": "links", "answer": "Me in short: I'm an independent web designer with over 25 years designing, building and maintaining digital products. Interestingly enough, I designed Urban.co.uk back in 2016, so PropTech isn't new ground for me. Urban.co.uk was a fun one.", "linked": ["urban-co-uk-product-branding"], "text": "Me in short: I'm an independent web designer with over 25 years designing, building and maintaining digital products. Interestingly enough, I designed [Urban.co.uk](/case-study/urban-co-uk-product-branding) back in 2016, so PropTech isn't new ground for me. Urban.co.uk was a fun one."},
+    {"id": "links-skip-card-on-screen", "_": "The card shows under this answer: it is the link.", "kind": "links", "answer": "Me in short: I'm an independent web designer with over 25 years designing, building and maintaining digital products. Interestingly enough, I designed Urban.co.uk back in 2016, so PropTech isn't new ground for me. Urban.co.uk was a fun one.", "cards": ["urban-co-uk-product-branding"], "notLinked": ["urban-co-uk-product-branding"]},
+    {"id": "links-vaiie-alone-is-ambiguous", "_": "'Vaiie' names three studies: none linked; 'Vaiie Identify' names one.", "kind": "links", "answer": "I spent years at Vaiie. The Vaiie Identify work was about verification. White Paper came later, and StreetPal is a side project.", "linked": ["vaiie-identify-product-design", "white-paper-booking-engine-design-development", "streetpal-ios-app-design-development"], "notLinked": ["vaiie-product-branding", "vaiie-onboard-product-design"]},
+    {"id": "links-leave-existing-and-markers", "_": "An existing link and markers stay whole; no double link.", "kind": "links", "answer": "I designed [Urban.co.uk](/case-study/urban-co-uk-product-branding) in 2016, and Urban.co.uk still runs.\n\n[[casestudies]]", "text": "I designed [Urban.co.uk](/case-study/urban-co-uk-product-branding) in 2016, and Urban.co.uk still runs.\n\n[[casestudies]]"},
+    {"id": "links-common-phrase-not-a-name", "_": "'a white paper' in lower case is the ordinary phrase, not the client.", "kind": "links", "answer": "I once wrote a white paper on KYC flows.", "notLinked": ["white-paper-booking-engine-design-development"]}
+  ]
+}

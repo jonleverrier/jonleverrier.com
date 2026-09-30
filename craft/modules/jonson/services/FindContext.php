@@ -33,6 +33,7 @@ class FindContext extends Component
     private const MAX_ITEMS = 4;
     private const MAX_TESTIMONIALS = 3; // ceiling on how many quotes surface at once
     private const TESTIMONIAL_FEATURED_BOOST = 100; // a featured quote outranks any non-featured in generic (non-client) contexts
+    private const LEAD_PER_TURN = 3; // a lead set (a VIP's relevant work) shows at most this many a turn — large cards, never the rail
     private const CASE_STUDY_TARGETED_MAX = 2; // >this many matches = a broad sweep, not a targeted ask → featured only
 
     /**
@@ -198,10 +199,18 @@ class FindContext extends Component
      * `isFeatured` lead (his strongest, boosted above any non-featured), then
      * topical overlap of each quote's `context` + text with the answer fills the
      * rest (or the single best as a default, since the model asked for a quote via
-     * its marker). Capped at MAX_TESTIMONIALS. Returns a list of
+     * its marker). Capped at MAX_TESTIMONIALS.
+     *
+     * $leadSlugs — a VIP's relevant studies, most relevant first (Vip::relevantStudies).
+     * A quote linked to one of them (its `caseStudyLink`) leads, in that order: asked
+     * "what makes you different?", Allan got Vaiie's quote before Urban's CEO on CMS
+     * order alone. On a generic beat those quotes REPLACE the featured ones — a White
+     * Paper quote says nothing to a proptech founder. Never overrides a named client:
+     * the answer's subject still decides WHICH quotes, this only decides their order.
+     * Returns a list of
      * { quote, name, role, company, image } (empty if none).
      */
-    public function testimonials(string $forText = '', string $recentText = ''): array
+    public function testimonials(string $forText = '', string $recentText = '', array $leadSlugs = []): array
     {
         if (!Craft::$app->getEntries()->getSectionByHandle('testimonials')) {
             return [];
@@ -251,7 +260,10 @@ class FindContext extends Component
             $topical = count(array_intersect($terms, $vocab));
 
             $isFeatured = $this->isFeatured($entry);
+            $studySlug = (string) ($entry->caseStudyLink?->one()?->slug ?? '');
+            $leadRank = $studySlug !== '' ? array_search($studySlug, $leadSlugs, true) : false;
             $scored[] = [
+                'lead' => $leadRank === false ? null : (int) $leadRank,
                 'entry' => $entry,
                 'isSubject' => $isSubject,
                 'isRecentSubject' => $isRecentSubject,
@@ -290,6 +302,17 @@ class FindContext extends Component
                 $chosen = [$scored[0]];
             }
         }
+        if ($leadSlugs) {
+            // A generic beat with quotes from their own relevant work: those, not the featured.
+            if (!$scored[0]['isSubject'] && !array_filter($scored, static fn($s) => $s['isRecentSubject'])) {
+                $theirs = array_values(array_filter($scored, static fn($s) => $s['lead'] !== null));
+                if ($theirs) {
+                    $chosen = $theirs;
+                }
+            }
+            // Their work first, most relevant first; everything else keeps its order.
+            usort($chosen, static fn($a, $b) => ($a['lead'] ?? PHP_INT_MAX) <=> ($b['lead'] ?? PHP_INT_MAX) ?: $a['i'] <=> $b['i']);
+        }
         $chosen = array_slice($chosen, 0, self::MAX_TESTIMONIALS);
 
         $out = [];
@@ -301,6 +324,100 @@ class FindContext extends Component
         }
 
         return $out;
+    }
+
+    /**
+     * Link the first mention of each case study in an answer to its page — the model
+     * was told it CAN link and did so about one time in five (Jon, 2026-09-30).
+     *
+     * What counts as a mention: the study's client + its first distinctive title word
+     * ("Vaiie Identify"), its full short title, or — only when the client has ONE study
+     * — the client's name alone ("Urban.co.uk", "White Paper"). "Vaiie" alone names
+     * three studies and links none. A study with no client (Logo Design) is a
+     * collection, not a project, and isn't linked.
+     *
+     * Skipped: $skipSlugs (the studies whose cards show right under this answer — the
+     * card is the link), anything already linked, and text inside a link or a marker.
+     * First mention only; the rest stay plain.
+     */
+    public function linkStudies(string $answer, array $skipSlugs = []): string
+    {
+        $studies = $this->caseStudies();
+        $perClient = array_count_values(array_filter(array_map(static fn(array $s) => mb_strtolower($s['client']), $studies)));
+        $phrases = []; // phrase => path, longest first so "Vaiie Identify" beats "Vaiie"
+        foreach ($studies as $st) {
+            $path = (string) (parse_url($st['url'], PHP_URL_PATH) ?: '');
+            $client = trim($st['client']);
+            if ($path === '' || $client === '' || in_array($st['slug'], $skipSlugs, true) || str_contains($answer, '](' . $path . ')')) {
+                continue;
+            }
+            $phrases[$st['name']] = $path;
+            $rest = trim((string) preg_replace('/^' . preg_quote($client, '/') . '\s*/iu', '', $st['name']));
+            $first = preg_split('/\s+/', $rest)[0] ?? '';
+            if ($first !== '' && mb_strlen($first) >= 4 && !in_array(mb_strtolower($first), ['product', 'design', 'booking', 'ios', 'app'], true)) {
+                $phrases["{$client} {$first}"] = $path;
+            }
+            if (($perClient[mb_strtolower($client)] ?? 0) === 1) {
+                $phrases[$client] = $path;
+            }
+        }
+        if (!$phrases) {
+            return $answer;
+        }
+        uksort($phrases, static fn($a, $b) => mb_strlen($b) <=> mb_strlen($a));
+
+        // Plain text only: existing links and [[markers]] are split out and kept whole.
+        $parts = preg_split('/(\[\[[^\]]*\]\]|\[[^\]\n]+\]\([^)\s]*\))/u', $answer, -1, PREG_SPLIT_DELIM_CAPTURE) ?: [$answer];
+        $done = [];
+        foreach ($parts as $i => $part) {
+            if ($i % 2 === 1) {
+                continue; // a link or a marker
+            }
+            foreach ($phrases as $phrase => $path) {
+                if (isset($done[$path])) {
+                    continue;
+                }
+                // Case-SENSITIVE: these are proper nouns, and "a white paper on KYC" is
+                // not White Paper the client.
+                $re = '/(?<![\p{L}\p{N}.\/])(' . preg_quote($phrase, '/') . ')(?![\p{L}\p{N}]|\.[\p{L}])/u';
+                if (preg_match($re, $part)) {
+                    $part = preg_replace($re, '[$1](' . $path . ')', $part, 1);
+                    $done[$path] = true;
+                    // Shorter phrases for the same study must not relink inside this one.
+                    foreach ($phrases as $p2 => $path2) {
+                        if ($path2 === $path) {
+                            unset($phrases[$p2]);
+                        }
+                    }
+                }
+            }
+            $parts[$i] = $part;
+        }
+
+        return implode('', $parts);
+    }
+
+    /**
+     * Whether $text names someone with a quote — the person or their company, on the
+     * same distinctive-phrase match testimonials() uses to find its subject. What lets
+     * a [[testimonial]] marker stacked under a paragraph about Oliver count as framed.
+     */
+    public function testimonialNamedIn(string $text): bool
+    {
+        if (!Craft::$app->getEntries()->getSectionByHandle('testimonials')) {
+            return false;
+        }
+        $norm = ' ' . trim(preg_replace('/\s+/', ' ', preg_replace('/[^\p{L}\p{N}]+/u', ' ', mb_strtolower($text)) ?? '')) . ' ';
+        foreach (Entry::find()->status(Entry::STATUS_LIVE)->section('testimonials')->all() as $entry) {
+            foreach ([Testimonials::company($entry), (string) ($entry->personName ?? '')] as $name) {
+                $key = $this->nameKey((string) $name);
+                if ($key !== '' && str_contains($norm, ' ' . $key . ' ')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -419,8 +536,81 @@ class FindContext extends Component
      * a private `jonsonSummary` (AI context only), and its sector/skill categories.
      * Independent of the Client List (not every client has a study). Skips until the
      * section exists; entries with no case-study title are dropped. Returns maps.
+     *
+     * $lead — studies that go FIRST whatever the answer picked: a VIP's own work (see
+     * studiesForNote). Their note is the best evidence of what fits them, better than
+     * any count over the answer's wording, and the answer's pick follows as the rest.
+     * Ignored when the question itself names work — "worked for Vaiie?" is asking
+     * about Vaiie, and a card from the note would answer a question they didn't ask.
      */
-    public function caseStudies(?string $context = null, bool $all = false, ?string $question = null): array
+    public function caseStudies(?string $context = null, bool $all = false, ?string $question = null, array $lead = []): array
+    {
+        $picked = $this->pickStudies($context, $all, $question);
+        if (!$lead || $context === null || trim($context) === '') {
+            return $picked;
+        }
+        if ($question !== null && trim($question) !== '' && $this->studiesNamedIn($question)) {
+            return $picked;
+        }
+        $slugs = array_column($lead, 'slug');
+
+        // Their work, then any other study the answer NAMED (by title or client) — both
+        // are relevance. Not the answer's sector/skill brushes or the featured fallback.
+        //
+        // AT MOST THREE A TURN, so they stand as large cards: the rail hides relevant work
+        // in a drift, and four stacked large cards is too much (Jon, 2026-09-30). Nothing
+        // is lost — the caller filters out what's been shown, so the next turn that shows
+        // work leads with whatever relevant study didn't fit this time.
+        $namedByAnswer = array_filter(
+            $picked,
+            fn(array $s) => !in_array($s['slug'], $slugs, true) && in_array($this->studyMatchTier($context, $s), [1, 2], true),
+        );
+
+        return array_slice(array_merge($lead, array_values($namedByAnswer)), 0, self::LEAD_PER_TURN);
+    }
+
+    /**
+     * $picked less every study already on screen this conversation. $shown is the
+     * lower-cased client names and titles recorded as cards went up (AskController::
+     * rememberShownStudies); a study counts as shown when both of its are there — a
+     * client's name alone doesn't hide its other studies.
+     */
+    public function withoutShown(array $picked, array $shown): array
+    {
+        if (!$shown) {
+            return $picked;
+        }
+
+        return array_values(array_filter($picked, static function (array $study) use ($shown): bool {
+            foreach ([$study['client'] ?? '', $study['title'] ?? ''] as $name) {
+                $name = mb_strtolower(trim((string) $name));
+                if ($name !== '' && !in_array($name, $shown, true)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }));
+    }
+
+    /**
+     * The studies a VIP note names by title or client — "I designed Urban.co.uk back
+     * in 2016" is Urban's work. A sector or skill mention doesn't count: a note says
+     * "startup" or "logo" about the person, not about which of Jon's projects fits.
+     */
+    public function studiesForNote(string $note): array
+    {
+        if (trim($note) === '') {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $this->caseStudies(),
+            fn(array $s) => in_array($this->studyMatchTier($note, $s), [1, 2], true),
+        ));
+    }
+
+    private function pickStudies(?string $context, bool $all, ?string $question): array
     {
         if (!Craft::$app->getEntries()->getSectionByHandle('caseStudies')) {
             return [];
@@ -679,6 +869,14 @@ class FindContext extends Component
         if ($client !== '') {
             $name = trim((string) preg_replace('/(?<![a-z0-9])' . preg_quote(mb_strtolower($client), '/') . '(?![a-z0-9])/iu', ' ', $name));
         }
+        // A study with NO client is a collection of a kind of work ("Logo Design"), and
+        // is named by that kind of work in general — its whole title, or its word in the
+        // plural ("my logos"). Not by the singular in passing: "a logo device that
+        // stands without the wordmark" in an answer about Urban is Urban's logo, and it
+        // put the Logo Design card beside Urban's.
+        if ($name !== '' && $name !== $long && $client === '' && !$this->namesCollection($context, $name)) {
+            $name = '';
+        }
         if ($name !== '' && $name !== $long && $this->studyRelevantTo($context, $study, labels: [$name])) {
             return 1;
         }
@@ -692,6 +890,22 @@ class FindContext extends Component
             return 4;
         }
         return 0;
+    }
+
+    /** Whether $context names a client-less study by its whole title or a plural of one of its words. */
+    private function namesCollection(string $context, string $name): bool
+    {
+        $haystack = ' ' . mb_strtolower($context) . ' ';
+        if (str_contains($haystack, mb_strtolower($name))) {
+            return true;
+        }
+        foreach (preg_split('/\s+/', mb_strtolower($name)) ?: [] as $word) {
+            if (mb_strlen($word) >= 4 && preg_match('/(?<![a-z0-9])' . preg_quote($word, '/') . 'e?s(?![a-z0-9])/u', $haystack)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

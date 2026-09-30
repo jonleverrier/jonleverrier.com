@@ -4,6 +4,10 @@ namespace modules\jonson\services;
 
 use Craft;
 use craft\elements\Entry;
+use craft\helpers\App;
+use craft\helpers\Queue;
+use modules\jonson\jobs\PickVipStudies;
+use modules\jonson\Jonson;
 use yii\base\Component;
 use yii\web\Cookie;
 
@@ -394,7 +398,7 @@ class Vip extends Component
             return $line;
         }
         // An ELLIPSIS counts as one mark, not as a full stop with two dots in front of
-        // it. Without this, "Ask me any question..." came back as "Ask me any question..,
+        // it. Without this, "Ask me anything..." came back as "Ask me anything..,
         // Marcus." — the greedy-looking match takes only the final character.
         if (preg_match('/^(.*?)(\.{3}|\x{2026}|[?!.])$/u', $line, $m)) {
             return $m[1] . ', ' . $first . $m[2];
@@ -457,5 +461,122 @@ class Vip extends Component
         $value = $entry->$handle;
 
         return is_string($value) ? trim($value) : '';
+    }
+
+    /**
+     * The case studies that fit this person, most relevant first — what leads the
+     * cards whenever they show, and what the prompt tells the model is theirs.
+     *
+     * 1. Every study the note NAMES (by client or title) — "I designed Urban.co.uk".
+     * 2. Every other study Claude judged relevant after reading the note — no quota,
+     *    relevance decides: a proptech startup founder building multi-party infrastructure is
+     *    Vaiie's kind of problem though the note never says "Vaiie". That judgement
+     *    is made ONCE, in a queue job after the entry is saved, and cached against
+     *    the note and the catalogue — never on the visitor's clock. Until it lands
+     *    (or if it failed), the named studies stand alone.
+     */
+    public function relevantStudies(Entry $entry): array
+    {
+        $find = Jonson::getInstance()->findContext;
+        $named = $find->studiesForNote($this->note($entry));
+        $picked = Craft::$app->getCache()->get($this->studiesKey($entry));
+        if ($picked === false) {
+            $this->queuePick($entry);
+            return $named;
+        }
+        $out = $named;
+        $have = array_column($named, 'slug');
+        foreach ($find->caseStudies() as $s) {
+            if (in_array($s['slug'], (array) $picked, true) && !in_array($s['slug'], $have, true)) {
+                $out[] = $s;
+            }
+        }
+        // Keep Claude's order, not the catalogue's.
+        $rank = array_flip(array_merge($have, (array) $picked));
+        usort($out, static fn(array $a, array $b) => ($rank[$a['slug']] ?? 99) <=> ($rank[$b['slug']] ?? 99));
+
+        return $out;
+    }
+
+    /**
+     * Ask Claude which other studies this person would find relevant, and cache the
+     * answer (a list of slugs, possibly empty). Returns null on failure, so the job
+     * retries. Called from the queue job and the console, never from a request.
+     */
+    public function pickStudies(Entry $entry): ?array
+    {
+        $note = $this->note($entry);
+        $find = Jonson::getInstance()->findContext;
+        $named = array_column($find->studiesForNote($note), 'slug');
+        if ($note === '') {
+            Craft::$app->getCache()->set($this->studiesKey($entry), [], 0);
+            return [];
+        }
+        $apiKey = App::env('KEY_ANTHROPIC_API');
+        if (empty($apiKey)) {
+            return null;
+        }
+
+        $catalogue = [];
+        foreach ($find->caseStudies() as $s) {
+            if (in_array($s['slug'], $named, true)) {
+                continue;
+            }
+            $catalogue[] = "- {$s['slug']}: {$s['name']} (client: {$s['client']}; sectors: " . implode(', ', $s['sectors'])
+                . '; skills: ' . implode(', ', $s['skills']) . ")\n  " . mb_substr($s['summary'] . ' ' . $s['jonsonSummary'], 0, 1200);
+        }
+        if (!$catalogue) {
+            Craft::$app->getCache()->set($this->studiesKey($entry), [], 0);
+            return [];
+        }
+
+        $system = "You choose which of a designer's case studies a specific person would find relevant to them "
+            . "and their situation. Relevant means it speaks to what they do or are wrestling with: the same "
+            . "sector, the same stage of company, the same kind of problem. Not merely good work. An empty "
+            . "list is a correct answer when nothing fits.";
+        $user = "The person, in the designer's own private note:\n\n{$note}\n\n"
+            . "Case studies (studies the note already names are left out):\n" . implode("\n", $catalogue)
+            . "\n\nReply with ONLY a JSON array of the relevant slugs, most relevant first, e.g. [\"slug-a\"] — "
+            . "as many as genuinely fit, none if none do.";
+        $model = App::env('KEY_ANTHROPIC_MODEL_MEMORY') ?: 'claude-opus-5';
+        $text = Jonson::getInstance()->noteMemory->complete($apiKey, $model, $system, $user, 'vip studies for entry ' . $entry->id, 1024);
+        if ($text === null || !preg_match('/\[[^\[\]]*\]/s', $text, $m)) {
+            Craft::warning('[jonson] vip studies for entry ' . $entry->id . ': no JSON array in ' . json_encode($text), __METHOD__);
+            return null;
+        }
+        $known = array_column($find->caseStudies(), 'slug');
+        $slugs = array_values(array_filter(
+            (array) json_decode($m[0], true),
+            static fn($s) => is_string($s) && in_array($s, $known, true) && !in_array($s, $named, true),
+        ));
+        Craft::$app->getCache()->set($this->studiesKey($entry), $slugs, 0);
+
+        return $slugs;
+    }
+
+    /** Queue a pick unless one is cached or already queued in the last few minutes. */
+    public function queuePick(Entry $entry): void
+    {
+        if ($entry->section?->handle !== self::SECTION || $this->note($entry) === '') {
+            return;
+        }
+        $cache = Craft::$app->getCache();
+        $key = $this->studiesKey($entry);
+        if ($cache->get($key) !== false || $cache->get($key . '.queued')) {
+            return;
+        }
+        $cache->set($key . '.queued', true, 600);
+        Queue::push(new PickVipStudies(['entryId' => $entry->id]));
+    }
+
+    /**
+     * Keyed on the note AND the catalogue, so editing either re-picks: a new study
+     * may be the better fit, and a rewritten note may be a different person.
+     */
+    private function studiesKey(Entry $entry): string
+    {
+        $catalogue = array_map(static fn(array $s) => $s['slug'] . '|' . $s['name'], Jonson::getInstance()->findContext->caseStudies());
+
+        return 'jonson.vip.studies.' . $entry->id . '.' . md5($this->note($entry) . "\n" . implode("\n", $catalogue));
     }
 }

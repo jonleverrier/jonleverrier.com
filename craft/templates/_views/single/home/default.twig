@@ -4,7 +4,7 @@
 {% set tplPath = _self %}
 
 {# The ask bar's prompt, with the visitor's name in it when they came through a VIP
-   door: "Ask me any question, Lee...". vip.personalise() returns the line untouched when
+   door: "Ask me anything, Lee...". vip.personalise() returns the line untouched when
    there is no VIP and no first name, so both bars below can use it blind.
 
    Set once here rather than called twice: the two bars are the same invitation in two
@@ -22,7 +22,7 @@
    any trailing ellipsis taken off. Same source as _components/ask.twig. #}
 {% set jonson = craft.app.getModule('jonson') %}
 {% set globals = craft.entries().section('globals').one() %}
-{% set placeholderLine = (globals ? (globals.jonsonPlaceholderDefault ?? '')|trim : '') ?: 'Ask me any question...' %}
+{% set placeholderLine = (globals ? (globals.jonsonPlaceholderDefault ?? '')|trim : '') ?: 'Ask me anything...' %}
 {% set askPlaceholder = jonson.vip.personalise(placeholderLine) %}
 {% set askLabel = jonson.vip.personalise(placeholderLine|replace('/(\\.{3}|…)$/u', '')|trim) %}
 
@@ -53,7 +53,7 @@
         {# `longTitle`, like every other section — but NOT the usual `?: entry.title`
            fallback. This single's title is "Home", which is a CMS label, not a
            headline; falling back to it would put "Home" in the hero. #}
-        <h1 class="c-frontdoor__title">{{ entry.longTitle ?: 'Ask me any question' }}</h1>
+        <h1 class="c-frontdoor__title">{{ entry.longTitle ?: 'Ask me anything' }}</h1>
         {# The field and the band tucked behind it. The band is a SIBLING of the form,
            not a child — inside the shell it would flatten the field's bottom corners;
            behind it, the field keeps its own rounded box and the band peeks out below. #}
@@ -148,7 +148,7 @@
 {# Conversation view — revealed in-place on the first question. #}
 <section class="c-jonson" data-jonson-view hidden
     {%- if jonsonLinks|length %} data-jonson-links="{{ jonsonLinks|join(' ') }}"{% endif %}>
-    <p class="c-jonson__whisper u-font-whisper">Ask me any question</p>
+    <p class="c-jonson__whisper u-font-whisper">Ask me anything</p>
 
     <div class="c-jonson__thread" data-jonson-thread></div>
 

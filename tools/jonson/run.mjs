@@ -24,6 +24,15 @@
  * `linksTool` asserts the answer does (true) or does not (false) link the free
  * homepage analysis.
  *
+ * `vip: "<slug>"` on a scenario opens that VIP door (/vip/<slug>) in the run's
+ * cookie jar before the first question, so the whole conversation is primed with
+ * the entry's note exactly as a visitor holding the link would be. `expectStudies`
+ * on a turn lists study slugs whose cards must be on screen; `leadStudy` is the
+ * slug the FIRST card must be — the work the note makes the obvious match;
+ * `minStudies` the fewest cards the turn may show; `forbidText` regex sources the
+ * answer must not match; `leadQuote` the person whose quote
+ * must come first whenever a testimonial shows.
+ *
  * Output: a table per scenario (pass rate, and every failed assertion with its
  * count), a per-surface summary (missed when expected / shown when forbidden),
  * and the full per-run record as JSON under tools/jonson/results/. Exit code 1
@@ -105,7 +114,10 @@ async function ask(jar, cid, token, question, continuation, fromChip = null) {
     // to change. A first pass keyed on the path missed every card and left the repeat
     // assertion below testing an empty list: green, and checking nothing.
     const studyHtml = (events.casestudies || []).map((d) => d.html || '').join('');
-    const studies = [...new Set([...studyHtml.matchAll(/class="c-case-study"\s+href="([^"]+)"/g)].map((m) => m[1]))];
+    let studies = [...new Set([...studyHtml.matchAll(/class="c-case-study"\s+href="([^"]+)"/g)].map((m) => m[1]))];
+    // The marquee's markup is REVERSED (see _components/case-studies.twig) so the cards
+    // arrive in list order as the strip drifts; undo it so studies[0] is the lead.
+    if (/c-case-studies--marquee/.test(studyHtml)) studies = studies.reverse();
     return {events, answer: done.answer || '', imgs, chips, studies, error: events.error?.[0]?.message};
 }
 
@@ -113,10 +125,20 @@ async function ask(jar, cid, token, question, continuation, fromChip = null) {
 async function runScenario(s) {
     const jar = new Jar();
     const cid = `suite-${randomUUID()}`;
+    // THE VIP DOOR. /vip/{slug} answers with a redirect that sets the signed
+    // `jonson_vip` cookie; not following the redirect keeps the cookie in this jar
+    // and nothing else. No cookie means the door is dead — fail loudly rather than
+    // run the scenario as an anonymous visitor and report on the wrong thing.
+    if (s.vip) {
+        const res = await fetch(`${BASE}/vip/${s.vip}`, {redirect: 'manual', headers: {Cookie: jar.header()}});
+        jar.absorb(res);
+        if (!jar.cookies.has('jonson_vip')) throw new Error(`VIP door /vip/${s.vip} set no cookie (HTTP ${res.status})`);
+    }
     const token = await csrf(jar);
     const record = {id: s.id, turns: [], failures: []};
     const seenImgs = new Set();
     const seenStudies = new Set();
+    let seenText = '';
     let offered = [];
     for (const [i, turn] of s.turns.entries()) {
         // TAPPING A CHIP, rather than typing another question of our own. Every
@@ -157,6 +179,34 @@ async function runScenario(s) {
             const cards = (html.match(/class="c-case-study"/g) || []).length;
             if (cards > turn.maxStudies) fails.push(`T${i + 1} casestudies showed ${cards} cards (max ${turn.maxStudies})`);
         }
+        // WHICH WORK, NOT WHETHER. `expect: ["casestudies"]` is satisfied by any card
+        // at all — two Vaiie cards under an answer to a proptech founder that named
+        // Urban.co.uk passed it. These name the study. Matched on the slug inside the
+        // card's href, so a card for the right work passes however the URL is prefixed.
+        const hasStudy = (slug) => r.studies.some((u) => u.replace(/\/+$/, '').endsWith(`/${slug}`));
+        for (const slug of turn.expectStudies || []) {
+            if (!hasStudy(slug)) fails.push(`T${i + 1} missing study ${slug} (shown: ${r.studies.map((u) => u.split('/').pop()).join(', ') || 'none'})`);
+        }
+        // THINGS THE ANSWER MUST NEVER SAY — each a regex source, case-insensitive. For a
+        // VIP, crediting the visitor with Jon's own work for someone else ("given you
+        // built Urban into something new since we worked together in 2016").
+        for (const src of turn.forbidText || []) {
+            const hit = r.answer.match(new RegExp(src, 'i'));
+            if (hit) fails.push(`T${i + 1} answer said "${hit[0]}"`);
+        }
+        // WHICH QUOTE LEADS, when a quote shows at all (the model decides whether).
+        // Lee (Vaiie) led Oliver (Urban's CEO) for Allan on CMS order alone.
+        if (turn.leadQuote) {
+            const html = (r.events.testimonial || []).map((d) => d.html || '').join('');
+            const first = (html.match(/class="c-testimonial__name">([^<]+)</) || [])[1];
+            if (first && first.trim() !== turn.leadQuote) fails.push(`T${i + 1} lead quote was ${first.trim()}, not ${turn.leadQuote}`);
+        }
+        if (turn.minStudies && r.studies.length < turn.minStudies) {
+            fails.push(`T${i + 1} showed ${r.studies.length} study card(s) (min ${turn.minStudies})`);
+        }
+        if (turn.leadStudy && !(r.studies[0] || '').replace(/\/+$/, '').endsWith(`/${turn.leadStudy}`)) {
+            fails.push(`T${i + 1} lead study was ${(r.studies[0] || 'none').split('/').pop()}, not ${turn.leadStudy}`);
+        }
         if (turn.maxWords) {
             const prose = r.answer.replace(/\[\[[^\]]*\]{1,2}/g, ' ').trim();
             const words = prose.split(/\s+/).filter(Boolean).length;
@@ -192,6 +242,17 @@ async function runScenario(s) {
         if (s.singleTestimonial) {
             const html = (r.events.testimonial || []).map((d) => d.html || '').join('');
             if (html && /has-multiple/.test(html)) fails.push(`T${i + 1} testimonial panel had several quotes`);
+        }
+        // A CHIP NAMING WHAT THE VISITOR NEVER MET. Chips are the visitor's own words, so
+        // "What did you do on the Vaiie regulatory products?" is impossible for someone
+        // who has not heard of Vaiie — neither in their questions, the answers nor a card.
+        // Checked on EVERY turn against suite.names (clients and projects); the seen text
+        // is everything shown so far, this turn's answer and panels included.
+        seenText += ' ' + question + ' ' + r.answer + ' ' + SURFACES.flatMap((n) => (r.events[n] || []).map((d) => d.html || '')).join(' ');
+        const seen = seenText.toLowerCase();
+        for (const chip of r.chips) {
+            const unseen = (suite.names || []).filter((n) => chip.toLowerCase().includes(n.toLowerCase()) && !seen.includes(n.toLowerCase()));
+            if (unseen.length) fails.push(`T${i + 1} chip names unseen ${unseen.join(', ')}: "${chip}"`);
         }
         r.imgs.forEach((src) => seenImgs.add(src));
         r.studies.forEach((u) => seenStudies.add(u));
