@@ -31,7 +31,7 @@ class FrontEndVariable
     /** @var int[]|null Memo for notesHiddenByTopic() — see the note there. */
     private static ?array $hiddenNotes = null;
 
-    /** The purposeOptions value meaning "show this to everyone" — see ctas(). */
+    /** The purposeOptions value meaning "Non-VIP": visitors without a door — see ctas(). */
     private const CTA_GENERAL = 'general';
 
     /** @var Entry[]|null Memo for ctas() — see the note there. */
@@ -512,8 +512,10 @@ class FrontEndVariable
      * A CTA carries a Purpose checkbox set (`purposeOptions`); a VIP door carries one
      * `purpose` from the same list, minus 'general'. The rule:
      *
-     *   'general' ticked    → shown to everyone, VIP or not. This is the ONLY way a CTA
-     *                         reaches an ordinary visitor.
+     *   'general' ticked    → shown to ordinary visitors — labelled "Non-VIP" in the CP.
+     *                         NOT to a VIP: their door's own CTAs replace these. A door
+     *                         with the purpose left blank counts as no door here, so it
+     *                         never ends up with no CTAs at all.
      *   a purpose ticked    → shown to a visitor who came through a VIP door with that
      *                         purpose. No door, or a door with the dropdown left blank,
      *                         and it stays hidden.
@@ -525,9 +527,9 @@ class FrontEndVariable
      *                         is visibly empty in the CP.
      *
      * The two combine: 'general' plus 'lookingForAJob' is an ordinary CTA that also
-     * suits that door. And 'general' is additive, not exclusive — a VIP still sees the
-     * general CTAs, because losing "Send me an email" is not something being recognised
-     * at the door should cost you.
+     * suits that door. To keep "Send me an email" in front of a VIP, tick their purpose
+     * on it as well — 'general' alone no longer reaches them. (It used to: a partnership
+     * door was offered the free Homepage Analysis, a pitch for strangers.)
      *
      * Resolved once: three templates render this list (footer, contact page, contact
      * panel) and each used to fetch the globals single for itself.
@@ -589,10 +591,10 @@ class FrontEndVariable
                 }
             }
 
-            $everyone = in_array(self::CTA_GENERAL, $wanted, true);
+            $nonVip = $purpose === '' && in_array(self::CTA_GENERAL, $wanted, true);
             $thisDoor = $purpose !== '' && in_array($purpose, $wanted, true);
 
-            if ($everyone || $thisDoor) {
+            if ($nonVip || $thisDoor) {
                 $shown[] = $cta;
             }
         }

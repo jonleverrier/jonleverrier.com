@@ -10,7 +10,7 @@ settings:
       __assoc__:
         -
           - label
-          - General
+          - Non-VIP
         -
           - value
           - general
