@@ -207,23 +207,23 @@
 .c-form__input-icon {
     position: absolute;
     top: 50%;
-    right: rem(16);
+    right: rem(12);
     transform: translateY(-50%);
-    width: rem(24);
-    height: rem(24);
+    width: rem(20);
+    height: rem(20);
     color: getmap($colour, primary, 600); // red — matches the error border
     pointer-events: none;
 }
 
 .c-form__field--error .c-form__input {
     border-color: getmap($colour, primary, 600); // red — as on focus
-    padding-right: rem(48); // clear the overlaid warning icon on the right
+    padding-right: rem(40); // clear the overlaid warning icon on the right
 }
 
 .c-form__input {
     width: 100%;
-    height: rem(55); // single-line inputs (the textarea overrides below)
-    padding: 0 rem(16); // single-line text centres vertically on its own
+    height: rem(44); // single-line inputs (the textarea overrides below) — the tap-target minimum, no more
+    padding: 0 rem(14); // single-line text centres vertically on its own
     border: rem(2) solid transparent;
     border-radius: $b-radius-100;
     background-color: getmap($colour, light, 600); // cream — same as the page slab
@@ -253,8 +253,8 @@
 
 .c-form__input--area {
     height: auto; // grow with content, not the fixed single-line height
-    min-height: rem(130);
-    padding: rem(14) rem(16); // restore vertical padding for the multi-line box
+    min-height: rem(110);
+    padding: rem(10) rem(14); // restore vertical padding for the multi-line box
     resize: vertical;
 }
 
