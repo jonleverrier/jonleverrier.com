@@ -116,8 +116,10 @@ $b-logo-flip-ease: cubic-bezier(0.4, 0, 0.2, 1);
 
 // A vertical ticker through the mask above: the leaving line slides up and out
 // while the next slides up and in, on the SAME curve and duration, so it reads
-// as one line pushing the other out rather than two effects. No opacity — the
-// mask edge makes the cut, which is what gives it its snap. Ease-in-out (slow
+// as one line pushing the other out rather than two effects. Plus a QUICK FADE
+// (Jon, 2026-09-30): without one, any frame caught mid-slide — a screenshot, half
+// the time — showed two sliced half-lines, and read as broken. The leaving line is
+// gone before the halfway mark; the next fades in behind it. Ease-in-out (slow
 // off the mark, slow to settle): a one-second move, a one-second hold — the
 // duration here, the beat in cycle-logo-description.js. The 110% travel clears
 // the descenders past the mask edge, where 100% leaves them peeking.
@@ -129,25 +131,20 @@ $b-logo-flip-ease: cubic-bezier(0.4, 0, 0.2, 1);
 // instant and only the two live moves animate.
 $b-logo-ticker-duration: 1000ms;
 $b-logo-ticker-ease: cubic-bezier(0.65, 0, 0.35, 1);
+$b-logo-ticker-fade: 400ms;             // out over the first 0.4s of the slide…
+$b-logo-ticker-fade-in-delay: 300ms;    // …and the next in from 0.3s to 0.7s
 
 .b-logo__item {
     @include typography(p-sm);
     color: getmap($colour, light, 100);
     margin: 0;
-    // Wraps. It was `nowrap`, and the mask above then cut the line off mid-word: the
-    // header genuinely runs out of width for "Street Photographer" on a phone, and a
-    // silent slice is a worse answer than a second row.
-    //
-    // `anywhere`, NOT `break-word`, and the difference is the whole point here. A grid
-    // column can't size below its min-content, which is its longest WORD — at 320
-    // "Photographer" (132px) held the column wider than the 107px the header can give
-    // it, and the mask cut it again. `break-word` breaks such a word when it's laid
-    // out but does NOT lower min-content, so the column stayed 132px wide and nothing
-    // changed (measured). `anywhere` lowers it, which is what lets the column fit.
-    //
-    // It engages only when a single word genuinely cannot fit the box: from 375 up
-    // nothing here breaks.
-    overflow-wrap: anywhere;
+    // ONE LINE. This wrapped for a while (overflow-wrap: anywhere), so a title too
+    // long for a phone took a second row rather than being cut. But the band is as tall
+    // as the tallest title, so one wrapping title made every title turn over as two
+    // half-lines and sit above a blank row. Now nothing wraps and, when the longest
+    // title won't fit, cycle-logo-description.js shrinks them all together until it
+    // does (fitToOneLine). No JS: the stacked fallback below lets them wrap again.
+    white-space: nowrap;
 
     // All the lines in the same cell, stacked, as the absolute `inset: 0` had them.
     // They stretch to the row's height (grid's default), so every line travels the
@@ -156,15 +153,22 @@ $b-logo-ticker-ease: cubic-bezier(0.65, 0, 0.35, 1);
     // ticker turns over, which centring would take away.
     grid-area: 1 / 1;
     transform: translateY(110%);
+    opacity: 0;
 
     &.is-current {
         transform: translateY(0);
-        transition: transform $b-logo-ticker-duration $b-logo-ticker-ease;
+        opacity: 1;
+        transition:
+            transform $b-logo-ticker-duration $b-logo-ticker-ease,
+            opacity $b-logo-ticker-fade ease-out $b-logo-ticker-fade-in-delay;
     }
 
     &.is-leaving {
         transform: translateY(-110%);
-        transition: transform $b-logo-ticker-duration $b-logo-ticker-ease;
+        opacity: 0;
+        transition:
+            transform $b-logo-ticker-duration $b-logo-ticker-ease,
+            opacity $b-logo-ticker-fade ease-out;
     }
 }
 
@@ -204,5 +208,7 @@ $b-logo-ticker-ease: cubic-bezier(0.65, 0, 0.35, 1);
     .b-logo__item {
         grid-area: auto; // out of the shared cell and back into a real stacked list
         transform: none;
+        opacity: 1;
+        white-space: normal;
     }
 }
