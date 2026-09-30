@@ -178,9 +178,18 @@ $c-vip-ring-flat: color.mix(getmap($colour, light, 700), getmap($colour, primary
 // move on different clocks — the pill (clip + a small scale from the disc's edge)
 // and the words inside it (a fade + a short slide), the words trailing the pill.
 .c-vip__greeting {
+    // The pill's corner, as a variable because the clip-path below has to round by the
+    // same amount — a clip rounder than the box would cut into wrapped text.
+    --c-vip-radius: #{rem(999)};
+
     margin: 0;
     padding: rem(14) rem(22) rem(15);
-    border-radius: rem(999);
+    border-radius: var(--c-vip-radius);
+    // NEVER WIDER THAN THE WINDOW LEAVES. Unwrapped, the greeting plus the disc and its
+    // offset ran ~440px; on a 375px phone (LinkedIn's in-app browser, 2026-09-30) the
+    // pill's left end was off-screen. The cap is the viewport less the right offset,
+    // the disc, the gap and a 16px margin on the left.
+    max-width: calc(100vw - #{rem(40)} - #{$c-vip-size} - #{getmap($space, rhythm, 300)} - #{rem(16)});
     display: flex;
     flex-direction: column;
     gap: rem(3);
@@ -193,6 +202,14 @@ $c-vip-ring-flat: color.mix(getmap($colour, light, 700), getmap($colour, primary
     font-family: $g-font-secondary;
     line-height: 1.3;
     white-space: nowrap;
+
+    // A phone: the greeting wraps inside the cap above, and a stadium would clip the
+    // corners of two-line text, so the pill becomes a rounded box.
+    @media (max-width: 600px) {
+        --c-vip-radius: #{rem(22)};
+        white-space: normal;
+        text-wrap: balance;
+    }
     // Inset, and flat rather than translucent — see $c-vip-ring-flat. The outer drop
     // shadow is kept for the moment the pill is mid-unfold and the clip has not yet
     // reached the full box.
@@ -204,7 +221,7 @@ $c-vip-ring-flat: color.mix(getmap($colour, light, 700), getmap($colour, primary
     // Closed: clipped to nothing at the disc's edge, a touch smaller, and out of
     // the way of the pointer and the accessibility tree (aria-hidden is toggled by
     // vip.js alongside).
-    clip-path: inset(0 0 0 100% round rem(999));
+    clip-path: inset(0 0 0 100% round var(--c-vip-radius));
     transform: scale(0.94);
     opacity: 0;
     visibility: hidden;
@@ -216,7 +233,7 @@ $c-vip-ring-flat: color.mix(getmap($colour, light, 700), getmap($colour, primary
         visibility 0s 380ms;
 
     .c-vip.is-open & {
-        clip-path: inset(0 0 0 0 round rem(999));
+        clip-path: inset(0 0 0 0 round var(--c-vip-radius));
         transform: none;
         opacity: 1;
         visibility: visible;
