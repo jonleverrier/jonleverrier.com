@@ -270,7 +270,8 @@ $b-footer-strapline: getmap($colour, primary, 430);
 // New notes since the visitor's last look (notes-new.js). A pill, because at footer
 // size a bare number beside the link reads as part of its text. The links' own
 // yellow with the footer's navy for the number, 9.6:1 — the same pair the nav's
-// count and the burger dot wear, so all three read as one signal. An inline-block, so the link's hover underline doesn't run through it.
+// count wears, so the two read as one signal. An inline-block, so the link's hover
+// underline doesn't run through it.
 .c-footer__badge {
     display: inline-block;
     margin-left: rem(8);

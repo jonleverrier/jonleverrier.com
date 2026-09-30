@@ -263,7 +263,7 @@ $c-nav-panel-item-step: 100ms;
 }
 
 // New notes since the visitor's last look (notes-new.js). A count circle in the
-// burger dot's yellow, so the dot outside and the count inside read as one signal.
+// footer's yellow, so the two counts read as one signal.
 // Navy on the yellow, 9.6:1. Sized in em so it follows the h1 across breakpoints;
 // min-width rather than width, so "9+" stretches it to a pill instead of spilling.
 //

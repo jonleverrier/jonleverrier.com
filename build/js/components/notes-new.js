@@ -2,8 +2,7 @@
  * NOTES NEW
  *
  * "New since you were last here" on the Notes links: a count in the footer and the
- * nav panel, and a plain dot on the burger — the nav's count is behind a closed menu,
- * so without the dot nobody would open it to find out.
+ * nav panel.
  *
  * The page carries the post dates of the latest notes (_components/notes-new.twig),
  * the same for everyone. What THIS visitor has seen is one number in localStorage:
@@ -46,8 +45,6 @@ export function mountNotesNew(root = document) {
     const newest = latest[0] ?? 0;
 
     const badges = [...root.querySelectorAll('[data-notes-badge]')];
-    const burger = root.querySelector('[data-nav-toggle]');
-    const burgerLabel = burger?.getAttribute('aria-label') || 'Menu';
 
     const render = () => {
         const mark = readMark();
@@ -69,14 +66,6 @@ export function mountNotesNew(root = document) {
             const slot = badge.querySelector('[data-notes-badge-count]');
             if (slot) slot.textContent = text;
         });
-
-        if (burger) {
-            burger.classList.toggle('has-notes-new', count > 0);
-            // The dot is decoration on an icon button; its meaning goes in the name.
-            burger.setAttribute('aria-label', count > 0
-                ? `${burgerLabel}, ${text} new ${count === 1 ? 'note' : 'notes'}`
-                : burgerLabel);
-        }
     };
 
     render();
