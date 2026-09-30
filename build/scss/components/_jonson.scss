@@ -1397,14 +1397,17 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     // different is the surface it sits on: solid white here, frosted glass there.
     @include typography(p);
 
-    // Tighter on a phone. field-input's 12/8/12/16 is shared with the front door,
-    // so this narrows the footer's field only — the front door's bar is the page's
-    // main event and keeps its air.
+    // Tighter than field-input's 12/8/12/16, which is shared with the front door:
+    // the front door's bar is the page's main event and keeps its air; this one is
+    // a follow-up, and at 12 top and bottom it stood 71px tall — heavier than the
+    // page it sits under. 6 brings the bar to ~59.
     //
     // The left inset comes down with the block padding: at 16 against a reduced
     // height the placeholder sat noticeably off-centre in its own box.
+    padding: rem(6) rem(8) rem(6) rem(14);
+
     @include mq(until, md) {
-        padding: rem(10) rem(8) rem(10) rem(12);
+        padding: rem(6) rem(8) rem(6) rem(12);
     }
 }
 
