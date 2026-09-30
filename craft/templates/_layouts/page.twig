@@ -45,8 +45,6 @@
    reason. Renders nothing for anyone who isn't one (see the component). #}
 {% include '_components/vip-strip.twig' %}
 {% include '_includes/page/scripts.twig' %}
-{# TEMPORARY: LinkedIn in-app nav jump probe, ?navdebug only. #}
-{% if craft.app.request.getQueryParam('navdebug') is not null %}{% include '_includes/page/nav-debug.twig' %}{% endif %}
 {% block siteScripts %}{% endblock %}
 {{ endBody() }}
 </body>

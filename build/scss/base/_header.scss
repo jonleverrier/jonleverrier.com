@@ -181,7 +181,13 @@ $c-header-rest-sm: $c-header-top-sm;
 //
 // The offset is the header's resting height spelled out from the viewport: rhythm500
 // puts the slab below the window edge, rhythm700 puts the header below the slab's.
-.is-nav-open .b-header {
+// `.is-jonson.is-nav-open` too: on a Jonson page the phone rule above
+// (`.is-jonson .b-header` → absolute) matched with equal weight and won, so the
+// open header stayed absolute and took this top and padding from the SLAB — the logo
+// jumped 11px right and 17px down, the burger 11px left (found 2026-09-30, first seen
+// in LinkedIn's in-app browser; any browser, any Jonson answer page, below md).
+.is-nav-open .b-header,
+.is-jonson.is-nav-open .b-header {
     position: fixed;
     top: calc(#{getmap($space, rhythm, 500)} + #{getmap($space, rhythm, 700)});
 
@@ -221,6 +227,25 @@ $c-header-rest-sm: $c-header-top-sm;
     // Same max-width token the wrap uses, so the two can never disagree.
     max-width: getmap($mq-breakpoints, xxl);
     margin-inline: auto;
+}
+
+// ON A JONSON PAGE, above md, the bar inside the header is `absolute` with left/right 0
+// (so it can slide while the header sticks). Absolute children ignore padding, so the
+// open header's padding-inline never reached it and the logo jumped ~17px LEFT on open.
+// Open, there is nothing to slide: put the bar back in flow so the padding applies.
+.is-jonson.is-nav-open .b-header > .b-wrap {
+    position: static;
+    transform: none;
+    transition: none;
+}
+
+// …and if it was PINNED when the nav opened, keep it at the pinned height rather than
+// dropping it to the resting one. Sticky `top` and fixed `top` are both measured from
+// the viewport, so the same value holds it still. Phones never pin (see above).
+.is-jonson.is-header-stuck.is-nav-open .b-header {
+    @include mq(from, md) {
+        top: $c-header-stuck;
+    }
 }
 
 // Nothing scrolls behind the panel. It is opaque and covers the viewport, so any
