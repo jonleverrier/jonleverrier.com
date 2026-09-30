@@ -545,6 +545,16 @@ class FindContext extends Component
      */
     public function caseStudies(?string $context = null, bool $all = false, ?string $question = null, array $lead = []): array
     {
+        // ASKED ABOUT A CLIENT WITH NO STUDY, nothing on file can honestly sit under
+        // the answer. "Have you worked at HSBC?" → the answer said "e-commerce team",
+        // "E-commerce" is a sector tag on three studies, the sweep rule fell to the
+        // featured one, and a White Paper card appeared under a paragraph about HSBC
+        // (2026-10-01). A question naming work we DO have still shows it.
+        if ($context !== null && trim($context) !== '' && $question !== null
+            && $this->asksAboutClientWithoutStudy($question)
+        ) {
+            return [];
+        }
         $picked = $this->pickStudies($context, $all, $question);
         if (!$lead || $context === null || trim($context) === '') {
             return $picked;
@@ -591,6 +601,45 @@ class FindContext extends Component
 
             return false;
         }));
+    }
+
+    /**
+     * Does the question name a client from the client list who has no case study, and
+     * no work we do have? Matched on the client's name less company suffixes ("HSBC
+     * International" → "HSBC", "Lloyds Bank International" → "Lloyds"), case-SENSITIVE
+     * and whole-word, so it takes the proper noun and not the ordinary word. A client
+     * whose short name is also an everyday word ("Sure" Telecom) is matched only in
+     * full.
+     */
+    public function asksAboutClientWithoutStudy(string $question): bool
+    {
+        if ($this->studiesNamedIn($question)) {
+            return false;
+        }
+        $withStudy = array_map(static fn(array $s) => mb_strtolower(trim($s['client'])), $this->caseStudies());
+        static $suffixes = ['international', 'bank', 'telecom', 'chartered', 'accountants', 'limited', 'ltd', 'plc', 'group', 'company'];
+        static $everyday = ['sure', 'feel', 'post'];
+        foreach ($this->clients() as $client) {
+            $full = trim($client['name']);
+            if ($full === '' || in_array(mb_strtolower($full), $withStudy, true)) {
+                continue;
+            }
+            $names = [$full];
+            $short = trim(implode(' ', array_filter(
+                preg_split('/\s+/', $full) ?: [],
+                static fn(string $w) => !in_array(mb_strtolower($w), $suffixes, true),
+            )));
+            if ($short !== '' && $short !== $full && mb_strlen($short) >= 3 && !in_array(mb_strtolower($short), $everyday, true)) {
+                $names[] = $short;
+            }
+            foreach ($names as $name) {
+                if (preg_match('/(?<![\p{L}\p{N}])' . preg_quote($name, '/') . '(?![\p{L}\p{N}])/u', $question)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

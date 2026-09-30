@@ -107,7 +107,7 @@ foreach ($cases as $c) {
     if (!empty($c['min']) && count($slugs) < $c['min']) {
         $fails[] = count($slugs) . " card(s), min {$c['min']}";
     }
-    if (!empty($c['max']) && count($slugs) > $c['max']) {
+    if (isset($c['max']) && count($slugs) > $c['max']) {
         $fails[] = count($slugs) . " card(s), max {$c['max']}";
     }
     foreach ($c['has'] ?? [] as $s) {
