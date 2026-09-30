@@ -116,10 +116,10 @@ $b-logo-flip-ease: cubic-bezier(0.4, 0, 0.2, 1);
 
 // A vertical ticker through the mask above: the leaving line slides up and out
 // while the next slides up and in, on the SAME curve and duration, so it reads
-// as one line pushing the other out rather than two effects. Plus a QUICK FADE
-// (Jon, 2026-09-30): without one, any frame caught mid-slide — a screenshot, half
-// the time — showed two sliced half-lines, and read as broken. The leaving line is
-// gone before the halfway mark; the next fades in behind it. Ease-in-out (slow
+// as one line pushing the other out rather than two effects. No opacity — the
+// mask edge makes the cut, which is what gives it its snap. (A quick fade was tried
+// on 2026-09-30 so a mid-slide screenshot wouldn't show two half-lines; Jon took it
+// back out the same day.) Ease-in-out (slow
 // off the mark, slow to settle): a one-second move, a one-second hold — the
 // duration here, the beat in cycle-logo-description.js. The 110% travel clears
 // the descenders past the mask edge, where 100% leaves them peeking.
@@ -131,8 +131,6 @@ $b-logo-flip-ease: cubic-bezier(0.4, 0, 0.2, 1);
 // instant and only the two live moves animate.
 $b-logo-ticker-duration: 1000ms;
 $b-logo-ticker-ease: cubic-bezier(0.65, 0, 0.35, 1);
-$b-logo-ticker-fade: 400ms;             // out over the first 0.4s of the slide…
-$b-logo-ticker-fade-in-delay: 300ms;    // …and the next in from 0.3s to 0.7s
 
 .b-logo__item {
     @include typography(p-sm);
@@ -153,22 +151,15 @@ $b-logo-ticker-fade-in-delay: 300ms;    // …and the next in from 0.3s to 0.7s
     // ticker turns over, which centring would take away.
     grid-area: 1 / 1;
     transform: translateY(110%);
-    opacity: 0;
 
     &.is-current {
         transform: translateY(0);
-        opacity: 1;
-        transition:
-            transform $b-logo-ticker-duration $b-logo-ticker-ease,
-            opacity $b-logo-ticker-fade ease-out $b-logo-ticker-fade-in-delay;
+        transition: transform $b-logo-ticker-duration $b-logo-ticker-ease;
     }
 
     &.is-leaving {
         transform: translateY(-110%);
-        opacity: 0;
-        transition:
-            transform $b-logo-ticker-duration $b-logo-ticker-ease,
-            opacity $b-logo-ticker-fade ease-out;
+        transition: transform $b-logo-ticker-duration $b-logo-ticker-ease;
     }
 }
 
@@ -208,7 +199,6 @@ $b-logo-ticker-fade-in-delay: 300ms;    // …and the next in from 0.3s to 0.7s
     .b-logo__item {
         grid-area: auto; // out of the shared cell and back into a real stacked list
         transform: none;
-        opacity: 1;
         white-space: normal;
     }
 }
