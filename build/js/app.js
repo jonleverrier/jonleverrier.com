@@ -380,9 +380,8 @@ window.addEventListener('beforeunload', disposeCardCursor, {once: true});
 const disposeTitleAway = mountTitleAway();
 window.addEventListener('beforeunload', disposeTitleAway, {once: true});
 
-// Prepares the document for printing: stamps where it came from and when, and takes
-// every lazy image off its leash (WebKit does not force-load them for a print the way
-// Chrome does). Both on beforeprint, so the date is the print's, not the page load's.
+// Prepares the document for printing: takes every lazy image off its leash (WebKit
+// does not force-load them for a print the way Chrome does).
 const disposePrint = mountPrint();
 window.addEventListener('beforeunload', disposePrint, {once: true});
 

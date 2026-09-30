@@ -14,13 +14,6 @@
 @use '../mixins' as *;
 @use '../theme' as *;
 
-// Screen never shows it. Outside the print block on purpose: a rule inside @media
-// print cannot hide anything on screen, and this has to be invisible by default
-// rather than revealed by a stylesheet that might not have loaded yet.
-.c-print-footer {
-    display: none;
-}
-
 @media print {
 
     // ── The page itself ────────────────────────────────────────────────────────────
@@ -152,9 +145,8 @@
     // .c-frontdoor is the WHOLE front door, not just its input: the orb, the question
     // and the suggestion chips are one interactive surface, and it carries
     // `min-height: 100dvh` — which in print resolves to the PAGE, so it claimed a full
-    // sheet on its own and pushed the provenance line onto a second one. The homepage
-    // now prints as what it is on paper: a sheet with a letterhead and a note of where
-    // it came from. A conversation is NOT lost with it — the thread is a separate
+    // sheet on its own and pushed what followed onto a second one. The homepage now
+    // prints as what it is on paper: a sheet with a letterhead. A conversation is NOT lost with it — the thread is a separate
     // `.c-jonson` section (see _views/single/home/default.twig), which still prints.
     .b-footer,
     .b-footer__primary,
@@ -201,9 +193,9 @@
     // up by breakpoint (rhythm 500 / 600 / 800). That is a problem here and not only an
     // unneeded one: which step applies depends on how wide the print page box is, and
     // that differs by engine — Chrome's A4 box lands below `md`, Safari's above it. So
-    // anything positioned to match the column by hand (the provenance block, which is a
-    // sibling of .b-main rather than a child of the column) matched in one browser and
-    // was out by the difference in the other.
+    // anything positioned to match the column by hand (anything that is a sibling of
+    // .b-main rather than a child of the column) matched in one browser and was out by
+    // the difference in the other.
     //
     // Zeroing both leaves every element on the sheet starting at the page margin, with
     // no breakpoint in the answer.
@@ -920,8 +912,7 @@
     .c-case-study,
     .c-testimonial,
     .c-method__phase,
-    .c-content__clients-inner,
-    .c-print-footer {
+    .c-content__clients-inner {
         break-inside: avoid;
         page-break-inside: avoid;
     }
@@ -1147,52 +1138,4 @@
     .c-content__next {
         display: none !important;
     }
-
-    // ── Provenance ─────────────────────────────────────────────────────────────────
-    //
-    // The last thing on the last sheet: where this came from and when it was taken.
-    // A printed page has no address bar and no history, so without this it is an
-    // undated photocopy. Rendered last in .b-wrap (see _layouts/page.twig) and filled
-    // in at print time by print-footer.js.
-    //
-    // Quiet: it is a reference, not a sign-off, so it sits under a hairline at the
-    // size of the smallest thing on the page.
-    // No inset of its own. It is a sibling of .b-main rather than a child of the content
-    // column, so it used to need the column's padding rebuilt by hand — which only
-    // matched in the browser whose page box happened to pick the same breakpoint. With
-    // the gutter zeroed above, it starts where everything else does.
-    .c-print-footer {
-        display: block !important;
-        margin-top: 0.8cm !important;
-        padding-top: 0.3cm !important;
-        border-top: 1px solid #000;
-        break-inside: avoid;
-        page-break-inside: avoid;
-    }
-
-    // Mono. It is machine output — an address and a timestamp — not prose, and the mono
-    // face is the one this site already uses to say so.
-    .c-print-footer p {
-        margin: 0 !important;
-        font-family: $g-font-secondary !important;
-        font-size: 8pt !important;
-        line-height: 1.5 !important;
-        color: #000 !important;
-    }
-
-    // break-all, because a case study URL is one long unbreakable token and would
-    // otherwise run off the right edge of the sheet rather than wrap.
-    .c-print-footer__url {
-        word-break: break-all;
-    }
-
-    // The date is a beat apart from the address above it, as written. Qualified with
-    // the element, because `.c-print-footer p` above zeroes every margin in here and
-    // is the more specific of the two — unqualified, this lost and the three lines ran
-    // together.
-    .c-print-footer p.c-print-footer__date {
-        margin-top: 0.25cm !important;
-    }
-
-    // No "(url)" suffix. There is no <a> here — this IS the URL, written out.
 }
