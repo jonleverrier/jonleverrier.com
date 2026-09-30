@@ -266,7 +266,7 @@
        been segmented. Out here it is plainly global — and it is the only thing in the
        widget about right now rather than about the period in the subtitle. #}
     <div class="jonson-w__tabs" role="tablist">
-        {% for key, label in {all: 'All', general: 'General', vips: 'VIPs'} %}
+        {% for key, label in {all: 'All', general: 'General', vips: 'VIPs', prospects: 'Prospects'} %}
             <button
                 type="button"
                 role="tab"
@@ -295,6 +295,29 @@
             } only %}
         </div>
     {% endfor %}
+
+    {# PROSPECTS — VIP doors made and not yet opened (URL Hits 0). Not a segment of the
+       stats above and not date-ranged: see Insights::prospects(). #}
+    <div class="jonson-w__panel" data-jonson-panel="prospects" hidden>
+        {% if prospects|length %}
+            <table class="jonson-w__table">
+                <thead>
+                    <tr><th>Name</th><th>Purpose</th><th>URL Hits</th></tr>
+                </thead>
+                <tbody>
+                    {% for p in prospects %}
+                        <tr class="{{ loop.index is even ? 'is-alt' }}">
+                            <td title="{{ p.title }}">{% if p.url %}<a href="{{ p.url }}">{{ p.title }}</a>{% else %}{{ p.title }}{% endif %}</td>
+                            <td>{{ p.purpose ?: '—' }}</td>
+                            <td>{{ p.hits }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="light">Every door has been opened.</p>
+        {% endif %}
+    </div>
 
     <script>
         (() => {

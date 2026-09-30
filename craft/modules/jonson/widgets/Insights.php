@@ -4,6 +4,8 @@ namespace modules\jonson\widgets;
 
 use Craft;
 use craft\base\Widget;
+use craft\elements\Entry;
+use modules\jonson\services\Vip;
 use modules\jonson\Jonson;
 use modules\jonson\services\Analytics;
 
@@ -85,6 +87,39 @@ class Insights extends Widget
             // segmented either — the presence table carries no VIP flag — so the same
             // figure shows on every tab.
             'presence' => $analytics->presence(),
+            'prospects' => $this->prospects(),
         ]);
+    }
+
+    /**
+     * VIP doors nobody has walked through yet — enabled entries whose URL Hits is still
+     * 0 (or never set). The follow-up list: who has been sent a door and not opened it.
+     *
+     * Not windowed by the widget's days, and on purpose: a door made two months ago and
+     * still unopened is exactly the one worth chasing, and a date range would hide it.
+     * Newest first. A plain entry query filtered in PHP — the section is tens of
+     * entries, not thousands, and the field is a number stored in JSON content.
+     *
+     * @return array<int, array{title: string, url: ?string, purpose: string, hits: int}>
+     */
+    private function prospects(): array
+    {
+        $vip = Jonson::getInstance()->vip;
+        $rows = [];
+        foreach (Entry::find()->section('vip')->orderBy(['elements.dateCreated' => SORT_DESC])->all() as $entry) {
+            $hits = (int) ($entry->getFieldLayout()?->getFieldByHandle(Vip::HITS_FIELD) ? $entry->{Vip::HITS_FIELD} : 0);
+            if ($hits !== 0) {
+                continue;
+            }
+            $purpose = $vip->purpose($entry);
+            $rows[] = [
+                'title' => (string) $entry->title,
+                'url' => $entry->getCpEditUrl(),
+                'purpose' => $purpose !== '' ? Vip::PURPOSES[$purpose]['label'] : '',
+                'hits' => $hits,
+            ];
+        }
+
+        return $rows;
     }
 }
