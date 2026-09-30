@@ -22,6 +22,7 @@ class CrmController extends Controller
     private const RATE_LIMIT = 5;         // max submissions per IP per window
     private const RATE_WINDOW = 3600;     // 1 hour
     private const MIN_FILL_SECONDS = 3;   // reject sub-3s submissions (bots)
+    private const NAME_MAX = 60;          // longer than any real name; catches pasted pitches
 
     public function actionSubmit(): ?Response
     {
@@ -40,6 +41,14 @@ class CrmController extends Controller
         $email     = trim((string) $request->getBodyParam('email'));
         $message   = trim((string) $request->getBodyParam('message'));
         $referrer  = $this->referrerUrl((string) $request->getBodyParam('referrerUrl'));
+
+        // A link in a name field is spam and nothing else — no one's name has a URL
+        // in it. Treated like the honeypot: accepted silently and nothing saved, so
+        // the bot learns nothing to change. The message is NOT checked: a real
+        // enquiry often links to the sender's own site.
+        if ($this->containsLink($firstName) || $this->containsLink($surname)) {
+            return $this->succeed();
+        }
 
         // Time-trap — bots submit near-instantly. A signed render timestamp lets
         // us reject implausibly fast fills without trusting the client's clock
@@ -68,9 +77,13 @@ class CrmController extends Controller
         $fieldErrors = [];
         if ($firstName === '') {
             $fieldErrors['firstName'] = 'Please add your first name.';
+        } elseif (mb_strlen($firstName) > self::NAME_MAX) {
+            $fieldErrors['firstName'] = 'Please shorten your first name.';
         }
         if ($surname === '') {
             $fieldErrors['surname'] = 'Please add your surname.';
+        } elseif (mb_strlen($surname) > self::NAME_MAX) {
+            $fieldErrors['surname'] = 'Please shorten your surname.';
         }
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $fieldErrors['email'] = 'Please add a valid email address.';
@@ -213,6 +226,24 @@ class CrmController extends Controller
         }
 
         return $this->redirectToPostedUrl();
+    }
+
+    /**
+     * Whether a name field holds a link: a scheme, `www.`, or a bare domain
+     * (`ugy2mr2.gentlecouple.org`), or a short link with a path (`bit.ly/x`). A
+     * match means the submission is dropped WITHOUT telling the sender, so the
+     * domain tests are kept narrow: the bare-domain one only knows the endings spam
+     * uses, and both are lowercase-only, as bots write domains. Any word-dot-word
+     * would also catch a real person typing "j.smith" or "Smith.Co" — and they'd
+     * never know their enquiry went nowhere.
+     */
+    private const LINK_TLDS = 'com|org|net|io|co|info|biz|xyz|top|site|online|store|shop|live|link|click|club|app|dev|me|ru|cn|us|uk|de|fr';
+
+    private function containsLink(string $value): bool
+    {
+        return preg_match('~https?:|://|www\.~i', $value) === 1
+            || preg_match('~\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:' . self::LINK_TLDS . ')\b~', $value) === 1
+            || preg_match('~\b[a-z0-9-]+\.[a-z]{2,}/~', $value) === 1;
     }
 
     /**
