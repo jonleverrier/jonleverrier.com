@@ -1,0 +1,28 @@
+{#
+  The contact form, rendered on its own for the contact panel.
+
+  contact-panel.js fetches this when the panel opens and drops it into the empty
+  form step (see _components/contact-panel). It used to be rendered into every page
+  up front, which put a live form in every page's source for bots to post to.
+
+  `from` is the page the panel was opened on — path and query, from location — so
+  the form records where the lead came from and a no-JS submit returns there. Only
+  a same-site path is accepted: it ends up in the signed redirect, and a full URL
+  there would be an open redirect.
+
+  Not a page. A plain request gets a 404, so it isn't crawled or linked to; the
+  panel asks with X-Requested-With, which is what isAjax checks.
+#}
+{% if not craft.app.request.isAjax %}
+    {% exit 404 %}
+{% endif %}
+{% header "Cache-Control: no-store" %}
+{% header "X-Robots-Tag: noindex" %}
+{% set from = craft.app.request.getQueryParam('from') ?? '' %}
+{% if not (from matches '/^\\/(?!\\/)\\S*$/') %}
+    {% set from = '/' %}
+{% endif %}
+{% include '_components/form' with {
+    pagePath: from|split('?')|first|trim('/', 'left'),
+    pageUrl: craft.app.request.hostInfo ~ from,
+} %}

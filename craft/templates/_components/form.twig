@@ -10,6 +10,12 @@
 {% set contactSingle = craft.entries().section('contact').status('live').one() %}
 {% set sentTitle = (contactSingle.messageSentTitle ?? '')|trim ?: 'Message sent' %}
 {% set sentText = (contactSingle.messageSentText ?? '')|trim ?: 'I’ll be in touch soon within the next day or so' %}
+{# The page the form belongs to: this request's, unless it's being rendered on its
+   own for the contact panel (_views/fragments/contact-form), which passes the page
+   the panel was opened on. `pagePath` is where the no-JS submit returns to;
+   `pageUrl` is stored on the lead as where it came from. #}
+{% set pagePath = pagePath ?? craft.app.request.pathInfo %}
+{% set pageUrl = pageUrl ?? craft.app.request.absoluteUrl %}
 {% set old = craft.app.session.getFlash('crmForm') ?? {} %}
 {% set error = craft.app.session.getFlash('error') %}
 {% set fieldErrors = craft.app.session.getFlash('crmErrors') ?? {} %}
@@ -53,14 +59,14 @@
        visitor typed is what they meant, even if it differs from the entry. #}
     {% set vip = craft.app.getModule('jonson').vip.current() %}
     <input type="hidden" name="action" value="jonson/crm/submit">
-    {{ redirectInput(craft.app.request.pathInfo) }}
+    {{ redirectInput(pagePath) }}
 
     {# Signed render time — the controller rejects submissions completed
        implausibly fast (bots). Hashed so it can't be forged. #}
     <input type="hidden" name="ts" value="{{ craft.app.security.hashData(now|date('U')) }}">
     {# Where the message was sent from — the page this form was rendered on (the
        contact page, or any page via the contact panel). Stored on the lead. #}
-    <input type="hidden" name="referrerUrl" value="{{ craft.app.request.absoluteUrl }}">
+    <input type="hidden" name="referrerUrl" value="{{ pageUrl }}">
 
 
     {# Honeypot — hidden from people, tempting to bots. #}

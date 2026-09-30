@@ -71,9 +71,14 @@
                 {% endif %}
             </div>
             {% if not sent %}
-                <div class="c-contact-panel__step c-contact-panel__step--form" hidden data-contact-panel-form-target>
-                    {% include '_components/form' %}
-                </div>
+                {# EMPTY until the panel opens: contact-panel.js fetches the form into it
+                   from _views/fragments/contact-form. With the form in the page, every
+                   page on the site was a working form in its source — token, signed
+                   timestamp and all — for any bot reading HTML to post to. Now a bot has
+                   to open the panel the way a person does, and the timestamp starts
+                   when it's opened. /contact keeps its form in the page, so it still
+                   works without JS. #}
+                <div class="c-contact-panel__step c-contact-panel__step--form" hidden data-contact-panel-form-target></div>
             {% endif %}
             {# THE BOOKING STEP — the "request a call back" CTA opened in place instead of
                sending the visitor off to cal.com and losing the panel, the conversation

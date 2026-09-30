@@ -12,6 +12,11 @@
  * The panel has two steps: the light ways in (the CTAs), and the form behind a
  * "send me a message" button, revealed on request and never before.
  *
+ * The form isn't in the page. The step ships empty and the form is fetched into it
+ * when the panel opens (_views/fragments/contact-form) — in the background, while
+ * the visitor reads the ways in, so it's there by the time they ask for it. A form
+ * in every page's source was a form for any bot reading HTML to post to.
+ *
  * The click listener runs in the capture phase so it gets the click before the
  * page-transition script, which would otherwise start its warp-out for the
  * navigation we're replacing.
@@ -19,6 +24,7 @@
 **/
 
 import {setupMarquee, teardownMarquee} from './clients-marquee.js';
+import {mountContactForm} from './contact-form.js';
 
 // The panel's closing slide — matches $c-contact-panel-exit in _contact-panel.scss
 // (the exit is shorter than the enter, on purpose).
@@ -34,6 +40,10 @@ const CAL_EMBED_JS = `${CAL_ORIGIN}/embed/embed.js`;
 // The namespace Cal files this embed under. One booking surface here, so one namespace,
 // named for the CTA it belongs to.
 const CAL_NS = 'callback';
+
+// Where the panel's form comes from — see config/routes.php. X-Requested-With is
+// what the template checks (isAjax); anything else gets a 404.
+const FORM_URL = '/fragments/contact-form';
 
 export function mountContactPanel() {
     const panel = document.querySelector('[data-contact-panel]');
@@ -121,10 +131,41 @@ export function mountContactPanel() {
         document.head.appendChild(link);
     };
 
+    // The form, fetched once per page into the empty form step. Started on open, and
+    // held as a promise so "send me a message" can wait on it: a visitor who presses
+    // it faster than the fetch lands gets the form a beat late, never an empty step.
+    //
+    // A failed fetch is forgotten, so the next open tries again, and the step says
+    // so rather than sliding in blank.
+    let formLoad = null;
+    let disposeForm = () => {};
+    const loadForm = () => {
+        if (formLoad || !formWrap) return formLoad || Promise.resolve();
+        const from = location.pathname + location.search;
+        formLoad = fetch(`${FORM_URL}?from=${encodeURIComponent(from)}`, {
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            credentials: 'same-origin',
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error(`form ${res.status}`);
+                return res.text();
+            })
+            .then((html) => {
+                formWrap.innerHTML = html;
+                disposeForm = mountContactForm(formWrap.querySelector('[data-form]'));
+            })
+            .catch(() => {
+                formLoad = null;
+                formWrap.innerHTML = '<p class="c-contact-panel__form-error" role="status">The form didn’t load. Please use one of the ways above, or try again.</p>';
+            });
+        return formLoad;
+    };
+
     const open = (from) => {
         if (panel.open) return;
         clearTimeout(closing);
         warmBooking();
+        loadForm();
         trigger = from || null;
         const byKeyboard = !byPointer;
         panel.showModal();
@@ -214,10 +255,10 @@ export function mountContactPanel() {
         }, reduced ? 0 : FORM_MS);
     };
 
-    const onWrite = () => showStep(
+    const onWrite = () => loadForm().then(() => showStep(
         formWrap,
         () => formWrap && formWrap.querySelector('input:not([type="hidden"]):not([tabindex="-1"]), textarea'),
-    );
+    ));
 
     // The event as Cal names it — "jonleverrier/callback" — read off the CTA's own href
     // so the booking link lives in the CMS and nowhere else. Both spellings reduce to
@@ -379,6 +420,7 @@ export function mountContactPanel() {
         panel.removeEventListener('click', onPanelClick);
         if (closeBtn) closeBtn.removeEventListener('click', close);
         if (writeBtn) writeBtn.removeEventListener('click', onWrite);
+        disposeForm();
         if (panel.open) panel.close();
         root.classList.remove('has-contact-panel');
     };

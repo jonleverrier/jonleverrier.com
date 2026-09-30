@@ -305,6 +305,14 @@ $c-contact-panel-exit: 260ms; // the exit — softer, so a dismiss is the panel 
     display: flex;
 }
 
+// Said in the form step when its fetch failed (contact-panel.js), so the step never
+// slides in blank. Body type, the panel's own ink.
+.c-contact-panel__form-error {
+    @include typography(p);
+    margin: 0;
+    color: getmap($colour, primary, 700);
+}
+
 // The brands strip at the foot: pushed to the bottom when the panel has room to
 // spare, in flow beneath the steps when it doesn't — and flush with the panel's
 // bottom edge either way, bleeding through the inner's bottom padding. The strip's
