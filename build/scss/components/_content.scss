@@ -347,6 +347,7 @@ $c-content-subheading: getmap($colour, light, 880); // the sub-heading grey — 
     // line to fix one lonely word, which is a whole-paragraph change for a one-word
     // problem.
     text-wrap: pretty;
+    text-align: center;
     // Looser than the scale's 1.3: a bold mono at this size sets dense, and a
     // three-line standfirst wants air between the lines. Unitless, so it scales
     // with the font size at every breakpoint rather than needing a value each.
