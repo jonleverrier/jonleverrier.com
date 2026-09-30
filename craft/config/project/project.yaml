@@ -1,4 +1,4 @@
-dateModified: 1790775241
+dateModified: 1790775513
 elementSources:
   craft\elements\Entry:
     -
@@ -155,7 +155,7 @@ elementSources:
       key: 'section:232b394e-e9cd-4a51-9d65-83d1a8020c56' # VIP
       page: Entries
       tableAttributes:
-        - slug
+        - 'field:ed50ab74-0966-4b8e-a313-53e039a800f9' # Purpose
         - 'field:da8e0e9f-3e2d-4127-a793-c4adaa4710d3' # URL Hits
         - status
       type: native
