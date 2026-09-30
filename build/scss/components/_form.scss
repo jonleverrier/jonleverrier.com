@@ -222,8 +222,8 @@
 
 .c-form__input {
     width: 100%;
-    height: rem(44); // single-line inputs (the textarea overrides below) — the tap-target minimum, no more
-    padding: 0 rem(14); // single-line text centres vertically on its own
+    height: rem(50); // single-line inputs (the textarea overrides below) — was 55; 44 read cramped
+    padding: 0 rem(16); // single-line text centres vertically on its own
     border: rem(2) solid transparent;
     border-radius: $b-radius-100;
     background-color: getmap($colour, light, 600); // cream — same as the page slab
@@ -253,8 +253,9 @@
 
 .c-form__input--area {
     height: auto; // grow with content, not the fixed single-line height
-    min-height: rem(110);
-    padding: rem(10) rem(14); // restore vertical padding for the multi-line box
+    // Height is the markup's rows="3", not a min-height: rows sets the box by line
+    // count, which a min-height below it never reaches.
+    padding: rem(10) rem(16); // restore vertical padding for the multi-line box
     resize: vertical;
 }
 
