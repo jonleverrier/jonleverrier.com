@@ -94,14 +94,9 @@
                                 {# The panel's main button as a link: /contact, so it works
                                    without JS and on the contact page itself; elsewhere
                                    contact-panel.js opens the panel and, for
-                                   data-contact-write, goes straight to the form. Its label
-                                   is the globals single's jonsonCtaButtonText — the same
-                                   words as Jonson's in-chat button — with this as the
-                                   fallback when the field is empty. #}
-                                {% set footerGlobals = craft.entries().section('globals').one() %}
-                                {% set writeLabel = (footerGlobals ? (footerGlobals.jonsonCtaButtonText ?? '')|trim : '') ?: 'Send a message' %}
+                                   data-contact-write, goes straight to the form. #}
                                 <li class="c-footer__item">
-                                    <a class="c-footer__link" href="{{ siteUrl('contact') }}" data-contact-write><span>{{ writeLabel }}</span></a>
+                                    <a class="c-footer__link" href="{{ siteUrl('contact') }}" data-contact-write><span>Send a message</span></a>
                                 </li>
                             </ul>
                         </div>
