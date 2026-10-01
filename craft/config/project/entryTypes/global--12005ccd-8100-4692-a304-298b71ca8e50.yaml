@@ -142,6 +142,80 @@ fieldLayouts:
         name: SEO
         uid: af9d787f-abbf-443c-b534-20bbb58bff61
         userCondition: null
+      -
+        elementCondition: null
+        elements:
+          -
+            dateAdded: '2026-10-01T11:27:32+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 09805ad9-ad12-4f9b-b458-0644d283c8e3 # Default Prompts
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: c19b13b4-433a-484a-92af-7d6bbdf86b66
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-10-01T11:31:26+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: bb0fe26f-164e-46ef-ab5c-11fef2c655c0 # Job Prompts
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 97d7e426-219a-4045-bd44-a6a01e248d80
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-10-01T11:31:26+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: fb7247ca-b615-4361-a2ee-b1877823c76a # Partnership Prompts
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: ed369e1e-984a-458e-8866-f4d3a0844fbb
+            userCondition: null
+            warning: null
+            width: 100
+          -
+            dateAdded: '2026-10-01T11:31:26+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 2eeaa97a-e46f-4a7a-832d-3a1662150227 # Win Work Prompts
+            handle: null
+            instructions: null
+            label: null
+            oldFieldUid: null
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: c08a7e70-048b-4912-94cf-dc5a7cc85474
+            userCondition: null
+            warning: null
+            width: 100
+        name: Prompts
+        uid: 402bac60-8fe4-4d91-a94d-f8d643be3049
+        userCondition: null
     thumbFieldKey: null
 handle: global
 hasTitleField: false

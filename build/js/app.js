@@ -8,7 +8,7 @@
 import '../scss/app.scss';
 
 import {mountCycleLogoDescription} from './components/cycle-logo-description.js';
-import {mountLostForWords} from './components/lost-for-words.js';
+import {mountPlaceholderCycle} from './components/placeholder-cycle.js';
 import {mountJonson} from './components/jonson-ask.js';
 import {mountGrid} from './components/jonson-grid.js';
 import {mountObserver} from './components/observe.js';
@@ -224,12 +224,10 @@ if (cycleLogoDescription) {
     window.addEventListener('beforeunload', disposeCycleLogoDescription, {once: true});
 }
 
-// "Lost for words?" under the front door's ask bar — fills the input with one of the
-// homepage single's prompts. Reveals itself on mount, so it never shows without JS.
-// Every such button on the page: the front door's, and the ask bar's on a content
-// page (see _components/ask). They share the visit's three-use allowance.
-const disposeLostForWords = [...document.querySelectorAll('[data-lost-for-words]')].map(mountLostForWords);
-window.addEventListener('beforeunload', () => disposeLostForWords.forEach((d) => d()), {once: true});
+// Every ask bar cycles its prompts through its placeholder: the front door's and the
+// thread's (the homepage set), and a content page's (its own, see _components/ask).
+const disposePlaceholderCycles = [...document.querySelectorAll('[data-placeholder-cycle]')].map(mountPlaceholderCycle);
+window.addEventListener('beforeunload', () => disposePlaceholderCycles.forEach((d) => d()), {once: true});
 
 // Resolved at call time, not bound now: the point cloud loads asynchronously and may
 // not have set `backdropWarp` yet when this runs. Falls back to the tunnel's, which is

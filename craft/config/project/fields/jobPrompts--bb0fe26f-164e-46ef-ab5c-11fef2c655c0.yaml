@@ -1,10 +1,10 @@
 columnSuffix: null
-handle: prompts
+handle: jobPrompts
 instructions: null
-name: 'Default Prompts'
+name: 'Job Prompts'
 searchable: false
 settings:
-  addRowLabel: 'Add a prompt'
+  addRowLabel: 'Add a row'
   columns:
     __assoc__:
       -
@@ -19,7 +19,7 @@ settings:
               - prompt
             -
               - width
-              - '100'
+              - 100%
             -
               - type
               - singleline
@@ -31,7 +31,7 @@ settings:
           - ''
         -
           - rowId
-          - c0e38a69-bd08-4bc4-a89c-f46058d9d546
+          - 5ef6f96e-515c-4a7a-970e-f15fd3d09895
   maxRows: null
   minRows: null
   staticRows: false

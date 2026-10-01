@@ -186,38 +186,19 @@
 }
 
 // Input with an inline submit button living inside the field.
-// Height of the prompt band. The ask was 8px; it can't be — the text is rem(16) on a
-// 1.45 line-height, so 8px would clip it to a sliver. This is the smallest that holds
-// the words, and the padding around them is tight deliberately so the band reads as a
-// border rather than as a second row. Declared here because .c-frontdoor__field's own
-// padding is derived from it.
-$prompt-band-h: rem(46);
-
-// Holds the field and the band tucked behind it.
-//
-// The padding is what makes the band reachable. The band and its button are absolutely
-// positioned, so they don't extend this box on their own — and the pointer moving down
-// off the field would leave the wrapper, drop :hover, and pull the band out from under
-// the cursor before it arrived. The padding stretches the hover region over the band's
-// visible part, so the trip from field to words is continuous.
-//
-// Reserved permanently rather than on hover: it's layout, and growing it on hover would
-// shift the vertically-centred hero.
 .c-frontdoor__field {
     position: relative;
     margin: rem(24) auto 0;
     width: 100%; // .c-frontdoor__meta above sets the bar's width; this fills it
-    padding-bottom: calc(#{$prompt-band-h} - #{$b-radius-200});
 }
 
 .c-frontdoor__form {
     @include field-shell('.c-frontdoor__input');
     width: 100%;
     margin: 0;
-    // Above the band, so the band's top edge and its upper corners are hidden behind
-    // the field and only the bottom of it shows.
     position: relative;
     z-index: 1;
+    @include field-grow;
 }
 
 .c-frontdoor__input {
@@ -226,79 +207,8 @@ $prompt-band-h: rem(46);
 }
 
 .c-frontdoor__submit {
-    // No width here: field-submit owns it now, animating 0 -> 44px as the button
-    // arrives. Setting it after the include pinned it open and the reveal never ran.
     @include field-submit;
 }
-// The band under the field — the words' strip at rest, the chips when opened —
-// is the shared .c-jonson__band (its --below variant), in _jonson.scss. Only the
-// words themselves are dressed here: yellow on the olive.
-.c-frontdoor__prompt {
-    position: absolute;
-    left: rem(16);
-    bottom: rem(6); // the strip's bottom padding
-    z-index: 1;
-
-    display: block;
-    width: auto;
-    padding: 0;
-    border: 0;
-    background: none;
-    text-align: left;
-
-    font-family: $g-font-secondary; // JonSonMono, as the input's own text
-    @include typography(p-sm);
-    font-weight: 600; // the mono's bold face, as the content pages' nudge
-    color: getmap($colour, primary, 400); // yellow — reads properly on the dark band
-    cursor: pointer;
-
-    &:focus-visible {
-        outline: rem(2) solid getmap($colour, primary, 400);
-        outline-offset: rem(2);
-    }
-
-    // Author `display` overrides the UA [hidden] rule, so restore it explicitly —
-    // the button ships hidden and JS reveals it.
-    &[hidden] {
-        display: none;
-    }
-}
-
-// Typing state — the label fades out and a spinner takes its place while the prompt
-// types into the field, the same beat the contact form's submit button has. JS adds
-// .is-typing for the duration.
-//
-// Reuses c-form-spin from _form.scss rather than declaring a second identical rotate:
-// @keyframes are global, and two spinners drifting apart would be worse than the
-// cross-partial reference.
-.c-frontdoor__prompt.is-typing {
-    color: transparent;
-    pointer-events: none; // can't be re-clicked mid-type
-
-    &::after {
-        content: "";
-        position: absolute;
-        // Over the label, which is now the button's whole box — so left 0 and
-        // vertically centred on it, rather than offset into a band. Centred with
-        // calc, NOT translateY: c-form-spin animates `transform`, which would
-        // replace the translate and drop the spinner half its height mid-rotation.
-        left: 0;
-        top: calc(50% - #{rem(8)});
-        width: rem(16);
-        height: rem(16);
-        border: rem(2) solid rgba(getmap($colour, light, 100), 0.3); // faint white track
-        border-top-color: getmap($colour, light, 100);                // bright white arc
-        border-radius: 50%;
-        animation: c-form-spin 650ms linear infinite;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .c-frontdoor__prompt.is-typing::after {
-        animation: none;
-    }
-}
-
 // The backdrop is NOT hidden under reduced motion — it used to be (display: none),
 // from when it was only ever the tunnel. Reduced motion means no motion, not no
 // picture: hero-mount.js gives these visitors the point cloud as one still frame, and

@@ -9,7 +9,6 @@
 // and any referrer sent to a third party. Per-tab storage keeps it to this journey.
 
 import {looksLikeJunk} from './junk-question.js';
-import {armSubmit} from './submit-arm.js';
 
 const PENDING = 'jonson.pending';
 const PENDING_FROM = 'jonson.pending-from'; // the entry id of the page the question was asked from, if any
@@ -21,20 +20,25 @@ export function mountAskHandoff() {
 
     const onSubmit = (e) => {
         const input = form.querySelector('input[name="question"]');
-        const question = (input?.value || '').trim();
+        let question = (input?.value || '').trim();
         e.preventDefault(); // never a plain submit: the form's action is the homepage, and a bare GET there is a pointless redirect
         if (!question) {
-            // Nothing to hand over — stay here and put the cursor back in the box.
-            input?.focus();
-            return;
+            // An empty field hands over the prompt its placeholder is showing
+            // (placeholder-cycle.js) — unless the field is focused, when the placeholder
+            // is cleared and there's nothing in view to send: then just the caret.
+            const shown = input?.dataset.cycleCurrent || '';
+            if (!shown || document.activeElement === input) {
+                input?.focus();
+                return;
+            }
+            question = shown;
         }
 
-        // Not a question either — same answer as the front door gives: the prompts
-        // drawer, right here, rather than a trip to the homepage to be refused there.
-        // (This bar has its own lost-for-words nudge; see _components/ask.twig.)
+        // Not a question — same answer as the front door gives: the field cleared and
+        // handed back, right here, rather than a trip to the homepage to be refused.
         if (looksLikeJunk(question)) {
-            document.dispatchEvent(new CustomEvent('jonson:nudge'));
-            input?.focus();
+            input.value = '';
+            input.focus();
             return;
         }
 
@@ -52,14 +56,9 @@ export function mountAskHandoff() {
     };
 
     form.addEventListener('submit', onSubmit);
-    // Same acknowledgement as the homepage bars. It matters a little more here: this
-    // one is going to navigate away, so "is this going to work?" is a question worth
-    // answering before the page changes rather than after.
-    const disarm = armSubmit(form);
 
     return () => {
         form.removeEventListener('submit', onSubmit);
-        disarm();
     };
 }
 

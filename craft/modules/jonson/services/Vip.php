@@ -422,6 +422,66 @@ class Vip extends Component
     }
 
     /**
+     * Which Globals table each door purpose draws its ask-bar prompts from, when the
+     * door has none of its own. A purpose not listed here, or an empty table, falls
+     * back to the Globals `prompts`.
+     */
+    public const PURPOSE_PROMPTS = [
+        'lookingForAJob' => 'jobPrompts',
+        'lookingToWinWork' => 'winWorkPrompts',
+        'lookingToFormAPartnership' => 'partnershipPrompts',
+    ];
+
+    /**
+     * The default prompts an ask bar cycles through for THIS visitor, first that has
+     * any: the VIP entry's own `prompts` (written for this person), their door's
+     * purpose set from the Globals single, the Globals `prompts`. A page's own prompts
+     * (a note or case study's) are the caller's to put first — these are the fallback
+     * for everywhere else.
+     *
+     * @return string[]
+     */
+    public function prompts(?Entry $entry = null): array
+    {
+        $entry ??= $this->current();
+        if ($entry) {
+            $own = $this->promptRows($entry, 'prompts');
+            if ($own) {
+                return $own;
+            }
+        }
+
+        $globals = Entry::find()->section('globals')->one();
+        if (!$globals) {
+            return [];
+        }
+
+        $handle = $entry ? (self::PURPOSE_PROMPTS[$this->purpose($entry)] ?? null) : null;
+        if ($handle) {
+            $set = $this->promptRows($globals, $handle);
+            if ($set) {
+                return $set;
+            }
+        }
+
+        return $this->promptRows($globals, 'prompts');
+    }
+
+    /** A prompts table's non-empty `prompt` cells — [] if the field isn't on the layout. */
+    private function promptRows(Entry $entry, string $handle): array
+    {
+        if (!$entry->getFieldLayout()?->getFieldByHandle($handle)) {
+            return [];
+        }
+        $rows = $entry->getFieldValue($handle) ?: [];
+
+        return array_values(array_filter(array_map(
+            fn($row) => trim((string) ($row['prompt'] ?? '')),
+            is_iterable($rows) ? [...$rows] : [],
+        ), fn($p) => $p !== ''));
+    }
+
+    /**
      * The question the contact copy asks this visitor: their entry's own
      * customContactTitle when Jon has written one, else $default (the contact
      * single's), either way with the first name worked in. $default unchanged for

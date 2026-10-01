@@ -831,25 +831,8 @@ $orb-refract: $orb * 0.03; // the band bending round the rim
 // otherwise wins on source order once the media queries are sorted.
 $c-ask-cream: getmap($colour, light, 650);
 
-// The "lost for words?" nudge on a content page's ask bar — the front door's
-// band, in the light bar's colours: a beige band tucked behind the field that
-// slides out on hover or focus, carrying the nudge, and stands down once the
-// field has anything in it. Same mechanics as .c-frontdoor__field (see
-// _frontdoor.scss for the reasoning behind each rule); the classes are this
-// bar's own so the two can be dressed apart.
-// The front door's depth. Here the band rises from behind the field rather
-// than dropping below it: the bar sits flush on the bottom edge of the l600
-// slab, which clips its children, so there's no room to drop into — but above
-// the field is the bar's own top padding and then the open page, and the band
-// is free to overlap that.
-$c-jonson-band-h: rem(46);
-
-// The field wrapper: the form, and the band behind it. Takes the form's place
-// in the bar's layout — the centre column from md, the room beside the buttons
-// below it. Its hover area is extended upward by the band's visible depth (a
-// top padding cancelled by the same negative margin, so its layout box is still
-// the form's and the bar's padding stays even) so the pointer can travel from
-// the field up to the words without leaving it.
+// The field wrapper on a content page's ask bar: takes the form's place in the
+// bar's layout — the centre column from md, the room beside the buttons below it.
 .c-jonson__field {
     position: relative;
     // 0 0 auto, not `1 1 0`: the footer is a COLUMN on mobile now, and `1 1 0` there
@@ -857,397 +840,12 @@ $c-jonson-band-h: rem(46);
     // bar instead of across it. Width comes from the parent's align-items: stretch.
     flex: 0 0 auto;
     min-width: 0;
-    padding-top: calc(#{$c-jonson-band-h} - #{$b-radius-200});
-    margin-top: calc(-1 * (#{$c-jonson-band-h} - #{$b-radius-200}));
 
     @include mq(from, md) {
         grid-column: 2;
         width: 100%;
         max-width: $c-jonson-measure;
         justify-self: center;
-    }
-
-    // Above the band, so only the band's visible strip shows from behind the field.
-    .c-jonson__form {
-        position: relative;
-        z-index: 1;
-        width: 100%;
-    }
-
-    &:not(:has(.c-jonson__prompt)) {
-        padding-top: 0;
-        margin-top: 0;
-    }
-}
-
-// THE BAND — shared by the light bar (rising from the field's top) and the front
-// door (dropping from its bottom, the --below variant). One box, one colour,
-// holding two panels stacked as grid rows: the nudge's label on a strip the
-// band's own depth, and every prompt as a chip on a row that's collapsed (0fr)
-// until the nudge is clicked. Then the rows swap — label to nothing, chips to
-// their natural height — so the box grows away from the field, while inside it
-// the label slides out to the left and the chips slide in from the right,
-// clipped by their rows. The stage never moves and never changes colour; the
-// only motion is the two panels. Tucked behind the field (clipped away) at
-// rest, out on hover or focus, down again once the field has anything in it.
-$c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visible depth
-
-.c-jonson__band {
-    --band-hide: inset(100% 0 0 0); // clipped away toward the field
-    --band-bg: #536069; // the input's focus border (navy at 70%) composited on the cream, solid
-    --band-bg-deep: #3e4e5c; // under the pointer on the label
-
-    // The clip's two timings, named because the hover rule below overrides them
-    // rather than restating the whole transition. Values and reasoning at the
-    // `transition` declaration.
-    --band-wipe: 260ms;
-    --band-hold: 375ms;
-
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: calc(100% - #{$c-jonson-band-h}); // its bottom edge a radius below the field's top
-    z-index: 0;
-    // One grid row — the chips, collapsed (0fr) until opened — and a minimum
-    // height that is the strip the label sits on. The label itself is out of the
-    // grid, pinned to the band's field-side edge, so nothing about the row
-    // opening can move it: its exit is a flat slide. (An earlier cut gave the
-    // label its own row, and the row's resizing carried it up as it left.)
-    display: grid;
-    grid-template-rows: 0fr;
-    min-height: $c-jonson-band-h;
-    padding-bottom: $b-radius-200; // the overlap hidden behind the field
-    border-radius: $b-radius-200 $b-radius-200 0 0;
-    background-color: var(--band-bg);
-    clip-path: var(--band-hide);
-    // The delay on clip-path is a HIDE delay, and only ever applies on the way out:
-    // the revealed rule below zeroes it, so opening is still immediate.
-    //
-    // It started at 140ms, for a narrower reason: the band is hit-testable only where
-    // it is unclipped, and the clip opens downward over 260ms — the nudge's words are
-    // the last part to arrive. A pointer diving from the bar straight to the words can
-    // beat the reveal, land on a region that is not there yet, and cancel the very
-    // thing it was reaching for. A moment's hold gave that move somewhere to land.
-    //
-    // NOW 375ms, which is a different intention on top of the same mechanism: leaving
-    // the band should not dismiss it. At 140ms the band was gone before you could look
-    // away and back, or round a corner to reach a chip, and the whole thing read as
-    // something you had to keep hold of. Two seconds overshot — a band that outstays
-    // the pointer that long stops reading as patient and starts reading as stuck. A
-    // second was the first correction, 500ms the second, and both still left the band
-    // sitting there after you had plainly gone. 375ms is the shortest hold that still
-    // covers the corner-cutting move. The hold is the same length as the drawer's own
-    // grace period
-    // (LEAVE_GRACE_MS in lost-for-words.js) — the band and the drawer
-    // inside it are one object to a visitor, and they should not expire at different
-    // times, so the two move together.
-    //
-    // THE WIPE IS ONE-WAY: it animates OUT and not IN (see the hover rule, which sets
-    // --band-wipe to 0s). The hold covers a leave of up to 375ms, but a leave of
-    // 375-635ms lands INSIDE the wipe, and coming back then reverses it from wherever
-    // it got to. Measured, sampling the computed clip every frame while driving the
-    // pointer out of the field and back: an out-and-back of 450ms catches the band 92%
-    // wiped, one of 500ms catches it at 98%, and easing that back took ~200ms. That is
-    // the flap — the band half leaving and being dragged back — and it is what a glance
-    // away and back does with a real hand, not a contrived one.
-    //
-    // A reversal can't be designed out of a delayed transition: any finite hold has a
-    // boundary, and the wipe behind it is always interruptible. So the reversal is made
-    // to cost nothing instead — the band is simply out again on the next frame, and
-    // there is no partial state on screen while the pointer is on the field.
-    //
-    // The lost reveal is not a loss. It is what the 140ms hold above was invented to
-    // paper over: a pointer diving from the bar to the words could outrun the opening
-    // clip and land on a region that was not there yet. A band that is out on the first
-    // frame cannot be outrun, and that failure mode is retired rather than delayed.
-    //
-    // Only the clip is delayed. The row and the colour keep their own timings: they
-    // animate INSIDE a band that is still on screen, so holding them back would stall
-    // the drawer's own close rather than the band's.
-    transition:
-        clip-path var(--band-wipe) cubic-bezier(0.16, 1, 0.3, 1) var(--band-hold),
-        grid-template-rows 340ms cubic-bezier(0.16, 1, 0.3, 1),
-        background-color 200ms ease;
-
-    // Phones: the field is too narrow for a row of chips, so the band spans the
-    // bar instead — anchored to the field's right edge (the bar's content edge)
-    // and as wide as the bar's content: the viewport less the slab's margin and
-    // the bar's own inset, each side.
-    .c-jonson__field & {
-        @include mq(until, md) {
-            left: auto;
-            width: calc(100vw - 2 * var(--b-page-inset) - 2 * #{getmap($space, rhythm, 500)});
-        }
-    }
-
-    &--below {
-        --band-hide: inset(0 0 100% 0);
-        --band-bg: #{rgba(getmap($colour, light, 800), 0.92)}; // the front door's olive, near-solid over the hero
-        // Deeper under the pointer, exactly as the light bar's band does. It used to
-        // be a no-op here, on the grounds that the words alone were the cue — but no
-        // hover was ever written on the words either, so the front door's nudge had
-        // NO hover response at all while the light bar's had one.
-        //
-        // Two things move, because one isn't enough over a photograph: the olive goes
-        // down a step (matching the slate band's own ~7 points of lightness), and the
-        // alpha goes up, so the band reads as more solid over the hero at the same
-        // time as darker. 0.92 → 0.97 rather than 1: the hero still has to show
-        // through a little, or the band stops belonging to the door.
-        --band-bg-deep: #{rgba(color.scale(getmap($colour, light, 800), $lightness: -35%), 0.97)};
-
-        bottom: auto;
-        top: calc(100% - #{$c-jonson-band-h});
-        padding: $b-radius-200 0 0;
-        border-radius: 0 0 $b-radius-200 $b-radius-200;
-    }
-}
-
-// The two panels. The band's clip-path wipes each at the band's edge — the label
-// leaves to the left, the chips arrive from the right. The label's row keeps its
-// depth throughout, so the label's move is a flat slide (collapsing the row under
-// it as it went made it look like it rose as it left); the chips panel is pulled
-// up over that row instead, so it takes the strip's place once the label has gone.
-.c-jonson__band-label,
-.c-jonson__band-chips {
-    transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-// The strip: pinned to the band's field-side edge, just above the hidden overlap.
-.c-jonson__band-label {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: $b-radius-200;
-    height: $c-jonson-band-strip;
-    z-index: 1;
-
-    .c-jonson__band--below & {
-        bottom: auto;
-        top: $b-radius-200;
-    }
-}
-
-// The chips: the grid's one row, top-aligned, so when it opens they take the
-// strip's place (the label having left) and the band grows away from the field.
-.c-jonson__band-chips {
-    position: relative;
-    min-height: 0;
-    padding: rem(12) rem(16);
-    transform: translateX(100%);
-
-    &[hidden] {
-        display: none;
-    }
-}
-
-// Open: the chips' row opens out, the panels slide, and the band stays out
-// whatever the pointer does.
-:is(.c-jonson__field, .c-frontdoor__field).is-open {
-    .c-jonson__band {
-        grid-template-rows: 1fr;
-        clip-path: inset(0);
-    }
-
-    .c-jonson__band-label {
-        transform: translateX(-100%);
-        pointer-events: none;
-    }
-
-    .c-jonson__band-chips {
-        transform: none;
-    }
-}
-
-// Out on FOCUS anywhere in the field — the input, the words, a chip — and nothing
-// else (Jon, 29 Sep 2026). It used to come out on hover of the bar as well, and a
-// pointer that happened to be resting where the bar loads opened it with nobody doing
-// anything: landing on the homepage could show the nudge before a visitor had so much
-// as looked at the box. Focus is the one signal that means "I'm about to ask".
-//
-// THE BAND'S OWN HOVER STAYS, and it has to. It can only be hovered once it is out
-// (clip-path removes a clipped region from hit-testing), so it can never OPEN the
-// band — it only holds it open while the pointer travels onto the words. Without it,
-// Safari closes the band under the click: pressing a button there does not focus it,
-// so the input blurs on mousedown, :focus-within drops, and the words clip away before
-// the click lands.
-:is(.c-jonson__field, .c-frontdoor__field):is(
-    :has(.c-jonson__band:hover),
-    :focus-within
-) .c-jonson__band {
-    clip-path: inset(0);
-    // No hold and no wipe on the way in: the band is out on the first frame. The 260ms
-    // is the right weight for a band leaving of its own accord and the wrong one for a
-    // band being pulled back under a pointer that has returned — at 0s a return mid-exit
-    // costs one frame, so the band is never caught half-drawn while you are pointing at
-    // it. Overriding the two names rather than restating the whole shorthand keeps one
-    // declaration site for the transition (see the base rule).
-    --band-hold: 0s;
-    --band-wipe: 0s;
-}
-
-// Someone typing doesn't need to be told what to ask: once the field has anything
-// in it the band stands down (and comes back if they clear it). The nudge leaves
-// the tab order too — clipped, it was still the next stop after submit, so a
-// keyboard user landed on something invisible. Delayed so the clip finishes first.
-:is(.c-jonson__field, .c-frontdoor__field):has([data-jonson-input]:not(:placeholder-shown)) {
-    .c-jonson__band {
-        clip-path: var(--band-hide);
-    }
-
-    :is(.c-jonson__prompt, .c-frontdoor__prompt) {
-        visibility: hidden;
-        transition: visibility 0s linear 260ms;
-    }
-}
-
-// …except while the nudge is typing its own answer in, or the drawer is open.
-:is(.c-jonson__field, .c-frontdoor__field):is(.is-open, :has(:is(.c-jonson__prompt, .c-frontdoor__prompt).is-typing)) {
-    .c-jonson__band {
-        clip-path: inset(0);
-    }
-
-    :is(.c-jonson__prompt, .c-frontdoor__prompt) {
-        visibility: visible;
-    }
-}
-
-// The pointer has left with the drawer open: the whole band tucks away as one
-// piece (lost-for-words.js adds .is-tucking for the wipe, then resets the
-// panels with .is-resetting — no transitions — once it's out of sight).
-:is(.c-jonson__field, .c-frontdoor__field).is-open.is-tucking .c-jonson__band {
-    clip-path: var(--band-hide);
-}
-
-:is(.c-jonson__field, .c-frontdoor__field).is-resetting {
-    .c-jonson__band,
-    .c-jonson__band-label,
-    .c-jonson__band-chips {
-        transition: none;
-    }
-}
-
-// Deeper under the pointer on the words (the light bar; the front door's band
-// sets --band-bg-deep to its own colour, so this is a no-op there).
-//
-// AND WHILE THE DRAWER IS OPEN. Opening it slides the label out to the left and the
-// chips in from the right — so the pointer that was on .c-jonson__prompt is now on a
-// chip, the :has() above stops matching, and the deep colour dropped back to the base
-// exactly as the chips arrived. It read as the band going flat at the moment it should
-// have felt most active. The open state is the same intent as the hover that caused it,
-// so it holds the same colour: `.is-open` is set on the field by lost-for-words.js
-// alongside the drawer's own class.
-:is(.c-jonson__field, .c-frontdoor__field):is(
-    :has(:is(.c-jonson__prompt, .c-frontdoor__prompt):is(:hover, :focus-visible)),
-    .is-open
-) .c-jonson__band {
-    background-color: var(--band-bg-deep);
-}
-
-
-// No visible nudge — no band.
-:is(.c-jonson__field, .c-frontdoor__field):not(:has(:is(.c-jonson__prompt, .c-frontdoor__prompt):not([hidden]))) .c-jonson__band {
-    display: none;
-}
-
-// The words on the light bar's band: sized to their text, sat where the strip's
-// padding puts them. (The front door's are in _frontdoor.scss — yellow on olive.)
-.c-jonson__prompt {
-    position: absolute;
-    left: rem(16);
-    top: rem(6);
-    z-index: 1;
-    display: block;
-    width: auto;
-    padding: 0;
-    border: 0;
-    background: none;
-    text-align: left;
-    // One line, always: the strip is a fixed depth, and a label that wrapped on a
-    // phone put its first line behind the field. A label longer than the strip
-    // ends in an ellipsis (the button's name stays the full text — only the paint
-    // is cut).
-    max-width: calc(100% - #{rem(32)});
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-family: $g-font-secondary; // JonSonMono, as the input's own text
-    @include typography(p-sm);
-    font-weight: 600; // as the input — the Light face thins out at 16px
-    @include mq(until, md) {
-        font-size: rem(13); // narrower field, shorter line…
-        left: rem(10); // …and a tighter inset, so the default label fits the 375 field whole
-        max-width: calc(100% - #{rem(20)});
-    }
-    color: getmap($colour, light, 100); // white on the slate band
-    cursor: pointer;
-
-    &:focus-visible {
-        outline: rem(2) solid getmap($colour, light, 100); // white, as the words — navy would sink into the slate band
-        outline-offset: rem(2);
-    }
-
-    &[hidden] {
-        display: none;
-    }
-
-    // Typing: the label fades and a spinner takes its place (see the front door).
-    &.is-typing {
-        color: transparent;
-        pointer-events: none;
-
-        &::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: calc(50% - #{rem(8)});
-            width: rem(16);
-            height: rem(16);
-            border: rem(2) solid rgba(getmap($colour, light, 100), 0.3);
-            border-top-color: getmap($colour, light, 100);
-            border-radius: 50%;
-            animation: c-form-spin 650ms linear infinite;
-        }
-    }
-}
-
-.c-jonson__drawer-items {
-    display: flex;
-    flex-wrap: wrap;
-    gap: rem(8);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.c-jonson__drawer-item {
-    margin: 0;
-    max-width: 100%;
-}
-
-// The chips: the suggestions' dress, a size down — a band of six wants less air
-// than three under an answer. The hover's arrow room shrinks with it. No fill at
-// rest: on the Jonson page the chip's green vanishes into the green slab, and
-// that's the look — on the band, where the ground is olive or slate, only a
-// transparent chip reads the same way. The hover keeps its fill, ring and arrow.
-.c-jonson__drawer-chip {
-    padding: rem(8) rem(14);
-    white-space: normal;
-    background-color: transparent;
-
-    &:hover {
-        padding-right: rem(40);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .c-jonson__band,
-    .c-jonson__band-label,
-    .c-jonson__band-chips {
-        transition: none;
-    }
-
-    .c-jonson__prompt.is-typing::after {
-        animation: none;
     }
 }
 
@@ -1272,6 +870,9 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     // Sits flush in the slab's bottom corners, as the conversation footer does.
     border-radius: 0 0 $b-radius-300 $b-radius-300;
 
+    // The cycling placeholder (.c-field__cycle) wears the placeholder's colour below.
+    --field-placeholder: rgba(22, 44, 65, 0.72);
+
     .c-jonson__input {
         color: getmap($colour, primary, 700); // navy, as the page's other text
 
@@ -1284,6 +885,12 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
         // placeholder would sit under the caret on the light footer while clearing
         // everywhere else.
         &:focus::placeholder {
+            color: transparent;
+        }
+
+        // And for the same reason, field's "drawn by the overlay" rule
+        // (.c-field__wrap input.is-cycling) — or both copies of the line would show.
+        &.is-cycling::placeholder {
             color: transparent;
         }
     }
@@ -1325,28 +932,6 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
         outline-color: $c-ask-ink;
     }
 
-    // The drawer's chips on the slate: the Jonson page's pattern exactly — no
-    // fill, a light hairline, the words in white; on hover a fill a step darker
-    // than the ground (the band's own deeper slate) with the white ring spinning
-    // round it. Only the fill colour differs from the Jonson page, where the
-    // ground is green and the hover fill is the olive.
-    .c-jonson__drawer-chip {
-        border-color: rgba(getmap($colour, light, 100), 0.4);
-        background-color: transparent;
-        color: getmap($colour, light, 100);
-
-        &:hover {
-            background:
-                linear-gradient(#3e4e5c, #3e4e5c) padding-box,
-                conic-gradient(
-                    from var(--c-chip-angle),
-                    #536069, // the band's own slate, so the ring's dark half melts into the ground and only the white sweep reads
-                    getmap($colour, light, 100) 50%,
-                    #536069
-                ) border-box;
-        }
-    }
-
     // field-shell's resting stroke is light 800 — a dark olive, which reads as a
     // step down from the olive footer but as a heavy dark box on cream. Here it's
     // the navy ink held right back, and focus is the same ink dialled up rather
@@ -1373,8 +958,16 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
     }
 
     @include field-shell('.c-jonson__input');
+    @include field-grow;
     width: 100%;
     max-width: $c-jonson-measure; // match the thread's measure
+
+    // The cycling placeholder's inset (see .c-field__cycle) — the input's own left
+    // padding, below.
+    --field-pad-l: #{rem(14)};
+    @include mq(until, md) {
+        --field-pad-l: #{rem(12)};
+    }
 
     @include mq(from, md) {
         grid-column: 2; // the centred column of the footer grid
@@ -1385,6 +978,7 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
 
     &:focus-within {
         background-color: getmap($colour, light, 100);
+        max-width: calc(#{$c-jonson-measure} + 16px); // field-grow's 16px, past the cap
     }
 }
 
@@ -1412,8 +1006,6 @@ $c-jonson-band-strip: calc(#{$c-jonson-band-h} - #{$b-radius-200}); // the visib
 }
 
 .c-jonson__submit {
-    // No width here: field-submit owns it now, animating 0 -> 44px as the button
-    // arrives. Setting it after the include pinned it open and the reveal never ran.
     @include field-submit;
 }
 

@@ -149,7 +149,7 @@ fieldLayouts:
             editCondition: null
             elementCondition: null
             elementEditCondition: null
-            fieldUid: 09805ad9-ad12-4f9b-b458-0644d283c8e3 # Prompts
+            fieldUid: 09805ad9-ad12-4f9b-b458-0644d283c8e3 # Default Prompts
             handle: null
             instructions: null
             label: null

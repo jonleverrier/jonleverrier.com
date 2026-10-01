@@ -17,7 +17,6 @@ import {slideTo} from './testimonials.js';
 import {pauseOffscreenWithin} from './pause-offscreen.js';
 import {mountThinkingOrb} from './thinking-orb.js';
 import {looksLikeJunk} from './junk-question.js';
-import {armSubmit} from './submit-arm.js';
 import {revealPictures} from './picture.js';
 
 // Strip the invisible markers Claude leaves in its prose: the [[next: …]]
@@ -150,9 +149,8 @@ function conversationId() {
 // are one row spanning seven days, and "how far did they get" means nothing.
 //
 // sessionStorage is already the visit boundary everywhere else in this codebase: the
-// thread snapshot and the nudge allowance (`jonson-prompt-uses`) both live there and
-// both mean "this tab, this visit". This sits beside them and inherits the same
-// lifetime for free — it survives navigation within the visit and dies with the tab.
+// thread snapshot lives there and means "this tab, this visit". This sits beside it
+// and inherits the same lifetime for free — it survives navigation within the visit and dies with the tab.
 //
 // Two tabs get two sids. That is correct rather than a flaw: the thread snapshot is
 // per-tab too, so a second tab genuinely IS a second conversation.
@@ -172,17 +170,6 @@ function visitId() {
         return id;
     } catch (e) {
         return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    }
-}
-
-// How many "lost for words" prompts have been spent this visit — written by
-// lost-for-words.js, read here so the server can record whether that drawer is doing
-// a job. Read, never written: this is a reporting tap on someone else's counter.
-function promptUses() {
-    try {
-        return Math.max(0, parseInt(sessionStorage.getItem('jonson-prompt-uses'), 10) || 0);
-    } catch (e) {
-        return 0;
     }
 }
 
@@ -445,7 +432,6 @@ export function mountJonson({warpOut} = {}) {
         // Analytics only — none of these change the answer. See the Analytics service.
         payload.set('sid', visitId());              // THIS visit (see visitId)
         payload.set('pageUrl', location.pathname);  // the page the turn happened on
-        payload.set('promptUses', String(promptUses()));
         // Which chip this came from, if it came from a chip at all. Without it a chip
         // click is indistinguishable from a typed question and "do the chips work?"
         // has no answer. Position, not text: the text is already in `question`, and
@@ -624,8 +610,8 @@ export function mountJonson({warpOut} = {}) {
     // something that isn't a question shouldn't be asked at all: ask() calls enter(),
     // which warps the hero away and reveals the thread BEFORE any answer arrives — so
     // "aaa" costs the point cloud, the headline and the ask bar, and lands the visitor
-    // on a conversation headed "aaa". The prompts drawer is a better answer and it
-    // keeps the door open.
+    // on a conversation headed "aaa". So the field is cleared and handed back instead,
+    // and the door stays open.
     //
     // The follow-up field inside the thread does NOT do this. There is no hero left to
     // stay on, the question is already in the thread above, and a submit that visibly
@@ -634,6 +620,11 @@ export function mountJonson({warpOut} = {}) {
     //
     // The server gate is untouched either way; this can be bypassed by posting the
     // endpoint directly, so it is a courtesy on top, never the check.
+    // EITHER bar's submit is always on screen, so an EMPTY submit asks the prompt its
+    // placeholder is showing (placeholder-cycle.js writes it to data-cycle-current) —
+    // the button promises a question, and that's the one in view. Only when the field
+    // isn't focused: focused, the placeholder is cleared, so there's nothing in view to
+    // ask, and the press just puts the caret there.
     const wire = (form, clearOnSubmit, guardJunk = false) => {
         if (!form) return;
         const input = form.querySelector('input[type="text"]');
@@ -641,24 +632,27 @@ export function mountJonson({warpOut} = {}) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             if (busy) return;
-            const question = input.value.trim();
+            let question = input.value.trim();
+            if (!question) {
+                const shown = input.dataset.cycleCurrent || '';
+                if (shown && document.activeElement !== input) {
+                    question = shown;
+                    // In the field for the hero's warp, the same as a typed question
+                    // would be. (The thread's bar clears it again just below.)
+                    input.value = shown;
+                } else {
+                    input.focus();
+                    return;
+                }
+            }
             if (!question) return;
             if (guardJunk && looksLikeJunk(question)) {
-                // Hand over the prompts drawer instead — and CLEAR the field. This is
-                // the one path where the front door stays on screen, so what's left in
-                // the box is what the visitor goes on looking at: "a" sitting there
-                // reads as a question still pending. Emptying it hands back the
-                // placeholder, which is the instruction they need.
-                //
-                // It also lets the band open: the drawer is hidden by a rule keyed on
-                // the field NOT being placeholder-shown (see _jonson.scss), so text
-                // left in the box would fight the nudge we just asked for.
+                // CLEAR the field and hand it back. This is the one path where the
+                // front door stays on screen, so what's left in the box is what the
+                // visitor goes on looking at: "a" sitting there reads as a question
+                // still pending.
                 input.value = '';
-                document.dispatchEvent(new CustomEvent('jonson:nudge'));
-                // Deliberately NOT focused. The field is empty and showing its
-                // placeholder, and the answer to "what should I ask?" is the row of
-                // suggestions that just appeared — a caret blinking in an empty box
-                // points back at the thing they've just been told isn't working.
+                input.focus();
                 return;
             }
             if (clearOnSubmit) input.value = '';
@@ -666,15 +660,8 @@ export function mountJonson({warpOut} = {}) {
         });
     };
 
-    wire(heroForm, false, true);  // front door: junk opens the drawer, not a conversation
+    wire(heroForm, false, true);  // front door: junk is handed back, not a conversation
     wire(followForm, true);       // in-thread: junk gets the server's canned reply
-
-    // Both bars arm their submit as soon as what's typed becomes a question. Both,
-    // even though only the hero REFUSES junk — the field is the same field to the
-    // person using it, and a button that acknowledged a real question at the front
-    // door but not in the thread would read as the thread being the broken one.
-    armSubmit(heroForm);
-    armSubmit(followForm);
 
     // Suggested-prompt chips (rendered under each answer): clicking one asks it,
     // reusing the normal flow. Delegated since chips are injected per answer.

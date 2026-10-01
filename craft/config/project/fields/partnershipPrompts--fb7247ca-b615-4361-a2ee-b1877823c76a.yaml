@@ -1,10 +1,10 @@
 columnSuffix: null
-handle: prompts
+handle: partnershipPrompts
 instructions: null
-name: 'Default Prompts'
+name: 'Partnership Prompts'
 searchable: false
 settings:
-  addRowLabel: 'Add a prompt'
+  addRowLabel: 'Add a row'
   columns:
     __assoc__:
       -
@@ -19,7 +19,7 @@ settings:
               - prompt
             -
               - width
-              - '100'
+              - 100%
             -
               - type
               - singleline
@@ -31,7 +31,7 @@ settings:
           - ''
         -
           - rowId
-          - c0e38a69-bd08-4bc4-a89c-f46058d9d546
+          - 0945aaf6-99aa-451c-a981-daad9bd4e755
   maxRows: null
   minRows: null
   staticRows: false

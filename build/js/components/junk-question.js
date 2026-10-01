@@ -5,7 +5,7 @@
  * AskController::looksLikeJunk() — SAME THREE RULES, and they have to stay that way.
  *
  * This one is a courtesy: it stops the front door collapsing into a conversation
- * whose heading is "aaa", and shows the lost-for-words drawer instead. The server's
+ * whose heading is "aaa", and hands the field back cleared instead. The server's
  * is the real gate, because anything here can be bypassed by posting the endpoint
  * directly — so a change to the rules belongs in BOTH files or neither.
  *

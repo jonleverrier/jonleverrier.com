@@ -1,4 +1,4 @@
-dateModified: 1790842843
+dateModified: 1790854714
 elementSources:
   craft\elements\Entry:
     -
@@ -281,6 +281,7 @@ meta:
     2c7e191f-4db6-4b41-9d9f-6feae3bef0cd: 'End Date' # End Date
     2d33f0d3-5668-4312-8d32-87eca5c7aba8: 'Large Image' # Large Image
     2e7b7f18-1d9b-4556-b115-cdf870027ca6: Testimonial # Testimonial
+    2eeaa97a-e46f-4a7a-832d-3a1662150227: 'Win Work Prompts' # Win Work Prompts
     2ffd51f5-8488-4bc6-a969-da63a608779c: Role # Role
     3a15ea5a-e35f-4121-974b-8705a328441b: Home # Home
     3a385840-ffe7-4230-bb75-8a3f41027903: Testimonial # Testimonial
@@ -339,7 +340,7 @@ meta:
     4833f177-88ca-45a3-9945-0bc2baaa2b0f: Method # Method
     4884e743-8e66-499c-9b3d-bea10a306c02: 'Lead Generator' # Lead Generator
     8636ff44-3f6d-40e6-bf55-09775e0e6a6d: CRM # CRM
-    09805ad9-ad12-4f9b-b458-0644d283c8e3: Prompts # Prompts
+    09805ad9-ad12-4f9b-b458-0644d283c8e3: 'Default Prompts' # Default Prompts
     12005ccd-8100-4692-a304-298b71ca8e50: Global # Global
     22559de5-9987-4d8e-8dda-32482d03074c: Snippet # Snippet
     32583b60-37cb-443a-9712-36c9c501d20f: Conversation # Conversation
@@ -369,6 +370,7 @@ meta:
     b1d9fee8-8250-4688-b6f7-b8e7bffa0569: 'Client Long Title' # Client Long Title
     b7cbdaa4-0dca-4396-ac30-8a87d96757d7: Tags # Tags
     ba6e18f9-ba13-4201-8c29-03a1ebd3ad4e: Video # Video
+    bb0fe26f-164e-46ef-ab5c-11fef2c655c0: 'Job Prompts' # Job Prompts
     bb8f9d67-a41f-4ece-a83f-9bf12de5011e: 'Hide entries from index?' # Hide entries from index?
     bf05dd31-0643-4d5f-985c-90849d0e4ebc: 'Case Study' # Case Study
     bfb56d7d-fee2-4410-9f56-4f8c6ec62176: Testimonial # Testimonial
@@ -417,6 +419,7 @@ meta:
     f72fde96-d0e8-4526-bd7e-52228d6dc2b7: Home # Home
     f87acb59-ec2e-4031-aa6c-ad11069ba376: 'Open Graph Image' # Open Graph Image
     f487c1d5-6e83-4e7f-9124-c60a7de99825: Surname # Surname
+    fb7247ca-b615-4361-a2ee-b1877823c76a: 'Partnership Prompts' # Partnership Prompts
     fc756c61-415e-4207-8833-f2209a907afe: Language # Language
     fd87040d-8b86-4b1e-9263-61cc796304ff: 'Alt Slug' # Alt Slug
     fda9463a-004f-448a-9907-bfab64c7f831: 'Enable sidebar summary' # Enable sidebar summary

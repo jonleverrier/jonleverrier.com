@@ -54,40 +54,6 @@ fieldLayouts:
             warning: null
             width: 100
           -
-            dateAdded: '2026-08-06T13:31:32+00:00'
-            editCondition: null
-            elementCondition: null
-            elementEditCondition: null
-            fieldUid: a62bda5a-4156-4df3-978e-898f4573c2da # Suggestions
-            handle: null
-            instructions: null
-            label: null
-            oldFieldUid: null
-            required: false
-            tip: null
-            type: craft\fieldlayoutelements\CustomField
-            uid: 05ea4ba4-0bd8-4dac-a36d-5a859c613269
-            userCondition: null
-            warning: null
-            width: 100
-          -
-            dateAdded: '2026-08-06T10:50:30+00:00'
-            editCondition: null
-            elementCondition: null
-            elementEditCondition: null
-            fieldUid: 09805ad9-ad12-4f9b-b458-0644d283c8e3 # Prompts
-            handle: null
-            instructions: null
-            label: null
-            oldFieldUid: null
-            required: false
-            tip: null
-            type: craft\fieldlayoutelements\CustomField
-            uid: b6171e12-0ebc-4237-abea-3f23a44fbb6d
-            userCondition: null
-            warning: null
-            width: 100
-          -
             dateAdded: '2026-09-10T21:42:16+00:00'
             editCondition: null
             elementCondition: null

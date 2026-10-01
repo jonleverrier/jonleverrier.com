@@ -116,6 +116,23 @@ fieldLayouts:
             userCondition: null
             warning: null
             width: 100
+          -
+            dateAdded: '2026-10-01T11:38:34+00:00'
+            editCondition: null
+            elementCondition: null
+            elementEditCondition: null
+            fieldUid: 09805ad9-ad12-4f9b-b458-0644d283c8e3 # Default Prompts
+            handle: null
+            instructions: null
+            label: 'Custom Prompts'
+            oldFieldUid: 09805ad9-ad12-4f9b-b458-0644d283c8e3 # Default Prompts
+            required: false
+            tip: null
+            type: craft\fieldlayoutelements\CustomField
+            uid: 7aeaa1ff-ca34-4d57-933f-f26725603be6
+            userCondition: null
+            warning: null
+            width: 100
         name: Intel
         uid: 96fa9dea-bc16-414f-becf-0e459700e285
         userCondition: null
