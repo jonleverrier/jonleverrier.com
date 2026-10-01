@@ -98,7 +98,7 @@ hasTitleField: true
 icon: null
 name: CTA
 showSlugField: false
-showStatusField: false
+showStatusField: true
 slugTranslationKeyFormat: null
 slugTranslationMethod: site
 titleFormat: null
