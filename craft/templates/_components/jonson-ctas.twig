@@ -28,7 +28,9 @@
   Optional: offerRoutes — bool.
 #}
 {% if contact is defined and contact %}
-    {% set routes = (offerRoutes ?? false) ? craft.frontend.doorCtas() : [] %}
+    {# Not a CTA switched off for tools (isExcludedFromTools) — the same exclusion the
+       case-content form applies to craft.frontend.ctas(). #}
+    {% set routes = (offerRoutes ?? false) ? craft.frontend.doorCtas()|filter(c => not (c.isExcludedFromTools ?? false)) : [] %}
     {# The label is Jon's, from the globals single — same place the footer and contact
        panel read their copy from, fetched the same way they fetch it. Falls back to the
        label this button carried before the field existed, so an empty field is a button
@@ -37,28 +39,34 @@
     {% set ctaLabel = (globals ? (globals.jonsonCtaButtonText ?? '')|trim : '') ?: 'Let’s talk more' %}
     <div class="c-ctas c-ctas--jonson">
         {% if routes|length %}
-            {# A LIST, not a sentence, and that is a deliberate retreat. Written as prose
-               it ran "…directly — +33…, or Send me a WhatsApp", because the label is the
-               CTA's title exactly as Jon typed it in the CP and a title is capitalised.
-               Lowercasing it is not the fix — that is what turned "Send me a WhatsApp"
-               into "send me a whatsapp" in the model's own prose, a brand name spelled
-               wrong by us. A separated list reads correctly WITH the capitals, so the
-               titles can stay exactly as they are written.
+            {# A sentence: "Reach me directly: Telephone +33…, Send me a WhatsApp or Send
+               me an email". The labels are the CTAs' titles exactly as Jon typed them in
+               the CP, capitals and all — lowercasing them is what once turned "Send me a
+               WhatsApp" into "send me a whatsapp", a brand name spelled wrong by us. A
+               phone number is its own label, introduced as "Telephone": someone reading
+               on a desktop cannot tap it, and someone who wants to save it has to see it.
 
-               The separator is the CHARACTER, not `&middot;`: Twig autoescapes the
-               output of {{ }}, so the entity would arrive as &amp;middot; and sit on
-               the screen spelled out. #}
-            <p class="c-ctas__routes">Reach me directly —
-                {%- for cta in routes %}
-                    {# safeUrl strips the invisible Unicode a pasted phone number brings
-                       with it; see _components/ctas.twig for the whole story. #}
-                    {% set href = craft.frontend.safeUrl(cta.ctaUrl.url ?? null) %}
-                    {# A phone number is its own label: someone reading on a desktop
-                       cannot tap it, and someone who wants to save it has to see it. #}
-                    {% set face = href starts with 'tel:' ? href|replace({'tel:': ''}) : cta.title %}
-                    {%- if href %} <a class="c-jonson__link" href="{{ href }}">{{ face }}</a>{{ not loop.last ? ' ·' : '' }}{% endif %}
-                {%- endfor %}
-            </p>
+               Only routes with a usable URL count, so the commas and the "or" are placed
+               over THOSE — filtered first, not skipped mid-loop, or a dropped last route
+               would leave the sentence ending on a comma. #}
+            {% set links = [] %}
+            {% for cta in routes %}
+                {# safeUrl strips the invisible Unicode a pasted phone number brings with
+                   it; see _components/ctas.twig for the whole story. #}
+                {% set href = craft.frontend.safeUrl(cta.ctaUrl.url ?? null) %}
+                {% if href %}
+                    {% set links = links|merge([{href: href, tel: href starts with 'tel:', title: cta.title}]) %}
+                {% endif %}
+            {% endfor %}
+            {% if links|length %}
+                <p class="c-ctas__routes">Reach me directly:
+                    {%- for link in links %}
+                        {{- loop.first ? ' ' : (loop.last ? ' or ' : ', ') -}}
+                        {% if link.tel %}Telephone <a class="c-jonson__link" href="{{ link.href }}">{{ link.href|replace({'tel:': ''}) }}</a>
+                        {%- else %}<a class="c-jonson__link" href="{{ link.href }}">{{ link.title }}</a>{% endif %}
+                    {%- endfor %}
+                </p>
+            {% endif %}
         {% endif %}
         {% include '_components/button.twig' with {
             label: ctaLabel,
