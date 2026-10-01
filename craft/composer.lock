@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d3b95274492d62b4e8309c72952a6ecb",
+    "content-hash": "e1ce316fef865bc2384c4029ab430deb",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -588,11 +588,11 @@
         },
         {
             "name": "craftcms/cms",
-            "version": "5.11.3",
+            "version": "5.11.4",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/craftcms/cms/zipball/12267745b86eebe575bef865e6aee1040ef8a204",
-                "reference": "12267745b86eebe575bef865e6aee1040ef8a204",
+                "url": "https://api.github.com/repos/craftcms/cms/zipball/ad1fd3304223047e311b7eeb1721f5ea7363e6f4",
+                "reference": "ad1fd3304223047e311b7eeb1721f5ea7363e6f4",
                 "shasum": ""
             },
             "require": {
@@ -692,7 +692,7 @@
                 "docs": "https://craftcms.com/docs/5.x/",
                 "rss": "https://github.com/craftcms/cms/releases.atom"
             },
-            "time": "2026-09-18T16:45:54+00:00"
+            "time": "2026-10-01T15:48:49+00:00"
         },
         {
             "name": "craftcms/html-field",
@@ -1230,16 +1230,16 @@
         },
         {
             "name": "doctrine/lexer",
-            "version": "3.0.2",
+            "version": "3.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/lexer.git",
-                "reference": "e96fe45e92a54233726014a7cc7340abf29bb14c"
+                "reference": "71d305eaa6480d3d3460c7d053d1da7749fa9cca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/lexer/zipball/e96fe45e92a54233726014a7cc7340abf29bb14c",
-                "reference": "e96fe45e92a54233726014a7cc7340abf29bb14c",
+                "url": "https://api.github.com/repos/doctrine/lexer/zipball/71d305eaa6480d3d3460c7d053d1da7749fa9cca",
+                "reference": "71d305eaa6480d3d3460c7d053d1da7749fa9cca",
                 "shasum": ""
             },
             "require": {
@@ -1285,7 +1285,7 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/lexer/issues",
-                "source": "https://github.com/doctrine/lexer/tree/3.0.2"
+                "source": "https://github.com/doctrine/lexer/tree/3.0.3"
             },
             "funding": [
                 {
@@ -1301,7 +1301,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-06-14T20:44:06+00:00"
+            "time": "2026-10-01T06:59:29+00:00"
         },
         {
             "name": "egulias/email-validator",

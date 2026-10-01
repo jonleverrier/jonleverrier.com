@@ -3,7 +3,7 @@
   "prefer-stable": true,
   "require": {
     "craftcms/ckeditor": "^5.7.0",
-    "craftcms/cms": "^5.11.1",
+    "craftcms/cms": "^5.11.4",
     "craftcms/postmark": "^3.1.0",
     "miranj/craft-cryptographer": "^1.2.0",
     "nystudio107/craft-vite": "^5.0.2",
