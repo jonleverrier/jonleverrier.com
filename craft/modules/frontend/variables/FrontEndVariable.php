@@ -156,6 +156,51 @@ class FrontEndVariable
         return $source === '' ? null : new Markup(RichText::prepare($source), Craft::$app->charset);
     }
 
+    /**
+     * Rich-text HTML as Markdown, for /llms-full.txt. Only what reads as text survives:
+     * images, media, forms and buttons are dropped rather than left as broken image
+     * links or stray labels, and any tag the converter has no Markdown for is
+     * unwrapped to its text.
+     *
+     * $shift demotes the headings: the file puts each page under its own ## title, so
+     * a body's h2 has to become ### to sit beneath it rather than beside it.
+     */
+    public function markdown($html, int $shift = 1): string
+    {
+        $source = trim((string) $html);
+        if ($source === '') {
+            return '';
+        }
+
+        $converter = new \League\HTMLToMarkdown\HtmlConverter([
+            'header_style' => 'atx',
+            'strip_tags' => true,
+            'remove_nodes' => 'script style img picture figure video audio iframe svg form button',
+            'hard_break' => true,
+        ]);
+
+        $md = $converter->convert($source);
+        // Entities through as text: this is a plain-text file, and "&amp;" in it is
+        // a literal ampersand-a-m-p to anything reading it.
+        $md = html_entity_decode($md, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        // Headings only OUTSIDE code fences — a `# comment` in a shell snippet is
+        // not a heading, and shifting it would rewrite the code.
+        $out = [];
+        $inFence = false;
+        foreach (explode("\n", $md) as $row) {
+            if (str_starts_with(ltrim($row), '```')) {
+                $inFence = !$inFence;
+            } elseif (!$inFence && preg_match('/^(#{1,6}) (.*)$/', $row, $m)) {
+                // A heading set entirely in bold in the editor comes out as `## **Title**`.
+                $text = preg_replace('/^\*\*(.+)\*\*\s*$/', '$1', $m[2]);
+                $row = str_repeat('#', min(6, strlen($m[1]) + max(0, $shift))) . ' ' . $text;
+            }
+            $out[] = $row;
+        }
+
+        return trim(implode("\n", $out));
+    }
+
     public function readingTime(Entry $entry): int
     {
         return Notes::readingTime($entry);

@@ -5,6 +5,7 @@
     "craftcms/ckeditor": "^5.7.0",
     "craftcms/cms": "^5.11.4",
     "craftcms/postmark": "^3.1.0",
+    "league/html-to-markdown": "^5.1",
     "miranj/craft-cryptographer": "^1.2.0",
     "nystudio107/craft-vite": "^5.0.2",
     "putyourlightson/craft-cloudflare": "^3.1.3",

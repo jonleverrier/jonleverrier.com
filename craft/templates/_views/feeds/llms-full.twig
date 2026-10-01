@@ -1,0 +1,162 @@
+{#
+  /llms-full.txt — llms.txt with the pages' full text inline (see _views/feeds/llms.twig
+  for the format, the text/plain type and why autoescape is off).
+
+  llms.txt is the map: a model reads it and follows links. This is the territory, so
+  one fetch is enough to answer from — every live case study, note, tool and page, in
+  the order llms.txt lists them, notes newest first and ALL of them rather than ten.
+
+  Bodies are the same fields the pages render, converted from their HTML by
+  craft.frontend.markdown(): `content` (about, policy pages) and the caseContent
+  blocks (case studies, notes, tools). Only blocks that carry words are written out —
+  images, video and lottie have nothing for a model to read, and the homepage
+  analysis form is a form. A quote is written as a quote with its attribution, code
+  as a fenced block, and the method block as the methodology's phases.
+#}
+{%- header "Content-Type: text/plain; charset=utf-8" -%}
+{%- set about = craft.entries().section('about').status('live').one() -%}
+{%- set caseStudyIndex = craft.entries().section('caseStudy').status('live').one() -%}
+{%- set notesIndex = craft.entries().section('note').status('live').one() -%}
+{%- set contact = craft.entries().section('contact').status('live').one() -%}
+{%- set tools = craft.entries().section('tools').status('live').all() -%}
+{%- set studies = craft.entries().section('caseStudies').status('live').all() -%}
+{%- set notes = craft.entries().section('notes').status('live').orderBy('postDate DESC').all() -%}
+{%- set pages = craft.entries().section('pages').status('live').all() -%}
+{#- Autoescape INSIDE each macro — a macro escapes in the context it was defined in,
+    not where it's called (see llms.twig). -#}
+{%- macro line(text) -%}
+    {%- autoescape false -%}
+        {{- (text ?? '')|striptags|split("\n\n")|first|trim|replace({"\n": ' ', "\r": ''}) -}}
+    {%- endautoescape -%}
+{%- endmacro -%}
+{%- macro blocks(entry) -%}
+    {%- autoescape false -%}
+    {%- for block in entry.caseContent.all() ?? [] -%}
+        {%- set handle = block.type.handle -%}
+        {%- if handle == 'content' -%}
+            {%- set md = craft.frontend.markdown(block.content ?? '') -%}
+            {%- if md %}{{ md }}
+
+{% endif -%}
+        {%- elseif handle == 'code' and (block.codeSnippet ?? '')|trim -%}
+```{{ block.codeLanguage ?? '' }}
+{{ block.codeSnippet|trim }}
+```
+
+{% elseif handle == 'caseTestimonial' -%}
+            {%- set quoted = block.testimonial.status(null).one() -%}
+            {%- if quoted and (quoted.blockquote ?? '')|trim -%}
+                {%- set who = [quoted.personName ?? '', quoted.jobTitle ?? '', craft.frontend.testimonialCompany(quoted)]|map(v => v|trim)|filter(v => v)|join(', ') -%}
+> {{ quoted.blockquote|striptags|trim|replace({"\n\n": "\n>\n> ", "\n": "\n> "}) }}
+{% if who %}>
+> — {{ who }}
+{% endif %}
+
+{% endif -%}
+        {%- elseif handle == 'contentMethod' -%}
+            {%- for phase in craft.frontend.methodology() -%}
+**{{ phase.title }}**{% if phase.summary %}: {{ phase.summary|striptags|trim }}{% endif %}{% if phase.services|length %} ({{ phase.services|join(', ') }}){% endif %}
+
+{% endfor -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- endautoescape -%}
+{%- endmacro -%}
+{%- import _self as f -%}
+{% autoescape false %}
+# {{ siteName }}
+
+> {{ f.line(about.summary ?? '') ?: 'Design, development and maintenance of digital products.' }}
+
+The full text of {{ siteUrl() }} in one file. The short index, with a line per page, is
+{{ siteUrl('llms.txt') }}. The homepage has an assistant that answers questions about
+the work in Jon's own voice; everything it draws on is below.
+
+{% if about %}
+## {{ about.title }}
+
+Source: {{ about.url }}
+
+{{ craft.frontend.markdown(about.content ?? '') }}
+
+{{ f.blocks(about) }}
+{%- endif %}
+{%- for tool in tools %}
+
+## {{ tool.title }}
+
+Source: {{ tool.url }}
+
+{% if f.line(tool.summary ?? '') %}{{ f.line(tool.summary ?? '') }}
+
+{% endif %}
+{{- f.blocks(tool) }}
+{%- endfor %}
+{%- if studies|length %}
+
+# Case studies
+
+{% for study in studies %}
+{%- set client = craft.frontend.caseStudyClientName(study, true) -%}
+{%- set role = study.skills.all()|map(s => s.title)|join(', ') -%}
+{%- set year = (study.hasDateHidden ?? false) or not study.postDate ? '' : study.postDate|date('Y') ~ ((study.isPresent ?? false) ? ' – present' : '') -%}
+{%- set sectors = study.sectorSelector.all()|map(c => (c.longTitle ?? '')|trim ?: c.title)|join(', ') -%}
+## {{ (study.longTitle ?? '')|trim ?: study.title }}
+
+Source: {{ study.url }}
+{% if client %}Client: {{ client }}
+{% endif %}
+{%- if role %}Role: {{ role }}
+{% endif %}
+{%- if year %}Year: {{ year }}
+{% endif %}
+{%- if sectors %}Sectors: {{ sectors }}
+{% endif %}
+
+{% set summary = craft.frontend.markdown(study.caseSummary ?? '') -%}
+{% if summary %}{{ summary }}
+
+{% endif %}
+{{- f.blocks(study) }}
+{% endfor %}
+{%- endif %}
+{%- if notes|length %}
+
+# Notes
+
+{{ f.line(notesIndex.summary ?? '') }}
+
+{% for note in notes %}
+{%- set topics = note.topicSelector is defined ? note.topicSelector.all()|map(t => t.title)|join(', ') : '' -%}
+## {{ note.title }}
+
+Source: {{ note.url }}
+{% if note.postDate %}Published: {{ note.postDate|date('Y-m-d') }}
+{% endif %}
+{%- if topics %}Topics: {{ topics }}
+{% endif %}
+
+{% set summary = f.line(note.summary ?? '') -%}
+{% if summary %}{{ summary }}
+
+{% endif %}
+{{- f.blocks(note) }}
+{% endfor %}
+{%- endif %}
+{%- for page in pages %}
+
+## {{ page.title }}
+
+Source: {{ page.url }}
+
+{{ craft.frontend.markdown(page.content ?? '') }}
+{% endfor %}
+{%- if contact %}
+
+## {{ contact.title }}
+
+Source: {{ contact.url }}
+
+The contact page has a form, and the homepage assistant can take a message too.
+{% endif %}
+{% endautoescape %}
