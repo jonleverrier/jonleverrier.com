@@ -189,6 +189,60 @@ export const NO_SMOOTH_SCROLL = () => {
 };
 
 /**
+ * A SWITCH ON THE PAGE'S ANIMATION LOOP, installed before its scripts and left open.
+ *
+ * pinpointhq.com runs three Rive animations on WebGL2. With no GPU every frame is drawn
+ * in software and copied out with drawImage — measured at ~750ms a frame, back to back —
+ * so the page's main thread is never free: an EMPTY `page.evaluate` took 716–823ms, every
+ * screenshot 5–7s, and the capture spent its whole budget by slice 2 and failed. Nothing
+ * was stuck; everything was queued behind the next frame.
+ *
+ * Closing this switch drops every requestAnimationFrame callback from then on, so the
+ * loop stops and the page holds the last frame it drew. Measured on the same page: empty
+ * evaluates 0–9ms, a full-page shot 0.6s, and the Rive diagram still in the picture as a
+ * still. (Refusing WebGL2 was as fast and left a hole where the diagram was.)
+ *
+ * Only closed by freezeIfSaturated, never by default: the slice pass depends on scroll
+ * reveals finishing their motion, and some of those run on requestAnimationFrame.
+ */
+export const RAF_GATE = () => {
+    const raf = window.requestAnimationFrame.bind(window);
+    window.__auditRafFrozen = false;
+    window.requestAnimationFrame = (cb) => (window.__auditRafFrozen ? 0 : raf(cb));
+};
+
+/**
+ * How slow an empty evaluate has to be before the page counts as having taken the main
+ * thread. A healthy page answers in single-digit milliseconds; pinpointhq.com answered in
+ * ~730. Far enough from both that neither is near the line.
+ */
+export const SATURATED_MS = 250;
+
+/**
+ * Times three empty round trips to the page and, when the middle one is over
+ * SATURATED_MS, closes RAF_GATE. Returns what it measured either way, for meta.json —
+ * a capture of a frozen page is a still of an animation, and that should be on record.
+ *
+ * @param {import('playwright').Page} page
+ * @param {(what: string, start: () => Promise<any>) => Promise<any>} step
+ */
+export async function freezeIfSaturated(page, step = (_, start) => start()) {
+    const trips = [];
+    for (let i = 0; i < 3; i++) {
+        const t = Date.now();
+        await step('timing a round trip to the page', () => page.evaluate(() => 1));
+        trips.push(Date.now() - t);
+    }
+    const evaluateMs = [...trips].sort((a, b) => a - b)[1];
+    const frozen = evaluateMs > SATURATED_MS;
+    if (frozen) {
+        await step('freezing the page\'s animation loop', () => page.evaluate(() => { window.__auditRafFrozen = true; }));
+    }
+
+    return {frozen, evaluateMs};
+}
+
+/**
  * The whole wall-clock budget for one capture, and the reason it exists.
  *
  * bakerandpartners.com blocked a capture for FOURTEEN MINUTES on 0.60s of CPU before it
@@ -280,6 +334,28 @@ export function withDeadline(promise, ms, what) {
     });
 
     return Promise.race([guarded, bell]).finally(() => clearTimeout(timer));
+}
+
+/**
+ * One in-page step, bounded by what is left of `clock`.
+ *
+ * THE BUDGET IS CHECKED BEFORE THE STEP STARTS. It used to be an argument after `start()`
+ * — `withDeadline(start(), clock.check(what), what)` — and arguments run in order, so on
+ * a spent budget the screenshot was already in flight when check() threw, and the throw
+ * skipped the very wrapper that handles a late rejection. Closing the browser then
+ * rejected that orphaned screenshot with nobody listening, and node died on "Target page,
+ * context or browser has been closed" before `capture failed: …` could be printed — which
+ * is how pinpointhq.com's audit reached the CP reading only "capture: capturing https://…".
+ *
+ * @param {{check: (what: string) => number}} clock
+ * @returns {(what: string, start: () => Promise<any>) => Promise<any>}
+ */
+export function boundedStep(clock) {
+    return (what, start) => {
+        const ms = clock.check(what);
+
+        return withDeadline(start(), ms, what);
+    };
 }
 
 /**
@@ -697,7 +773,7 @@ export async function capturePage(url, outDir, opts = {}) {
         // fourteen minutes. The budget is the whole capture's, so a single stuck step
         // spends what is left of it and then fails like the 403 does: exit 1, a clear
         // message, no artefacts.
-        const step = (what, start) => withDeadline(start(), clock.check(what), what);
+        const step = boundedStep(clock);
         // Before the page's own scripts, so a hero that asks for a context on first
         // evaluation is still recorded.
         await page.addInitScript(WEBGL_PROBE_INIT);
@@ -706,6 +782,8 @@ export async function capturePage(url, outDir, opts = {}) {
         await page.addInitScript(SHADOW_INIT);
         // Before anything scrolls: the consent pass, the census and the slicer all do.
         await page.addInitScript(NO_SMOOTH_SCROLL);
+        // Before the page's scripts, so its animation loop runs through the switch.
+        await page.addInitScript(RAF_GATE);
         // THE STATUS WAS THROWN AWAY, and a blocked request looks exactly like a page.
         // webreality.co.uk answers a headless browser with a CloudFront 403: the capture
         // succeeded, wrote its artefacts, segmented into two blocks with area conserved
@@ -723,6 +801,10 @@ export async function capturePage(url, outDir, opts = {}) {
         await page.waitForLoadState('networkidle', {
             timeout: Math.min(20000, clock.check('the network to go quiet')),
         }).catch(() => {});
+
+        // A PAGE THAT HAS TAKEN THE MAIN THREAD gets its animation loop stopped here,
+        // before any of the work below queues behind it. See RAF_GATE.
+        const mainThread = await freezeIfSaturated(page, step);
 
         // WHERE THE SITE ITSELF PUT US, read before we have touched anything. A capture
         // ending on a different URL is two entirely different events wearing one face: the
@@ -991,6 +1073,9 @@ export async function capturePage(url, outDir, opts = {}) {
             consentArrivedLate: consent.arrivedLate === true,
             scrollCapHit,
             webgl,
+            // Whether the page's animation loop was stopped because it held the main
+            // thread, and the round trip that decided it. See RAF_GATE.
+            mainThread,
             fixed,
             heightGap: heightGap(fullHeight, rects, fixed),
         };
