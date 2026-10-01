@@ -91,6 +91,13 @@
                                         </li>
                                     {% endif %}
                                 {% endfor %}
+                                {# The panel's main button as a link: /contact, so it works
+                                   without JS and on the contact page itself; elsewhere
+                                   contact-panel.js opens the panel and, for
+                                   data-contact-write, goes straight to the form. #}
+                                <li class="c-footer__item">
+                                    <a class="c-footer__link" href="{{ siteUrl('contact') }}" data-contact-write><span>Send a message</span></a>
+                                </li>
                             </ul>
                         </div>
                     {% endif %}

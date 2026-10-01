@@ -372,6 +372,9 @@ export function mountContactPanel() {
         e.preventDefault();
         e.stopPropagation(); // before the page-transition's own listener sees it
         open(a);
+        // "Send a message" (the footer link) skips the ways in and goes to the form —
+        // the same step the panel's own button opens.
+        if (a.hasAttribute('data-contact-write')) onWrite();
     };
 
     // Escape fires the dialog's cancel: take over, so the close is the slide too.
