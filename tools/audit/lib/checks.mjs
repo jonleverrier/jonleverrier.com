@@ -50,6 +50,19 @@ const NAMES = {lcpMs: 'Largest Contentful Paint', tbtMs: 'Total Blocking Time', 
     fcpMs: 'First Contentful Paint', speedIndexMs: 'Speed Index'};
 
 export function speedChecks(speed, weight) {
+    // GOOGLE COULD NOT LOAD THE PAGE (see speedFrom in lib/pdf.mjs): one row, nothing to
+    // break down, because there are no metrics to read.
+    if (speed?.failed) {
+        return [{
+            id: 'pagespeed',
+            check: 'Google PageSpeed',
+            status: 'poor',
+            found: speed.failed.code === 'PAGE_HUNG'
+                ? "0/100: Google's speed test couldn't load this page; it stopped responding"
+                : "0/100: Google's speed test couldn't load this page",
+            fix: 'Run PageSpeed Insights on the homepage to see where loading stalls. A page Google cannot load is one a slower device struggles with too.',
+        }];
+    }
     const lab = speed?.lab;
     if (!lab || typeof speed.score !== 'number') return null;
 

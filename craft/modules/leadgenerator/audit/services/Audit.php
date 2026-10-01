@@ -199,6 +199,30 @@ class Audit extends Component
     }
 
     /**
+     * What Jon needs to know about this site's speed before the report goes out, or null.
+     *
+     * PageSpeed failures are scored by the report (see speedFrom in tools/audit/lib/pdf.mjs
+     * and failureKind in lib/psi.mjs): a page Google could not load is 0/10, which is a
+     * finding when Lighthouse blames the page and a guess when it only gave up. The guess
+     * is the one to re-verify; a failure of ours is not scored at all and says what to fix.
+     */
+    public function speedNote(int $entryId, string $which = ''): ?string
+    {
+        $path = $this->workDir($entryId, $which) . '/meta.json';
+        $meta = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+        $psi = is_array($meta) ? ($meta['psi'] ?? null) : null;
+        if (!is_array($psi) || empty($psi['error'])) {
+            return null;
+        }
+
+        return match ($psi['failure'] ?? null) {
+            'unclear' => 'Speed scored 0: PageSpeed couldn\'t access the site. Re-verify before sending.',
+            'ours' => 'Speed not measured: ' . mb_substr((string) $psi['error'], 0, 200) . '. Re-run once fixed.',
+            default => null,
+        };
+    }
+
+    /**
      * Choose the cover's findings, once every site has been measured.
      *
      * SEPARATE FROM `measure`, WHICH RUNS PER SITE. The lead is measured before the

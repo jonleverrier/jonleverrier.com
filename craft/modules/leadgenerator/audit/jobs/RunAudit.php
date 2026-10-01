@@ -121,12 +121,27 @@ class RunAudit extends BaseJob
             // `in-review` AND NOT `ready`: the report exists, and the next thing that has
             // to happen is a person reading it. The status names whose move it is.
             'auditStatus' => 'in-review',
-            // A competitor that could not be measured is the one thing worth saying on an
-            // otherwise successful audit: the report is sound, and the comparison the lead
-            // asked for is not in it.
-            'auditFailure' => $rivalWhy ?? '',
+            // What is worth saying on an otherwise successful audit: a competitor that could
+            // not be measured (the comparison the lead asked for is not in it), and a speed
+            // score that needs checking or could not be had — see Audit::speedNote().
+            'auditFailure' => $this->warnings($entry, $rivalWhy, $rival !== '' && !$rivalWhy),
             'auditReport' => [$asset->id],
         ]);
+    }
+
+    /**
+     * The warnings for auditFailure on a successful audit, one per line, or ''.
+     */
+    private function warnings(Entry $entry, ?string $rivalWhy, bool $rivalMeasured): string
+    {
+        $audit = LeadGenerator::getInstance()->audit;
+        $notes = [$rivalWhy, $audit->speedNote((int) $entry->id)];
+        if ($rivalMeasured) {
+            $note = $audit->speedNote((int) $entry->id, self::COMPETITOR);
+            $notes[] = $note ? 'Competitor: ' . $note : null;
+        }
+
+        return implode("\n", array_filter($notes));
     }
 
     /**

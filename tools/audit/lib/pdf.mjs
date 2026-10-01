@@ -41,6 +41,17 @@ import {bytesSummary} from './bytes.mjs';
 import {clusterColours, SAME_COLOUR_DE} from './styles.mjs';
 import {checks} from './checks.mjs';
 
+/** The report's speed: PageSpeed's result, a 0 for a failure on the page, or null. */
+export function speedFrom(psi) {
+    if (!psi) return null;
+    if (!psi.error) return psi;
+    if (psi.failure === 'page' || psi.failure === 'unclear') {
+        return {score: 0, failed: {failure: psi.failure, code: psi.code ?? null}};
+    }
+
+    return null;
+}
+
 /** A4 at 96dpi, less a 12mm margin: the box an image has to fit inside. */
 export const PAGE = {width: 794, height: 1123, margin: 45};
 
@@ -239,7 +250,13 @@ export function reportData(outDir, viewportHeight = 900) {
         // NULL AND NOT UNDEFINED, because this record is serialised: `undefined` drops out
         // of JSON entirely, so a consumer cannot tell "we did not measure it" from "the
         // field was never there". An absence has to survive the wire to be an absence.
-        speed: meta.psi && !meta.psi.error ? meta.psi : null,
+        //
+        // A PAGESPEED THAT FAILED ON THE PAGE scores 0, with what failed kept beside it:
+        // Google's own test could not load the page, which is a finding about the page, not
+        // a gap in ours (Jon, 1 Oct 2026). Only 'page' and 'unclear' failures — see
+        // failureKind in lib/psi.mjs; ours (key, quota, an unreadable answer) stays null.
+        // An error from before failures were classified has no `failure` and stays null too.
+        speed: speedFrom(meta.psi),
         weight: meta.bytes?.measured ? meta.bytes : null,
         weightSummary: bytesSummary(meta.bytes),
         // A judgement at a threshold, derived here for the same reason the colour grouping
@@ -367,7 +384,8 @@ export function stubTemplate(data, image) {
         </table>
         <div class="facts">
             ${data.weightSummary ? `<div>${esc(data.weightSummary)}</div>` : ''}
-            ${data.speed ? `<div>PageSpeed ${data.speed.score}/100 desktop &middot;
+            ${data.speed?.failed ? `<div>PageSpeed 0/100 desktop &middot; Google's test could not load the page (${esc(data.speed.failed.code ?? data.speed.failed.failure)})</div>`
+                : data.speed ? `<div>PageSpeed ${data.speed.score}/100 desktop &middot;
                 LCP ${data.speed.lab.lcpMs}ms &middot; TBT ${data.speed.lab.tbtMs}ms</div>` : ''}
             ${data.styles ? `<div>${data.styles.colours.total} colours &middot;
                 ${data.styles.fonts.loaded} font faces loaded of ${data.styles.fonts.declared} declared &middot;

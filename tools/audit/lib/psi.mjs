@@ -177,10 +177,40 @@ export function parsePsi(payload) {
  * `psi.json`. Keeping the rest would be twenty megabytes of JSON per hundred audits that
  * nothing reads.
  */
+/**
+ * The Lighthouse errors that are the PAGE's doing — it hung, painted nothing, or its own
+ * server refused the document. Google names them in the message ("Lighthouse returned
+ * error: PAGE_HUNG. …"), and a visitor's browser meets the same wall, so the report
+ * scores speed 0 for them. pinpointhq.com: PAGE_HUNG on mobile and desktop, its Rive
+ * animations holding the main thread (see RAF_GATE in lib/capture.mjs).
+ */
+export const PAGE_FAILURES = ['PAGE_HUNG', 'NO_FCP', 'NO_LCP', 'FAILED_DOCUMENT_REQUEST', 'ERRORED_DOCUMENT_REQUEST', 'NOT_HTML', 'DNS_FAILURE', 'INSECURE_DOCUMENT_REQUEST'];
+
+/**
+ * Whose failure a PageSpeed error is, which decides what the report does with it:
+ *
+ *   'page'    Lighthouse named a page failure (PAGE_FAILURES). Speed 0/10.
+ *   'unclear' Google gave up without saying why — "Something went wrong", a 5xx, no answer
+ *             in time. Speed 0/10, and the entry asks Jon to re-verify before sending.
+ *   'ours'    the key, the quota, a refused request, or an answer we could not read.
+ *             Nothing about the site; no score, and the entry says what to fix.
+ *
+ * @param {number|null} status  the HTTP status, null when there was no response at all
+ * @param {string} message
+ * @returns {{failure: 'page'|'unclear'|'ours', code: string|null}}
+ */
+export function failureKind(status, message) {
+    const code = (String(message).match(/Lighthouse returned error: ([A-Z_]+)/) ?? [])[1] ?? null;
+    if (code && PAGE_FAILURES.includes(code)) return {failure: 'page', code};
+    if (status === null || status >= 500) return {failure: 'unclear', code};
+
+    return {failure: 'ours', code};
+}
+
 export async function fetchPsi(url, opts = {}) {
     const key = opts.key ?? psiKey(opts.envPath);
     if (!key) {
-        return {error: 'no GOOGLE_CLOUD_KEY in the environment or in craft/.env'};
+        return {error: 'no GOOGLE_CLOUD_KEY in the environment or in craft/.env', failure: 'ours', code: null};
     }
     const strategy = opts.strategy ?? STRATEGY;
     const attempts = opts.attempts ?? PSI_ATTEMPTS;
@@ -190,6 +220,7 @@ export async function fetchPsi(url, opts = {}) {
 
     const query = new URLSearchParams({url, strategy, category: 'performance', key});
     let last = 'the request never completed';
+    let lastStatus = null;
     for (let attempt = 1; attempt <= attempts; attempt++) {
         let status = null;
         try {
@@ -198,14 +229,17 @@ export async function fetchPsi(url, opts = {}) {
             if (res.ok) {
                 const reduced = parsePsi(await res.json());
 
-                return reduced.error ? {error: reduced.error} : reduced;
+                // A 200 we could not read is our parsing, never the page's.
+                return reduced.error ? {error: reduced.error, failure: 'ours', code: null} : reduced;
             }
             // The body carries Google's own explanation — a disabled API, a bad key, an
             // exhausted quota — and it is the difference between a five-minute fix and an
             // afternoon. Bounded, because it is a page from a server we do not control.
             last = `PageSpeed answered ${status}: ${String(await res.text().catch(() => '')).slice(0, 200)}`;
+            lastStatus = status;
         } catch (e) {
             last = `PageSpeed did not answer: ${e.message}`;
+            lastStatus = null;
         }
         if (attempt < attempts && worthRetrying(status)) {
             await sleep((opts.backoffMs ?? PSI_BACKOFF_MS) * attempt);
@@ -214,5 +248,5 @@ export async function fetchPsi(url, opts = {}) {
         break;
     }
 
-    return {error: last};
+    return {error: last, ...failureKind(lastStatus, last)};
 }

@@ -12,7 +12,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
-    ENDPOINT, STRATEGY, fetchPsi, labMetrics, parsePsi, pointsLost, psiKey, worthRetrying,
+    ENDPOINT, STRATEGY, failureKind, fetchPsi, labMetrics, parsePsi, pointsLost, psiKey, worthRetrying,
 } from '../lib/psi.mjs';
 
 const fixture = (name) => JSON.parse(readFileSync(`tools/audit/fixtures/psi-${name}.fixture.json`, 'utf8'));
@@ -207,4 +207,33 @@ test('the points each metric cost are read off the response, weights and all', (
 test('no weights in the response is null, not a page that lost nothing', () => {
     assert.equal(pointsLost(kohde.lighthouseResult), null);
     assert.equal(parsePsi(kohde).lost, null);
+});
+
+/* ------------------------------------------------------------------ whose failure */
+
+// WHOSE FAILURE decides what the report does: the page's and the unclear ones score 0,
+// ours are not scored. pinpointhq.com, 1 Oct 2026, verbatim from Google: a 500 naming
+// PAGE_HUNG on mobile and desktop, and a bare "Something went wrong" on desktop.
+const PAGE_HUNG = '{"error": {"code": 500, "message": "Lighthouse returned error: PAGE_HUNG. Lighthouse was unable to reliably load the URL you requested because the page stopped responding."}}';
+const WENT_WRONG = '{"error": {"code": 500, "message": "Lighthouse returned error: Something went wrong."}}';
+
+test('a Lighthouse error that names the page is the page\'s failure', async () => {
+    const got = await fetchPsi('https://pinpointhq.com', {key: 'k', attempts: 1, fetch: async () => bad(500, PAGE_HUNG)});
+    assert.equal(got.failure, 'page');
+    assert.equal(got.code, 'PAGE_HUNG');
+});
+
+test('Google giving up without a reason, or not answering, is unclear', async () => {
+    const wrong = await fetchPsi('https://a.com', {key: 'k', attempts: 1, fetch: async () => bad(500, WENT_WRONG)});
+    assert.equal(wrong.failure, 'unclear');
+    const silent = await fetchPsi('https://a.com', {key: 'k', attempts: 1, fetch: async () => { throw new Error('timed out'); }});
+    assert.equal(silent.failure, 'unclear');
+});
+
+test('the key, the quota and a refused request are ours, never the page\'s', async () => {
+    assert.equal((await fetchPsi('https://a.com', {key: null, envPath: 'tools/audit/test/nothing-here.env'})).failure, 'ours');
+    assert.equal((await fetchPsi('https://a.com', {key: 'k', attempts: 1, fetch: async () => bad(429, 'Quota exceeded')})).failure, 'ours');
+    assert.equal((await fetchPsi('https://a.com', {key: 'k', attempts: 1, fetch: async () => bad(403, 'API has not been used')})).failure, 'ours');
+    // A 400 that names a page failure is still the page's: Google answers some of those 400.
+    assert.equal(failureKind(400, 'Lighthouse returned error: FAILED_DOCUMENT_REQUEST. …').failure, 'page');
 });

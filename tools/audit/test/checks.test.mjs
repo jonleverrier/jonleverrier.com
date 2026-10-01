@@ -9,7 +9,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {bytes, checks, consistencyChecks, speedChecks, technicalChecks} from '../lib/checks.mjs';
-import {technicalScore} from '../lib/pdf.mjs';
+import {speedFrom, technicalScore} from '../lib/pdf.mjs';
 
 const MB = 1048576;
 const status = (rows) => Object.fromEntries(rows.map((r) => [r.id, r.status]));
@@ -136,4 +136,19 @@ test('checks() reads a report record and nothing else', () => {
 test('bytes print the way r.bytes() prints them', () => {
     assert.equal(bytes(1.05 * MB), '1.1mb');
     assert.equal(bytes(343 * 1024), '343kb');
+});
+
+// A PAGE GOOGLE COULD NOT LOAD scores 0 with one row saying so; a failure of ours is not
+// scored at all, and neither is an error from before failures were classified.
+test('a PageSpeed failure on the page is a 0 with one row, and ours is no speed at all', () => {
+    const hung = speedFrom({error: 'PageSpeed answered 500: …', failure: 'page', code: 'PAGE_HUNG'});
+    assert.deepEqual(hung, {score: 0, failed: {failure: 'page', code: 'PAGE_HUNG'}});
+    const rows = speedChecks(hung, null);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].status, 'poor');
+    assert.match(rows[0].found, /^0\/100: .*stopped responding/);
+
+    assert.equal(speedFrom({error: '…', failure: 'unclear', code: null}).score, 0);
+    assert.equal(speedFrom({error: 'no GOOGLE_CLOUD_KEY', failure: 'ours', code: null}), null);
+    assert.equal(speedFrom({error: 'an old error with no failure recorded'}), null);
 });
