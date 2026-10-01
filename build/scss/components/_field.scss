@@ -368,9 +368,14 @@
     overflow: hidden;
 }
 
-// Gone whenever a placeholder would be — on focus and once anything is typed.
-.c-field__wrap input:is(:focus, :not(:placeholder-shown)) + .c-field__cycle {
+// Gone whenever a placeholder would be — on focus and once anything is typed — and
+// while the mic is listening, when the field's native placeholder says so instead.
+.c-field__wrap input:is(:focus, :not(:placeholder-shown), .is-listening) + .c-field__cycle {
     opacity: 0;
+}
+
+.c-field__wrap input.is-cycling.is-listening::placeholder {
+    color: var(--field-placeholder, #{getmap($colour, primary, 700)});
 }
 
 .c-field__cycle-line {

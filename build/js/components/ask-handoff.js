@@ -26,7 +26,8 @@ export function mountAskHandoff() {
             // An empty field hands over the prompt its placeholder is showing
             // (placeholder-cycle.js) — unless the field is focused, when the placeholder
             // is cleared and there's nothing in view to send: then just the caret.
-            const shown = input?.dataset.cycleCurrent || '';
+            // (Nor while the mic is listening — the field says "Listening..." then.)
+            const shown = input?.classList.contains('is-listening') ? '' : (input?.dataset.cycleCurrent || '');
             if (!shown || document.activeElement === input) {
                 input?.focus();
                 return;

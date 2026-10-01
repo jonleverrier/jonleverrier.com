@@ -893,6 +893,11 @@ $c-ask-cream: getmap($colour, light, 650);
         &.is-cycling::placeholder {
             color: transparent;
         }
+
+        // …except while the mic is listening, when "Listening..." is the native one.
+        &.is-cycling.is-listening::placeholder {
+            color: rgba(22, 44, 65, 0.72);
+        }
     }
 
     // The back circle is cream-on-olive by default — invisible here. Its HOVER is

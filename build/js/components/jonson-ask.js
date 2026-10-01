@@ -634,7 +634,9 @@ export function mountJonson({warpOut} = {}) {
             if (busy) return;
             let question = input.value.trim();
             if (!question) {
-                const shown = input.dataset.cycleCurrent || '';
+                // Not while the mic is listening: the field says "Listening..." then,
+                // not the prompt.
+                const shown = input.classList.contains('is-listening') ? '' : (input.dataset.cycleCurrent || '');
                 if (shown && document.activeElement !== input) {
                     question = shown;
                     // In the field for the hero's warp, the same as a typed question

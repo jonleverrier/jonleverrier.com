@@ -107,7 +107,9 @@ export function mountPlaceholderCycle(input) {
     let timer = null;
     let disposed = false;
 
-    const idle = () => input.value === '' && document.activeElement !== input;
+    // Not while the mic is listening either: the field says "Listening..." then (see
+    // jonson-voice.js), and a prompt hopping in behind it would contradict it.
+    const idle = () => input.value === '' && document.activeElement !== input && !input.classList.contains('is-listening');
 
     // How long a lone long prompt takes to slide back to its start.
     const RETURN_MS = 600;
@@ -186,10 +188,12 @@ export function mountPlaceholderCycle(input) {
     }, 0);
 
     const onInput = () => (input.value === '' ? resume() : pause());
+    const onListening = (e) => (e.detail ? pause() : resume());
 
     input.addEventListener('focus', pause);
     input.addEventListener('blur', resume);
     input.addEventListener('input', onInput);
+    input.addEventListener('jonson:listening', onListening);
     // After the fonts: the first line is the one on screen from page load, and the
     // lead-in alone doesn't cover a slow font.
     document.fonts.ready.then(() => {
@@ -202,6 +206,7 @@ export function mountPlaceholderCycle(input) {
         input.removeEventListener('focus', pause);
         input.removeEventListener('blur', resume);
         input.removeEventListener('input', onInput);
+        input.removeEventListener('jonson:listening', onListening);
         input.classList.remove('is-cycling');
         delete input.dataset.cycleCurrent;
         overlay.remove();

@@ -103,11 +103,21 @@ function setup(form) {
     // appends rather than wipes.
     let base = '';
 
+    // The field's own placeholder, put back when listening ends.
+    let placeholder = input.placeholder;
+
     const paint = (on) => {
+        if (on && !listening) placeholder = input.placeholder;
         listening = on;
         button.classList.toggle('is-listening', on);
         button.setAttribute('aria-pressed', on ? 'true' : 'false');
         button.setAttribute('aria-label', on ? 'Stop dictating' : 'Dictate your question');
+        // The field says it's listening. `is-listening` lifts the cycling placeholder
+        // off (see .c-field__wrap in _field.scss) so the native one shows, and the
+        // event tells placeholder-cycle.js to hold still until it's over.
+        input.placeholder = on ? 'Listening...' : placeholder;
+        input.classList.toggle('is-listening', on);
+        input.dispatchEvent(new CustomEvent('jonson:listening', {detail: on}));
     };
 
     const start = () => {
