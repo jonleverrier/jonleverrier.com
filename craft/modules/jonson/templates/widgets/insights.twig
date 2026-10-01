@@ -75,6 +75,13 @@
         padding: 8px 10px; border-radius: 4px; margin-bottom: var(--jw-gap);
         background: var(--error-color, #cf1124); color: #fff;
     }
+    .jonson-w__kill {
+        display: flex; align-items: center; gap: 10px;
+        margin-top: var(--jw-gap); padding-top: 12px;
+        border-top: 1px solid var(--hairline-color, #d8dde3);
+        font-size: 11px; /* matches .jonson-w__foot */
+    }
+    .jonson-w__kill .btn { font-size: 11px; }
     .jonson-w__cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--jw-gap); }
     /* Both small-caps tiers carry the same weight — the stat labels and the column
        titles are one system, and bolding only half of it would read as an accident.
@@ -318,6 +325,18 @@
             <p class="light">Every door has been opened.</p>
         {% endif %}
     </div>
+
+    {# KILL VIP SESSION — for after testing a door on this device. Clears the cookie;
+       vip.js wipes the VIP-primed thread on the next site page load. #}
+    <form class="jonson-w__kill" method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('jonson/vip/forget') }}
+        {{ redirectInput('dashboard') }}
+        <span class="light">
+            VIP session on this device: <strong>{{ vipNow ? vipNow.title : 'None' }}</strong>
+        </span>
+        {% if vipNow %}<button type="submit" class="btn small">End Session</button>{% endif %}
+    </form>
 
     <script>
         (() => {

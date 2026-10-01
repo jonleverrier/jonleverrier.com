@@ -14,7 +14,8 @@ use yii\web\Response;
  */
 class VipController extends Controller
 {
-    protected int|bool|array $allowAnonymous = true;
+    // Only the door is public. forget() is Jon's, from the CP dashboard.
+    protected int|bool|array $allowAnonymous = ['enter'];
 
     public function actionEnter(string $token): Response
     {
@@ -25,5 +26,15 @@ class VipController extends Controller
         }
 
         return $vip->enter($entry);
+    }
+
+    /** Kill the VIP session on this browser — the dashboard widget's button. */
+    public function actionForget(): Response
+    {
+        $this->requirePostRequest();
+        Jonson::getInstance()->vip->forget();
+        $this->setSuccessFlash('VIP session cleared on this device.');
+
+        return $this->redirectToPostedUrl();
     }
 }

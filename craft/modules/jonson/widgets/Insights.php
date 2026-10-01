@@ -88,6 +88,8 @@ class Insights extends Widget
             // figure shows on every tab.
             'presence' => $analytics->presence(),
             'prospects' => $this->prospects(),
+            // The VIP door THIS browser holds, if any — for the kill button at the foot.
+            'vipNow' => Jonson::getInstance()->vip->current(),
         ]);
     }
 

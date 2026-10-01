@@ -341,6 +341,21 @@ class Vip extends Component
     }
 
     /**
+     * Forget the VIP on this browser: expire the cookie on the current response. For
+     * Jon, after testing a door on his own device (the dashboard widget's button). The
+     * thread primed as that VIP goes too, client-side — vip.js wipes it on the next page
+     * load when it sees the door gone.
+     */
+    public function forget(): void
+    {
+        // remove() sends an expired cookie of the same name; path and domain are the
+        // defaults remember() used, so it overwrites the right one.
+        Craft::$app->getResponse()->getCookies()->remove(self::COOKIE);
+        $this->resolved = true;
+        $this->current = null;
+    }
+
+    /**
      * The VIP this request belongs to, or null: a live entry in the vip section
      * matching the cookie's uid. Anything else — no cookie, a stale or forged one, a
      * disabled entry — is null, and the visitor is treated as anyone else. Resolved
