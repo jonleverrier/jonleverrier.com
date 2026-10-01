@@ -1,0 +1,19 @@
+{#
+    VIP door — the link-preview page (see services\Vip::enter). Served only to
+    things that aren't a browser navigating: chat and social unfurlers, mostly.
+    The homepage's own card (head.twig, rendered for the homepage entry) with one
+    change: og:url is the door, so the card links to the door and not past it.
+    noindex — a door is private and must never land in a search index.
+#}
+{% set element = home %}
+<!DOCTYPE html>
+<html lang="{{ craft.app.language|slice(0,2) }}">
+<head>
+    {% include '_includes/page/head.twig' with {entry: home, element: home, ogUrl: doorUrl, tplPath: '_views/single/home/default'} %}
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="refresh" content="0;url={{ siteUrl('') }}">
+</head>
+<body>
+    <a href="{{ siteUrl('') }}">Continue to Jon Leverrier</a>
+</body>
+</html>

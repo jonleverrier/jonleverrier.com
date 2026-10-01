@@ -159,7 +159,10 @@
 {% if metaDescription is defined and metaDescription %}
     <meta property="og:description" content="{{ metaDescription }}">
 {% endif %}
-<meta property="og:url" content="{{ canonical }}">
+{# `ogUrl` lets a page that is standing in for another one keep its OWN address on
+   the card: the VIP door's preview (_views/structure/vip/_preview) wears the
+   homepage's card but must link back to the door, or the card skips it. #}
+<meta property="og:url" content="{{ ogUrl ?? canonical }}">
 <meta property="og:type" content="{{ entry is defined and entry and entry.section.handle == 'notes' ? 'article' : 'website' }}">
 {% if socialImage %}
     <meta property="og:image" content="{{ craft.frontend.socialImageUrl(socialImage) }}">

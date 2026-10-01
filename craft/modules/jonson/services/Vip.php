@@ -217,9 +217,44 @@ class Vip extends Component
         if ($entry) {
             $this->remember($entry);
             $this->countHit($entry);
+
+            // A LINK PREVIEW, not a visitor. LinkedIn, Slack, WhatsApp et al. follow
+            // the redirect below and draw the homepage's card — whose og:url is the
+            // homepage, so the card links PAST the door and the recipient arrives as
+            // nobody. Anything that isn't a browser navigating (see isBrowserNavigation)
+            // gets the homepage's card served AT the door's address instead, with the
+            // door as its og:url. A meta refresh carries on home for the rare human it
+            // catches (plain http, an old browser) — the cookie is already set.
+            if (!$this->isBrowserNavigation()) {
+                return $this->preview();
+            }
         }
 
         return Craft::$app->getResponse()->redirect(\craft\helpers\UrlHelper::siteUrl(''));
+    }
+
+    /** The door's link-preview page: the homepage's card, pointing at the door. */
+    private function preview(): \yii\web\Response
+    {
+        $request = Craft::$app->getRequest();
+        $response = Craft::$app->getResponse();
+        $html = Craft::$app->getView()->renderTemplate('_views/structure/vip/_preview', [
+            'home' => Entry::find()->section('homepage')->one(),
+            'doorUrl' => \craft\helpers\UrlHelper::siteUrl($request->getPathInfo()),
+        ], \craft\web\View::TEMPLATE_MODE_SITE);
+
+        // TWO WAYS IN. The slug form reaches enter() from a template that ends in
+        // {% exit %}, and Craft ends a template response with whatever has been ECHOED
+        // into its buffer (web\Application::end) — so there the page is echoed. The
+        // code form comes from VipController, which sends the response it's handed.
+        if ($response->format === \craft\web\TemplateResponseFormatter::FORMAT) {
+            echo $html;
+        } else {
+            $response->format = \yii\web\Response::FORMAT_HTML;
+            $response->data = $html;
+        }
+
+        return $response;
     }
 
     /** The field counting visits to the door (either URL form). */
@@ -318,6 +353,18 @@ class Vip extends Component
         if (str_contains($purpose, 'prefetch') || str_contains($purpose, 'prerender')) {
             return false;
         }
+
+        return $this->isBrowserNavigation();
+    }
+
+    /**
+     * A browser navigating to a top-level page — the fetch-metadata half of
+     * isHumanArrival(), without its other exclusions (Jon, prefetch), which are about
+     * counting and not about what to serve.
+     */
+    private function isBrowserNavigation(): bool
+    {
+        $headers = Craft::$app->getRequest()->getHeaders();
 
         return strtolower((string) $headers->get('Sec-Fetch-Mode')) === 'navigate'
             && strtolower((string) $headers->get('Sec-Fetch-Dest')) === 'document';
