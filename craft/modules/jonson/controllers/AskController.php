@@ -3625,7 +3625,11 @@ class AskController extends Controller
                 continue;
             }
 
-            $payload = ($surface['data'])($question, 'all', $question, [], $session);
+            // Every argument the registry's data() takes, the answer included. There is no
+            // answer on this path, so the question stands in for it — the picker reads the
+            // answer as its context. Calling with five crashed (ArgumentCountError) once
+            // `answer` was added, turning the designed outage reply into the bare error.
+            $payload = ($surface['data'])($question, 'all', $question, [], $session, $question);
             if (!$payload) {
                 return null;
             }

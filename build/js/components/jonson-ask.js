@@ -469,6 +469,11 @@ export function mountJonson({warpOut} = {}) {
             delete heroForm.dataset.jonsonFrom;
         }
         if (csrfInput && csrfInput.name) payload.set(csrfInput.name, csrfInput.value);
+        // The request itself failed (network, a 5xx, a broken stream). Through the same
+        // reveal as any answer, so it gets the answer's paragraph — its type, its mono,
+        // its fade — instead of bare text dropped into the box.
+        let revealed = false;
+        const fail = () => revealAnswer(answerEl, '', '', '', '', '', '', '', '', '', [], 'Sorry — something went wrong. Please try again.', startedAt);
 
         try {
             const res = await fetch(endpoint, {
@@ -482,7 +487,7 @@ export function mountJonson({warpOut} = {}) {
             });
 
             if (!res.ok || !res.body) {
-                answerEl.textContent = 'Sorry — something went wrong. Please try again.';
+                fail();
                 return;
             }
 
@@ -547,6 +552,7 @@ export function mountJonson({warpOut} = {}) {
                         if (typeof answer === 'string' && stripMarkers(answer)) {
                             answerText = answer;
                             addLate = revealAnswer(answerEl, answerText, railHtml, testimonialHtml, clientsHtml, sectorsHtml, caseStudiesHtml, methodHtml, musicHtml, contactHtml, suggestions, errorText, startedAt);
+                            revealed = true;
                         }
                     } else if (event === 'error') {
                         errorText = JSON.parse(data).message;
@@ -577,7 +583,9 @@ export function mountJonson({warpOut} = {}) {
                 }
             }
         } catch {
-            answerEl.textContent = 'Sorry — something went wrong. Please try again.';
+            // Broke AFTER the answer was revealed (the chips' call, say): leave the answer
+            // on screen — losing a chip is better than replacing what they're reading.
+            if (!revealed) fail();
         }
     };
 
