@@ -1011,7 +1011,7 @@ class FindContext extends Component
      * a study's own title, or its client's name when that client has a single study.
      * "Vaiie" alone can't say which of three studies it means, so it adds nothing.
      */
-    public function withNamedIn(array $listed, string $answer): array
+    public function withNamedIn(array $listed, string $answer, ?string $question = null): array
     {
         $have = array_column($listed, 'slug');
         $all = $this->caseStudies();
@@ -1037,7 +1037,36 @@ class FindContext extends Component
             }
         }
 
-        return $listed;
+        // A CLIENT'S WORK COMES AS A SET. Listing one of Vaiie's three studies and not the
+        // others was the last way the cards and the prose drifted apart ("designed the
+        // identity verification journey" with only the branding card). Any study shown
+        // brings its client's other studies, after the ones named, so the work Jonson
+        // talks about is never held back. A study with no client (the logo collection)
+        // is its own set.
+        //
+        // EXCEPT when the visitor named one study by TITLE: "Did you design Vaiie
+        // Identify?" is about that project, not its two siblings — the specificity rule
+        // the picker has always kept (see pickStudies' $askedByTitle).
+        if ($question !== null && trim($question) !== ''
+            && array_filter($listed, fn(array $s) => $this->studyMatchTier($question, $s) === 1)
+        ) {
+            return $listed;
+        }
+        $out = [];
+        foreach ($listed as $s) {
+            $out[$s['slug']] = $s;
+            $client = mb_strtolower(trim((string) ($s['client'] ?? '')));
+            if ($client === '') {
+                continue;
+            }
+            foreach ($all as $sib) {
+                if (mb_strtolower(trim((string) ($sib['client'] ?? ''))) === $client && !isset($out[$sib['slug']])) {
+                    $out[$sib['slug']] = $sib;
+                }
+            }
+        }
+
+        return array_values($out);
     }
 
     /** The studies a piece of text names — by title, client, sector or skill. */

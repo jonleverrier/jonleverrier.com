@@ -1691,7 +1691,7 @@ class AskController extends Controller
                     if ($named) {
                         // Plus any study the answer names outright but didn't list — a
                         // passing mention ("the mark for Urban") — see withNamedIn.
-                        $named = $ctx->withNamedIn($named, $answer);
+                        $named = $ctx->withNamedIn($named, $answer, $question);
                         return $ctx->withoutShown($named, $shown);
                     }
 

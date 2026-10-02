@@ -17,12 +17,18 @@ const ENV = (() => {
 })();
 const API_KEY = (ENV.match(/^KEY_ANTHROPIC_API=["']?([^"'\n]+)/m) || [])[1] || '';
 export const slugOf = (url) => url.replace(/\/+$/, '').split('/').pop();
-export let catalogue = null; // slug -> "Title: one-line description", from the site's own /case-studies.md
+export let catalogue = null;
+export const clients = {}; // slug -> client name // slug -> "Title: one-line description", from the site's own /case-studies.md
 export async function loadCatalogue() {
     if (catalogue) return catalogue;
     catalogue = {};
     const md = await (await fetch(`${BASE}/case-studies.md`)).text();
     for (const m of md.matchAll(/^- \[([^\]]+)\]\(([^)]+)\): ?(.*)$/gm)) catalogue[slugOf(m[2])] = `${m[1]}: ${m[3]}`;
+    // Each study's client, from llms-full.txt ("Source: …/slug" then "Client: …"), so a
+    // client's sibling studies aren't counted as extras (the site shows a client's work
+    // as a set).
+    const full = await (await fetch(`${BASE}/llms-full.txt`)).text();
+    for (const m of full.matchAll(/^Source: (\S+)\nClient: (.+)$/gm)) clients[slugOf(m[1])] = m[2].trim();
     return catalogue;
 }
 export async function judgeCards(prose, shown, earlier) {
@@ -60,7 +66,9 @@ export async function judgeCards(prose, shown, earlier) {
         return {
             described,
             missing: described.filter((sl) => !shown.includes(sl) && !earlier.includes(sl)),
-            extra: shown.filter((sl) => !described.includes(sl)),
+            // A sibling of a described study (same client) is the set, not an extra.
+            extra: shown.filter((sl) => !described.includes(sl)
+                && !(clients[sl] && described.some((d) => clients[d] === clients[sl]))),
         };
     } catch {
         return null;

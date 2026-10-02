@@ -62,7 +62,7 @@ const BASE = process.env.JONSON_BASE || 'https://jonleverrier2.local';
 const RUNS = Number(process.argv[2] || 6);
 const CONCURRENCY = Number(process.argv[3] || 4);
 const FILTER = process.argv[4] || '';
-import {judgeCards, loadCatalogue, slugOf, catalogue} from './judge.mjs';
+import {judgeCards, loadCatalogue, slugOf, catalogue, clients} from './judge.mjs';
 const SURFACES = ['context', 'casestudies', 'clients', 'sectors', 'method', 'testimonial', 'contact', 'music', 'suggestions'];
 
 const suite = JSON.parse(readFileSync(join(HERE, 'suite.json'), 'utf8'));
@@ -212,28 +212,35 @@ async function runScenario(s) {
             const first = (html.match(/class="c-testimonial__name">([^<]+)</) || [])[1];
             if (first && first.trim() !== turn.leadQuote) fails.push(`T${i + 1} lead quote was ${first.trim()}, not ${turn.leadQuote}`);
         }
-        // OBEYED: a marker that lists ids gets exactly those cards (never-twice aside).
         const shownSlugs = r.studies.map(slugOf);
         const earlierSlugs = [...seenStudies].map(slugOf);
-        const listed = [...r.answer.matchAll(/\[\[casestudies:([^\]]+)\]\]/gi)].map((m) => m[1].trim()).filter((m) => m.toLowerCase() !== 'all');
-        if (listed.length) {
-            const ids = listed.join(',').toLowerCase().split(/[\s,]+/).filter(Boolean);
-            const extra = shownSlugs.filter((sl) => !ids.includes(sl));
-            const missing = ids.filter((id) => !shownSlugs.includes(id) && !earlierSlugs.includes(id) && (!catalogue || catalogue[id]));
-            if (extra.length) fails.push(`T${i + 1} cards not in the marker's list: ${extra.join(', ')}`);
-            if (missing.length) fails.push(`T${i + 1} marker listed ${missing.join(', ')} but no card`);
-        }
-        // JUDGED: do the cards match the work the prose describes?
+        let judged = null;
+        // JUDGED: do the cards match the work the prose describes? (Run first: the
+        // obedience check below lets named work through.)
         const isAll = /\[\[casestudies:all\]\]/i.test(r.answer);
         if (r.studies.length && !isAll) {
             const prose = r.answer.replace(/\[\[[^\]]*\]{1,2}/g, ' ').replace(/\s+/g, ' ').trim();
-            const v = await judgeCards(prose, shownSlugs, earlierSlugs);
+            judged = await judgeCards(prose, shownSlugs, earlierSlugs);
+            const v = judged;
             if (v && v.missing?.length) fails.push(`T${i + 1} judge: prose describes ${v.missing.join(', ')} — no card`);
             // A study the scenario REQUIRES isn't an extra: a VIP's own work leads because
             // of the note, whether or not the prose dwells on it.
             const required = new Set([...(turn.expectStudies || []), ...(turn.leadStudy ? [turn.leadStudy] : [])]);
             const extra = (v?.extra || []).filter((sl) => !required.has(sl));
             if (extra.length) fails.push(`T${i + 1} judge: card(s) the prose isn't about: ${extra.join(', ')}`);
+        }
+        // OBEYED: a marker that lists ids gets exactly those cards (never-twice aside).
+        const listed = [...r.answer.matchAll(/\[\[casestudies:([^\]]+)\]\]/gi)].map((m) => m[1].trim()).filter((m) => m.toLowerCase() !== 'all');
+        if (listed.length) {
+            const ids = listed.join(',').toLowerCase().split(/[\s,]+/).filter(Boolean);
+            // Every listed study must show. Others may join, but only a listed study's
+            // sibling (same client — the site shows a client's work as a set) or work the
+            // answer names outright; anything else is a card nobody asked for.
+            const sibling = (sl) => clients[sl] && ids.some((id) => clients[id] === clients[sl]);
+            const extra = shownSlugs.filter((sl) => !ids.includes(sl) && !sibling(sl) && !(judged?.described || []).includes(sl));
+            const missing = ids.filter((id) => !shownSlugs.includes(id) && !earlierSlugs.includes(id) && (!catalogue || catalogue[id]));
+            if (extra.length) fails.push(`T${i + 1} cards not in the marker's list: ${extra.join(', ')}`);
+            if (missing.length) fails.push(`T${i + 1} marker listed ${missing.join(', ')} but no card`);
         }
         if (turn.minStudies && r.studies.length < turn.minStudies) {
             fails.push(`T${i + 1} showed ${r.studies.length} study card(s) (min ${turn.minStudies})`);
