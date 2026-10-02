@@ -183,7 +183,22 @@ async function runScenario(s) {
             question = offered[n];
             fromChip = n;
         }
-        const r = await ask(jar, cid, token, question, i > 0, fromChip);
+        // A DROPPED CONNECTION IS RETRIED, not scored. Jonson's outage reply (done.apiError)
+        // or a failed fetch is the network, not the product — 2026-10-02 on train wifi, 120
+        // of 141 answers were outage replies. Wait and ask again (10s, 30s, 60s); only if
+        // it's still down does the run record an error, never fake missed surfaces.
+        let r;
+        for (const wait of [0, 10, 30, 60]) {
+            if (wait) await new Promise((res) => setTimeout(res, wait * 1000));
+            try {
+                r = await ask(jar, cid, token, question, i > 0, fromChip);
+            } catch (e) {
+                if (wait === 60) throw e;
+                continue;
+            }
+            if (!(r.events.done?.[0] || {}).apiError) break;
+            if (wait === 60) throw new Error('API unreachable (outage reply) after retries');
+        }
         const shown = SURFACES.filter((name) => (r.events[name] || []).length > 0);
         const fails = [];
         for (const e of turn.expect || []) if (!shown.includes(e)) fails.push(`T${i + 1} missing ${e}`);
@@ -255,7 +270,8 @@ async function runScenario(s) {
             // Every listed study must show. Others may join, but only a listed study's
             // sibling (same client — the site shows a client's work as a set) or work the
             // answer names outright; anything else is a card nobody asked for.
-            const sibling = (sl) => clients[sl] && ids.some((id) => clients[id] === clients[sl]);
+            const described = judged?.described || [];
+            const sibling = (sl) => clients[sl] && [...ids, ...described].some((id) => clients[id] === clients[sl]);
             const extra = shownSlugs.filter((sl) => !ids.includes(sl) && !sibling(sl) && !(judged?.described || []).includes(sl));
             const missing = ids.filter((id) => !shownSlugs.includes(id) && !earlierSlugs.includes(id) && (!catalogue || catalogue[id]));
             if (extra.length) fails.push(`T${i + 1} cards not in the marker's list: ${extra.join(', ')}`);

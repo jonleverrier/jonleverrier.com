@@ -60,7 +60,18 @@ echo json_encode([
         'client' => $s['client'],
         'title' => $s['title'],
         'sectors' => $s['sectors'],
+        // What the study says — Jonson describes the work from these, so the judge must
+        // read them too ("adopted by the Government of Jersey" is in Vaiie Identify's).
+        'summary' => $s['summary'],
+        'notes' => $s['jonsonSummary'],
     ], $jonson->findContext->caseStudies()),
+    // Who said what about Jon — "Oliver Atkinson, who ran Urban.co.uk" is a fact here.
+    'testimonials' => array_map(static fn(Entry $t) => [
+        'name' => trim((string) ($t->personName ?? '')),
+        'role' => trim((string) ($t->jobTitle ?? '')),
+        'company' => \modules\frontend\helpers\Testimonials::company($t),
+        'quote' => trim(strip_tags((string) ($t->blockquote ?? ''))),
+    ], Entry::find()->section('testimonials')->status(null)->all()),
     'sectors' => $jonson->findContext->sectors(),
     // Employers and roles — Jonson may truthfully say "in-house at an international bank".
     'cv' => $jonson->findContext->curriculumVitae(),
@@ -76,6 +87,18 @@ echo json_encode([
         return trim((string) preg_replace('/\s+/', ' ', $text));
     })(),
     'howICanHelp' => $jonson->findContext->methodology(),
+    // How long the longest relationships have run, as Jon stated it (2026-10-02). Test
+    // truth only — it lets the judge accept these if Jonson says them; it is not shown to
+    // Jonson and not written into Jon's own content.
+    'relationships' => 'The White Paper Conference Company: over a decade, ongoing. Urban.co.uk: around five years. Vaiie: around five years. Many of his early clients were Jersey-based. His startup work is mostly with pre-seed and seed-stage startups.',
+    // What Jonson itself reads about Jon — his personality text and his notes — so the
+    // judge doesn't call true things invented ("pre-seed startups", his side projects).
+    'personality' => trim(strip_tags((string) (Entry::find()->section('personality')->one()?->personality ?? ''))),
+    'notes' => array_map(static fn(Entry $n) => [
+        'title' => $n->title,
+        'summary' => trim(strip_tags((string) ($n->summary ?? ''))),
+        'memory' => trim(strip_tags((string) ($n->jonsonSummary ?? ''))),
+    ], Entry::find()->section('notes')->status('live')->all()),
     'ctas' => $ctas,
     'vips' => $doors,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), "\n";

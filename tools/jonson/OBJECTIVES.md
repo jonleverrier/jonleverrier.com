@@ -17,7 +17,7 @@ conversation** (contact). It is not a general chatbot.
 | 3 | **Chat → CTA.** When someone's ready (price, availability, how to start), offer the ways in | `run.mjs` (`signoff`, `contact`) |
 | 4 | **Show, don't tell** — photos, clients, sectors, method, testimonials, music when the answer earns them, never when it doesn't | `run.mjs` per-surface expect / forbid, decoys |
 | 5 | **Steer to the work**, not endless chat; chips lead somewhere | `run.mjs` (`work-chip-loop`), `depth.mjs` |
-| 6 | **Never invent** who Jon has worked with — no made-up clients, no sector turned into a kind of client ("regulators"), no one client made plural ("estate agents") | `run.mjs` on **every answer**: Sonnet judge vs the CMS facts (`facts.php`: clients, studies, sectors, CV), two reads, agreed findings only |
+| 6 | **Never invent** who Jon has worked with — no made-up clients, no sector turned into a kind of client ("regulators"), no one client made plural ("estate agents"), no quantity inflated ("some" → "many"). **Zero tolerance: one invented client in any run fails the run** (Jon, 2026-10-02) | `run.mjs` on **every answer**: Sonnet judge vs the CMS facts (`facts.php`: clients, studies, sectors, CV), two reads, agreed findings only |
 | 7 | **Never screen anyone out** — fit is worked out together, not decided up front | `run.mjs` `notScreened` scenarios (`no-screen-*`), judged |
 | 8 | **Be quick** — the answer shows as soon as it's written | production analytics (`ttftMs`); the suite doesn't time |
 

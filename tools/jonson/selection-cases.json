@@ -110,6 +110,17 @@
             "streetpal-ios-app-design-development"
         ],
         "min": 3
+    },
+    {
+        "id": "markers-two-paragraphs-frame-two-panels",
+        "_": "2026-10-02: a paragraph naming three studies, then one naming clients, with [[clients]][[casestudies:…]] stacked below — two paragraphs frame two panels; only the last one used to count, and the cards were dropped.",
+        "kind": "markers",
+        "answer": "I rebuilt the whole platform behind White Paper's conferences, branded and designed the regulatory products at Vaiie, and did the brand and front-end for Urban.co.uk.\n\nBeyond those, I've done work for the likes of Lloyds Bank International, HSBC International, Jersey Post, Feel Unique and the Government of Jersey.\n\n[[clients]]\n[[casestudies:white-paper-booking-engine-design-development,vaiie-product-branding,urban-co-uk-product-branding]]",
+        "framed": [
+            "clients",
+            "casestudies"
+        ],
+        "unframed": []
     }
   ]
 }

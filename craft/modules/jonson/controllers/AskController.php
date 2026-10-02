@@ -1277,8 +1277,28 @@ class AskController extends Controller
             return '';
         }
 
+        // EACH SECTOR WITH THE CLIENTS BEHIND IT, where the case studies say: a bare list of
+        // labels ("Beauty, RegTech, PropTech…") was read as kinds of client, and one client
+        // in a sector came back plural ("regulatory startups", "estate agencies", "beauty
+        // brands"). Derived from the studies' own sectors, so it follows the CMS.
+        $behind = [];
+        foreach (Jonson::getInstance()->findContext->caseStudies() as $study) {
+            foreach ($study['sectors'] ?? [] as $sector) {
+                if (!empty($study['client'])) {
+                    $behind[$sector][$study['client']] = true;
+                }
+            }
+        }
+        $labelled = array_map(static fn(string $sector) => isset($behind[$sector])
+            ? $sector . ' (' . implode(', ', array_keys($behind[$sector])) . ')'
+            : $sector, $sectors);
+
         return 'The sectors/industries you have hands-on experience in are: '
-            . implode(', ', $sectors) . '. That\'s not an exhaustive list — it\'s a representative '
+            . implode(', ', $labelled) . '. Where a sector names clients in brackets, those are '
+            . 'the clients behind it — one name means one client. These are areas of experience, '
+            . 'not a list of the kinds of client you have worked for: never describe your clients '
+            . 'as a plural of a sector, and when you name who you have worked with, take it from '
+            . 'your client list, never from these labels. That\'s not an exhaustive list — it\'s a representative '
             . 'sample of where you\'ve worked, not the full extent of it — so don\'t present it as '
             . 'the complete set or imply you\'ve only ever touched those. Equally, don\'t claim '
             . 'you\'ve actually worked *in* a specific sector that isn\'t on it. You\'re not precious '
@@ -1560,6 +1580,7 @@ class AskController extends Controller
             $lines[] = $line;
         }
 
+
         return "A selection of past projects you've delivered — each line is the client/brand it was "
             . "for and what you did on it (PRIVATE background — knowledge, not something to read out):\n"
             . implode("\n", $lines) . "\n"
@@ -1567,9 +1588,10 @@ class AskController extends Controller
             . 'the case studies say which (a role with no end date, or a study marked ONGOING). Let that '
             . 'decide the tense, and when you don\'t know, speak about the WORK rather than the state of '
             . 'the relationship. Never announce that a relationship ended, and never put a long one in '
-            . 'the past as though it were over — several of these have run for years and some still do, '
-            . 'which is the point worth making: you are someone people keep working with, not someone '
-            . 'who was once kept on. Equally, don\'t claim anyone as a current client unless the '
+            . 'the past as though it were over — some have run for years and some still do. When that '
+            . 'is worth making, make it with the relationship itself (who, since when — your career '
+            . 'history has the dates), never as a general claim that clients "tend to stay" or "stick '
+            . 'around". Equally, don\'t claim anyone as a current client unless the '
             . 'background actually says so. Draw on this to speak concretely when a visitor asks about '
             . 'your experience, a sector, or a kind of project — name a fitting project when it '
             . 'genuinely answers what they asked. Synthesise; never recite the whole '
@@ -1692,6 +1714,12 @@ class AskController extends Controller
                         // Plus any study the answer names outright but didn't list — a
                         // passing mention ("the mark for Urban") — see withNamedIn.
                         $named = $ctx->withNamedIn($named, $answer, $question);
+                        // A VIP'S OWN WORK LEADS (see $lead above), whatever order the model
+                        // listed things in — Allan's Urban came second behind a Vaiie study.
+                        if ($lead) {
+                            $leadSlugs = array_column($lead, 'slug');
+                            usort($named, static fn(array $a, array $b) => (int) !in_array($a['slug'], $leadSlugs, true) <=> (int) !in_array($b['slug'], $leadSlugs, true));
+                        }
                         return $ctx->withoutShown($named, $shown);
                     }
 
@@ -2689,8 +2717,13 @@ class AskController extends Controller
         $photos = array_flip(array_map('strtolower', $photoHandles));
         $marks = [];
         $order = 0;
-        // A prose paragraph nobody has used to introduce a panel yet.
-        $frameFree = false;
+        // Prose paragraphs nobody has used to introduce a panel yet — a COUNT, not a flag.
+        // One paragraph frames one panel, so two paragraphs frame two: "I rebuilt White
+        // Paper's platform, branded Vaiie, rebranded Urban" then "Beyond those, Lloyds,
+        // HSBC…" with [[clients]][[casestudies]] stacked below lost the cards, because
+        // only the LAST paragraph was ever counted. A lone paragraph with two panels
+        // stacked under it still frames just the first (see the stacking note below).
+        $frameFree = 0;
         // The last paragraph of prose — what a stack of markers below it sits under.
         $lastProse = '';
         foreach (preg_split('/\n{2,}/', $answer) ?: [] as $paragraph) {
@@ -2699,19 +2732,19 @@ class AskController extends Controller
                 $lastProse = $this->stripMarkers($paragraph);
             }
             if (!preg_match_all('/\[\[([a-z0-9][a-z0-9-]*)(?::([a-z0-9][a-z0-9, -]*))?\]\]/i', $paragraph, $m, PREG_SET_ORDER)) {
-                $frameFree = $frameFree || $hasProse;
+                $frameFree += $hasProse ? 1 : 0;
                 continue;
             }
             // Its own prose reframes: a paragraph that says something can introduce a
             // panel whether or not an earlier one already has.
-            $frameFree = $frameFree || $hasProse;
+            $frameFree += $hasProse ? 1 : 0;
             foreach ($m as $match) {
                 $handle = strtolower($match[1]);
                 if ($handle === 'next') {
                     continue;
                 }
                 $isPhoto = isset($photos[$handle]);
-                $framed = $isPhoto ? ($frameFree || $hasProse) : $frameFree;
+                $framed = $isPhoto ? ($frameFree > 0 || $hasProse) : $frameFree > 0;
                 // STACKED UNDER ONE PARAGRAPH. One paragraph introduces one panel, so a
                 // sentence can't dump a stack of them — but a paragraph that NAMES what
                 // a second panel shows has introduced that one too. "Oliver Atkinson,
@@ -2720,8 +2753,8 @@ class AskController extends Controller
                 if (!$isPhoto && !$framed && $lastProse !== '') {
                     $framed = $this->paragraphNamesPanel($handle, $lastProse);
                 }
-                if (!$isPhoto && $framed) {
-                    $frameFree = false; // this panel has taken the paragraph
+                if (!$isPhoto && $framed && $frameFree > 0) {
+                    $frameFree--; // this panel has taken a paragraph
                 }
                 if (isset($marks[$handle])) {
                     $marks[$handle]['framed'] = $marks[$handle]['framed'] || $framed;

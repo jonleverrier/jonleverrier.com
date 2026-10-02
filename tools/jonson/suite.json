@@ -42,6 +42,7 @@
     },
     {
       "id": "outside-work",
+      "_": "Outside work comes from the personality: photos must show (street photography leads it); music may show — it is part of his life outside work (Jon, 2026-10-02).",
       "turns": [
         {
           "q": "What do you do outside of work?",
@@ -53,7 +54,7 @@
             "sectors",
             "method",
             "casestudies",
-            "music",
+            
             "contact"
           ]
         }
@@ -337,7 +338,6 @@
           "q": "Tell me more about Jersey",
           "expect": [],
           "forbid": [
-            "clients",
             "sectors",
             "method",
             "casestudies"

@@ -1011,6 +1011,34 @@ class FindContext extends Component
      * a study's own title, or its client's name when that client has a single study.
      * "Vaiie" alone can't say which of three studies it means, so it adds nothing.
      */
+    /**
+     * Whether a text names a study by its title — by the title's DISTINCTIVE words, all of
+     * them, whole-word ("Identify", "booking engine"), less the client's name and the
+     * generic words every study shares. studyMatchTier()'s word-by-word title match
+     * counted "product" and "design", so "logos I designed" named Vaiie Identify.
+     */
+    private function namesStudyByTitle(string $text, array $s): bool
+    {
+        $name = mb_strtolower(trim((string) ($s['name'] ?? '')));
+        $client = mb_strtolower(trim((string) preg_replace('/\s*\(.*\)\s*$/', '', (string) ($s['client'] ?? ''))));
+        if ($client !== '') {
+            $name = str_replace($client, ' ', $name);
+        }
+        $generic = ['product', 'products', 'design', 'designs', 'development', 'branding', 'brand', 'app', 'ios', 'website', 'web', 'and', 'the', 'collection'];
+        $words = array_values(array_filter(preg_split('/[^a-z0-9]+/u', $name) ?: [], static fn($w) => mb_strlen($w) >= 3 && !in_array($w, $generic, true)));
+        if (!$words) {
+            return false;
+        }
+        $hay = mb_strtolower($text);
+        foreach ($words as $w) {
+            if (!preg_match('/(?<![a-z0-9])' . preg_quote($w, '/') . '(?![a-z0-9])/u', $hay)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function withNamedIn(array $listed, string $answer, ?string $question = null): array
     {
         $have = array_column($listed, 'slug');
@@ -1025,7 +1053,22 @@ class FindContext extends Component
                 continue;
             }
             $tier = $this->studyMatchTier($answer, $s);
-            $single = ($perClient[mb_strtolower((string) ($s['client'] ?: $s['name']))] ?? 0) === 1;
+            // Title naming by distinctive words only — see namesStudyByTitle().
+            if ($tier === 1 && !$this->namesStudyByTitle($answer, $s)) {
+                $tier = $this->studyRelevantTo($answer, $s, labels: [(string) ($s['client'] ?? '')]) ? 2 : 0;
+            }
+            $clientKey = mb_strtolower((string) ($s['client'] ?: $s['name']));
+            $single = ($perClient[$clientKey] ?? 0) === 1;
+            // A client with several studies, NAMED in the prose but none of its studies
+            // listed ("the iris device for Vaiie" under a logo-collection marker): the name
+            // can't say which one, so the client's set comes — the same rule as below,
+            // where any listed study brings its siblings.
+            $clientListed = (bool) array_filter($listed, static fn(array $l) => mb_strtolower((string) ($l['client'] ?: $l['name'])) === $clientKey);
+            if ($tier === 2 && !$single && !$clientListed && ($s['client'] ?? '') !== '') {
+                $listed[] = $s;
+                $have[] = $s['slug'];
+                continue;
+            }
             // The brand as people say it: "Urban" for Urban.co.uk. Case-sensitive and whole
             // word, so "urban design" in a sentence is not the client.
             $brand = trim((string) preg_replace('/\.(?:co\.uk|com|net|org|io|co)$/i', '', (string) ($s['client'] ?? '')));
@@ -1048,7 +1091,7 @@ class FindContext extends Component
         // Identify?" is about that project, not its two siblings — the specificity rule
         // the picker has always kept (see pickStudies' $askedByTitle).
         if ($question !== null && trim($question) !== ''
-            && array_filter($listed, fn(array $s) => $this->studyMatchTier($question, $s) === 1)
+            && array_filter($listed, fn(array $s) => $this->namesStudyByTitle($question, $s))
         ) {
             return $listed;
         }
@@ -1537,6 +1580,11 @@ class FindContext extends Component
                 $items[] = ['kind' => 'photo', 'image' => $asset];
             }
         }
+        // SHUFFLED before find() cuts the list to the rail's size, so a place or theme
+        // with more photos than the rail holds shows a different few each time — in CMS
+        // order, the first four of eight street photos were the only ones ever seen.
+        // Never-twice (forHandles' $excludeKeys) still holds within a conversation.
+        shuffle($items);
 
         return $items;
     }

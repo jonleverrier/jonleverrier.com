@@ -67,7 +67,9 @@ export async function judgeCards(prose, shown, earlier) {
             described,
             missing: described.filter((sl) => !shown.includes(sl) && !earlier.includes(sl)),
             // A sibling of a described study (same client) is the set, not an extra.
-            extra: shown.filter((sl) => !described.includes(sl)
+            // Nothing specific described ("have a look at a few of these"): the cards are
+            // Jonson's own pick, and there is nothing in the prose to judge them against.
+            extra: described.length === 0 ? [] : shown.filter((sl) => !described.includes(sl)
                 && !(clients[sl] && described.some((d) => clients[d] === clients[sl]))),
         };
     } catch {
@@ -78,7 +80,7 @@ export async function judgeCards(prose, shown, earlier) {
 // ---------------------------------------------------------------------------------
 // Shared: one tool-forced Haiku call, and a quote check — a finding only stands when
 // at least 80% of its quoted words are really in the answer (see judgeCards).
-async function askHaiku(prompt, tool, model = process.env.JONSON_JUDGE_MODEL || 'claude-haiku-4-5') {
+async function askHaiku(prompt, tool, model = process.env.JONSON_JUDGE_MODEL || 'claude-haiku-4-5', system = null) {
     if (!JUDGE || !API_KEY) return null;
     // Haiku takes a forced tool call; Sonnet refuses one ("tool_choice: type tool is not
     // supported"), so it gets the tool on `auto` and is told to call it.
@@ -87,9 +89,12 @@ async function askHaiku(prompt, tool, model = process.env.JONSON_JUDGE_MODEL || 
         const res = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
-            body: JSON.stringify({model, max_tokens: 1200, tools: [tool], tool_choice: forced ? {type: 'tool', name: tool.name} : {type: 'auto'}, messages: [{role: 'user', content: forced ? prompt : `${prompt}\n\nReply ONLY by calling the ${tool.name} tool.`}]}),
+            // The facts go in a CACHED system block: identical on every call in a run, so
+            // after the first they cost a tenth (≈ €25 → €3 a full run for the invention judge).
+            body: JSON.stringify({model, max_tokens: 1200, ...(system ? {system: [{type: 'text', text: system, cache_control: {type: 'ephemeral'}}]} : {}), tools: [tool], tool_choice: forced ? {type: 'tool', name: tool.name} : {type: 'auto'}, messages: [{role: 'user', content: forced ? prompt : `${prompt}\n\nReply ONLY by calling the ${tool.name} tool.`}]}),
         });
         const json = await res.json();
+        if (process.env.JONSON_JUDGE_DEBUG) console.error('[judge usage]', model, JSON.stringify(json.usage || json.error));
         return (json.content || []).find((c) => c.type === 'tool_use')?.input || null;
     } catch {
         return null;
@@ -119,18 +124,23 @@ export async function judgeInvention(prose, facts) {
 async function inventionOnce(prose, facts) {
     const brief = JSON.stringify({
         clients: facts.clients,
-        caseStudies: facts.studies.map((s) => ({client: s.client, title: s.title, sectors: s.sectors})),
+        caseStudies: facts.studies.map((s) => ({client: s.client, title: s.title, sectors: s.sectors, summary: s.summary, notes: s.notes})),
+        testimonials: facts.testimonials,
         sectors: facts.sectors,
-        career: facts.cv.map((c) => ({company: c.company, about: c.companySummary, role: c.title, from: c.start, to: c.end || 'present', types: c.types})),
+        career: facts.cv.map((c) => ({company: c.company, about: c.companySummary, role: c.title, did: c.summary, from: c.start, to: c.end || 'present', types: c.types})),
         about: facts.about,
         howICanHelp: facts.howICanHelp,
+        personality: facts.personality,
+        relationships: facts.relationships,
+        notes: facts.notes,
     });
     const out = await askHaiku(
-        `FACTS about a designer, Jon — everyone he has worked for, his case studies, the sectors he has experience in, and his career:\n${brief}\n\nANSWER he gave (in the first person):\n${prose}\n\nList every claim in the ANSWER about who Jon has worked with or for — named clients or employers, the KINDS of client (e.g. "banks"), or HOW MANY of a kind — that the FACTS do not support. A sector he has experience in is not the same as a kind of client he worked for; one client of a kind is not several. Judge whether the client or kind of client EXISTS in the facts, not adjectives — "big", "well-known" and similar are out of scope. Whether he worked WITH or FOR someone doesn't matter. A client described by what it plainly is counts as supported (a known retailer as a retailer). The kinds of client Jon says he works with in ABOUT and HOW I CAN HELP are supported. Skills, opinions, process and interests are out of scope. Quote each claim verbatim. If everything is supported, return an empty list.`,
+        `ANSWER he gave (in the first person):\n${prose}\n\nList every claim in the ANSWER about WHO Jon has worked with or for — named clients or employers, the KINDS of client (e.g. \"banks\"), HOW MANY of a kind, or HOW LONG he has worked with them — that the FACTS do not support. The details of what he did for a client are out of scope; only who, how many and how long. For HOW LONG, the career dates (from/to) and what Jon states about specific relationships in his PERSONALITY are the authority; vaguer wording (\"some clients have been with me for years\") doesn't make \"many\" true. A sector he has experience in is not the same as a kind of client he worked for; one client of a kind is not several. Judge whether the client or kind of client EXISTS in the facts, not adjectives — "big", "well-known" and similar are out of scope. Whether he worked WITH or FOR someone doesn't matter. A client described by what it plainly is counts as supported (a known retailer as a retailer). The kinds of client Jon says he works with in ABOUT and HOW I CAN HELP are supported. Skills, opinions, process, interests, personal life and travel are out of scope — only claims about clients, employers and the work. Quote each claim verbatim. If everything is supported, return an empty list.`,
         {name: 'unsupported', description: 'Claims about who Jon worked with that the facts do not support.', input_schema: {type: 'object', properties: {claims: {type: 'array', items: {type: 'object', properties: {quote: {type: 'string', description: 'the exact words from the answer'}, why: {type: 'string'}}, required: ['quote', 'why']}}}, required: ['claims']}},
         // Sonnet: Haiku flagged true claims (real clients by a shortened name) and missed
         // sector-turned-client inventions ("regulators") two runs in three.
         process.env.JONSON_INVENTION_MODEL || 'claude-sonnet-5-5',
+        `FACTS about a designer, Jon — everyone he has worked for, his case studies, the sectors he has experience in, and his career:\n${brief}`,
     );
     const backed = backedBy(prose);
     return (out?.claims || []).filter((c) => backed(c.quote));
