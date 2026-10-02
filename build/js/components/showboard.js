@@ -32,9 +32,9 @@ export function mountShowboard(root) {
     if (!DEBUG) return;
     var line = new Date().toTimeString().slice(0, 8) + ' ' + msg;
     dbgLines.push(line);
-    if (dbgLines.length > 14) dbgLines.shift();
+    if (dbgLines.length > 80) dbgLines.shift();
     try { sessionStorage.setItem('showboard-debug', JSON.stringify(dbgLines)); } catch (err) {}
-    if (dbgBox) dbgBox.textContent = dbgLines.join('\n');
+    if (dbgBox){ dbgBox.textContent = dbgLines.join('\n'); dbgBox.scrollTop = dbgBox.scrollHeight; }
   }
   if (DEBUG){
     try {
@@ -44,12 +44,16 @@ export function mountShowboard(root) {
     dbgBox = document.createElement('pre');
     dbgBox.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;margin:0;padding:8px;'
       + 'max-height:45vh;overflow:auto;background:rgba(0,0,0,.82);color:#9f9;font:10px/1.35 monospace;'
-      + 'white-space:pre-wrap;pointer-events:none;border-radius:6px';
+      + 'white-space:pre-wrap;border-radius:6px;-webkit-overflow-scrolling:touch';
     document.body.appendChild(dbgBox);
     on(window, 'error', function(e){ dbg('ERROR ' + (e.message || e)); });
     on(window, 'unhandledrejection', function(e){ dbg('REJECTED ' + (e.reason && (e.reason.message || e.reason))); });
     dbg('ready · ' + innerWidth + '×' + innerHeight + ' @' + devicePixelRatio + 'x · ' + navigator.userAgent.replace(/^.*?\(([^)]*)\).*$/, '$1'));
   }
+  // Where a load's time goes, in one line at the end: picker (opened → files arrived),
+  // reading (arrived → all decoded and shrunk), drawing (→ first frame with them).
+  var tPick = 0, tChange = 0, tRead = 0;
+  function secs(a, b){ return a && b ? ((b - a) / 1000).toFixed(1) + 's' : '?'; }
   function memNote(){
     var px = 0, tex = 0;
     shots.forEach(function(s){ if (s.src) px += s.src.width * s.src.height; if (s.tex) tex += s.src ? s.src.width * s.src.height : 0; });
@@ -850,7 +854,12 @@ export function mountShowboard(root) {
       applyClear(); // and the sky colour depends on where it looks
       renderer.render(scene, camera);
       needsRender = false;
-      if (settling && !loading){ settling = false; progress(''); syncLoading(); dbg('drawn · ' + memNote()); }
+      if (settling && !loading){
+        settling = false; progress(''); syncLoading();
+        dbg('drawn · ' + memNote());
+        dbg('SUMMARY · picker ' + secs(tPick, tChange) + ' · reading ' + secs(tChange, tRead) + ' · drawing ' + secs(tRead, performance.now()));
+        tPick = tChange = 0;
+      }
     }
     raf = requestAnimationFrame(frameLoop);
   }
@@ -916,11 +925,13 @@ export function mountShowboard(root) {
     var left = files.length;
     loading++;
     syncLoading();
+    if (!tChange) tChange = performance.now(); // a drop or paste: no picker to time
     progress('Reading photos · 0 of ' + files.length);
     dbg('drop: ' + files.length + ' files, ' + Math.round(files.reduce(function(a, f){ return a + f.size; }, 0) / 1e6) + ' MB · tex max ' + TEX_MAX);
     var done = function(){
       if (--left) return;
       batch.forEach(function(shot){ if (shot) shots.push(shot); });
+      tRead = performance.now();
       dbg('all read · ' + shots.length + ' shots · ' + memNote());
       loading--;
       settling = true; // the spinner stays until the board has been drawn with them
@@ -1254,7 +1265,7 @@ export function mountShowboard(root) {
   dropZone.addEventListener('keydown', function(e){
     if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('file').click(); picking(); }
   });
-  $('file').addEventListener('change', function(){ dbg('picker → change: ' + this.files.length + ' files'); picked(); addFiles(this.files); this.value = ''; });
+  $('file').addEventListener('change', function(){ tChange = performance.now(); dbg('picker → change: ' + this.files.length + ' files'); picked(); addFiles(this.files); this.value = ''; });
   $('file').addEventListener('cancel', function(){ dbg('picker cancelled'); picked(); });
   on(document, 'visibilitychange', function(){ dbg('page ' + (document.hidden ? 'hidden' : 'visible')); });
 
@@ -1266,6 +1277,7 @@ export function mountShowboard(root) {
   // with nothing following.
   var pickWait = false, pickTimer = 0;
   function picking(){
+    tPick = performance.now();
     dbg('picker opened');
     if (pickWait) return;
     pickWait = true; loading++; syncLoading();
