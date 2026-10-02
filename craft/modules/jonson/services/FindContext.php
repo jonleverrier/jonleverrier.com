@@ -1004,6 +1004,42 @@ class FindContext extends Component
         return $out ? array_values($out) : null;
     }
 
+    /**
+     * The studies the model listed, plus any the ANSWER names outright that it left off —
+     * work mentioned in passing ("the iris device for Vaiie, the mark for Urban") under a
+     * marker that listed only the logo collection. Only names count, never paraphrase:
+     * a study's own title, or its client's name when that client has a single study.
+     * "Vaiie" alone can't say which of three studies it means, so it adds nothing.
+     */
+    public function withNamedIn(array $listed, string $answer): array
+    {
+        $have = array_column($listed, 'slug');
+        $all = $this->caseStudies();
+        $perClient = [];
+        foreach ($all as $s) {
+            $key = mb_strtolower((string) ($s['client'] ?: $s['name']));
+            $perClient[$key] = ($perClient[$key] ?? 0) + 1;
+        }
+        foreach ($all as $s) {
+            if (in_array($s['slug'], $have, true)) {
+                continue;
+            }
+            $tier = $this->studyMatchTier($answer, $s);
+            $single = ($perClient[mb_strtolower((string) ($s['client'] ?: $s['name']))] ?? 0) === 1;
+            // The brand as people say it: "Urban" for Urban.co.uk. Case-sensitive and whole
+            // word, so "urban design" in a sentence is not the client.
+            $brand = trim((string) preg_replace('/\.(?:co\.uk|com|net|org|io|co)$/i', '', (string) ($s['client'] ?? '')));
+            $saysBrand = $brand !== '' && $brand !== ($s['client'] ?? '')
+                && preg_match('/(?<![\w.])' . preg_quote($brand, '/') . '(?![\w])/u', $answer);
+            if ($tier === 1 || ($single && ($tier === 2 || $saysBrand))) {
+                $listed[] = $s;
+                $have[] = $s['slug'];
+            }
+        }
+
+        return $listed;
+    }
+
     /** The studies a piece of text names — by title, client, sector or skill. */
     public function studiesNamedIn(string $text): array
     {

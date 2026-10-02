@@ -554,7 +554,7 @@
     },
     {
       "id": "vip-sector-match",
-      "_": "Allan Wood's door: a proptech founder whose note names Urban.co.uk. 'What makes you different?' must show the Urban study and lead with it — the note makes it the obvious match. Found 2026-09-30: two Vaiie cards and no Urban under an answer that named Urban.",
+      "_": "Allan Wood's door: a proptech founder whose note names Urban.co.uk. 'What makes you different?' must show the Urban study and lead with it. No minimum count since 2026-10-02: Jonson names the cards, and one is right when the answer is about Urban alone (the judge checks the rest) — the note makes it the obvious match. Found 2026-09-30: two Vaiie cards and no Urban under an answer that named Urban.",
       "vip": "allan-wood",
       "turns": [
         {
@@ -566,7 +566,6 @@
             "urban-co-uk-product-branding"
           ],
           "leadStudy": "urban-co-uk-product-branding",
-          "minStudies": 2,
           "leadQuote": "Oliver Atkinson",
           "forbidText": [
             "\\byou(?:'ve| have|'d| had)?\\s+(?:built|founded|ran|run|grew|grown|launched|started|took|taken|turned)\\b[^.]{0,40}urban",

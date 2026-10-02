@@ -229,7 +229,11 @@ async function runScenario(s) {
             const prose = r.answer.replace(/\[\[[^\]]*\]{1,2}/g, ' ').replace(/\s+/g, ' ').trim();
             const v = await judgeCards(prose, shownSlugs, earlierSlugs);
             if (v && v.missing?.length) fails.push(`T${i + 1} judge: prose describes ${v.missing.join(', ')} — no card`);
-            if (v && v.extra?.length) fails.push(`T${i + 1} judge: card(s) the prose isn't about: ${v.extra.join(', ')}`);
+            // A study the scenario REQUIRES isn't an extra: a VIP's own work leads because
+            // of the note, whether or not the prose dwells on it.
+            const required = new Set([...(turn.expectStudies || []), ...(turn.leadStudy ? [turn.leadStudy] : [])]);
+            const extra = (v?.extra || []).filter((sl) => !required.has(sl));
+            if (extra.length) fails.push(`T${i + 1} judge: card(s) the prose isn't about: ${extra.join(', ')}`);
         }
         if (turn.minStudies && r.studies.length < turn.minStudies) {
             fails.push(`T${i + 1} showed ${r.studies.length} study card(s) (min ${turn.minStudies})`);

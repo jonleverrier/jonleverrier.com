@@ -1689,6 +1689,9 @@ class AskController extends Controller
                     // left and it falls back to the reading below. Never-twice still applies.
                     $named = $ctx->studiesBySlugs($modifier);
                     if ($named) {
+                        // Plus any study the answer names outright but didn't list — a
+                        // passing mention ("the mark for Urban") — see withNamedIn.
+                        $named = $ctx->withNamedIn($named, $answer);
                         return $ctx->withoutShown($named, $shown);
                     }
 
