@@ -383,11 +383,13 @@ export function mountContactPanel() {
     const onClick = (e) => {
         if (onContactPage) return;
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        // The call-back CTA OUTSIDE the panel (the footer's): open the panel straight at
-        // its booking step, as "Send a message" opens it at the form — rather than off
-        // to Cal in a new tab. Its target="_blank" is the no-JS fallback, so this runs
-        // before the target check below. Inside the panel, onPanelClick has it.
-        const call = e.target.closest && e.target.closest('a[data-cta-kind="callback"][href]');
+        // A booking link OUTSIDE the panel — the footer's call-back CTA, or "book a call"
+        // in a Jonson answer: open the panel straight at its booking step, as "Send a
+        // message" opens it at the form — rather than off to Cal in a new tab. Any Cal
+        // link counts, so the model's own links need no tagging. Its target="_blank" is
+        // the no-JS fallback, so this runs before the target check below. Inside the
+        // panel, onPanelClick has it.
+        const call = e.target.closest && e.target.closest('a[href]');
         if (call && !panel.contains(call) && bookingWrap && calLink(call.getAttribute('href') || '')) {
             e.preventDefault();
             e.stopPropagation();
