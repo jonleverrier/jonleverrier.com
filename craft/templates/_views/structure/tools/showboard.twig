@@ -80,7 +80,11 @@
                     <strong class="c-showboard__drop-title">Drop images here</strong>
                     <span class="c-showboard__drop-hint">or click · or paste ⌘V</span>
                 </div>
-                <input type="file" id="sb-file" accept="image/*,application/json,.json" multiple hidden>
+                {# HEIC named outright (Jon, 2 Oct 2026): with only image/*, iOS converts every
+                   photo to JPEG inside the picker before handing it over — the long pause after
+                   choosing 30+ photos. Named, the originals come straight through; Safari
+                   draws HEIC itself (iOS 17+). #}
+                <input type="file" id="sb-file" accept="image/*,image/heic,image/heif,.heic,.heif,application/json,.json" multiple hidden>
                 <ul class="c-showboard__shots" id="sb-shots"></ul>
             </details>
             <details class="c-tool__sec" open hidden data-showboard-needs-shots>

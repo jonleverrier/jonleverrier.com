@@ -902,7 +902,8 @@ export function mountShowboard(root) {
     var all = Array.prototype.slice.call(list || []);
     all.filter(isSettingsFile).forEach(importSettings);
     var files = all.filter(function(f){
-      return f && f.type && f.type.indexOf('image/') === 0;
+      // A HEIC can arrive with no type at all; its name still says what it is.
+      return f && ((f.type && f.type.indexOf('image/') === 0) || /\.(heic|heif)$/i.test(f.name || ''));
     });
     if (!files.length) return;
     // A WHOLE DROP LANDS AT ONCE, in the order it was dropped. Each file used to join
@@ -1239,11 +1240,38 @@ export function mountShowboard(root) {
 
   /* ───────── drop / paste ───────── */
   var dropZone = $('drop');
-  dropZone.addEventListener('click', function(){ $('file').click(); });
+  dropZone.addEventListener('click', function(){ $('file').click(); picking(); });
   dropZone.addEventListener('keydown', function(e){
-    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('file').click(); }
+    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('file').click(); picking(); }
   });
-  $('file').addEventListener('change', function(){ addFiles(this.files); this.value = ''; });
+  $('file').addEventListener('change', function(){ picked(); addFiles(this.files); this.value = ''; });
+  $('file').addEventListener('cancel', picked);
+
+  // THE SPINNER FROM THE MOMENT THE PICKER CLOSES. iOS can take a while to hand over a
+  // big selection after Add is pressed, with the page already showing again; without
+  // this it sat on its invitation, looking stuck. The wait is marked when the picker is
+  // opened (it covers the page meanwhile) and cleared by the files arriving, by a
+  // cancel, or — for browsers that send no cancel — by the page getting focus back
+  // with nothing following.
+  var pickWait = false, pickTimer = 0;
+  function picking(){
+    if (pickWait) return;
+    pickWait = true; loading++; syncLoading();
+  }
+  function picked(){
+    clearTimeout(pickTimer);
+    if (!pickWait) return;
+    pickWait = false; loading--; syncLoading();
+  }
+  on(window, 'focus', function(){
+    if (!pickWait) return;
+    clearTimeout(pickTimer);
+    pickTimer = setTimeout(function(){
+      // Still waiting long after the page came back, with no change: a cancel the
+      // browser didn't announce. iOS's own hand-over fires change well inside this.
+      if (pickWait && !$('file').files.length) picked();
+    }, 15000);
+  });
 
   ['dragenter','dragover'].forEach(function(ev){
     on(window, ev, function(e){ e.preventDefault(); dropZone.classList.add('is-hot'); });
