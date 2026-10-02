@@ -36,7 +36,7 @@ export function mountShowboard(root) {
     outW:3200, outH:1800 // the export size (Size section) — its shape frames everything
   };
   var S = Object.assign({}, DEFAULTS);
-  var shots = [];          // {id,name,img,w,h,tex,mat}
+  var shots = [];          // {id,name,src,thumb,w,h,tex,mat}
   var nextId = 1;
   var needsRender = true;
   var needsBuild = true;
@@ -169,19 +169,10 @@ export function mountShowboard(root) {
     ctx.closePath();
   }
 
+  // The texture is the shot's own small canvas (readShot): already at texture size,
+  // square-cornered — the corners are rounded in the shader (roundCorners).
   function makeTexture(shot){
-    var MAX = 1800;
-    var scale = Math.min(1, MAX / Math.max(shot.w, shot.h));
-    var w = Math.max(2, Math.round(shot.w * scale));
-    var h = Math.max(2, Math.round(shot.h * scale));
-    var c = document.createElement('canvas');
-    c.width = w; c.height = h;
-    var ctx = c.getContext('2d');
-    // Square: the corners are rounded in the shader (roundCorners), so the radius
-    // slider never redraws this.
-    ctx.drawImage(shot.img, 0, 0, w, h);
-
-    var t = new THREE.CanvasTexture(c);
+    var t = new THREE.CanvasTexture(shot.src);
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = maxAniso;
     if (isGL2){
@@ -282,7 +273,8 @@ export function mountShowboard(root) {
   function disposeShot(s){
     if (s.tex) s.tex.dispose();
     if (s.mat) s.mat.dispose();
-    s.tex = s.mat = null;
+    if (s.src) s.src.width = s.src.height = 0; // its pixels, now: the shot is gone
+    s.tex = s.mat = s.src = null;
   }
 
   function clearGroup(g){
@@ -895,21 +887,54 @@ export function mountShowboard(root) {
       renderShotList();
       needsBuild = true; needsRender = true;
     };
-    files.forEach(function(f, i){
-      var reader = new FileReader();
-      reader.onerror = done;
-      reader.onload = function(e){
-        var img = new Image();
-        img.onerror = done;
-        img.onload = function(){
-          batch[i] = { id: nextId++, name: f.name || 'screenshot', img: img,
-                       w: img.naturalWidth, h: img.naturalHeight, tex: null, mat: null };
-          done();
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(f);
-    });
+    // TWO AT A TIME, each shrunk as soon as it decodes (Jon, 2 Oct 2026: 36 photos from
+    // an iPhone hung the page). All of a drop used to be read at once, as base64 text,
+    // and every full-size picture kept — a 12 MP photo is ~48 MB decoded, so 36 of them
+    // asked an iPhone for well over a gigabyte, and the list's thumbnails decoded each
+    // one again. Now only two full-size pictures exist at any moment.
+    var next = 0;
+    var pump = function(){
+      if (next >= files.length) return;
+      var i = next++;
+      readShot(files[i], function(shot){ batch[i] = shot; done(); pump(); });
+    };
+    pump(); pump();
+  }
+
+  // One file, read as the texture needs it: decoded from an object URL (no base64 copy),
+  // drawn straight down to TEX_MAX on its longer side, plus a small thumbnail for the
+  // list; then the full-size picture is let go. The shot keeps the full size's
+  // proportions (w, h) for the layout. A phone's textures stop at 1024: in a 3200 px
+  // export a tile is rarely half that, and 36 of them stay ~110 MB rather than ~350.
+  var TEX_MAX = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ? 1024 : 1800;
+  var THUMB_MAX = 160;
+  function readShot(f, cb){
+    var url = URL.createObjectURL(f);
+    var img = new Image();
+    var finish = function(shot){ img.onload = img.onerror = null; img.src = ''; URL.revokeObjectURL(url); cb(shot); };
+    img.onerror = function(){ finish(null); };
+    img.onload = function(){
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h){ finish(null); return; }
+      var src = scaledCanvas(img, w, h, TEX_MAX);
+      var t = scaledCanvas(src, w, h, THUMB_MAX);
+      var thumb = t.toDataURL('image/jpeg', 0.8);
+      t.width = t.height = 0;
+      finish({ id: nextId++, name: f.name || 'screenshot', src: src, thumb: thumb,
+               w: w, h: h, tex: null, mat: null });
+    };
+    img.src = url;
+  }
+
+  function scaledCanvas(from, w, h, max){
+    var k = Math.min(1, max / Math.max(w, h));
+    var c = document.createElement('canvas');
+    c.width = Math.max(2, Math.round(w * k));
+    c.height = Math.max(2, Math.round(h * k));
+    var ctx = c.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(from, 0, 0, c.width, c.height);
+    return c;
   }
 
   // THE SPINNER replaces the stage's invitation while a drop is being read and the
@@ -933,7 +958,7 @@ export function mountShowboard(root) {
 
       var im = document.createElement('img');
       im.className = 'c-showboard__shot-thumb';
-      im.src = s.img.src; im.alt = '';
+      im.src = s.thumb; im.alt = '';
       li.appendChild(im);
 
       var nm = document.createElement('div');
