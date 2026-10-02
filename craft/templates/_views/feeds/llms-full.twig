@@ -63,7 +63,11 @@
     {%- endautoescape -%}
 {%- endmacro -%}
 {%- import _self as f -%}
+{#- ONE BLANK LINE BETWEEN THINGS, enforced on the whole output rather than tag by tag.
+    A block that prints nothing (an image, a video) still leaves its line breaks, and
+    the trim markers to stop that are a game of whack-a-mole across a dozen branches. -#}
 {% autoescape false %}
+{% apply replace('/\\n{3,}/', "\n\n", true) %}
 # {{ siteName }}
 
 > {{ f.line(about.summary ?? '') ?: 'Design, development and maintenance of digital products.' }}
@@ -77,9 +81,11 @@ the work in Jon's own voice; everything it draws on is below.
 
 Source: {{ about.url }}
 
-{{ craft.frontend.markdown(about.content ?? '') }}
+{% set body = craft.frontend.markdown(about.content ?? '') -%}
+{% if body %}{{ body }}
 
-{{ f.blocks(about) }}
+{% endif %}
+{{- f.blocks(about) }}
 {%- endif %}
 {%- for tool in tools %}
 
@@ -148,8 +154,11 @@ Source: {{ note.url }}
 ## {{ page.title }}
 
 Source: {{ page.url }}
+{% set body = craft.frontend.markdown(page.content ?? '') -%}
+{% if body %}
 
-{{ craft.frontend.markdown(page.content ?? '') }}
+{{ body }}
+{% endif %}
 {% endfor %}
 {%- if contact %}
 
@@ -159,4 +168,5 @@ Source: {{ contact.url }}
 
 The contact page has a form, and the homepage assistant can take a message too.
 {% endif %}
+{% endapply %}
 {% endautoescape %}
