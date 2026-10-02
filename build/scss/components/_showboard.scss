@@ -179,6 +179,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 16px; // keeps the invitation off the canvas edges on a narrow screen
     text-align: center;
     pointer-events: none;
 }
