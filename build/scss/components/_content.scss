@@ -217,22 +217,21 @@ $c-content-subheading: getmap($colour, light, 880); // the sub-heading grey — 
     text-align: center;
     color: $c-content-title;
 
-    // Wider than the answer measure on large viewports, so the title has more
-    // room left/right than the whisper + body (which stay at the measure).
+    // Out to the shared wide measure on large viewports — the 1110 the body, panels
+    // and case-study titles already line up on — so the title breaks out past the
+    // whisper + body (which stay at the reading measure) onto a width the page has.
     @include mq(from, lg) {
-        max-width: rem(1000);
+        max-width: $g-measure-wide;
+        // A touch more leading than the h1 default (1.2) at this width: lines up to
+        // 1110 long need a little more room for the eye to find the next one. 1.25
+        // looked loose, and 1.3 read as two headings rather than one title in two lines.
+        line-height: 1.22;
     }
 }
 
-// A case study's h1 is the Long title — a full descriptive sentence ("Designing and
-// developing the booking engine for…"), not a page name like "Contact", so it wraps
-// where the other pages' titles don't. It gets the shared wide measure instead: the
-// same box the body, testimonials and case study panels use, so the extra width lands
-// on a line the rest of the page already sits on rather than a new one.
-//
-// The TITLE only. The whisper and prose stay at the reading measure — a sentence set
-// to 1110 is a title; a paragraph set to 1110 is hard to read.
-.c-content--case-study .c-content__title,
+// A case study's columns go out to the wide measure with its title (every title does
+// now — see .c-content__title). The whisper and prose stay at the reading measure — a
+// sentence set to 1110 is a title; a paragraph set to 1110 is hard to read.
 .c-content--case-study .c-content__cols {
     @include mq(from, lg) {
         max-width: $g-measure-wide;
