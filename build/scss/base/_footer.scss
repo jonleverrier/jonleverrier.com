@@ -218,10 +218,14 @@ $b-footer-strapline: getmap($colour, primary, 430);
     // FOUR since Legal was split out of Quick Links. The count is written out rather
     // than `repeat(4, auto)` to match the two-column rule above and because the columns
     // are not interchangeable — the first is a sentence, the rest are lists.
+    // THE GAP IS THE FLOOR, not the usual spacing: space-between only spreads the
+    // columns once their content leaves room, and around lg it doesn't — the lists sat
+    // ~23px apart and read as one block. 800 (~46px) keeps them apart at the tightest
+    // width; wider screens still get space-between's extra on top.
     @include mq(from, lg) {
         grid-template-columns: auto auto auto auto;
         justify-content: space-between;
-        gap: getmap($space, rhythm, 600);
+        gap: getmap($space, rhythm, 800);
     }
 }
 
