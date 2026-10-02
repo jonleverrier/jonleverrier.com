@@ -14,6 +14,7 @@ use craft\web\UrlManager;
 use craft\web\View;
 use modules\jonson\jobs\GenerateNoteMemory;
 use modules\jonson\services\Analytics;
+use modules\jonson\services\ClaimCheck;
 use modules\jonson\services\FindContext;
 use modules\jonson\services\NoteMemory;
 use modules\jonson\services\Persona;
@@ -27,6 +28,7 @@ use yii\base\Module as BaseModule;
  * Jonson — the Claude-powered "ask me anything" assistant.
  *
  * @property-read Analytics $analytics
+ * @property-read ClaimCheck $claimCheck
  * @property-read Persona $persona
  * @property-read FindContext $findContext
  * @property-read Spotify $spotify
@@ -47,6 +49,7 @@ class Jonson extends BaseModule
 
         $this->setComponents([
             'analytics' => Analytics::class,
+            'claimCheck' => ClaimCheck::class,
             'persona' => Persona::class,
             'findContext' => FindContext::class,
             'spotify' => Spotify::class,

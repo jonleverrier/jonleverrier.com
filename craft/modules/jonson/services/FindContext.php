@@ -1341,6 +1341,43 @@ class FindContext extends Component
     }
 
     /**
+     * Everyone Jon has worked with or for, by name: the client roster, the case
+     * studies' clients, his CV companies, and the companies and people behind his
+     * testimonials. What ClaimCheck lets an answer put forward as his work. His sectors
+     * too: a list may mix the two ("Lloyds and HSBC, RegTech and government work").
+     *
+     * @return string[]
+     */
+    public function workNames(): array
+    {
+        $names = array_map(static fn(array $c) => (string) ($c['name'] ?? ''), $this->clientWork());
+        foreach ($this->caseStudies() as $study) {
+            $names[] = (string) ($study['client'] ?? '');
+        }
+        array_push($names, ...$this->employers(), ...$this->sectors());
+        foreach (Entry::find()->section('testimonials')->status(null)->all() as $quote) {
+            $names[] = (string) ($quote->personName ?? '');
+            $names[] = \modules\frontend\helpers\Testimonials::company($quote);
+        }
+
+        return array_values(array_unique(array_filter(array_map('trim', $names))));
+    }
+
+    /**
+     * Every company Jon has worked at, from the CV — what "in-house at X" may name
+     * (see ClaimCheck).
+     *
+     * @return string[]
+     */
+    public function employers(): array
+    {
+        return array_values(array_unique(array_filter(array_map(
+            static fn(array $row) => trim((string) ($row['company'] ?? '')),
+            $this->curriculumVitae(),
+        ))));
+    }
+
+    /**
      * Jon's career history from the `curriculumVitae` section — one item per role
      * (a company can hold several via its `role` Matrix), most recent first. Each:
      * { company, companySummary, title, summary, start, end, types }. Background

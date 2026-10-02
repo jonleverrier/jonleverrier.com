@@ -249,64 +249,7 @@ class AskController extends Controller
         // what it can show via [[handle]] markers; we list the available handles
         // in the system prompt and resolve them from the finished answer.
         $tools = [];
-        $inventory = $this->inventoryPrompt();
-        if ($inventory !== '') {
-            $system .= "\n\n" . $inventory;
-        }
-
-        // Tell the model which sectors Jon actually has experience in, so he
-        // never claims — or suggests as a prompt — a sector he hasn't worked in.
-        $sectorsPrompt = $this->sectorsPrompt();
-        if ($sectorsPrompt !== '') {
-            $system .= "\n\n" . $sectorsPrompt;
-        }
-
-        // Tell the model Jon's actual "how I can help" journey (phases +
-        // services), so he speaks to his real process/offering and knows when
-        // the [[method]] timeline is worth showing.
-        $methodologyPrompt = $this->methodologyPrompt();
-        if ($methodologyPrompt !== '') {
-            $system .= "\n\n" . $methodologyPrompt;
-        }
-
-        // Feed Jon's real career history in as private background, so he can speak
-        // accurately to his experience when a visitor is weighing him up — without
-        // reciting the CV.
-        $cvPrompt = $this->cvPrompt();
-        if ($cvPrompt !== '') {
-            $system .= "\n\n" . $cvPrompt;
-        }
-
-        // Feed Jon's notes in as memories — what he's done, seen and thought, as
-        // memory cards (see services\NoteMemory) — so a chat about printing can
-        // bring a Tokyo museum to mind. Background, never a reading list.
-        $notesPrompt = $this->notesPrompt();
-        if ($notesPrompt !== '') {
-            $system .= "\n\n" . $notesPrompt;
-        }
-
-        // Feed the client roster + what Jon did for each in as background too, so
-        // he can speak concretely about relevant work (separate from the [[clients]]
-        // logo strip).
-        $clientsPrompt = $this->clientsPrompt();
-        if ($clientsPrompt !== '') {
-            $system .= "\n\n" . $clientsPrompt;
-        }
-
-        // Case studies as background (the private jonsonSummary per study) + when to
-        // surface the [[casestudies]] discovery cards.
-        $caseStudiesPrompt = $this->caseStudiesPrompt();
-        if ($caseStudiesPrompt !== '') {
-            $system .= "\n\n" . $caseStudiesPrompt;
-        }
-
-        // Jon's music taste (Spotify) as personality/tone background — colours his
-        // voice and lets him speak to what he's into when people are getting to
-        // know him.
-        $musicPrompt = $this->musicPrompt();
-        if ($musicPrompt !== '') {
-            $system .= "\n\n" . $musicPrompt;
-        }
+        $system .= $this->backgroundPrompt();
 
         // ——— EVERYTHING ABOVE IS THE CACHED PREFIX. EVERYTHING BELOW VARIES. ———
         //
@@ -595,6 +538,14 @@ class AskController extends Controller
                     $answer .= $block['text'];
                 }
             }
+
+            // CHECK WHO IT SAYS JON WORKED FOR, before anyone sees it. The page holds the
+            // answer until it's complete, so this costs a clean answer nothing (plain
+            // code, no API call). A wrong one — a client Jon never had, an employer that
+            // was a client — is written again with the mistake named; only that rare
+            // answer waits for the rewrite. See services\ClaimCheck, and prove changes
+            // with tools/jonson/claims.php.
+            $answer = yield from $this->checkClaims($answer, $client, $apiKey, $model, $system, $volatile, $messages, $question);
 
             // GROUND THE LINKS before anything reads the answer. inlineMarkdown() lets a
             // same-site path through by shape — it cannot know which paths exist — so
@@ -902,6 +853,67 @@ class AskController extends Controller
         };
 
         return $response;
+    }
+
+    /**
+     * The answer, with every claim about who Jon worked for or with checked against
+     * the CMS (services\ClaimCheck). Clean: returned as is, at no cost. Not clean: the
+     * model writes it again, told exactly what was wrong; if the rewrite still slips,
+     * or can't be had, the offending sentences are cut. The visitor never sees the
+     * wrong version — the page reveals on the `answer` event, which follows this.
+     */
+    private function checkClaims(
+        string $answer,
+        Client $client,
+        string $apiKey,
+        string $model,
+        string $system,
+        string $volatile,
+        array $messages,
+        string $question,
+    ): \Generator {
+        $jonson = Jonson::getInstance();
+        $employers = $jonson->findContext->employers();
+        $workNames = $jonson->findContext->workNames();
+        $context = "$system\n$volatile\n$question";
+
+        $findings = $jonson->claimCheck->findings($answer, $context, $employers, $workNames);
+        if (!$findings) {
+            return $answer;
+        }
+        Craft::warning('[jonson] claim check, rewriting: ' . implode('; ', array_column($findings, 'problem')) . ' — for: ' . $question, __METHOD__);
+
+        // The draft goes back as the assistant's turn, the correction as a note from
+        // the site. The system prompt is untouched, so the cached prefix still reads.
+        $correction = "(A note from the website, not the visitor — they haven't seen your reply above.) "
+            . "Your reply above " . implode('; and ', array_column($findings, 'problem')) . '. '
+            . 'Write the whole reply again, as you would have sent it, with that put right: say only what is true of Jon. '
+            . 'Keep everything else — the same voice, length and [[markers]].';
+        $retry = [...$messages, ['role' => 'assistant', 'content' => $answer], ['role' => 'user', 'content' => $correction]];
+
+        $rewritten = '';
+        try {
+            $result = yield from $this->streamTurn($client, $apiKey, $model, $system, $volatile, $retry, [], false);
+            foreach ($result['blocks'] ?? [] as $block) {
+                if (($block['type'] ?? '') === 'text') {
+                    $rewritten .= $block['text'];
+                }
+            }
+        } catch (\Throwable $e) {
+            Craft::error('[jonson] claim rewrite failed: ' . $e->getMessage(), __METHOD__);
+        }
+
+        if (trim($rewritten) !== '') {
+            $still = $jonson->claimCheck->findings($rewritten, $context, $employers, $workNames);
+            if (!$still) {
+                return $rewritten;
+            }
+            Craft::warning('[jonson] claim check, rewrite still wrong; cutting: ' . implode('; ', array_column($still, 'problem')), __METHOD__);
+
+            return $jonson->claimCheck->withoutSentences($rewritten, array_column($still, 'name'));
+        }
+
+        return $jonson->claimCheck->withoutSentences($answer, array_column($findings, 'name'));
     }
 
     /**
@@ -1269,6 +1281,86 @@ class AskController extends Controller
             . "that is an invitation with nowhere to go, and it reads as a brush-off rather than an "
             . "opening.";
     }
+
+    /**
+     * What ClaimCheck holds an answer to when the turn's own context isn't to hand
+     * (tools/jonson/claims.php): the cached system prompt, persona plus background.
+     */
+    private function claimContext(): string
+    {
+        return Jonson::getInstance()->persona->prompt() . $this->backgroundPrompt();
+    }
+
+    /**
+     * Everything Jonson knows that isn't the persona: what it can show, sectors, how
+     * Jon works, CV, notes, clients, case studies, music. Part of the cached prefix,
+     * and what ClaimCheck reads as "things Jonson was told".
+     */
+    private function backgroundPrompt(): string
+    {
+        $out = '';
+        $inventory = $this->inventoryPrompt();
+        if ($inventory !== '') {
+            $out .= "\n\n" . $inventory;
+        }
+
+        // Tell the model which sectors Jon actually has experience in, so he
+        // never claims — or suggests as a prompt — a sector he hasn't worked in.
+        $sectorsPrompt = $this->sectorsPrompt();
+        if ($sectorsPrompt !== '') {
+            $out .= "\n\n" . $sectorsPrompt;
+        }
+
+        // Tell the model Jon's actual "how I can help" journey (phases +
+        // services), so he speaks to his real process/offering and knows when
+        // the [[method]] timeline is worth showing.
+        $methodologyPrompt = $this->methodologyPrompt();
+        if ($methodologyPrompt !== '') {
+            $out .= "\n\n" . $methodologyPrompt;
+        }
+
+        // Feed Jon's real career history in as private background, so he can speak
+        // accurately to his experience when a visitor is weighing him up — without
+        // reciting the CV.
+        $cvPrompt = $this->cvPrompt();
+        if ($cvPrompt !== '') {
+            $out .= "\n\n" . $cvPrompt;
+        }
+
+        // Feed Jon's notes in as memories — what he's done, seen and thought, as
+        // memory cards (see services\NoteMemory) — so a chat about printing can
+        // bring a Tokyo museum to mind. Background, never a reading list.
+        $notesPrompt = $this->notesPrompt();
+        if ($notesPrompt !== '') {
+            $out .= "\n\n" . $notesPrompt;
+        }
+
+        // Feed the client roster + what Jon did for each in as background too, so
+        // he can speak concretely about relevant work (separate from the [[clients]]
+        // logo strip).
+        $clientsPrompt = $this->clientsPrompt();
+        if ($clientsPrompt !== '') {
+            $out .= "\n\n" . $clientsPrompt;
+        }
+
+        // Case studies as background (the private jonsonSummary per study) + when to
+        // surface the [[casestudies]] discovery cards.
+        $caseStudiesPrompt = $this->caseStudiesPrompt();
+        if ($caseStudiesPrompt !== '') {
+            $out .= "\n\n" . $caseStudiesPrompt;
+        }
+
+        // Jon's music taste (Spotify) as personality/tone background — colours his
+        // voice and lets him speak to what he's into when people are getting to
+        // know him.
+        $musicPrompt = $this->musicPrompt();
+        if ($musicPrompt !== '') {
+            $out .= "\n\n" . $musicPrompt;
+        }
+
+        return $out;
+    }
+
 
     private function sectorsPrompt(): string
     {
