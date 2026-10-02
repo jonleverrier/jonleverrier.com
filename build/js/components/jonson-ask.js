@@ -32,8 +32,8 @@ import {revealPictures} from './picture.js';
 function stripMarkers(text) {
     return text
         .replace(/\s*\[\[next:[^\]]*\]{1,2}/gi, '')
-        .replace(/\s*\[\[[a-z0-9-]+(?::[a-z0-9-]+)?\]\]/gi, '')
-        .replace(/\s*\[\[[a-z0-9-]+(?::[a-z0-9-]+)?\]?/gi, '')
+        .replace(/\s*\[\[[a-z0-9-]+(?::[a-z0-9][a-z0-9, -]*)?\]\]/gi, '')
+        .replace(/\s*\[\[[a-z0-9-]+(?::[a-z0-9][a-z0-9, -]*)?\]?/gi, '')
         .trim();
 }
 
@@ -249,7 +249,7 @@ function revealAnswer(el, text, railHtml, testimonialHtml, clientsHtml, sectorsH
         // any marker that isn't a panel's — and failing that the first paragraph
         // with content. Nothing ever renders above the first line of prose.
         const PANEL_MARKER = /\[\[(testimonial|clients|sectors|casestudies|method|music|contact|next)(?::[^\]]*)?\]\]/i;
-        const hasPhotoMarker = (raw) => [...raw.matchAll(/\[\[[a-z0-9][a-z0-9-]*(?::[a-z0-9-]+)?\]\]/gi)]
+        const hasPhotoMarker = (raw) => [...raw.matchAll(/\[\[[a-z0-9][a-z0-9-]*(?::[a-z0-9][a-z0-9, -]*)?\]\]/gi)]
             .some((m) => !PANEL_MARKER.test(m[0]));
         let railAnchor = rawParts.findIndex((raw) => hasPhotoMarker(raw) && stripMarkers(raw));
         if (railAnchor < 0) railAnchor = rawParts.findIndex((raw) => stripMarkers(raw));
@@ -278,7 +278,7 @@ function revealAnswer(el, text, railHtml, testimonialHtml, clientsHtml, sectorsH
             }
             // Optional :modifier — [[casestudies:all]] places the cards exactly like
             // the plain marker; the modifier only changes WHICH studies the server sent.
-            if (caseStudies && !caseStudiesPlaced && /\[\[casestudies(?::[a-z0-9-]+)?\]\]/i.test(raw)) {
+            if (caseStudies && !caseStudiesPlaced && /\[\[casestudies(?::[a-z0-9][a-z0-9, -]*)?\]\]/i.test(raw)) {
                 frag.append(caseStudies); // case study cards after the paragraph pointing at the work
                 caseStudiesPlaced = true;
             }

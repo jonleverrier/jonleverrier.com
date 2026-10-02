@@ -980,6 +980,30 @@ class FindContext extends Component
         return false;
     }
 
+    /**
+     * The studies a [[casestudies:id,id]] marker names, in the order it names them —
+     * unknown ids dropped, duplicates once. Null when the modifier isn't a list of ids
+     * (none, `all`, or nothing that matches a live study).
+     */
+    public function studiesBySlugs(?string $modifier): ?array
+    {
+        if ($modifier === null || trim($modifier) === '' || strtolower(trim($modifier)) === 'all') {
+            return null;
+        }
+        $bySlug = [];
+        foreach ($this->caseStudies() as $s) {
+            $bySlug[strtolower($s['slug'])] = $s;
+        }
+        $out = [];
+        foreach (preg_split('/[\s,]+/', strtolower($modifier)) ?: [] as $slug) {
+            if ($slug !== '' && isset($bySlug[$slug]) && !isset($out[$slug])) {
+                $out[$slug] = $bySlug[$slug];
+            }
+        }
+
+        return $out ? array_values($out) : null;
+    }
+
     /** The studies a piece of text names — by title, client, sector or skill. */
     public function studiesNamedIn(string $text): array
     {

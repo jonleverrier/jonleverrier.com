@@ -29,7 +29,15 @@
  * the entry's note exactly as a visitor holding the link would be. `expectStudies`
  * on a turn lists study slugs whose cards must be on screen; `leadStudy` is the
  * slug the FIRST card must be — the work the note makes the obvious match;
- * `minStudies` the fewest cards the turn may show; `forbidText` regex sources the
+ * `minStudies` the fewest cards the turn may show; `forbidStudies` slugs whose cards must
+ * NOT show (the wrong work under the answer);
+ *
+ * EVERY TURN WITH CARDS, no per-scenario setup, so it scales as studies are added:
+ *   - OBEYED: when the answer lists ids ([[casestudies:a,b]]) the cards must be exactly
+ *     those (less any already shown earlier in the conversation — never twice).
+ *   - JUDGED: one Haiku call asks whether the cards match the work the prose describes
+ *     (missing / extra), against the live catalogue from /case-studies.md. Off with
+ *     JONSON_JUDGE=0. Skipped for [[casestudies:all]], which is everything on purpose. `forbidText` regex sources the
  * answer must not match; `leadQuote` the person whose quote
  * must come first whenever a testimonial shows.
  *
@@ -54,10 +62,13 @@ const BASE = process.env.JONSON_BASE || 'https://jonleverrier2.local';
 const RUNS = Number(process.argv[2] || 6);
 const CONCURRENCY = Number(process.argv[3] || 4);
 const FILTER = process.argv[4] || '';
+import {judgeCards, loadCatalogue, slugOf, catalogue} from './judge.mjs';
 const SURFACES = ['context', 'casestudies', 'clients', 'sectors', 'method', 'testimonial', 'contact', 'music', 'suggestions'];
 
 const suite = JSON.parse(readFileSync(join(HERE, 'suite.json'), 'utf8'));
 const scenarios = suite.scenarios.filter((s) => !FILTER || s.id.includes(FILTER));
+
+// THE CARD JUDGE — see judge.mjs.
 
 /** A minimal cookie jar: enough for CraftSessionId + the CSRF cookie. */
 class Jar {
@@ -201,6 +212,25 @@ async function runScenario(s) {
             const first = (html.match(/class="c-testimonial__name">([^<]+)</) || [])[1];
             if (first && first.trim() !== turn.leadQuote) fails.push(`T${i + 1} lead quote was ${first.trim()}, not ${turn.leadQuote}`);
         }
+        // OBEYED: a marker that lists ids gets exactly those cards (never-twice aside).
+        const shownSlugs = r.studies.map(slugOf);
+        const earlierSlugs = [...seenStudies].map(slugOf);
+        const listed = [...r.answer.matchAll(/\[\[casestudies:([^\]]+)\]\]/gi)].map((m) => m[1].trim()).filter((m) => m.toLowerCase() !== 'all');
+        if (listed.length) {
+            const ids = listed.join(',').toLowerCase().split(/[\s,]+/).filter(Boolean);
+            const extra = shownSlugs.filter((sl) => !ids.includes(sl));
+            const missing = ids.filter((id) => !shownSlugs.includes(id) && !earlierSlugs.includes(id) && (!catalogue || catalogue[id]));
+            if (extra.length) fails.push(`T${i + 1} cards not in the marker's list: ${extra.join(', ')}`);
+            if (missing.length) fails.push(`T${i + 1} marker listed ${missing.join(', ')} but no card`);
+        }
+        // JUDGED: do the cards match the work the prose describes?
+        const isAll = /\[\[casestudies:all\]\]/i.test(r.answer);
+        if (r.studies.length && !isAll) {
+            const prose = r.answer.replace(/\[\[[^\]]*\]{1,2}/g, ' ').replace(/\s+/g, ' ').trim();
+            const v = await judgeCards(prose, shownSlugs, earlierSlugs);
+            if (v && v.missing?.length) fails.push(`T${i + 1} judge: prose describes ${v.missing.join(', ')} — no card`);
+            if (v && v.extra?.length) fails.push(`T${i + 1} judge: card(s) the prose isn't about: ${v.extra.join(', ')}`);
+        }
         if (turn.minStudies && r.studies.length < turn.minStudies) {
             fails.push(`T${i + 1} showed ${r.studies.length} study card(s) (min ${turn.minStudies})`);
         }
@@ -260,7 +290,7 @@ async function runScenario(s) {
         // Which markers the model actually wrote, so a report can say whether a
         // missing surface was the model's judgement (unmarked) or the server's
         // (marked, then dropped) — the two need different fixes.
-        const marked = [...new Set([...r.answer.matchAll(/\[\[([a-z0-9][a-z0-9-]*)(?::[a-z0-9-]+)?\]\]/gi)].map((m) => m[1].toLowerCase()).filter((h) => h !== 'next'))];
+        const marked = [...new Set([...r.answer.matchAll(/\[\[([a-z0-9][a-z0-9-]*)(?::[a-z0-9][a-z0-9, -]*)?\]\]/gi)].map((m) => m[1].toLowerCase()).filter((h) => h !== 'next'))];
         const PHOTO_MARKED = marked.some((h) => !SURFACES.includes(h));
         const annotated = fails.map((f) => {
             const m = f.match(/^T\d+ missing (\w+)$/);

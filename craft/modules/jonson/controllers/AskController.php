@@ -1680,6 +1680,18 @@ class AskController extends Controller
                         ? $ctx->withoutShown($vip->relevantStudies($entry), $shown)
                         : [];
 
+                    // THE MODEL NAMED THEM: [[casestudies:id,id]] lists the studies its own
+                    // words describe, so the cards are exactly those, in its order. Reading
+                    // them back from the prose can't follow a paraphrase — "a street
+                    // photography app", "a CPD conference company", "an online estate agency"
+                    // never say StreetPal, White Paper or Urban — and failed every time the
+                    // plain marker was used (suite, 2026-10-02). Unknown ids are dropped; none
+                    // left and it falls back to the reading below. Never-twice still applies.
+                    $named = $ctx->studiesBySlugs($modifier);
+                    if ($named) {
+                        return $ctx->withoutShown($named, $shown);
+                    }
+
                     $picked = $ctx->caseStudies(
                         $answer,
                         $modifier === 'all' && !$ctx->studiesNamedIn($question),
@@ -1698,7 +1710,7 @@ class AskController extends Controller
                 // More than a couple of studies is a strip, not a stack of cards.
                 // Up to three stand as large cards; past that it's the rail. The template
                 // has the same threshold (featureMax) — this used to say 2 and overrode it.
-                'present' => static fn(array $studies, ?string $modifier) => count($studies) > 3 ? 'all' : $modifier,
+                'present' => static fn(array $studies, ?string $modifier) => count($studies) > 3 || $modifier === 'all' ? 'all' : null,
                 // Which studies are on screen, so a later chip can't offer one again.
                 'onShown' => fn(array $studies, $session) => $this->rememberShownStudies($session, $studies),
             ],
@@ -2683,7 +2695,7 @@ class AskController extends Controller
             if ($hasProse) {
                 $lastProse = $this->stripMarkers($paragraph);
             }
-            if (!preg_match_all('/\[\[([a-z0-9][a-z0-9-]*)(?::([a-z0-9-]+))?\]\]/i', $paragraph, $m, PREG_SET_ORDER)) {
+            if (!preg_match_all('/\[\[([a-z0-9][a-z0-9-]*)(?::([a-z0-9][a-z0-9, -]*))?\]\]/i', $paragraph, $m, PREG_SET_ORDER)) {
                 $frameFree = $frameFree || $hasProse;
                 continue;
             }
@@ -2750,7 +2762,7 @@ class AskController extends Controller
      */
     private function paragraphNamesLabel(string $answer, string $question, string $handle, string $label): bool
     {
-        $marker = '/\[\[' . preg_quote($handle, '/') . '(?::[a-z0-9-]+)?\]\]/i';
+        $marker = '/\[\[' . preg_quote($handle, '/') . '(?::[a-z0-9][a-z0-9, -]*)?\]\]/i';
         // Any substantive word of the label counts as naming it: the model says
         // "I shoot street[[street-photo]]" for the theme labelled "street photo",
         // and that IS the thing named, in its own words. Short words (of, the)
@@ -2780,7 +2792,7 @@ class AskController extends Controller
 
         // Must accept the optional :modifier too — otherwise a [[casestudies:all]]
         // survives this pass and renders as literal text in the answer.
-        $text = preg_replace('/\s*\[\[[a-z0-9-]+(?::[a-z0-9-]+)?\]\]/i', '', $text) ?? $text;
+        $text = preg_replace('/\s*\[\[[a-z0-9-]+(?::[a-z0-9][a-z0-9, -]*)?\]\]/i', '', $text) ?? $text;
 
         // Then the malformed ones. The model sometimes closes a marker with a single
         // bracket ("[[france]") or not at all, and the strict pass above leaves those
@@ -2790,7 +2802,7 @@ class AskController extends Controller
         //
         // Note this catches invented handles too, which is the point: the model made
         // up [[france]] once, and an unknown marker should vanish rather than render.
-        return trim(preg_replace('/\s*\[\[[a-z0-9-]+(?::[a-z0-9-]+)?\]?/i', '', $text) ?? $text);
+        return trim(preg_replace('/\s*\[\[[a-z0-9-]+(?::[a-z0-9][a-z0-9, -]*)?\]?/i', '', $text) ?? $text);
     }
 
     /**
@@ -3319,6 +3331,12 @@ class AskController extends Controller
      */
     private function panelSlot(string $handle, ?string $modifier): string
     {
+        // A list of study ids ([[casestudies:a,b]]) is still THE casestudies panel, not a
+        // variant with a slot of its own — only the `all` keyword is a variant.
+        if ($handle === 'casestudies' && $modifier !== null && $modifier !== 'all') {
+            return $handle;
+        }
+
         return $modifier !== null && $modifier !== '' ? $handle . ':' . $modifier : $handle;
     }
 

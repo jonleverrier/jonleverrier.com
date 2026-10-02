@@ -629,6 +629,47 @@
           "minStudies": 3
         }
       ]
+    },
+    {
+      "id": "ids-regtech",
+      "_": "Jon on prod 2026-10-02: an answer only about Vaiie ('a regulatory tech startup') showed Urban and the logo collection. Cards must be the work described, and only that.",
+      "turns": [
+        {
+          "q": "Can I see examples of your regtech work?",
+          "expect": [
+            "casestudies"
+          ],
+          "forbidStudies": [
+            "urban-co-uk-product-branding",
+            "logos",
+            "streetpal-ios-app-design-development"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ids-apps",
+      "_": "A question about one kind of work: the cards are whatever the answer describes.",
+      "turns": [
+        {
+          "q": "Have you designed any apps?",
+          "expect": [
+            "casestudies"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ids-startups",
+      "_": "'Startup' is a sector half the catalogue carries: the cards must follow the prose, not the word.",
+      "turns": [
+        {
+          "q": "What have you done for startups?",
+          "expect": [
+            "casestudies"
+          ]
+        }
+      ]
     }
   ]
 }
