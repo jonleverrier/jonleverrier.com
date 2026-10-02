@@ -24,6 +24,9 @@ const RED = '#e02e1a';
 const LOGO = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><path d="M32.1016 63.4021C49.4986 63.4021 63.6016 49.2991 63.6016 31.9021C63.6016 14.5051 49.4986 0.4021 32.1016 0.4021C14.7046 0.4021 0.601562 14.5051 0.601562 31.9021C0.601562 49.2991 14.7046 63.4021 32.1016 63.4021Z" fill="#FFFFFF"/><path d="M38.7013 38.8021V27.4021C38.4013 24.0021 35.7019 21.4021 32.3019 21.3021C28.9019 21.4021 26.1021 24.1021 26.0021 27.5021V40.1021C26.1021 45.2021 21.9019 49.4021 16.8019 49.5021C11.7019 49.6021 7.5015 45.4021 7.4015 40.3021C7.4015 40.2021 7.4015 40.2021 7.4015 40.1021C7.4015 38.5021 8.70189 37.2021 10.3019 37.1021C11.9019 37.1021 13.2013 38.4021 13.2013 40.1021C13.2013 41.9021 14.6021 43.5021 16.5021 43.5021H16.6017C18.3017 43.5021 19.7021 42.3021 20.0021 40.6021V27.7021C20.0021 27.2021 20.0017 26.8021 20.1017 26.3021C20.8017 19.5021 26.8021 14.6021 33.5021 15.3021C39.7021 15.9021 44.5017 21.1021 44.6017 27.3021C44.6017 27.7021 44.7013 28.1021 44.7013 28.6021V39.1021C44.7013 40.9221 46.1816 42.4021 48.0016 42.4021H62.3019C63.4019 39.1021 64.0021 35.7021 64.0021 32.3021C64.2021 14.6021 50.0019 0.202087 32.3019 0.002087C14.6019 -0.197913 0.202088 14.0021 0.00208711 31.7021C-0.197912 49.4021 14.0013 63.8021 31.7013 64.0021C43.2013 64.1021 53.9013 58.0021 59.7013 48.1021H48.0016C42.8616 48.1021 38.7013 43.9421 38.7013 38.8021ZM32.3019 38.1021C30.5019 38.1021 29.0021 36.6021 29.0021 34.8021C29.0021 33.0021 30.5019 31.5021 32.3019 31.5021C34.1019 31.5021 35.6017 33.0021 35.6017 34.8021C35.6017 36.7021 34.1019 38.1021 32.3019 38.1021Z" fill="#162C41"/></svg>')}`;
 // The site's webfont doesn't reach devtools, so say so plainly rather than name it.
 const FONT = 'system-ui, -apple-system, sans-serif';
+// Jonson's answers, in mono as they are on the site (Söhne Mono there; the webfont
+// doesn't reach devtools, so the system mono stands in).
+const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
 let csrf = null;   // {name, value}, fetched once
 let turns = 0;     // console questions asked this page; the first is an opener
@@ -107,7 +110,7 @@ async function run(question) {
         if (error) {
             console.log(`%c${error}`, `font: 13px/1.5 ${FONT};`);
         } else if (answer) {
-            console.log(`%cJonson%c\n${plain(answer)}`, `font: 700 13px ${FONT}; color: ${RED};`, `font: 14px/1.6 ${FONT};`);
+            console.log(`%cJonson%c\n${plain(answer)}`, `font: 700 13px ${FONT}; color: ${RED};`, `font: 13px/1.6 ${MONO};`);
         }
         if (suggestions.length) {
             console.log(
