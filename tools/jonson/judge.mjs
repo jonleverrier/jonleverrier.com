@@ -74,3 +74,78 @@ export async function judgeCards(prose, shown, earlier) {
         return null;
     }
 }
+
+// ---------------------------------------------------------------------------------
+// Shared: one tool-forced Haiku call, and a quote check — a finding only stands when
+// at least 80% of its quoted words are really in the answer (see judgeCards).
+async function askHaiku(prompt, tool, model = process.env.JONSON_JUDGE_MODEL || 'claude-haiku-4-5') {
+    if (!JUDGE || !API_KEY) return null;
+    // Haiku takes a forced tool call; Sonnet refuses one ("tool_choice: type tool is not
+    // supported"), so it gets the tool on `auto` and is told to call it.
+    const forced = model.includes('haiku');
+    try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
+            body: JSON.stringify({model, max_tokens: 1200, tools: [tool], tool_choice: forced ? {type: 'tool', name: tool.name} : {type: 'auto'}, messages: [{role: 'user', content: forced ? prompt : `${prompt}\n\nReply ONLY by calling the ${tool.name} tool.`}]}),
+        });
+        const json = await res.json();
+        return (json.content || []).find((c) => c.type === 'tool_use')?.input || null;
+    } catch {
+        return null;
+    }
+}
+const words = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter((w) => w.length > 2);
+const backedBy = (prose) => {
+    const hay = new Set(words(prose));
+    return (q) => { const w = words(q || ''); return w.length > 0 && w.filter((x) => hay.has(x)).length / w.length >= 0.8; };
+};
+
+/**
+ * NEVER INVENT. Claims about who Jon has worked with — clients, employers, kinds of
+ * client, how many — that the facts (the CMS client list, case studies, sectors and CV,
+ * from facts.php) don't support. "Regulators" from a RegTech sector, "estate agents"
+ * from one online estate agent. Returns [{quote, why}] for the unsupported ones.
+ */
+export async function judgeInvention(prose, facts) {
+    // TWO INDEPENDENT READS, and only what both flag stands: one read alone wobbled —
+    // it once flagged a true claim and missed the false one. A finding agreed twice,
+    // with overlapping quotes, is the signal; a one-off is noise.
+    const [a, b] = await Promise.all([inventionOnce(prose, facts), inventionOnce(prose, facts)]);
+    const overlap = (x, y) => { const wx = new Set(words(x)); const wy = words(y); return wy.filter((w) => wx.has(w)).length / Math.max(1, Math.min(wx.size, wy.length)) >= 0.5; };
+    return a.filter((c) => b.some((d) => overlap(c.quote, d.quote)));
+}
+
+async function inventionOnce(prose, facts) {
+    const brief = JSON.stringify({
+        clients: facts.clients,
+        caseStudies: facts.studies.map((s) => ({client: s.client, title: s.title, sectors: s.sectors})),
+        sectors: facts.sectors,
+        career: facts.cv.map((c) => ({company: c.company, about: c.companySummary, role: c.title, from: c.start, to: c.end || 'present', types: c.types})),
+        about: facts.about,
+        howICanHelp: facts.howICanHelp,
+    });
+    const out = await askHaiku(
+        `FACTS about a designer, Jon — everyone he has worked for, his case studies, the sectors he has experience in, and his career:\n${brief}\n\nANSWER he gave (in the first person):\n${prose}\n\nList every claim in the ANSWER about who Jon has worked with or for — named clients or employers, the KINDS of client (e.g. "banks"), or HOW MANY of a kind — that the FACTS do not support. A sector he has experience in is not the same as a kind of client he worked for; one client of a kind is not several. Judge whether the client or kind of client EXISTS in the facts, not adjectives — "big", "well-known" and similar are out of scope. Whether he worked WITH or FOR someone doesn't matter. A client described by what it plainly is counts as supported (a known retailer as a retailer). The kinds of client Jon says he works with in ABOUT and HOW I CAN HELP are supported. Skills, opinions, process and interests are out of scope. Quote each claim verbatim. If everything is supported, return an empty list.`,
+        {name: 'unsupported', description: 'Claims about who Jon worked with that the facts do not support.', input_schema: {type: 'object', properties: {claims: {type: 'array', items: {type: 'object', properties: {quote: {type: 'string', description: 'the exact words from the answer'}, why: {type: 'string'}}, required: ['quote', 'why']}}}, required: ['claims']}},
+        // Sonnet: Haiku flagged true claims (real clients by a shortened name) and missed
+        // sector-turned-client inventions ("regulators") two runs in three.
+        process.env.JONSON_INVENTION_MODEL || 'claude-sonnet-5-5',
+    );
+    const backed = backedBy(prose);
+    return (out?.claims || []).filter((c) => backed(c.quote));
+}
+
+/**
+ * NEVER SCREEN ANYONE OUT. Whether the answer turns the visitor away or decides for
+ * them that they aren't a fit (budget, size, stage) instead of leaving that to a
+ * conversation. Returns [{quote, why}] for each turning-away.
+ */
+export async function judgeScreening(question, prose) {
+    const out = await askHaiku(
+        `A designer's portfolio assistant was asked:\n"${question}"\n\nIt answered:\n${prose}\n\nThe rule: never screen anyone out. Whether a project fits is worked out together in a conversation, never decided for the visitor up front. Being honest about how something might work (e.g. a smaller scope) is fine; refusing, discouraging them from getting in touch, or deciding they aren't a fit is not. List every place the answer turns the visitor away or decides they're not a fit, quoting verbatim. If it doesn't, return an empty list.`,
+        {name: 'screening', description: 'Places where the answer turns the visitor away.', input_schema: {type: 'object', properties: {findings: {type: 'array', items: {type: 'object', properties: {quote: {type: 'string'}, why: {type: 'string'}}, required: ['quote', 'why']}}}, required: ['findings']}},
+    );
+    const backed = backedBy(prose);
+    return (out?.findings || []).filter((f) => backed(f.quote));
+}

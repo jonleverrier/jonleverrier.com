@@ -1,5 +1,7 @@
 # Jonson surfacing suite
 
+**What Jonson is for, and which check proves each objective: [OBJECTIVES.md](OBJECTIVES.md).**
+
 The acceptance suite for everything Jonson places around an answer: the photo
 rail, case studies, clients, sectors, method, testimonial, contact CTA, music strip
 and the suggestion chips. It exists because every one of those grew its own

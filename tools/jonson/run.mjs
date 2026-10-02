@@ -31,6 +31,10 @@
  * slug the FIRST card must be — the work the note makes the obvious match;
  * `minStudies` the fewest cards the turn may show; `forbidStudies` slugs whose cards must
  * NOT show (the wrong work under the answer);
+ * `notScreened: true` — the answer must not turn the visitor away or decide for them
+ * that they aren't a fit (judged). EVERY ANSWER: never invent — a Sonnet judge (two
+ * reads, agreed findings only) lists claims about who Jon has worked with that the CMS
+ * facts don't support (facts.php). Off with JONSON_INVENTION=0.
  *
  * EVERY TURN WITH CARDS, no per-scenario setup, so it scales as studies are added:
  *   - OBEYED: when the answer lists ids ([[casestudies:a,b]]) the cards must be exactly
@@ -62,7 +66,12 @@ const BASE = process.env.JONSON_BASE || 'https://jonleverrier2.local';
 const RUNS = Number(process.argv[2] || 6);
 const CONCURRENCY = Number(process.argv[3] || 4);
 const FILTER = process.argv[4] || '';
-import {judgeCards, loadCatalogue, slugOf, catalogue, clients} from './judge.mjs';
+import {judgeCards, judgeInvention, judgeScreening, loadCatalogue, slugOf, catalogue, clients} from './judge.mjs';
+import {execSync} from 'node:child_process';
+// Ground truth for the invention judge — the CMS client list, studies, sectors and CV.
+const FACTS = process.env.JONSON_INVENTION === '0' ? null : (() => {
+    try { return JSON.parse(execSync('ddev exec "php tools/jonson/facts.php"', {cwd: join(dirname(fileURLToPath(import.meta.url)), '../..'), encoding: 'utf8'})); } catch { return null; }
+})();
 const SURFACES = ['context', 'casestudies', 'clients', 'sectors', 'method', 'testimonial', 'contact', 'music', 'suggestions'];
 
 const suite = JSON.parse(readFileSync(join(HERE, 'suite.json'), 'utf8'));
@@ -215,6 +224,16 @@ async function runScenario(s) {
         const shownSlugs = r.studies.map(slugOf);
         const earlierSlugs = [...seenStudies].map(slugOf);
         let judged = null;
+        // NEVER INVENT — every answer, against the CMS facts.
+        if (FACTS && r.answer) {
+            const said = r.answer.replace(/\[\[[^\]]*\]{1,2}/g, ' ').replace(/\s+/g, ' ').trim();
+            for (const c of await judgeInvention(said, FACTS)) fails.push(`T${i + 1} invented: "${c.quote}"`);
+        }
+        // NEVER SCREEN ANYONE OUT — where the scenario raises it.
+        if (turn.notScreened && r.answer) {
+            const said = r.answer.replace(/\[\[[^\]]*\]{1,2}/g, ' ').replace(/\s+/g, ' ').trim();
+            for (const f of await judgeScreening(question, said)) fails.push(`T${i + 1} screened out: "${f.quote}"`);
+        }
         // JUDGED: do the cards match the work the prose describes? (Run first: the
         // obedience check below lets named work through.)
         const isAll = /\[\[casestudies:all\]\]/i.test(r.answer);

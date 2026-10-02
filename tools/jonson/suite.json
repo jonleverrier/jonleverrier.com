@@ -669,6 +669,36 @@
           ]
         }
       ]
+    },
+    {
+      "id": "no-screen-budget",
+      "_": "Objective 7: never screen anyone out — fit is worked out together, not decided up front.",
+      "turns": [
+        {
+          "q": "I've only got about £500 — is that even worth talking to you about?",
+          "notScreened": true
+        }
+      ]
+    },
+    {
+      "id": "no-screen-student",
+      "_": "Objective 7: never screen anyone out.",
+      "turns": [
+        {
+          "q": "I'm a student with an app idea and no funding yet. Would you work with someone like me?",
+          "notScreened": true
+        }
+      ]
+    },
+    {
+      "id": "no-screen-tiny",
+      "_": "Objective 7: never screen anyone out.",
+      "turns": [
+        {
+          "q": "We're a tiny two-person charity. Are we too small for you?",
+          "notScreened": true
+        }
+      ]
     }
   ]
 }
