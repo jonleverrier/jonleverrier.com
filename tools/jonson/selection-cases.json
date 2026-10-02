@@ -73,6 +73,43 @@
     {"id": "client-without-study-hsbc", "_": "Reported 2026-10-01: 'e-commerce team' swept to the featured White Paper card under an HSBC answer. A client with no study shows no cards.", "q": "Have you worked at HSBC?", "answer": "Yes — I was Web Design Manager at HSBC International, leading web design in-house, and I redesigned their site to lift leads and account openings.\n\nI was one of the few full-time creatives in the group, working in a small multidisciplinary e-commerce team.", "max": 0, "hasNot": ["white-paper-booking-engine-design-development"]},
     {"id": "client-without-study-vip-lead", "_": "Same with a VIP door: their relevant work doesn't lead under an answer about a client with no study.", "vip": "allan-wood", "q": "Have you worked at HSBC?", "answer": "Yes — I was Web Design Manager at HSBC International, leading web design in-house, and I redesigned their site to lift leads and account openings.\n\nI was one of the few full-time creatives in the group, working in a small multidisciplinary e-commerce team.", "max": 0},
     {"id": "client-with-study-still-shows", "_": "A question naming a client we DO have a study for is untouched.", "q": "Have you worked with White Paper?", "answer": "Yes — I built White Paper's booking engine and have supported it for over a decade.", "has": ["white-paper-booking-engine-design-development"]},
-    {"id": "everyday-word-not-a-client", "_": "'sure' in a question is not Sure Telecom; 'Jersey' is not Jersey Post.", "q": "Are you sure you can work with a team in Jersey?", "answer": "Yes — I've worked with teams across Jersey for years, including White Paper.", "has": ["white-paper-booking-engine-design-development"]}
+    {"id": "everyday-word-not-a-client", "_": "'sure' in a question is not Sure Telecom; 'Jersey' is not Jersey Post.", "q": "Are you sure you can work with a team in Jersey?", "answer": "Yes — I've worked with teams across Jersey for years, including White Paper.", "has": ["white-paper-booking-engine-design-development"]},
+    {
+        "id": "regtech-startup-word-is-not-a-sector-pick",
+        "_": "Jon on prod 2026-10-02: an answer only about Vaiie ('a regulatory tech startup') showed Urban and the logo collection — 'startup' matched the shared Startup sector.",
+        "q": "Can I see examples of your regtech work?",
+        "answer": "Yes — most of my regtech work is with Vaiie, a regulatory tech startup. I branded their whole product suite, designed an identity verification journey that ended up government-approved, and shaped an onboarding product for genuinely gnarly multi-jurisdictional ownership structures.",
+        "has": [
+            "vaiie-identify-product-design",
+            "vaiie-onboard-product-design",
+            "vaiie-product-branding"
+        ],
+        "hasNot": [
+            "urban-co-uk-product-branding",
+            "logos"
+        ]
+    },
+    {
+        "id": "spread-answer-shows-every-piece",
+        "_": "Jon on prod 2026-10-02: four pieces of work described, ONE card shown (only the strongest match tier was kept).",
+        "q": "Can I see some of the work you've done?",
+        "answer": "Have a look — there's a mix here, from a regulatory onboarding platform and an identity verification product through to an estate agency rebrand and a conference booking engine I've been evolving for years.",
+        "has": [
+            "white-paper-booking-engine-design-development",
+            "vaiie-onboard-product-design"
+        ],
+        "min": 4
+    },
+    {
+        "id": "spread-regtech-word-not-only-vaiie",
+        "_": "Jon 2026-10-02: 'regtech products … a conference platform … a street photography app' showed two Vaiie cards and nothing else.",
+        "q": "Can I see some of your actual projects?",
+        "answer": "Here's a spread of them — regtech products, an estate agency rebrand, a conference platform, and a street photography app I built for myself.",
+        "has": [
+            "white-paper-booking-engine-design-development",
+            "streetpal-ios-app-design-development"
+        ],
+        "min": 3
+    }
   ]
 }

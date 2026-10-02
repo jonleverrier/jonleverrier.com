@@ -826,7 +826,29 @@ class FindContext extends Component
         // conference booking engine" showed ONE card. The cards are the point of the
         // answer: chat → the work. More than three already becomes the strip (see the
         // registry's `present`), so there is nothing to cut for space either.
-        $relevant = array_merge($named, $tiers[3] ?? []) ?: ($tiers[4] ?? []);
+        //
+        // A SECTOR ADDS ITS WORK ONLY WHEN IT BELONGS TO ONE CLIENT. "Regulatory" is all
+        // Vaiie, so a "regulatory onboarding platform" names Vaiie's work. "Startup" and
+        // "E-commerce" span half the catalogue: "Vaiie, a regulatory tech startup" put
+        // Urban and the logo collection under an answer about nothing but Vaiie. A shared
+        // sector still counts when the answer named nothing sharper — the fallback below.
+        $owners = [];
+        foreach ($out as $s) {
+            foreach ($s['sectorTerms'] ?? [] as $term) {
+                $owners[mb_strtolower($term)][mb_strtolower((string) ($s['client'] ?: $s['name']))] = true;
+            }
+        }
+        $bySector = array_values(array_filter($tiers[3] ?? [], function (array $s) use ($owners, $context): bool {
+            $own = array_values(array_filter(
+                $s['sectorTerms'] ?? [],
+                static fn(string $term) => count($owners[mb_strtolower($term)] ?? []) === 1,
+            ));
+
+            return $own && $this->studyRelevantTo($context, $s, labels: $own);
+        }));
+        $relevant = $named
+            ? array_merge($named, $bySector)
+            : (($tiers[3] ?? []) ?: ($tiers[4] ?? []));
         if ($relevant) {
             usort($relevant, static fn(array $a, array $b) => ($b['featured'] <=> $a['featured']));
 
@@ -1115,6 +1137,13 @@ class FindContext extends Component
 
         $out = [];
         foreach (Category::find()->group('sectorExperience')->all() as $category) {
+            // A PARENT WITH ITS CHILDREN IN THE LIST GOES: "Technology" beside EventTech,
+            // RegTech and PropTech says the same thing less precisely (Jon's rule — the
+            // same one categoryTitles() applies to a study's own sectors). A category with
+            // no children is just a sector, and stays.
+            if ($category->getHasDescendants()) {
+                continue;
+            }
             // Prefer an optional public-facing `longTitle` (so the back-office
             // title can stay tidy, e.g. "Regulatory" → shown as "RegTech");
             // fall back to the title when it's not set.
