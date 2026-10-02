@@ -35,7 +35,7 @@ export function mountShowboard(root) {
     outW:3200, outH:1800 // the export size (Size section) — its shape frames everything
   };
   var S = Object.assign({}, DEFAULTS);
-  var shots = [];          // {id,name,img,w,h,tex,radiusUsed}
+  var shots = [];          // {id,name,img,w,h,tex,mat}
   var nextId = 1;
   var needsRender = true;
   var needsBuild = true;
@@ -85,10 +85,9 @@ export function mountShowboard(root) {
     var c = document.createElement('canvas');
     c.width = w; c.height = h;
     var ctx = c.getContext('2d');
-    var r = (S.radius/100) * Math.min(w,h);
-    if (r > 0.5){ roundRectPath(ctx,0,0,w,h,r); ctx.save(); ctx.clip(); }
+    // Square: the corners are rounded in the shader (roundCorners), so the radius
+    // slider never redraws this.
     ctx.drawImage(shot.img, 0, 0, w, h);
-    if (r > 0.5) ctx.restore();
 
     var t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
@@ -103,7 +102,6 @@ export function mountShowboard(root) {
     t.magFilter = THREE.LinearFilter;
     if (shot.tex) shot.tex.dispose();
     shot.tex = t;
-    shot.radiusUsed = S.radius;
   }
 
   var shadowCache = {};
@@ -128,12 +126,90 @@ export function mountShowboard(root) {
   }
 
   /* ───────── scene build ───────── */
-  function clearGroup(g){
-    while (g.children.length){
-      var m = g.children.pop();
-      if (m.geometry) m.geometry.dispose();
-      if (m.material) m.material.dispose();
+  // SHARED, NOT PER TILE. Every tile is one unit plane scaled to its size, wearing its
+  // screenshot's own material; every shadow one unit plane and a material per look. A
+  // rebuild used to make a geometry and a material for every tile — 1,000 of each at
+  // 100 screenshots ×10 — and three.js re-derived its shader setup for each one, every
+  // slider step. clearGroup also dropped the tile's wrapper group without disposing
+  // the mesh inside it, so all of that stayed on the GPU. Now a rebuild only moves
+  // meshes around; materials are made when a texture or the look changes.
+  var tileGeo = new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0);
+  var shadowGeo = new THREE.PlaneGeometry(1, 1);
+  var shadowMats = {}; // texture uuid + opacity -> material, rebuilt with each build
+
+  function shotMaterial(s){
+    if (!s.mat || s.mat.map !== s.tex){
+      if (s.mat) s.mat.dispose();
+      s.mat = new THREE.MeshBasicMaterial({ map: s.tex, side: THREE.DoubleSide, transparent: S.radius > 0 });
+      roundCorners(s.mat, s.w / s.h);
     }
+    return s.mat;
+  }
+
+  // ROUND CORNERS IN THE SHADER (Jon, 2 Oct 2026: radius "feels laggy" at 18 ×10). The
+  // corners used to be clipped into each screenshot's texture, so every step of the
+  // slider redrew and re-uploaded every texture and rebuilt the board. Now one uniform
+  // carries the radius to every material: a step is a single redraw. Same shape as the
+  // clip it replaces — radius as a share of the shorter side — with the edge smoothed
+  // over one screen pixel.
+  var radiusU = { value: S.radius / 100 };
+  var roundedNow = S.radius > 0;
+  function roundCorners(mat, aspect){
+    mat.onBeforeCompile = function(sh){
+      sh.uniforms.uRadius = radiusU;
+      sh.uniforms.uAspect = { value: aspect };
+      sh.fragmentShader = 'uniform float uRadius;\nuniform float uAspect;\n' + sh.fragmentShader.replace(
+        '#include <opaque_fragment>',
+        [
+          '{',
+          '  vec2 halfSize = vec2(uAspect, 1.0) * 0.5;',
+          '  vec2 p = (vMapUv - 0.5) * vec2(uAspect, 1.0);',
+          '  float rad = uRadius * min(uAspect, 1.0);',
+          '  float d = length(max(abs(p) - halfSize + rad, 0.0)) - rad;',
+          '  float aa = fwidth(d);',
+          '  diffuseColor.a *= 1.0 - smoothstep(-aa, aa, d);',
+          '}',
+          '#include <opaque_fragment>'
+        ].join('\n')
+      );
+    };
+    mat.customProgramCacheKey = function(){ return 'showboard-rounded'; };
+  }
+
+  // The uniform follows the slider; crossing zero turns blending on or off, as the
+  // texture's transparent corners did.
+  function syncRadius(){
+    radiusU.value = S.radius / 100;
+    var rounded = S.radius > 0;
+    if (rounded !== roundedNow){
+      roundedNow = rounded;
+      shots.forEach(function(s){ if (s.mat){ s.mat.transparent = rounded; s.mat.needsUpdate = true; } });
+    }
+  }
+
+  function disposeShot(s){
+    if (s.tex) s.tex.dispose();
+    if (s.mat) s.mat.dispose();
+    s.tex = s.mat = null;
+  }
+
+  function clearGroup(g){
+    g.clear();
+  }
+
+  function clearShadowMats(){
+    Object.keys(shadowMats).forEach(function(k){ shadowMats[k].dispose(); });
+    shadowMats = {};
+  }
+
+  function shadowMaterial(tex, opacity){
+    var key = tex.uuid + '|' + opacity.toFixed(4);
+    if (!shadowMats[key]){
+      shadowMats[key] = new THREE.MeshBasicMaterial({
+        map: tex, transparent: true, opacity: opacity, depthWrite: false, color: 0x000000
+      });
+    }
+    return shadowMats[key];
   }
 
   function columnsFor(n){
@@ -292,6 +368,7 @@ export function mountShowboard(root) {
   function build(){
     clearGroup(itemsGroup);
     clearGroup(shadowGroup);
+    clearShadowMats();
     if (!shots.length) return;
 
     var base = shots.length;
@@ -526,7 +603,7 @@ export function mountShowboard(root) {
 
     for (i=0;i<n;i++){
       var s = shots[seq[i]];
-      if (!s.tex || s.radiusUsed !== S.radius) makeTexture(s);
+      if (!s.tex) makeTexture(s);
 
       var w = dims[i].w;
       var h = dims[i].h;
@@ -539,11 +616,8 @@ export function mountShowboard(root) {
       g.position.set(x, 0, z + (h*ct)/2);
       g.rotation.y = spin;
 
-      var geo = new THREE.PlaneGeometry(w, h);
-      geo.translate(0, h/2, 0);
-      var mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-        map: s.tex, side: THREE.DoubleSide, transparent: S.radius > 0
-      }));
+      var mesh = new THREE.Mesh(tileGeo, shotMaterial(s));
+      mesh.scale.set(w, h, 1);
       mesh.rotation.x = -Math.PI/2 + tilt;
       mesh.position.y = 0.004 + i*0.0002;
       g.add(mesh);
@@ -551,14 +625,11 @@ export function mountShowboard(root) {
 
       if (S.shadow > 0){
         var d = Math.max(0.08, ct);
-        var sm = new THREE.Mesh(
-          new THREE.PlaneGeometry(w*1.22, h*d*1.22 + 0.05),
-          new THREE.MeshBasicMaterial({
-            map: shadowTexture(w/Math.max(h*d,0.05)),
-            transparent:true, opacity: S.shadow/100 * (0.55 + 0.45*(1-ct)),
-            depthWrite:false, color: 0x000000
-          })
-        );
+        var sm = new THREE.Mesh(shadowGeo, shadowMaterial(
+          shadowTexture(w/Math.max(h*d,0.05)),
+          S.shadow/100 * (0.55 + 0.45*(1-ct))
+        ));
+        sm.scale.set(w*1.22, h*d*1.22 + 0.05, 1);
         sm.rotation.x = -Math.PI/2;
         sm.rotation.z = -spin;
         sm.position.set(x, 0.0015, z - 0.02*(1-ct));
@@ -623,10 +694,12 @@ export function mountShowboard(root) {
   function frameLoop(){
     if (needsBuild) build();
     if (needsRender){
+      syncRadius();
       applyClear();
       placeCamera();
       renderer.render(scene, camera);
       needsRender = false;
+      if (settling && !loading){ settling = false; syncLoading(); }
     }
     raf = requestAnimationFrame(frameLoop);
   }
@@ -680,20 +753,48 @@ export function mountShowboard(root) {
       return f && f.type && f.type.indexOf('image/') === 0;
     });
     if (!files.length) return;
-    files.forEach(function(f){
+    // A WHOLE DROP LANDS AT ONCE, in the order it was dropped. Each file used to join
+    // the board the moment it decoded, so a big drop rebuilt the layout once per image,
+    // in whatever order they finished. Now the batch waits for its last image, with
+    // the spinner on the stage meanwhile (Jon, 2 Oct 2026: "it seems to think about
+    // it"). A file that can't be read is skipped rather than holding the rest.
+    var batch = new Array(files.length);
+    var left = files.length;
+    loading++;
+    syncLoading();
+    var done = function(){
+      if (--left) return;
+      batch.forEach(function(shot){ if (shot) shots.push(shot); });
+      loading--;
+      settling = true; // the spinner stays until the board has been drawn with them
+      renderShotList();
+      needsBuild = true; needsRender = true;
+    };
+    files.forEach(function(f, i){
       var reader = new FileReader();
+      reader.onerror = done;
       reader.onload = function(e){
         var img = new Image();
+        img.onerror = done;
         img.onload = function(){
-          shots.push({ id: nextId++, name: f.name || 'screenshot', img: img,
-                       w: img.naturalWidth, h: img.naturalHeight, tex: null, radiusUsed: -1 });
-          renderShotList();
-          needsBuild = true; needsRender = true;
+          batch[i] = { id: nextId++, name: f.name || 'screenshot', img: img,
+                       w: img.naturalWidth, h: img.naturalHeight, tex: null, mat: null };
+          done();
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(f);
     });
+  }
+
+  // THE SPINNER replaces the stage's invitation while a drop is being read and the
+  // board built from it — over the board too, when images are added to one.
+  var loading = 0, settling = false;
+  function syncLoading(){
+    var busy = loading > 0 || settling;
+    $('empty').classList.toggle('is-loading', busy);
+    $('empty').setAttribute('aria-busy', busy ? 'true' : 'false');
+    $('empty').style.display = (busy || !shots.length) ? 'flex' : 'none';
   }
 
   function renderShotList(){
@@ -731,7 +832,7 @@ export function mountShowboard(root) {
       mini.appendChild(miniBtn('↑','Move earlier', i>0, function(){ swap(i,i-1); }));
       mini.appendChild(miniBtn('↓','Move later', i<shots.length-1, function(){ swap(i,i+1); }));
       var del = miniBtn('✕','Remove', true, function(){
-        if (shots[i].tex) shots[i].tex.dispose();
+        disposeShot(shots[i]);
         shots.splice(i,1); renderShotList(); needsBuild = true; needsRender = true;
       });
       del.classList.add('c-showboard__shot-btn--remove');
@@ -742,7 +843,7 @@ export function mountShowboard(root) {
     });
     var total = shots.length * Math.max(1, Math.round(S.repeat));
     $('count').textContent = shots.length ? shots.length + ' loaded' : '';
-    $('empty').style.display = shots.length ? 'none' : 'flex';
+    syncLoading();
     $('png').disabled = !shots.length;
     // Nothing to arrange, frame or export until there is something loaded: only
     // Screenshots and Size show on an empty tool (Jon, 29 Sep 2026).
@@ -781,7 +882,7 @@ export function mountShowboard(root) {
   }
 
   var sliders = ['cols','repeat','gap','depth','stagger','tilt','spin','radius','shadow','yaw','pitch','fov','zoom'];
-  var rebuilders = { cols:1, repeat:1, gap:1, depth:1, stagger:1, tilt:1, spin:1, radius:1, shadow:1 };
+  var rebuilders = { cols:1, repeat:1, gap:1, depth:1, stagger:1, tilt:1, spin:1, shadow:1 }; // not radius: a uniform
 
   sliders.forEach(function(key){
     var el = $(key);
@@ -899,7 +1000,7 @@ export function mountShowboard(root) {
   // RESET CLEARS EVERYTHING (Jon, 29 Sep 2026) — every screenshot and every setting,
   // back to a fresh page — and asks first, through the dialog in showboard.twig.
   function resetAll(){
-    shots.forEach(function(s){ if (s.tex) s.tex.dispose(); });
+    shots.forEach(disposeShot);
     shots.length = 0;
     Object.assign(S, DEFAULTS);
     emptyText.textContent = EMPTY_TEXT;
@@ -966,6 +1067,7 @@ export function mountShowboard(root) {
     var size = renderer.getSize(new THREE.Vector2());
     renderer.setPixelRatio(1);
     renderer.setSize(w, h, false);
+    syncRadius();
     applyClear();
     placeCamera();
     renderer.render(scene, camera);
@@ -1048,6 +1150,10 @@ export function mountShowboard(root) {
     cancelAnimationFrame(raf);
     listeners.forEach(function(l){ l[0].removeEventListener(l[1], l[2], l[3]); });
     if (ro) ro.disconnect();
+    shots.forEach(disposeShot);
+    clearShadowMats();
+    tileGeo.dispose();
+    shadowGeo.dispose();
     renderer.dispose();
   };
 }
