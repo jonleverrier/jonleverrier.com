@@ -850,7 +850,7 @@ export function mountShowboard(root) {
       applyClear(); // and the sky colour depends on where it looks
       renderer.render(scene, camera);
       needsRender = false;
-      if (settling && !loading){ settling = false; syncLoading(); dbg('drawn · ' + memNote()); }
+      if (settling && !loading){ settling = false; progress(''); syncLoading(); dbg('drawn · ' + memNote()); }
     }
     raf = requestAnimationFrame(frameLoop);
   }
@@ -861,6 +861,7 @@ export function mountShowboard(root) {
   // or after. It is a LOOK, not a session: camera, arrangement, size, background.
   var emptyText = root.querySelector('.c-showboard__empty-text');
   var EMPTY_TEXT = emptyText.textContent;
+  emptyInvite = EMPTY_TEXT;
 
   function isSettingsFile(f){
     return f && (f.type === 'application/json' || /\.json$/i.test(f.name || ''));
@@ -892,7 +893,7 @@ export function mountShowboard(root) {
       renderShotList(); // Auto columns follow the size
       // The empty stage's invitation changes once there are settings to put images
       // under (Jon, 29 Sep 2026); Reset puts the first one back.
-      emptyText.textContent = 'Drop screenshots from a previous session here';
+      emptyText.textContent = emptyInvite = 'Drop screenshots from a previous session here';
       toast('Settings loaded', 'success');
     };
     reader.readAsText(f);
@@ -915,6 +916,7 @@ export function mountShowboard(root) {
     var left = files.length;
     loading++;
     syncLoading();
+    progress('Reading photos · 0 of ' + files.length);
     dbg('drop: ' + files.length + ' files, ' + Math.round(files.reduce(function(a, f){ return a + f.size; }, 0) / 1e6) + ' MB · tex max ' + TEX_MAX);
     var done = function(){
       if (--left) return;
@@ -936,6 +938,7 @@ export function mountShowboard(root) {
       var i = next++;
       readShot(files[i], function(shot){
         batch[i] = shot;
+        progress('Reading photos · ' + (files.length - left + 1) + ' of ' + files.length);
         dbg('read ' + (files.length - left + 1) + '/' + files.length + (shot ? ' ' + shot.w + '×' + shot.h + ' → ' + shot.src.width + '×' + shot.src.height : ' FAILED ' + files[i].name));
         done(); pump();
       });
@@ -982,6 +985,13 @@ export function mountShowboard(root) {
   // THE SPINNER replaces the stage's invitation while a drop is being read and the
   // board built from it — over the board too, when images are added to one.
   var loading = 0, settling = false;
+  // A count under the spinner while a drop is read — a long wait that counts up reads
+  // as work, where a bare spinner after a 30-photo pick read as a freeze.
+  function progress(text){
+    emptyText.textContent = text || emptyInvite;
+    $('empty').classList.toggle('has-progress', !!text);
+  }
+  var emptyInvite = null;
   function syncLoading(){
     var busy = loading > 0 || settling;
     $('empty').classList.toggle('is-loading', busy);
@@ -1219,7 +1229,7 @@ export function mountShowboard(root) {
     shots.forEach(disposeShot);
     shots.length = 0;
     Object.assign(S, DEFAULTS);
-    emptyText.textContent = EMPTY_TEXT;
+    emptyText.textContent = emptyInvite = EMPTY_TEXT;
     syncAll();
     renderShotList();
     toast('Everything reset', 'success');
@@ -1244,8 +1254,9 @@ export function mountShowboard(root) {
   dropZone.addEventListener('keydown', function(e){
     if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('file').click(); picking(); }
   });
-  $('file').addEventListener('change', function(){ picked(); addFiles(this.files); this.value = ''; });
-  $('file').addEventListener('cancel', picked);
+  $('file').addEventListener('change', function(){ dbg('picker → change: ' + this.files.length + ' files'); picked(); addFiles(this.files); this.value = ''; });
+  $('file').addEventListener('cancel', function(){ dbg('picker cancelled'); picked(); });
+  on(document, 'visibilitychange', function(){ dbg('page ' + (document.hidden ? 'hidden' : 'visible')); });
 
   // THE SPINNER FROM THE MOMENT THE PICKER CLOSES. iOS can take a while to hand over a
   // big selection after Add is pressed, with the page already showing again; without
@@ -1255,6 +1266,7 @@ export function mountShowboard(root) {
   // with nothing following.
   var pickWait = false, pickTimer = 0;
   function picking(){
+    dbg('picker opened');
     if (pickWait) return;
     pickWait = true; loading++; syncLoading();
   }
@@ -1264,6 +1276,7 @@ export function mountShowboard(root) {
     pickWait = false; loading--; syncLoading();
   }
   on(window, 'focus', function(){
+    dbg('page focus');
     if (!pickWait) return;
     clearTimeout(pickTimer);
     pickTimer = setTimeout(function(){

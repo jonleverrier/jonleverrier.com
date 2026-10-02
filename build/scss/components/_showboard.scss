@@ -203,6 +203,12 @@
         display: none;
     }
 
+    // With a count to show (has-progress), the pill carries it, below the spinner.
+    &.has-progress .c-showboard__empty-text {
+        display: block;
+        margin-top: 120px;
+    }
+
     &::before,
     &::after {
         content: "";
