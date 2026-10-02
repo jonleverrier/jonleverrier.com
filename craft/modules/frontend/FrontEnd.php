@@ -94,7 +94,12 @@ class FrontEnd extends BaseModule
                         "form-action 'self'",
                         "font-src 'self'",
                         "connect-src 'self'",
-                        "img-src 'self' data: https://i.scdn.co",
+                        // blob: — Showboard (tools/showboard) decodes each dropped photo
+                        // from an object URL rather than a base64 copy, which is what keeps
+                        // 54 iPhone photos inside a phone's memory. Without it every image
+                        // fails to load, and only here: dev sends no policy (Jon,
+                        // 2 Oct 2026). A blob: URL can only be minted by the page itself.
+                        "img-src 'self' data: blob: https://i.scdn.co",
                         // The contact panel's "request a call back" step embeds Cal.com
                         // (see _components/contact-panel). Without this the frame falls
                         // back to default-src 'self' and the browser refuses it — and it
