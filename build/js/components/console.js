@@ -114,9 +114,9 @@ async function run(question) {
         }
         if (suggestions.length) {
             console.log(
-                `%cTry next:%c\n${suggestions.map((q) => `jonson.ask(${JSON.stringify(q)})`).join('\n')}`,
-                `font: 12px ${FONT}; color: #888;`,
-                'font: 12px monospace;',
+                `%cTry next%c\n${suggestions.map((q) => `jonson.ask(${JSON.stringify(q)})`).join('\n')}`,
+                `font: 700 13px ${FONT};`,
+                `font: 13px/1.6 ${MONO};`,
             );
         }
     } catch (e) {
