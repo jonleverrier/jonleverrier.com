@@ -143,6 +143,12 @@
    alternate representation of this site — and the type matches what is actually served.
    Harmless if nothing ever reads it; there if something starts to. #}
 <link rel="alternate" type="text/plain" title="llms.txt" href="{{ siteUrl('llms.txt') }}">
+{# This page as Markdown, where it has one (_views/feeds/page-md). The list of sections
+   that do is _md.twig's, so this can't advertise a .md that 404s. #}
+{% import '_views/feeds/_md' as md %}
+{% if element is defined and element and element.section is defined and element.section.handle in md.sections()|split(',') %}
+<link rel="alternate" type="text/markdown" href="{{ md.url(element) }}">
+{% endif %}
 <link rel="icon" href="{{ craft.vite.asset('build/images/favicon.ico') }}" sizes="any">
 
 {# Open Graph and Twitter cards — what a link to this page looks like when it

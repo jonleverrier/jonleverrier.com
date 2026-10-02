@@ -23,6 +23,8 @@ return [
     // llms-full.txt — the same site with every page's full text inline, so a model can
     // read the lot in one fetch instead of following each link.
     'llms-full.txt' => ['template' => '_views/feeds/llms-full'],
+    // {uri}.md — one page as Markdown (_views/feeds/page-md); the homepage is index.md.
+    '<path:[a-z0-9\-/]+>.md' => ['template' => '_views/feeds/page-md'],
 
     // The contact form on its own, for the contact panel to fetch when it opens
     // (see _views/fragments/contact-form). Not a page: 404 unless asked for by script.

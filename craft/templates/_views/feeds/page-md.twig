@@ -1,0 +1,29 @@
+{#
+  /{uri}.md — one page as Markdown, for an agent that wants the text of a page without
+  its HTML. The homepage is /index.md. Built by _md.twig's page(), the same macro
+  /llms-full.txt is made of.
+
+  A SEPARATE ADDRESS, NOT CONTENT NEGOTIATION. Serving Markdown at the page's own URL
+  for `Accept: text/markdown` would put two bodies behind one URL, and Cloudflare
+  caches by URL without varying on Accept — one agent's request could land Markdown in
+  the cache for every visitor after it.
+
+  Only the sections _md.twig lists have one; any other URI 404s — a VIP door in
+  particular must never come back as text.
+
+  text/markdown (RFC 7763): this is what an agent asks for by name. noindex for the
+  reason llms.txt has it — the HTML page is the one to rank.
+#}
+{%- import '_views/feeds/_md' as md -%}
+{%- set uri = path == 'index' ? '__home__' : path -%}
+{%- set entry = craft.entries().uri(uri).section(md.sections()|split(',')).status('live').one() -%}
+{%- if not entry -%}
+    {%- exit 404 -%}
+{%- endif -%}
+{%- header "Content-Type: text/markdown; charset=utf-8" -%}
+{%- header "X-Robots-Tag: noindex" -%}
+{% autoescape false %}
+{% apply replace('/\\n{3,}/', "\n\n", true) %}
+{{ md.page(entry, 1)|trim }}
+{% endapply %}
+{% endautoescape %}
