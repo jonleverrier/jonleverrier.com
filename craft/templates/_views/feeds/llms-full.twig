@@ -14,6 +14,10 @@
   as a fenced block, and the method block as the methodology's phases.
 #}
 {%- header "Content-Type: text/plain; charset=utf-8" -%}
+{#- Readable, not indexable: a model should fetch this, a search result should never be
+    a bare-text copy of the pages it points to. A header because text has no <meta>;
+    and NOT blocked in robots.txt, or a crawler never gets to see this. -#}
+{%- header "X-Robots-Tag: noindex" -%}
 {%- set about = craft.entries().section('about').status('live').one() -%}
 {%- set caseStudyIndex = craft.entries().section('caseStudy').status('live').one() -%}
 {%- set notesIndex = craft.entries().section('note').status('live').one() -%}
