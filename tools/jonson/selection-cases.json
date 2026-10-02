@@ -5,12 +5,17 @@
     "the same call the ask endpoint makes. Run: ddev exec \"php tools/jonson/selection.php\".",
     "`first` = the slug the first card must be; `has` / `hasNot` = slugs that must / must",
     "not be on screen; `min` = fewest cards. A VIP's lead is Vip::relevantStudies — the",
-    "note-named studies plus Claude's cached pick (run craft jonson/memory/vip-studies first).",
+    "note-named studies plus Claude's pick: `picks` fixes that pick per door, so the cases test",
+    "the code, not Claude's latest judgement (2026-10-02, Jon: White Paper's complexity makes it",
+    "fair for Allan, after Urban). A door missing from `picks` uses the live cached pick.",
     "`shown` = slugs already on screen this conversation (filtered out, as live).",
     "`kind: links` cases replay FindContext::linkStudies: `cards` skipped, `linked` / `notLinked` slugs, `text` exact.",
     "`kind: markers` cases replay AskController::markersIn: `framed` / `unframed` handles.",
     "`kind: testimonial` cases replay FindContext::testimonials and match quotes by person name."
   ],
+  "picks": {
+    "allan-wood": ["vaiie-identify-product-design", "vaiie-onboard-product-design", "vaiie-product-branding", "white-paper-booking-engine-design-development"]
+  },
   "cases": [
     {
       "id": "vip-allan-urban-and-vaiie",
@@ -56,7 +61,7 @@
       "has": ["white-paper-booking-engine-design-development", "vaiie-identify-product-design"]
     },
     {"id": "quote-vip-allan-both-named", "_": "Reported 2026-09-30: Lee (Vaiie) led, Oliver (Urban's CEO) second, on CMS order alone.", "kind": "testimonial", "vip": "allan-wood", "q": "What makes you different?", "answer": "Where that shows: I rebranded Urban.co.uk ahead of their pre-seed raise, and I've spent years on complex regulatory products at Vaiie. The other thing clients tend to say is that I stick around.", "first": "Oliver Atkinson", "has": ["Lee Bosio"]},
-    {"id": "quote-vip-allan-generic", "_": "Names nobody: his own work's quotes, not the featured White Paper one.", "kind": "testimonial", "vip": "allan-wood", "q": "What makes you different?", "answer": "The other thing clients tend to say is that I stick around — many relationships have run over ten years.", "first": "Oliver Atkinson", "hasNot": ["James Hirst", "Aaron Chatterley"]},
+    {"id": "quote-vip-allan-generic", "_": "Names nobody: his own work's quotes, Urban's first. White Paper is in his pick (Jon, 2026-10-02), so its quote may follow; work outside the pick may not.", "kind": "testimonial", "vip": "allan-wood", "q": "What makes you different?", "answer": "The other thing clients tend to say is that I stick around — many relationships have run over ten years.", "first": "Oliver Atkinson", "hasNot": ["Aaron Chatterley", "Huei-Hsin Wang"]},
     {"id": "quote-vip-allan-names-other", "_": "The answer's subject still decides which quote; the lead only orders.", "kind": "testimonial", "vip": "allan-wood", "q": "What did you do for White Paper?", "answer": "At White Paper I built the booking engine and have supported it for over a decade.", "first": "James Hirst", "hasNot": ["Oliver Atkinson"]},
     {"id": "quote-anonymous-generic", "_": "No VIP: the featured quotes, unchanged.", "kind": "testimonial", "q": "What makes you different?", "answer": "The other thing clients tend to say is that I stick around — many relationships have run over ten years.", "has": ["Lee Bosio", "James Hirst"]},
     {"id": "no-repeat-urban-follow-up", "_": "Reported 2026-09-30: Allan's rail had shown Urban; the chip 'What did you do on Urban.co.uk?' showed Logo Design + Urban again. Work never shows twice, and 'a logo device' is Urban's logo, not the Logo Design study.", "vip": "allan-wood", "q": "What did you do on Urban.co.uk?", "answer": "I rebranded Urban.co.uk ahead of their pre-seed raise back in 2016 — the UK's first online estate agency. I took it the opposite way to how estate agency branding usually plays it safe — bold colours, a friendly rounded typeface, a logo device that stands without the wordmark, and illustration instead of stock photos. I did the competitor analysis, personas, the brand, IA, wireframes, UI and the front-end in Craft.", "shown": ["urban-co-uk-product-branding", "vaiie-onboard-product-design", "vaiie-identify-product-design", "vaiie-product-branding"], "hasNot": ["urban-co-uk-product-branding", "logos"]},

@@ -20,7 +20,9 @@ use modules\jonson\Jonson;
 
 $ctx = Jonson::getInstance()->findContext;
 $vip = Jonson::getInstance()->vip;
-$cases = json_decode(file_get_contents(__DIR__ . '/selection-cases.json'), true)['cases'];
+$file = json_decode(file_get_contents(__DIR__ . '/selection-cases.json'), true);
+$cases = $file['cases'];
+$picks = $file['picks'] ?? [];
 
 $failed = 0;
 foreach ($cases as $c) {
@@ -32,7 +34,7 @@ foreach ($cases as $c) {
             $failed++;
             continue;
         }
-        $lead = $vip->relevantStudies($entry);
+        $lead = $vip->relevantStudies($entry, $picks[$c['vip']] ?? null);
     }
     // A link case: FindContext::linkStudies over an answer. `cards` = slugs whose cards
     // show under it (not linked); `linked` / `notLinked` = slugs; `text` = exact output.

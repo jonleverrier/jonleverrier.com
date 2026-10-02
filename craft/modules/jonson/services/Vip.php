@@ -597,11 +597,13 @@ class Vip extends Component
      *    the note and the catalogue — never on the visitor's clock. Until it lands
      *    (or if it failed), the named studies stand alone.
      */
-    public function relevantStudies(Entry $entry): array
+    public function relevantStudies(Entry $entry, ?array $picked = null): array
     {
         $find = Jonson::getInstance()->findContext;
         $named = $find->studiesForNote($this->note($entry));
-        $picked = Craft::$app->getCache()->get($this->studiesKey($entry));
+        // $picked is for tools/jonson/selection.php: a fixed pick, so the cases test
+        // this code rather than whatever Claude last judged.
+        $picked ??= Craft::$app->getCache()->get($this->studiesKey($entry));
         if ($picked === false) {
             $this->queuePick($entry);
             return $named;
