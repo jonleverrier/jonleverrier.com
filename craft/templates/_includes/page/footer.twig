@@ -86,7 +86,10 @@
                                     {% set target = cta.ctaUrl.target ?? null %}
                                     {% if href %}
                                         <li class="c-footer__item">
-                                            <a class="c-footer__link" href="{{ href }}"
+                                            {# The kind, as ctas.twig puts it: a "callback" link opens the
+                                               contact panel's booking step instead of a new tab (see
+                                               contact-panel.js). Without JS it's still the Cal link. #}
+                                            <a class="c-footer__link" href="{{ href }}" data-cta-kind="{{ craft.frontend.ctaIcon(cta) }}"
                                                {%- if target %} target="{{ target }}"{% if target == '_blank' %} rel="noopener"{% endif %}{% endif %}><span>{{ text.freeHop(cta.title, true) }}</span></a>
                                         </li>
                                     {% endif %}

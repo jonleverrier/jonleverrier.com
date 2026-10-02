@@ -255,10 +255,33 @@ export function mountContactPanel() {
         }, reduced ? 0 : FORM_MS);
     };
 
-    const onWrite = () => loadForm().then(() => showStep(
-        formWrap,
-        () => formWrap && formWrap.querySelector('input:not([type="hidden"]):not([tabindex="-1"]), textarea'),
-    ));
+    const firstField = () => formWrap && formWrap.querySelector('input:not([type="hidden"]):not([tabindex="-1"]), textarea');
+    const onWrite = () => loadForm().then(() => showStep(formWrap, firstField));
+
+    // OPEN STRAIGHT ONTO A SECOND STEP — for the footer's "Send a message" and its
+    // call-back link, which skip the ways in. Opening first and then sliding over
+    // (open + showStep) showed the ways in for a beat before the form or the calendar
+    // pushed them off. Here the stage is put in the state showStep ends in — that step
+    // as column one, the ways in hidden — with its transition off (is-settled), BEFORE
+    // the panel slides in, so the ways in are never painted. Focus follows once the
+    // panel has arrived.
+    const openAt = (from, wrap, focusTarget, preventScroll = false) => {
+        if (!wrap || !steps) {
+            open(from);
+            return;
+        }
+        clearTimeout(stepTimer);
+        steps.classList.add('is-settled');
+        steps.classList.remove('is-form');
+        if (waysWrap) waysWrap.hidden = true;
+        wrap.hidden = false;
+        open(from);
+        requestAnimationFrame(() => requestAnimationFrame(() => steps.classList.remove('is-settled')));
+        stepTimer = setTimeout(() => {
+            const el = typeof focusTarget === 'function' ? focusTarget() : focusTarget;
+            if (el) el.focus({preventScroll});
+        }, reduced ? 0 : SLIDE_MS);
+    };
 
     // The event as Cal names it — "jonleverrier/callback" — read off the CTA's own href
     // so the booking link lives in the CMS and nowhere else. Both spellings reduce to
@@ -360,6 +383,19 @@ export function mountContactPanel() {
     const onClick = (e) => {
         if (onContactPage) return;
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        // The call-back CTA OUTSIDE the panel (the footer's): open the panel straight at
+        // its booking step, as "Send a message" opens it at the form — rather than off
+        // to Cal in a new tab. Its target="_blank" is the no-JS fallback, so this runs
+        // before the target check below. Inside the panel, onPanelClick has it.
+        const call = e.target.closest && e.target.closest('a[data-cta-kind="callback"][href]');
+        if (call && !panel.contains(call) && bookingWrap && calLink(call.getAttribute('href') || '')) {
+            e.preventDefault();
+            e.stopPropagation();
+            mountCal(calLink(call.getAttribute('href') || ''));
+            openAt(call, bookingWrap, bookingFrame, true);
+
+            return;
+        }
         const a = e.target.closest && e.target.closest('a[href]');
         if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
         let url;
@@ -371,10 +407,16 @@ export function mountContactPanel() {
         if (url.origin !== location.origin || strip(url.pathname) !== contactPath) return;
         e.preventDefault();
         e.stopPropagation(); // before the page-transition's own listener sees it
+        // "Send a message" (the footer link) skips the ways in and opens on the form.
+        // The form is fetched on demand, so wait for it — but never more than a beat:
+        // a slow fetch opens on the (still loading) form step rather than stalling.
+        if (a.hasAttribute('data-contact-write') && formWrap) {
+            Promise.race([Promise.resolve(loadForm()).catch(() => {}), new Promise((r) => setTimeout(r, 400))])
+                .then(() => openAt(a, formWrap, firstField));
+
+            return;
+        }
         open(a);
-        // "Send a message" (the footer link) skips the ways in and goes to the form —
-        // the same step the panel's own button opens.
-        if (a.hasAttribute('data-contact-write')) onWrite();
     };
 
     // Escape fires the dialog's cancel: take over, so the close is the slide too.
