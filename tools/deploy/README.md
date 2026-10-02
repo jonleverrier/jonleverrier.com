@@ -159,3 +159,16 @@ If the reload is ever silently skipped again and the script field is clean, move
 reload out of the script and into a Forge **deploy hook**. Hooks run as separate
 steps, so nothing the main script does can swallow them, and a failure is reported on
 its own instead of failing the whole deploy.
+
+## Cache warming (the last step)
+
+After FPM reloads, the script requests every URL in `sitemap.xml`, then `llms.txt`,
+`llms-full.txt` and `notes.rss`, one at a time. The deploy has just cleared Craft's caches
+(`clear-caches/all` runs in composer's post-install hook) and reloaded PHP, so without
+this the first visitor to each page pays for the compiled Twig, opcache and the template
+cache — a case study once took 3.2s against ~0.3s warm.
+
+It goes straight to this box, not through Cloudflare, because of the `/etc/hosts` entry
+above. Rendering a page also queues any image transforms it is missing, which the queue
+daemon builds. It never fails a deploy; it prints `warmed N pages in Xs` and lists any
+URL that didn't return 200. Measured 2026-10-02: 60 URLs in 21s.

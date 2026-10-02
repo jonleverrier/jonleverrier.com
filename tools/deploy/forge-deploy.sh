@@ -70,4 +70,38 @@ sudo -n /usr/sbin/service "$FPM" reload
 echo "==> restarting the queue daemon"
 sudo -n /usr/bin/supervisorctl restart all || echo "(no daemon to restart)"
 
+# WARM, so no visitor pays for the deploy. composer's post-install hook ran
+# clear-caches/all and FPM has just reloaded: every page's template cache, compiled Twig
+# and opcache are cold, and the first person to each page waited for all of it (a case
+# study measured 3.2s once, against ~0.3s warm). Request every page in the sitemap, plus
+# the files agents fetch, one at a time so the site stays responsive while it runs.
+#
+# Straight to this box, not through Cloudflare: /etc/hosts maps jonleverrier.com to
+# 127.0.0.1 (see README), so these never leave the server. A render also queues any image
+# transforms the page is missing; the queue daemon restarted above builds them.
+#
+# NEVER FATAL, AND BOUNDED. A page that fails to warm is a page the first visitor warms
+# instead — not a reason to fail a release that is already live. 15s a request and 120s
+# in all, so a site that hangs on every page holds the deploy for two minutes, not 60 x 60s.
+echo "==> warming caches"
+WARM_BUDGET=120
+warm() {
+    # curl prints 000 itself when it can't connect or times out; `|| true` only stops a
+    # non-zero exit from ending the script, without printing a second code.
+    curl -s -o /dev/null --max-time 15 -A "jonleverrier-deploy-warm" -w '%{http_code}' "$1" || true
+}
+set +e
+START=$SECONDS; OK=0; SKIPPED=0; FAILED=""
+URLS=$(curl -s --max-time 15 -A "jonleverrier-deploy-warm" https://jonleverrier.com/sitemap.xml \
+    | grep -o '<loc>[^<]*</loc>' | sed -e 's/<loc>//' -e 's/<\/loc>//')
+for u in $URLS https://jonleverrier.com/llms.txt https://jonleverrier.com/llms-full.txt https://jonleverrier.com/notes.rss; do
+    if [ $((SECONDS - START)) -ge "$WARM_BUDGET" ]; then SKIPPED=$((SKIPPED + 1)); continue; fi
+    code=$(warm "$u")
+    if [ "$code" = "200" ]; then OK=$((OK + 1)); else FAILED="$FAILED $code:$u"; fi
+done
+echo "warmed $OK pages in $((SECONDS - START))s"
+[ -n "$FAILED" ] && echo "  not 200:$FAILED"
+[ "$SKIPPED" -gt 0 ] && echo "  skipped $SKIPPED: over the ${WARM_BUDGET}s budget"
+set -e
+
 echo "Deploy complete"
