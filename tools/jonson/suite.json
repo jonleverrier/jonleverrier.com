@@ -603,6 +603,32 @@
           ]
         }
       ]
+    },
+    {
+      "id": "spread-show-work",
+      "_": "Jon on prod 2026-10-02: the answer described a regulatory onboarding platform, an identity verification product, an estate agency rebrand and a conference booking engine — and showed ONE card. Cards must match the prose.",
+      "turns": [
+        {
+          "q": "Can I see some of the work you've done?",
+          "expect": [
+            "casestudies"
+          ],
+          "minStudies": 3
+        }
+      ]
+    },
+    {
+      "id": "spread-actual-projects",
+      "_": "Jon 2026-10-02: 'a spread — regtech products, an estate agency rebrand, a conference platform, and a street photography app' showed two Vaiie cards. Cards must match the prose.",
+      "turns": [
+        {
+          "q": "Can I see some of your actual projects?",
+          "expect": [
+            "casestudies"
+          ],
+          "minStudies": 3
+        }
+      ]
     }
   ]
 }

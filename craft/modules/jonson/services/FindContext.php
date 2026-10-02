@@ -34,7 +34,6 @@ class FindContext extends Component
     private const MAX_TESTIMONIALS = 3; // ceiling on how many quotes surface at once
     private const TESTIMONIAL_FEATURED_BOOST = 100; // a featured quote outranks any non-featured in generic (non-client) contexts
     private const LEAD_PER_TURN = 3; // a lead set (a VIP's relevant work) shows at most this many a turn — large cards, never the rail
-    private const CASE_STUDY_TARGETED_MAX = 2; // >this many matches = a broad sweep, not a targeted ask → featured only
 
     /**
      * Content sources, keyed by `kind`. Photos are the only tag-dependent one;
@@ -699,14 +698,17 @@ class FindContext extends Component
                 // which is why the rename emptied this silently instead of erroring.
                 'summary' => trim((string) ($this->fieldVal($entry, 'bio') ?? '')),                   // public blurb
                 'jonsonSummary' => trim((string) ($this->fieldVal($entry, 'jonsonSummary') ?? '')),    // private AI context
-                // Long titles ("RegTech", not "Regulatory") — what Jonson reads, so the
+                // Long titles ("RegTech", not "Regulatory") — what Jonson READS, so the
                 // short back-office name can't be paraphrased into something untrue
-                // ("regulators"). Matching takes both: see sectorTerms.
+                // ("regulators").
                 'sectors' => $this->categoryTitles($entry, 'sectorSelector', true),
-                'sectorTerms' => array_values(array_unique(array_merge(
-                    $this->categoryTitles($entry, 'sectorSelector'),
-                    $this->categoryTitles($entry, 'sectorSelector', true),
-                ))),
+                // MATCHING keeps the plain titles, exactly as before. Matching on the long
+                // titles too made "regtech" in an answer a sector-label hit for Vaiie — a
+                // higher tier than the looser matches that found White Paper ("conference
+                // platform"), StreetPal and Urban — so "here's a spread: regtech products,
+                // an estate agency rebrand, a conference platform…" showed two Vaiie cards
+                // and nothing else.
+                'sectorTerms' => $this->categoryTitles($entry, 'sectorSelector'),
                 'skills' => $this->categoryTitles($entry, 'skills'),
                 'featured' => $this->isFeatured($entry),
                 // The "Is present?" switch — this work is still going. The Year row
@@ -813,30 +815,22 @@ class FindContext extends Component
             return $askedByTitle;
         }
 
-        if (count($named) > 1 && $this->sharedClient($named) !== null) {
-            usort($named, static fn(array $a, array $b) => ($b['featured'] <=> $a['featured']));
-            return $named;
-        }
-        if ($named && count($named) > self::CASE_STUDY_TARGETED_MAX
-            && $byTitle && count($byTitle) <= self::CASE_STUDY_TARGETED_MAX
-        ) {
-            return $byTitle;
-        }
-        $relevant = $named ?: ($tiers[3] ?? ($tiers[4] ?? []));
+        // EVERY STUDY THE ANSWER NAMES SHOWS — by title, client or sector; by skill only
+        // when it named nothing more specific. Nothing it talks about is held back.
+        //
+        // This used to keep the strongest tier alone and cut a long list to the featured
+        // studies. An answer describing a spread names its pieces at different strengths
+        // — "a conference booking engine" hits White Paper's title, "a regulatory
+        // onboarding platform" only a sector — so "here's a mix: a regulatory onboarding
+        // platform, an identity verification product, an estate agency rebrand and a
+        // conference booking engine" showed ONE card. The cards are the point of the
+        // answer: chat → the work. More than three already becomes the strip (see the
+        // registry's `present`), so there is nothing to cut for space either.
+        $relevant = array_merge($named, $tiers[3] ?? []) ?: ($tiers[4] ?? []);
         if ($relevant) {
-            // A targeted ask matches only a study or two — show exactly those. But a
-            // broad answer ("why should I hire you") name-drops several clients/sectors
-            // and matches most of the catalogue; that's a sweep, not a targeted match,
-            // so narrow it to the featured picks among the matches rather than dumping
-            // everything. (Fall through to the global featured curation if none of the
-            // many matches are flagged featured.)
-            if (count($relevant) <= self::CASE_STUDY_TARGETED_MAX) {
-                return $relevant;
-            }
-            $featuredRelevant = array_values(array_filter($relevant, static fn(array $s) => $s['featured']));
-            if ($featuredRelevant) {
-                return $featuredRelevant;
-            }
+            usort($relevant, static fn(array $a, array $b) => ($b['featured'] <=> $a['featured']));
+
+            return $relevant;
         }
 
         // THE ANSWER NAMED NOTHING — now the question gets its say.
@@ -962,30 +956,6 @@ class FindContext extends Component
         }
 
         return false;
-    }
-
-    /**
-     * The client every one of these studies belongs to, or null if they differ or any
-     * is unattributed. Used to tell a complete answer about one client apart from a
-     * sweep across many.
-     */
-    private function sharedClient(array $studies): ?string
-    {
-        $seen = null;
-        foreach ($studies as $s) {
-            $client = trim((string) ($s['client'] ?? ''));
-            if ($client === '') {
-                return null;
-            }
-            $key = mb_strtolower($client);
-            if ($seen === null) {
-                $seen = $key;
-            } elseif ($seen !== $key) {
-                return null;
-            }
-        }
-
-        return $seen;
     }
 
     /** The studies a piece of text names — by title, client, sector or skill. */
