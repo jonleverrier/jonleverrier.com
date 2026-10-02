@@ -22,6 +22,40 @@ export function mountShowboard(root) {
   var raf = 0;
   function on(target, type, fn, opts){ target.addEventListener(type, fn, opts); listeners.push([target, type, fn, opts]); }
 
+  // ?debug — A READOUT FOR A DEVICE WE CAN'T ATTACH TO (Jon, 2 Oct 2026: 54 iPhone photos,
+  // "no go"). A box in the corner: load progress, estimated image and GPU memory, errors,
+  // WebGL context losses. The log is kept in sessionStorage, so a page iOS killed and
+  // reloaded still shows how far the last attempt got.
+  var DEBUG = /[?&]debug\b/.test(location.search);
+  var dbgBox = null, dbgLines = [];
+  function dbg(msg){
+    if (!DEBUG) return;
+    var line = new Date().toTimeString().slice(0, 8) + ' ' + msg;
+    dbgLines.push(line);
+    if (dbgLines.length > 14) dbgLines.shift();
+    try { sessionStorage.setItem('showboard-debug', JSON.stringify(dbgLines)); } catch (err) {}
+    if (dbgBox) dbgBox.textContent = dbgLines.join('\n');
+  }
+  if (DEBUG){
+    try {
+      var prev = JSON.parse(sessionStorage.getItem('showboard-debug') || '[]');
+      if (prev.length) dbgLines = ['— previous attempt —'].concat(prev.slice(-8), ['— this load —']);
+    } catch (err) {}
+    dbgBox = document.createElement('pre');
+    dbgBox.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;margin:0;padding:8px;'
+      + 'max-height:45vh;overflow:auto;background:rgba(0,0,0,.82);color:#9f9;font:10px/1.35 monospace;'
+      + 'white-space:pre-wrap;pointer-events:none;border-radius:6px';
+    document.body.appendChild(dbgBox);
+    on(window, 'error', function(e){ dbg('ERROR ' + (e.message || e)); });
+    on(window, 'unhandledrejection', function(e){ dbg('REJECTED ' + (e.reason && (e.reason.message || e.reason))); });
+    dbg('ready · ' + innerWidth + '×' + innerHeight + ' @' + devicePixelRatio + 'x · ' + navigator.userAgent.replace(/^.*?\(([^)]*)\).*$/, '$1'));
+  }
+  function memNote(){
+    var px = 0, tex = 0;
+    shots.forEach(function(s){ if (s.src) px += s.src.width * s.src.height; if (s.tex) tex += s.src ? s.src.width * s.src.height : 0; });
+    return 'images ~' + Math.round(px * 4 / 1e6) + ' MB · textures ~' + Math.round(tex * 4 * 1.33 / 1e6) + ' MB';
+  }
+
 
   /* ───────── state ───────── */
   // THE STARTING STATE IS THE FLAT LAY PRESET (Jon, 29 Sep 2026): screenshots arrive
@@ -769,7 +803,8 @@ export function mountShowboard(root) {
   // move. three.js asks for the context back when it is lost; once it returns, or the
   // page is shown again, everything is drawn afresh (textures re-upload from their
   // canvases on the next render).
-  on(canvas, 'webglcontextrestored', function(){ needsBuild = true; needsRender = true; });
+  on(canvas, 'webglcontextrestored', function(){ dbg('WebGL context RESTORED'); needsBuild = true; needsRender = true; });
+  on(canvas, 'webglcontextlost', function(){ dbg('WebGL context LOST · ' + memNote()); });
   on(document, 'visibilitychange', function(){ if (!document.hidden) needsRender = true; });
   on(window, 'pageshow', function(){ needsRender = true; });
   on(window, 'focus', function(){ needsRender = true; });
@@ -815,7 +850,7 @@ export function mountShowboard(root) {
       applyClear(); // and the sky colour depends on where it looks
       renderer.render(scene, camera);
       needsRender = false;
-      if (settling && !loading){ settling = false; syncLoading(); }
+      if (settling && !loading){ settling = false; syncLoading(); dbg('drawn · ' + memNote()); }
     }
     raf = requestAnimationFrame(frameLoop);
   }
@@ -879,9 +914,11 @@ export function mountShowboard(root) {
     var left = files.length;
     loading++;
     syncLoading();
+    dbg('drop: ' + files.length + ' files, ' + Math.round(files.reduce(function(a, f){ return a + f.size; }, 0) / 1e6) + ' MB · tex max ' + TEX_MAX);
     var done = function(){
       if (--left) return;
       batch.forEach(function(shot){ if (shot) shots.push(shot); });
+      dbg('all read · ' + shots.length + ' shots · ' + memNote());
       loading--;
       settling = true; // the spinner stays until the board has been drawn with them
       renderShotList();
@@ -896,7 +933,11 @@ export function mountShowboard(root) {
     var pump = function(){
       if (next >= files.length) return;
       var i = next++;
-      readShot(files[i], function(shot){ batch[i] = shot; done(); pump(); });
+      readShot(files[i], function(shot){
+        batch[i] = shot;
+        dbg('read ' + (files.length - left + 1) + '/' + files.length + (shot ? ' ' + shot.w + '×' + shot.h + ' → ' + shot.src.width + '×' + shot.src.height : ' FAILED ' + files[i].name));
+        done(); pump();
+      });
     };
     pump(); pump();
   }
@@ -1270,6 +1311,7 @@ export function mountShowboard(root) {
     renderer.setSize(size.x, size.y, false);
     needsRender = true;
 
+    dbg('export ' + OUT_W + '×' + OUT_H + ' at ' + mult + 'x · data URL ' + Math.round(url.length / 1e6) + ' MB');
     var name = 'showboard-' + OUT_W + 'x' + OUT_H + '.png';
     var note = OUT_W + ' × ' + OUT_H + (mult===2 ? ' · 2× render' : '');
     savePng(dataUrlToBlob(url), name, note);
