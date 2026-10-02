@@ -771,6 +771,17 @@ export function mountShowboard(root) {
   }
   var frameOnFloor = { x: 0, z: 0, w: 1, h: 1 };
 
+  // DRAW AGAIN WHEN THE PAGE COMES BACK. The preview is drawn only when something
+  // changes, so a canvas iOS emptied — the WebGL context dropped under memory pressure,
+  // or the page set aside behind the share sheet — stayed empty until the next slider
+  // move. three.js asks for the context back when it is lost; once it returns, or the
+  // page is shown again, everything is drawn afresh (textures re-upload from their
+  // canvases on the next render).
+  on(canvas, 'webglcontextrestored', function(){ needsBuild = true; needsRender = true; });
+  on(document, 'visibilitychange', function(){ if (!document.hidden) needsRender = true; });
+  on(window, 'pageshow', function(){ needsRender = true; });
+  on(window, 'focus', function(){ needsRender = true; });
+
   /* ───────── render loop ───────── */
   function sizePreview(){
     var rect = canvas.getBoundingClientRect();
@@ -1199,6 +1210,12 @@ export function mountShowboard(root) {
     // angle, crisper detail inside the screenshots. The LONGER side, doubled, has to
     // fit; where it does not, the export quietly renders at 1x and the toast says so.
     var mult = (maxBuffer() >= Math.max(OUT_W, OUT_H)*2) ? 2 : 1;
+    // A PHONE'S GPU MEMORY IS THE LIMIT, not its texture size (Jon, 2 Oct 2026: on iPhone
+    // the preview went blank after Save PNG). 3200 × 1800 doubled is a 6400 × 3600 buffer,
+    // ~92 MB, which an iPhone accepts and may then answer by dropping the WebGL context.
+    // On a touch device, 2x only while the doubled frame stays within 4096² pixels.
+    if (mult === 2 && window.matchMedia && window.matchMedia('(pointer: coarse)').matches
+        && OUT_W * OUT_H * 4 > 4096 * 4096) mult = 1;
     var w = OUT_W * mult, h = OUT_H * mult;
 
     var prevPR = renderer.getPixelRatio();
@@ -1254,8 +1271,10 @@ export function mountShowboard(root) {
     var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     if (touch && file && navigator.canShare && navigator.canShare({ files: [file] })){
       navigator.share({ files: [file] }).then(function(){
+        needsRender = true; // the sheet may have cost the preview its pixels
         toast('Shared PNG · ' + note, 'success');
       }, function(err){
+        needsRender = true;
         // Closing the sheet is a choice, not a failure; anything else falls back.
         if (err && err.name === 'AbortError') return;
         download(blob, name, note);
