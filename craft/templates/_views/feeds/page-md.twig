@@ -22,8 +22,14 @@
 {%- endif -%}
 {%- header "Content-Type: text/markdown; charset=utf-8" -%}
 {%- header "X-Robots-Tag: noindex" -%}
+{#- CACHED per path (no `globally`): Craft appends the request path to the key, so each
+    page's .md is its own entry and a query string can't make a new one. The lookup and
+    the 404 stay outside — a miss for a URI with no page is one cheap query, and an
+    exit thrown mid-cache would leave the block half-recorded. -#}
+{% cache using key 'page-md' %}
 {% autoescape false %}
 {% apply replace('/\\n{3,}/', "\n\n", true) %}
 {{ md.page(entry, 1)|trim }}
 {% endapply %}
 {% endautoescape %}
+{% endcache %}

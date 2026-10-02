@@ -14,6 +14,18 @@
     a bare-text copy of the pages it points to. A header because text has no <meta>;
     and NOT blocked in robots.txt, or a crawler never gets to see this. -#}
 {%- header "X-Robots-Tag: noindex" -%}
+{%- import '_views/feeds/_md' as md -%}
+{#- ONE BLANK LINE BETWEEN THINGS, enforced on the whole output rather than tag by tag.
+    A block that prints nothing (an image, a video) still leaves its line breaks, and
+    the trim markers to stop that are a game of whack-a-mole across a dozen branches. -#}
+{#- CACHED, keyed so it can be found and cleared by name. Craft records every element
+    query inside the block as a cache tag and drops the cache when an entry in any of
+    those sections is saved — so publishing a note refreshes it with no TTL to tune.
+    `globally`: the output is the same whatever the path. The headers stay OUTSIDE: they
+    aren't part of the cached body and must go out on a hit as well. -#}
+{% cache globally using key 'llms-full' %}
+{#- The queries INSIDE the block: run outside it they ran on every hit too, and
+    Craft never saw them, so they left no tags to invalidate on. -#}
 {%- set about = craft.entries().section('about').status('live').one() -%}
 {%- set caseStudyIndex = craft.entries().section('caseStudy').status('live').one() -%}
 {%- set notesIndex = craft.entries().section('note').status('live').one() -%}
@@ -22,10 +34,6 @@
 {%- set studies = craft.entries().section('caseStudies').status('live').all() -%}
 {%- set notes = craft.entries().section('notes').status('live').orderBy('postDate DESC').all() -%}
 {%- set pages = craft.entries().section('pages').status('live').all() -%}
-{%- import '_views/feeds/_md' as md -%}
-{#- ONE BLANK LINE BETWEEN THINGS, enforced on the whole output rather than tag by tag.
-    A block that prints nothing (an image, a video) still leaves its line breaks, and
-    the trim markers to stop that are a game of whack-a-mole across a dozen branches. -#}
 {% autoescape false %}
 {% apply replace('/\\n{3,}/', "\n\n", true) %}
 # {{ siteName }}
@@ -56,3 +64,4 @@ the work in Jon's own voice; everything it draws on is below.
 {% if contact %}{{ md.page(contact, 2) }}{% endif %}
 {% endapply %}
 {% endautoescape %}
+{% endcache %}

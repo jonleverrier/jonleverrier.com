@@ -27,14 +27,6 @@
     a bare-text copy of the pages it points to. A header because text has no <meta>;
     and NOT blocked in robots.txt, or a crawler never gets to see this. -#}
 {%- header "X-Robots-Tag: noindex" -%}
-{%- set about = craft.entries().section('about').status('live').one() -%}
-{%- set caseStudyIndex = craft.entries().section('caseStudy').status('live').one() -%}
-{%- set notesIndex = craft.entries().section('note').status('live').one() -%}
-{%- set contact = craft.entries().section('contact').status('live').one() -%}
-{%- set tools = craft.entries().section('tools').status('live').all() -%}
-{%- set studies = craft.entries().section('caseStudies').status('live').all() -%}
-{%- set notes = craft.entries().section('notes').status('live').orderBy('postDate DESC').limit(10).all() -%}
-{%- set pages = craft.entries().section('pages').status('live').all() -%}
 {#- ONE LINE, cleaned. Summaries are multi-paragraph and some are rich text, but a
     description in this format has to be a single line — so: strip tags, take the first
     paragraph, flatten any remaining newlines. -#}
@@ -49,6 +41,22 @@
     {%- endautoescape -%}
 {%- endmacro -%}
 {%- import _self as f -%}
+{#- CACHED, keyed so it can be found and cleared by name. Craft records every element
+    query inside the block as a cache tag and drops the cache when an entry in any of
+    those sections is saved — so publishing a note refreshes it with no TTL to tune.
+    `globally`: the output is the same whatever the path. The headers stay OUTSIDE: they
+    aren't part of the cached body and must go out on a hit as well. -#}
+{% cache globally using key 'llms' %}
+{#- The queries INSIDE the block: run outside it they ran on every hit too, and
+    Craft never saw them, so they left no tags to invalidate on. -#}
+{%- set about = craft.entries().section('about').status('live').one() -%}
+{%- set caseStudyIndex = craft.entries().section('caseStudy').status('live').one() -%}
+{%- set notesIndex = craft.entries().section('note').status('live').one() -%}
+{%- set contact = craft.entries().section('contact').status('live').one() -%}
+{%- set tools = craft.entries().section('tools').status('live').all() -%}
+{%- set studies = craft.entries().section('caseStudies').status('live').all() -%}
+{%- set notes = craft.entries().section('notes').status('live').orderBy('postDate DESC').limit(10).all() -%}
+{%- set pages = craft.entries().section('pages').status('live').all() -%}
 {% autoescape false %}
 # {{ siteName }}
 
@@ -122,3 +130,4 @@ rather than a summary of it.
 - [Full text]({{ siteUrl('llms-full.txt') }}): every page below in full, in one file.
 - [Notes feed]({{ siteUrl('notes.rss') }}): RSS, the 20 most recent notes.
 {% endautoescape %}
+{% endcache %}
