@@ -23,6 +23,9 @@
   from a feed someone is already following.
 #}
 {%- header "Content-Type: application/rss+xml; charset=utf-8" -%}
+{#- CACHED whole, keyed by name; the header above is sent on a hit too. Craft drops it
+    when an entry in a section queried inside is saved. -#}
+{%- cache globally using key 'notes-rss' -%}
 {%- set notes = craft.entries().section('notes').status('live').orderBy('postDate DESC').limit(20).all() -%}
 {%- set notesIndex = craft.entries().section('note').status('live').one() -%}
 {%- set feedUrl = siteUrl('notes.rss') -%}
@@ -78,3 +81,4 @@
         {% endfor %}
     </channel>
 </rss>
+{%- endcache -%}

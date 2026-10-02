@@ -23,6 +23,12 @@
 {% set slabModifier = 'b-slab--l600' %}
 
 {% block siteContent %}
+    {# CACHED: the studies, quotes and client logos are the same for every visitor and
+       are this page's queries. Keyed by name for Redis; Craft drops it when an entry in
+       any section queried inside is saved. The ask bar stays outside — it is per
+       visitor (a VIP's name goes into it). Nothing inside may read the request, the
+       session or the VIP, or it leaks between visitors. #}
+    {% cache using key 'case-studies-index' %}
     {% set studies = craft.entries()
         .section('caseStudies')
         .status('live')
@@ -107,5 +113,6 @@
        green pages the conversation footer likewise comes after the trailing dot. Out
        here it also spans the slab without needing negative margins, since the inline
        padding belongs to .c-content. #}
+    {% endcache %}
     {% include '_components/ask' only %}
 {% endblock %}

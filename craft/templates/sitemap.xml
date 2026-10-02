@@ -47,6 +47,9 @@
   instruction and reads the <urlset> as it always did.
 #}
 {%- header 'Content-Type: text/xml; charset=UTF-8' -%}
+{#- CACHED whole, keyed by name; the header above is sent on a hit too. Craft drops it
+    when an entry in a section queried inside is saved. -#}
+{%- cache globally using key 'sitemap' -%}
 {%- set denied = ['vip'] -%}
 {%- set handles = craft.app.entries.allSections|filter(s => s.handle not in denied)|map(s => s.handle)|values -%}
 {%- set entries = craft.entries().section(handles).status('live').orderBy('uri ASC').all() -%}
@@ -73,3 +76,4 @@
 {% if page.updated %}        <lastmod>{{ page.updated|date('c') }}</lastmod>
 {% endif %}    </url>
 {% endfor %}</urlset>
+{%- endcache -%}

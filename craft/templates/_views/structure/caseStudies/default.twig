@@ -22,6 +22,16 @@
 {% set slabModifier = 'b-slab--l600' %}
 
 {% block siteContent %}
+    {# CACHED: everything from here to the content include is the study itself — the
+       same for every visitor — and it is the heavy part (the blocks, their images, the
+       other studies). Per path, keyed so it can be found in Redis by name. Craft tags it
+       with every entry and section queried inside and drops it when one is saved.
+
+       The ask bar below stays OUTSIDE: it is per visitor (a VIP's name goes into it),
+       and so is everything the layout renders around this block. Nothing inside reads
+       the request, the session or the VIP — keep it that way, or it leaks between
+       visitors. (The method block's random palette is frozen per cache; cosmetic.) #}
+    {% cache using key 'case-study' %}
     {# `longTitle ?: title` — the pattern every other section uses (see the contact
        single and the case study index). Both are the STUDY's own names now: Title is
        the short one it's filed under and the one the cards use, Long title the fuller
@@ -193,6 +203,7 @@
         caseStudies: others,
         caseStudiesTitle: 'More case studies',
     } only %}
+    {% endcache %}
 
     {# Ask bar as a real footer — a SIBLING of .c-content, not a child, exactly as on
        the case study index. The timeline's end node is .c-content::after, so anything

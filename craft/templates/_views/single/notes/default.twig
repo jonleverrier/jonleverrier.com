@@ -49,6 +49,11 @@
     {# The Summary as a standfirst, exactly as on About. Plain text field, so it's
        escaped here; blank lines become paragraph breaks and single line breaks stay
        as breaks. #}
+    {# CACHED per path — Craft adds the page number to the key, so /notes/p2 is its own
+       entry. The query and page count stay above: the layout reads pageCount for the
+       prev/next links, and the 404 for a page past the end must not be cached. The
+       query itself runs inside (notes-index paginates it), so its section is tagged. #}
+    {% cache using key 'notes-index' %}
     {% set summary = (entry.summary ?? '')|trim %}
     {% set standfirst = null %}
     {% if summary %}
@@ -66,6 +71,7 @@
         standfirst: standfirst,
         topic: null,
     } only %}
+    {% endcache %}
 
     {# No ask bar here, unlike About: the index is a list to pick from, and the
        timeline's end node closes the page on its own. A note carries the bar. #}
