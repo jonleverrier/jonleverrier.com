@@ -699,7 +699,14 @@ class FindContext extends Component
                 // which is why the rename emptied this silently instead of erroring.
                 'summary' => trim((string) ($this->fieldVal($entry, 'bio') ?? '')),                   // public blurb
                 'jonsonSummary' => trim((string) ($this->fieldVal($entry, 'jonsonSummary') ?? '')),    // private AI context
-                'sectors' => $this->categoryTitles($entry, 'sectorSelector'),
+                // Long titles ("RegTech", not "Regulatory") — what Jonson reads, so the
+                // short back-office name can't be paraphrased into something untrue
+                // ("regulators"). Matching takes both: see sectorTerms.
+                'sectors' => $this->categoryTitles($entry, 'sectorSelector', true),
+                'sectorTerms' => array_values(array_unique(array_merge(
+                    $this->categoryTitles($entry, 'sectorSelector'),
+                    $this->categoryTitles($entry, 'sectorSelector', true),
+                ))),
                 'skills' => $this->categoryTitles($entry, 'skills'),
                 'featured' => $this->isFeatured($entry),
                 // The "Is present?" switch — this work is still going. The Year row
@@ -932,7 +939,7 @@ class FindContext extends Component
         if ($this->studyRelevantTo($context, $study, labels: [(string) ($study['client'] ?? '')])) {
             return 2;
         }
-        if ($this->studyRelevantTo($context, $study, labels: $study['sectors'] ?? [])) {
+        if ($this->studyRelevantTo($context, $study, labels: $study['sectorTerms'] ?? $study['sectors'] ?? [])) {
             return 3;
         }
         if ($this->studyRelevantTo($context, $study, labels: $study['skills'] ?? [])) {
@@ -1016,7 +1023,7 @@ class FindContext extends Component
         if ($labels === null) {
             $labels = $clientOnly
                 ? [(string) ($study['client'] ?? '')]
-                : array_merge([(string) ($study['client'] ?? '')], $study['sectors'] ?? []);
+                : array_merge([(string) ($study['client'] ?? '')], $study['sectorTerms'] ?? $study['sectors'] ?? []);
         }
 
         foreach ($labels as $label) {
@@ -1092,17 +1099,36 @@ class FindContext extends Component
 
     /**
      * Titles of the categories related to $entry through a category field, or [] if
-     * the field is absent or empty.
+     * the field is absent or empty. $long prefers each category's public `longTitle`
+     * (as sectors() does), falling back to the title where it isn't set.
      */
-    private function categoryTitles(Entry $entry, string $handle): array
+    private function categoryTitles(Entry $entry, string $handle, bool $long = false): array
     {
         if (!$entry->getFieldLayout()?->getFieldByHandle($handle)) {
             return [];
         }
 
+        $categories = $entry->$handle->all();
+        // A parent alongside one of its own children says the same thing twice, less
+        // precisely ("Technology" and "RegTech"): keep the children. A parent on its
+        // own stays — it is the right label when nothing narrower was picked.
+        $categories = array_filter($categories, static function ($c) use ($categories) {
+            foreach ($categories as $other) {
+                if ($other->id !== $c->id && $other->lft > $c->lft && $other->rgt < $c->rgt) {
+                    return false; // $other sits inside $c
+                }
+            }
+            return true;
+        });
+
         return array_values(array_filter(array_map(
-            static fn($c) => trim((string) $c->title),
-            $entry->$handle->all(),
+            static function ($c) use ($long) {
+                $longTitle = $long && $c->getFieldLayout()?->getFieldByHandle('longTitle')
+                    ? trim((string) $c->longTitle)
+                    : '';
+                return $longTitle !== '' ? $longTitle : trim((string) $c->title);
+            },
+            $categories,
         )));
     }
 
