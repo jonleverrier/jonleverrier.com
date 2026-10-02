@@ -52,14 +52,12 @@
     {% set items = items|merge([{ label: notesIndex.title, url: notesIndex.url, uri: notesIndex.uri, owns: [notesIndex.uri], key: 'n', notesBadge: true }]) %}
 {% endif %}
 
-{# Contact, PHONES ONLY — the one item that isn't a plain page in this list.
-   Above md the header carries it as a button; below md that button is hidden
-   (.b-header__contact in _header.scss), which left the footer as the only way to it,
-   so it comes back here instead. `mobileOnly` is what the stylesheet keys off.
+{# Contact — the one item that isn't a plain page in this list. At EVERY width now:
+   below md the header's Contact button is hidden outright, and above md it hides while
+   this panel is open (.is-nav-open in _header.scss), so the menu is where Contact lives
+   whenever the menu is showing.
 
-   LAST on purpose, and not only because it reads that way: the stagger delays are
-   nth-child, and an item hidden with display:none still counts for nth-child — put
-   anywhere else it would leave a gap in the cascade above md.
+   LAST because it reads that way, as the thing you do after browsing.
 
    A route, like Case Studies, rather than a queried entry: contact-panel.js turns any
    same-tab click on a /contact link into the side panel, so this never navigates. It
@@ -75,7 +73,6 @@
     uri: 'contact',
     owns: ['contact'],
     key: contactKey,
-    mobileOnly: true,
 }]) %}
 
 {% set currentPath = craft.app.request.getPathInfo()|trim('/') %}
@@ -99,7 +96,7 @@
                     {% for root in item.owns %}
                         {% set active = active or currentPath == root or currentPath starts with root ~ '/' %}
                     {% endfor %}
-                    <li class="c-nav-panel__item{% if item.mobileOnly ?? false %} c-nav-panel__item--mobile{% endif %}">
+                    <li class="c-nav-panel__item">
                         {# aria-current is the semantic AND the styling hook: the state is
                            announced to a screen reader and painted from the same source,
                            so a class can never drift out of step with what's read out. #}

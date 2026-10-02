@@ -134,20 +134,6 @@ $c-nav-panel-ms: 260ms;
     margin-top: rem(8);
 }
 
-// Contact, phones only. It's in this list precisely BECAUSE the header drops its
-// Contact button below md (.b-header__contact in _header.scss) — above that the
-// button is there and a second one here would be the same door twice.
-//
-// display:none rather than a Twig condition, so the markup is the same at every
-// width and the item can't be missing from a cached page served to a phone. It stays
-// last in the DOM either way, which is what keeps the nth-child stagger delays above
-// intact when it's hidden.
-.c-nav-panel__item--mobile {
-    @include mq(from, md) {
-        display: none;
-    }
-}
-
 // The items arrive one after another as the panel opens, rising into place.
 //
 // The drift is VERTICAL because the list is centred. It came in from the right while

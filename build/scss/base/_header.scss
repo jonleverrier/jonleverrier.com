@@ -167,6 +167,12 @@ $c-header-rest-sm: $c-header-top-sm;
     gap: getmap($space, rhythm, 400);
 }
 
+// Contact and Menu: a step wider than the logo's gap. Two buttons of the same size and
+// shape read as one control at the tighter spacing.
+.b-header__item:last-child {
+    gap: getmap($space, rhythm, 500);
+}
+
 // While the nav panel is open the header is pinned to the WINDOW, not the page. The
 // panel covers the whole site, so a header still travelling with the scroll takes the
 // logo — and the close button — off screen with it, leaving no way out of the nav but
@@ -268,6 +274,14 @@ $c-header-rest-sm: $c-header-top-sm;
     @include mq(until, md) {
         display: none;
     }
+
+    // And while the menu is open, at any width: the panel lists Contact itself (see
+    // nav-panel.twig), so the bar keeps only the cross. The cross is the last item in
+    // the row, so nothing beside it moves when this goes. `.is-nav-open` is set on the
+    // root by nav-panel.js for exactly as long as the panel is showing.
+    .is-nav-open & {
+        display: none;
+    }
 }
 
 // The menu button, to the right of Contact. Square, sized off the sm button's own
@@ -312,6 +326,70 @@ $c-header-rest-sm: $c-header-top-sm;
         &:hover,
         &:focus-visible {
             background-color: rgba(#000, 0.08);
+        }
+    }
+}
+
+// FROM md UP, A BUTTON BESIDE CONTACT: "Menu ≡" in a tint, the same size, type and
+// radius as the sm Contact button, so the two read as a pair — red to act, tint to
+// browse. Below md Contact is hidden and this stays the bare square icon above.
+//
+// The tint follows the slab rather than being one grey: white at 14% on the olive
+// (the hover the bare icon already had), and the secondary button's navy at 8% on the
+// cream pages — one fixed grey reads as a dead button on one of the two.
+//
+// OPEN, it's the cross alone at the 47px square: the label goes, nothing to say over
+// an X. The accessible name stays "Menu" (aria-label) and aria-expanded carries the
+// state, so a screen reader loses nothing.
+.b-header__burger-label {
+    display: none;
+}
+
+@include mq(from, md) {
+    .b-header__burger:not([aria-expanded='true']) {
+        width: auto;
+        gap: rem(8);
+        padding-inline: rem(16);
+        background-color: rgba(#fff, 0.14);
+        box-shadow: inset 0 rem(-3) 0 rgba(#000, 0.2);
+        font-family: $g-font-primary;
+        font-weight: 600;
+        line-height: 1;
+        @include typography(p-sm);
+
+        &:hover,
+        &:focus-visible {
+            background-color: rgba(#fff, 0.22);
+        }
+
+        // The same outer ring Contact wears on the olive (see .b-slab--p500 .c-button in
+        // _button.scss), so the pair match there. The cream slabs give Contact no ring,
+        // and this follows it.
+        .b-slab--p500 & {
+            box-shadow:
+                inset 0 rem(-3) 0 rgba(#000, 0.2),
+                0 0 0 rem(3) rgba(getmap($colour, light, 700), 0.5);
+        }
+
+        .b-slab--l600 &,
+        .b-slab--l100 & {
+            background-color: rgba(getmap($colour, primary, 700), 0.08);
+            box-shadow: inset 0 rem(-3) 0 rgba(getmap($colour, primary, 700), 0.18);
+
+            &:hover,
+            &:focus-visible {
+                background-color: rgba(getmap($colour, primary, 700), 0.16);
+            }
+        }
+
+        .b-header__burger-label {
+            display: inline;
+        }
+
+        // The ≡ sized to sit beside a word rather than to fill a square on its own.
+        .b-header__burger-icon {
+            width: rem(20);
+            height: auto;
         }
     }
 }

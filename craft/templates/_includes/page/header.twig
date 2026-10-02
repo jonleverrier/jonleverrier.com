@@ -26,6 +26,11 @@
                         aria-expanded="false"
                         aria-label="Menu"
                     >
+                        {# Seen only from md up, beside Contact, and only while closed —
+                           open, the button is just the cross (see _header.scss). The
+                           accessible name stays "Menu" either way (aria-label), and
+                           aria-expanded is what tells a screen reader it's open. #}
+                        <span class="b-header__burger-label" aria-hidden="true">Menu</span>
                         {# A WIDE box — 28x20 rather than a square 24 — so the bars run
                            the width of the button rather than sitting in a square well
                            inside it. Rotated 45deg the arms reach 1.5–18.5 vertically,
