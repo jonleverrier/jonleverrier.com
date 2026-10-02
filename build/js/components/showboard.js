@@ -1228,13 +1228,53 @@ export function mountShowboard(root) {
     renderer.setSize(size.x, size.y, false);
     needsRender = true;
 
+    var name = 'showboard-' + OUT_W + 'x' + OUT_H + '.png';
+    var note = OUT_W + ' × ' + OUT_H + (mult===2 ? ' · 2× render' : '');
+    savePng(dataUrlToBlob(url), name, note);
+  }
+
+  // The PNG as a Blob, made synchronously from the data URL so the click that asked for
+  // it still counts as the user's gesture when it reaches the share sheet below.
+  function dataUrlToBlob(url){
+    var bin = atob(url.slice(url.indexOf(',') + 1));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: 'image/png' });
+  }
+
+  // HANDING THE PNG OVER (Jon, 2 Oct 2026: on iPhone, Save PNG showed View / Download and
+  // then nothing happened). It was an <a download> pointing at a data: URL, which iOS
+  // Safari will not open — "View" navigates to it and is blocked — and does not reliably
+  // download either. On a touch device that can share files, Save PNG now opens the
+  // share sheet with the image, where Save Image puts it in Photos. Everywhere else it's
+  // a download as before, from a Blob URL, kept alive long enough to be fetched.
+  function savePng(blob, name, note){
+    var file = null;
+    try { file = new File([blob], name, { type: 'image/png' }); } catch (err) {}
+    var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    if (touch && file && navigator.canShare && navigator.canShare({ files: [file] })){
+      navigator.share({ files: [file] }).then(function(){
+        toast('Shared PNG · ' + note, 'success');
+      }, function(err){
+        // Closing the sheet is a choice, not a failure; anything else falls back.
+        if (err && err.name === 'AbortError') return;
+        download(blob, name, note);
+      });
+      return;
+    }
+    download(blob, name, note);
+  }
+
+  function download(blob, name, note){
+    var href = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = url;
-    a.download = 'showboard-' + OUT_W + 'x' + OUT_H + '.png';
+    a.href = href;
+    a.download = name;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    toast('Saved PNG · ' + OUT_W + ' × ' + OUT_H + (mult===2 ? ' · 2× render' : ''), 'success');
+    setTimeout(function(){ URL.revokeObjectURL(href); }, 60000);
+    toast('Saved PNG · ' + note, 'success');
   }
 
   $('png').addEventListener('click', function(){ exportImage(); });
