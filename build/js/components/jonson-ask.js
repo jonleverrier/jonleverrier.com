@@ -177,14 +177,46 @@ function visitId() {
 // first paragraph — wait for its images (capped), then fade the whole thing in
 // at once. Nothing renders until the response is complete, so there's no
 // pop-in, no reflow, and images arrive already loaded.
+function nodeFrom(html) {
+    if (!html) return null;
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html.trim();
+    return tpl.content.firstElementChild;
+}
+
+// "Where next?" prompt chips: a whisper title + a row of buttons. Each button's text
+// is the question; clicking it asks that question (wired in mountJonson). Null when
+// there are none.
+function suggestionsNav(suggestions) {
+    if (!Array.isArray(suggestions) || !suggestions.length) return null;
+    const nav = document.createElement('nav');
+    nav.className = 'c-jonson__suggestions';
+    nav.setAttribute('aria-label', 'Suggested questions');
+
+    const title = document.createElement('p');
+    title.className = 'c-jonson__suggestions-whisper';
+    title.textContent = 'Try asking me…';
+
+    const list = document.createElement('div');
+    list.className = 'c-jonson__suggestions-list';
+    suggestions.forEach((q) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'c-jonson__suggestion';
+        chip.textContent = q;
+        list.append(chip);
+    });
+
+    nav.append(title, list);
+    return nav;
+}
+
+// Returns `addLate(node)`: for what lands AFTER the reveal was decided — the chips
+// and the contact beat, which wait on the server's classifier (see the `answer`
+// event). Before the reveal has fired they simply join it; after, they're appended
+// to the end and fade in (.is-late in _jonson.scss).
 function revealAnswer(el, text, railHtml, testimonialHtml, clientsHtml, sectorsHtml, caseStudiesHtml, methodHtml, musicHtml, contactHtml, suggestions, errorText, startedAt) {
     const frag = document.createDocumentFragment();
-    const nodeFrom = (html) => {
-        if (!html) return null;
-        const tpl = document.createElement('template');
-        tpl.innerHTML = html.trim();
-        return tpl.content.firstElementChild;
-    };
 
     if (errorText) {
         const p = document.createElement('p');
@@ -273,41 +305,21 @@ function revealAnswer(el, text, railHtml, testimonialHtml, clientsHtml, sectorsH
         if (contact && !contactPlaced) frag.append(contact);
     }
 
-    // "Where next?" prompt chips — always last: a whisper title + a row of
-    // buttons. Each button's text is the question; clicking it asks that
-    // question (wired in mountJonson).
-    if (Array.isArray(suggestions) && suggestions.length) {
-        const nav = document.createElement('nav');
-        nav.className = 'c-jonson__suggestions';
-        nav.setAttribute('aria-label', 'Suggested questions');
-
-        const title = document.createElement('p');
-        title.className = 'c-jonson__suggestions-whisper';
-        title.textContent = 'Try asking me…';
-
-        const list = document.createElement('div');
-        list.className = 'c-jonson__suggestions-list';
-        suggestions.forEach((q) => {
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'c-jonson__suggestion';
-            chip.textContent = q;
-            list.append(chip);
-        });
-
-        nav.append(title, list);
-        frag.append(nav);
-    }
+    // "Where next?" prompt chips — always last.
+    const chips = suggestionsNav(suggestions);
+    if (chips) frag.append(chips);
 
     // Swap the thinking indicator for the composed answer, then let the rail's
     // photos develop in over their blur-up placeholders.
     let fired = false;
+    const early = []; // late nodes that arrived before the reveal: they join it
     const commit = () => {
         if (fired) return;
         fired = true;
         el.classList.add('is-pending'); // hidden pre-reveal
         el.textContent = '';            // remove the thinking indicator
         el.append(frag);
+        early.forEach((node) => el.append(node));
         requestAnimationFrame(() => {
             el.classList.remove('is-pending');
             el.classList.add('is-revealed'); // container zoom + paragraph fade
@@ -345,6 +357,18 @@ function revealAnswer(el, text, railHtml, testimonialHtml, clientsHtml, sectorsH
     const MIN_THINKING = 1100;
     const elapsed = startedAt ? performance.now() - startedAt : MIN_THINKING;
     setTimeout(commit, Math.max(0, MIN_THINKING - elapsed));
+
+    return (node) => {
+        if (!node) return;
+        if (!fired) { early.push(node); return; }
+        node.classList.add('is-late');
+        el.append(node);
+        // Flush the hidden state, then drop it: the transition runs from there. Not
+        // rAF — that doesn't fire in a background tab, and chips that land while the
+        // visitor is looking elsewhere would stay invisible until they came back.
+        void node.offsetWidth;
+        node.classList.remove('is-late');
+    };
 }
 
 // Pull the `event:` / `data:` lines out of one raw SSE block.
@@ -478,6 +502,7 @@ export function mountJonson({warpOut} = {}) {
             let contactHtml = '';      // resolved ways-to-connect CTA beat, if surfaced
             let suggestions = [];      // "where next?" prompt chips
             let errorText = '';
+            let addLate = null;        // set once the answer is revealed on `answer`
 
             // eslint-disable-next-line no-constant-condition
             while (true) {
@@ -508,13 +533,26 @@ export function mountJonson({warpOut} = {}) {
                     } else if (event === 'music') {
                         musicHtml = JSON.parse(data).html;
                     } else if (event === 'contact') {
-                        contactHtml = JSON.parse(data).html;
+                        const html = JSON.parse(data).html;
+                        if (addLate) addLate(nodeFrom(html)); else contactHtml = html;
                     } else if (event === 'suggestions') {
-                        suggestions = JSON.parse(data).items || [];
+                        const items = JSON.parse(data).items || [];
+                        if (addLate) addLate(suggestionsNav(items)); else suggestions = items;
+                    } else if (event === 'answer') {
+                        // The finished answer, sent BEFORE the server's classifier call
+                        // (see AskController): reveal it now rather than holding the
+                        // thinking orb for that call too. Chips / the contact beat
+                        // follow on their own events and are appended by addLate.
+                        const answer = JSON.parse(data).answer;
+                        if (typeof answer === 'string' && stripMarkers(answer)) {
+                            answerText = answer;
+                            addLate = revealAnswer(answerEl, answerText, railHtml, testimonialHtml, clientsHtml, sectorsHtml, caseStudiesHtml, methodHtml, musicHtml, contactHtml, suggestions, errorText, startedAt);
+                        }
                     } else if (event === 'error') {
                         errorText = JSON.parse(data).message;
                     } else if (event === 'done') {
                         const doneData = JSON.parse(data);
+                        if (addLate) continue; // already revealed on `answer`
                         // THE FINAL ANSWER WINS over the streamed text. The server edits
                         // the answer after the model finishes — dead links unlinked
                         // (groundLinks), case studies linked (linkStudies) — and only

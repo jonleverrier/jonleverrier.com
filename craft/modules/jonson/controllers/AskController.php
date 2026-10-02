@@ -747,8 +747,18 @@ class AskController extends Controller
                 // LINK THE WORK IT NAMES, in code rather than by asking: told it could
                 // link, the model did about one time in five. Studies whose card shows
                 // under this answer are skipped — the card is the link. The client
-                // renders only on `done`, so this is what the visitor sees.
+                // renders the answer it is sent below, so this is what the visitor sees.
                 $answer = $ctx->linkStudies($answer, $cardSlugs);
+
+                // THE ANSWER IS FINISHED HERE — send it, and let the page show it now.
+                // Everything below waits on classifyExchange(), a second API call, and
+                // only decides what goes UNDER the answer: the chips, or the contact
+                // beat for a hot visitor. Both are end-of-answer, so the client can
+                // reveal on this event and append them when they land, instead of
+                // holding the thinking orb up for the classifier too. `done` still
+                // carries the same answer for every path that doesn't send this one
+                // (cached replays, the junk gate, API errors).
+                yield $this->sse('answer', ['answer' => $answer]);
 
                 // Read the exchange for the two signals that shape the slate: the
                 // funnel stage (which roles fill it; whether the lead path leads),
