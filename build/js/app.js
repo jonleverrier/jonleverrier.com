@@ -418,3 +418,9 @@ if (showboardRoot) {
         window.addEventListener('beforeunload', dispose, {once: true});
     });
 }
+
+// The devtools hello (console.js): a banner and jonson.ask(). Its own
+// chunk, loaded once the page is idle, so it never competes with the first paint.
+(window.requestIdleCallback || ((fn) => setTimeout(fn, 1500)))(() => {
+    import('./components/console.js').then((m) => m.mountConsole()).catch(() => {});
+});
