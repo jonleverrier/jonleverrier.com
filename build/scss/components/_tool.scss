@@ -403,6 +403,12 @@ $c-tool-wide: 900px;
         opacity: 0.4;
         cursor: not-allowed;
     }
+
+    // A chip that is a choice (Surface's Fill): the chosen one keeps the red stroke.
+    &[aria-pressed="true"] {
+        border-color: $c-tool-accent;
+        background: getmap($colour, light, 100);
+    }
 }
 
 .c-tool__exports {

@@ -164,12 +164,39 @@
             </details>
             <details class="c-tool__sec" open hidden data-showboard-needs-shots>
                 <summary class="c-tool__head"><h2 class="c-tool__head-title u-font-whisper">Surface</h2></summary>
+                {# FILL (Jon, 2 Oct 2026): a plain Background, or a two-colour gradient painted
+                   on the floor the screens lie on, so it tilts and recedes with the camera.
+                   The floor exists only for a gradient: a solid fill is the canvas itself,
+                   as before. showboard.js renames the colour labels per fill. #}
                 <div class="c-tool__row">
-                    <label class="c-tool__label" for="sb-bg">Background</label>
+                    <span class="c-tool__label" id="sb-fill-label">Fill</span>
+                    <div class="c-tool__chips" role="group" aria-labelledby="sb-fill-label">
+                        <button class="c-tool__chip" type="button" data-fill="solid" aria-pressed="true">Solid</button>
+                        <button class="c-tool__chip" type="button" data-fill="linear" aria-pressed="false">Linear</button>
+                        <button class="c-tool__chip" type="button" data-fill="radial" aria-pressed="false">Radial</button>
+                    </div>
+                </div>
+                <div class="c-tool__row">
+                    <label class="c-tool__label" for="sb-bg" id="sb-bg-label">Background</label>
                     <div class="c-tool__swatch">
                         <input class="c-tool__swatch-colour" type="color" id="sb-bg" value="#ffffff">
                         <input class="c-tool__swatch-hex" type="text" id="sb-bg-hex" value="#FFFFFF" spellcheck="false" aria-label="Background hex">
                     </div>
+                </div>
+                <div class="c-tool__row" id="sb-bg2-row" hidden>
+                    <label class="c-tool__label" for="sb-bg2" id="sb-bg2-label">To</label>
+                    <div class="c-tool__swatch">
+                        <input class="c-tool__swatch-colour" type="color" id="sb-bg2" value="#d6dbe3">
+                        <input class="c-tool__swatch-hex" type="text" id="sb-bg2-hex" value="#D6DBE3" spellcheck="false" aria-label="Second colour hex">
+                    </div>
+                </div>
+                <div class="c-tool__row" id="sb-angle-row" hidden>
+                    <label class="c-tool__label" for="sb-angle">Angle <output class="c-tool__value" id="sb-angle-o">180°</output></label>
+                    <input class="c-tool__range" type="range" id="sb-angle" min="0" max="360" step="1" value="180">
+                </div>
+                <div class="c-tool__row" id="sb-spread-row" hidden>
+                    <label class="c-tool__label" for="sb-spread">Size <output class="c-tool__value" id="sb-spread-o">100%</output></label>
+                    <input class="c-tool__range" type="range" id="sb-spread" min="20" max="200" step="1" value="100">
                 </div>
                 <div class="c-tool__row">
                     <label class="c-tool__check"><input class="c-tool__check-box" type="checkbox" id="sb-alpha"> Transparent background</label>

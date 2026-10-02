@@ -32,6 +32,7 @@ export function mountShowboard(root) {
     matchw:false, tilt:0, spin:0, radius:2, shadow:0, // matchw and shadow off by default (Jon, 29 Sep 2026)
     yaw:0, pitch:89, fov:22, zoom:1.02,
     bg:'#ffffff', alpha:false,
+    fill:'solid', bg2:'#d6dbe3', angle:180, spread:100, // Fill: solid, or a gradient on the floor (Jon, 2 Oct 2026)
     outW:3200, outH:1800 // the export size (Size section) — its shape frames everything
   };
   var S = Object.assign({}, DEFAULTS);
@@ -57,6 +58,97 @@ export function mountShowboard(root) {
   var shadowGroup = new THREE.Group();
   scene.add(shadowGroup);
   scene.add(itemsGroup);
+
+  // THE GRADIENT FLOOR (Jon, 2 Oct 2026) — only while Fill is Linear or Radial, and never
+  // with Transparent on: the floor removed on 29 Sep (below) hid the Background colour
+  // and made transparent PNGs opaque, and a solid fill still has no floor. It lies under
+  // the screens and shadows, sized to the FRAME as it meets the floor at the board (a
+  // first cut sized it to the board, and the colours turned within a few centimetres of
+  // the screens): a linear gradient runs edge to edge at Angle (CSS's sense: 180° runs
+  // top to bottom in a flat lay), a radial one from the centre to the frame's corners. The colours are mixed as sRGB, as
+  // CSS mixes them, and written straight out; a little noise keeps wide, close colours
+  // from banding.
+  var floorMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uA: { value: new THREE.Vector3(1, 1, 1) },
+      uB: { value: new THREE.Vector3(1, 1, 1) },
+      uRadial: { value: 0 },
+      uCentre: { value: new THREE.Vector2() },
+      uHalf: { value: new THREE.Vector2(1, 1) },
+      uAxis: { value: new THREE.Vector2(1, 0) },
+      uSpread: { value: 1 },
+      uDir: { value: new THREE.Vector2(0, 1) }
+    },
+    vertexShader: [
+      'varying vec2 vW;',
+      'void main(){',
+      '  vec4 w = modelMatrix * vec4(position, 1.0);',
+      '  vW = w.xz;',
+      '  gl_Position = projectionMatrix * viewMatrix * w;',
+      // Pinned inside the depth range so the far floor is never cut off, without
+      // stretching the camera's range (see placeCamera): nothing depth-tests against it.
+      '  gl_Position.z = clamp(gl_Position.z, -gl_Position.w * 0.999, gl_Position.w * 0.999);',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'uniform vec3 uA; uniform vec3 uB; uniform float uRadial;',
+      'uniform vec2 uCentre; uniform vec2 uHalf; uniform vec2 uAxis; uniform vec2 uDir; uniform float uSpread;',
+      'varying vec2 vW;',
+      'void main(){',
+      '  vec2 p = vW - uCentre;',
+      // How far the frame reaches along the gradient: its half-width along the frame's
+      // own across (uAxis, the camera's right laid on the floor) and half-height along
+      // the perpendicular, each projected onto the direction.
+      '  vec2 down = vec2(-uAxis.y, uAxis.x);',
+      '  float ext = abs(dot(uDir, uAxis)) * uHalf.x + abs(dot(uDir, down)) * uHalf.y;',
+      '  float t = uRadial > 0.5 ? length(p) / (length(uHalf) * uSpread) : dot(p, uDir) / (2.0 * ext) + 0.5;',
+      '  t = clamp(t, 0.0, 1.0);',
+      '  float n = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;',
+      '  gl_FragColor = vec4(mix(uA, uB, t) + n / 255.0, 1.0);',
+      '}'
+    ].join('\n'),
+    depthTest: false,
+    depthWrite: false // drawn first (renderOrder), so everything simply lands on it
+  });
+  var floor = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -0.003; // under the shadows (0.0015) and the screens
+  floor.renderOrder = -2;
+  floor.visible = false;
+  scene.add(floor);
+  var FLOOR_REACH = 60; // the floor runs this many frame-widths out: past every edge
+
+  function hexToVec(hex, v){
+    var n = parseInt(hex.slice(1), 16);
+    return v.set((n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255);
+  }
+
+  // The gradient's direction on the floor: CSS's angle, with the flat lay's "up" as -z.
+  function fillDir(){
+    var a = S.angle * Math.PI / 180;
+    return floorMat.uniforms.uDir.value.set(Math.sin(a), -Math.cos(a));
+  }
+
+  function syncFloor(){
+    floor.visible = S.fill !== 'solid' && !S.alpha && itemsGroup.children.length > 0;
+    if (!floor.visible) return;
+    var u = floorMat.uniforms;
+    hexToVec(S.bg, u.uA.value);
+    hexToVec(S.bg2, u.uB.value);
+    u.uRadial.value = S.fill === 'radial' ? 1 : 0;
+    u.uSpread.value = S.spread / 100; // radial Size: 100% reaches the frame's corners
+    fillDir();
+    u.uCentre.value.set(frameOnFloor.x, frameOnFloor.z);
+    u.uHalf.value.set(Math.max(0.05, frameOnFloor.w), Math.max(0.05, frameOnFloor.h));
+    var right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+    u.uAxis.value.set(right.x, right.z);
+    if (u.uAxis.value.lengthSq() < 1e-6) u.uAxis.value.set(1, 0);
+    u.uAxis.value.normalize();
+    var size = Math.max(u.uHalf.value.x, u.uHalf.value.y) * 2 * FLOOR_REACH;
+    floor.scale.set(size, size, 1);
+    floor.position.x = u.uCentre.value.x;
+    floor.position.z = u.uCentre.value.y;
+  }
 
   // NO FLOOR (Jon, 29 Sep 2026). There was a 600-unit plane under everything with a
   // colour of its own, and it covered the canvas from almost every angle: the
@@ -671,7 +763,13 @@ export function mountShowboard(root) {
     camera.near = Math.max(0.001, (dist - radius * 1.5) * 0.5);
     camera.far = dist + radius * 4 + 10;
     camera.updateProjectionMatrix();
+
+    // The frame as it meets the floor at the board — what a gradient spans (syncFloor).
+    frameOnFloor.x = target.x; frameOnFloor.z = target.z;
+    frameOnFloor.h = dist * Math.tan(vFov / 2);
+    frameOnFloor.w = frameOnFloor.h * camera.aspect;
   }
+  var frameOnFloor = { x: 0, z: 0, w: 1, h: 1 };
 
   /* ───────── render loop ───────── */
   function sizePreview(){
@@ -686,6 +784,20 @@ export function mountShowboard(root) {
   function applyClear(){
     if (S.alpha){
       renderer.setClearColor(0x000000, 0);
+    } else if (floor.visible){
+      // Above the horizon (a standing camera), the sky is the colour the floor runs into
+      // as it recedes: the edge colour for radial; for linear, whichever end lies away
+      // from the camera, or the midpoint when the gradient runs across the view.
+      var c = S.bg2;
+      if (S.fill === 'linear'){
+        var f = new THREE.Vector3();
+        camera.getWorldDirection(f);
+        var along = f.x * floorMat.uniforms.uDir.value.x + f.z * floorMat.uniforms.uDir.value.y;
+        var flat = Math.hypot(f.x, f.z) || 1;
+        var t = Math.max(0, Math.min(1, 0.5 + 0.5 * Math.sign(along) * Math.min(1, Math.abs(along) / flat * 4)));
+        c = '#' + new THREE.Color(S.bg).lerp(new THREE.Color(S.bg2), t).getHexString();
+      }
+      renderer.setClearColor(new THREE.Color(c), 1);
     } else {
       renderer.setClearColor(new THREE.Color(S.bg), 1);
     }
@@ -695,8 +807,9 @@ export function mountShowboard(root) {
     if (needsBuild) build();
     if (needsRender){
       syncRadius();
-      applyClear();
       placeCamera();
+      syncFloor();  // after the camera: the gradient spans its frame
+      applyClear(); // and the sky colour depends on where it looks
       renderer.render(scene, camera);
       needsRender = false;
       if (settling && !loading){ settling = false; syncLoading(); }
@@ -733,7 +846,8 @@ export function mountShowboard(root) {
         var v = data.settings[key];
         if (typeof v !== typeof DEFAULTS[key]) return;
         if (typeof v === 'number' && !isFinite(v)) return;
-        if (key === 'bg' && !/^#[0-9a-f]{6}$/i.test(v)) return;
+        if ((key === 'bg' || key === 'bg2') && !/^#[0-9a-f]{6}$/i.test(v)) return;
+        if (key === 'fill' && !FILL_LABELS[v]) return;
         S[key] = v;
       });
       syncAll();
@@ -875,13 +989,15 @@ export function mountShowboard(root) {
       case 'zoom':    return Number(v).toFixed(2) + '×';
       case 'stagger': return Math.round(v*100) + '%';
       case 'radius':  return Number(v).toFixed(1) + '%';
+      case 'angle':   return Math.round(v) + '°';
+      case 'spread':  return Math.round(v) + '%';
       case 'shadow':  return Math.round(v) + '%';
       case 'fov':     return Math.round(v) + ' mm';
       default:        return Math.round(v) + '°';
     }
   }
 
-  var sliders = ['cols','repeat','gap','depth','stagger','tilt','spin','radius','shadow','yaw','pitch','fov','zoom'];
+  var sliders = ['cols','repeat','gap','depth','stagger','tilt','spin','radius','shadow','yaw','pitch','fov','zoom','angle','spread'];
   var rebuilders = { cols:1, repeat:1, gap:1, depth:1, stagger:1, tilt:1, spin:1, shadow:1 }; // not radius: a uniform
 
   sliders.forEach(function(key){
@@ -942,6 +1058,8 @@ export function mountShowboard(root) {
     sliders.forEach(function(k){ $(k).value = S[k]; syncOut(k); });
     applySize();
     $('bg').value = S.bg; $('bg-hex').value = S.bg.toUpperCase();
+    $('bg2').value = S.bg2; $('bg2-hex').value = S.bg2.toUpperCase();
+    syncFill();
     $('shuffle').checked = S.shuffle;
     $('masonry').checked = S.masonry;
     $('matchw').checked = S.matchw;
@@ -963,6 +1081,26 @@ export function mountShowboard(root) {
     });
   }
   hookColour('bg','bg-hex','bg');
+  hookColour('bg2','bg2-hex','bg2');
+
+  // FILL: the chips choose solid / linear / radial; the rows and labels follow. A solid
+  // fill's one colour is the Background; a gradient's two are From and To (linear) or
+  // Centre and Edge (radial).
+  var FILL_LABELS = { solid: ['Background', ''], linear: ['From', 'To'], radial: ['Centre', 'Edge'] };
+  function syncFill(){
+    Array.prototype.forEach.call(root.querySelectorAll('[data-fill]'), function(b){
+      b.setAttribute('aria-pressed', b.getAttribute('data-fill') === S.fill ? 'true' : 'false');
+    });
+    $('bg-label').textContent = FILL_LABELS[S.fill][0];
+    $('bg2-label').textContent = FILL_LABELS[S.fill][1] || 'To';
+    $('bg2-row').hidden = S.fill === 'solid';
+    $('angle-row').hidden = S.fill !== 'linear';
+    $('spread-row').hidden = S.fill !== 'radial';
+    needsRender = true;
+  }
+  Array.prototype.forEach.call(root.querySelectorAll('[data-fill]'), function(b){
+    b.addEventListener('click', function(){ S.fill = b.getAttribute('data-fill'); syncFill(); });
+  });
 
   $('masonry').addEventListener('change', function(){
     S.masonry = this.checked; needsBuild = true; needsRender = true;
@@ -1068,8 +1206,9 @@ export function mountShowboard(root) {
     renderer.setPixelRatio(1);
     renderer.setSize(w, h, false);
     syncRadius();
-    applyClear();
     placeCamera();
+    syncFloor();
+    applyClear();
     renderer.render(scene, camera);
 
     var url;
