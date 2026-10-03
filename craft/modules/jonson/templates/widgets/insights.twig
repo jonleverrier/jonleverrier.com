@@ -75,6 +75,14 @@
         padding: 8px 10px; border-radius: 4px; margin-bottom: var(--jw-gap);
         background: var(--error-color, #cf1124); color: #fff;
     }
+    .jonson-w__warn summary { cursor: pointer; font-weight: 600; }
+    .jonson-w__incidents { margin: 8px 0 0; padding: 0; list-style: none; }
+    .jonson-w__incidents li { padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.25); }
+    .jonson-w__incidents q { font-style: italic; }
+    .jonson-w__incidents .why, .jonson-w__incidents .todo { display: block; margin-top: 2px; }
+    .jonson-w__incidents .todo { opacity: 0.9; }
+    .jonson-w__seen { margin-top: 8px; }
+    .jonson-w__seen .btn { font-size: 11px; }
     .jonson-w__kill {
         display: flex; align-items: center; gap: 10px;
         margin-top: var(--jw-gap); padding-top: 12px;
@@ -266,6 +274,37 @@
    fetched: the queries behind them are small, and a tab that swaps instantly beats one
    that spins. #}
 <div class="jonson-w">
+    {# UNANSWERED QUESTIONS — and ONLY when there are some: a row of zeros trains you to
+       stop reading it. Each says when, what was asked, why it failed and what (if
+       anything) to do (Analytics::incidents); "Mark as seen" clears the list until a
+       new one happens. Above the tabs: it's about the whole site, not a segment. #}
+    {% if incidents|length %}
+        {% set failed = incidents|filter(i => i.outcome == 'apiError')|length %}
+        {% set limited = incidents|length - failed %}
+        <details class="jonson-w__warn">
+            <summary>
+                {% if failed %}{{ failed }} answer{{ failed == 1 ? '' : 's' }} failed — visitors saw the fallback{% endif %}
+                {% if failed and limited %} · {% endif %}
+                {% if limited %}{{ limited }} question{{ limited == 1 ? '' : 's' }} rate-limited{% endif %}
+                <span class="light">(details)</span>
+            </summary>
+            <ul class="jonson-w__incidents">
+                {% for i in incidents %}
+                    <li>
+                        <strong>{{ i.at|datetime('short') }}</strong> · <q>{{ i.question }}</q>
+                        <span class="why">{{ i.why }}</span>
+                        <span class="todo">What to do: {{ i.todo }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <form class="jonson-w__seen" method="post" accept-charset="UTF-8">
+                {{ csrfInput() }}
+                {{ actionInput('jonson/insights/seen') }}
+                {{ redirectInput('dashboard') }}
+                <button type="submit" class="btn small">Mark as seen</button>
+            </form>
+        </details>
+    {% endif %}
     {# LIVE VISITORS sits on the tab row, not inside a panel, because it is the one
        figure here that the tabs do NOT filter: presence is a count of who is on the
        site in the last five minutes, and the presence table carries no VIP flag. Held

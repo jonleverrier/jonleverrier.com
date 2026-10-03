@@ -122,6 +122,10 @@ class Analytics extends Component
                 'cacheReadTokens' => $this->int($turn['cacheReadTokens'] ?? null),
                 'cacheWriteTokens' => $this->int($turn['cacheWriteTokens'] ?? null),
                 'outTokens' => $this->int($turn['outTokens'] ?? null),
+                // Only on a turn that went unanswered (see the fail_reason migration).
+                'failReason' => in_array($turn['outcome'] ?? '', ['apiError', 'rateLimited'], true) && !empty($turn['failReason'])
+                    ? mb_substr((string) $turn['failReason'], 0, 64)
+                    : null,
                 'dateCreated' => $now,
                 'dateUpdated' => $now,
                 'uid' => \craft\helpers\StringHelper::UUID(),
@@ -317,6 +321,76 @@ class Analytics extends Component
      * is aggregate — no transcripts, nothing per-visitor — because the question being
      * asked is "how is the assistant doing", not "who came".
      */
+    /**
+     * The questions that went unanswered in the last $days days — newest first, at most
+     * $limit — since $seenAt (the "Mark as seen" button), each with its cause in words
+     * and what, if anything, to do. What the dashboard's warning lists (Jon, 3 Oct 2026:
+     * a count with "no context" and "no self-service way of fixing").
+     *
+     * @return array<int, array{at: \DateTime, question: string, outcome: string, why: string, todo: string}>
+     */
+    public function incidents(int $days = 30, ?string $seenAt = null, int $limit = 20): array
+    {
+        try {
+            $since = (new \DateTime())->modify("-{$days} days");
+            if ($seenAt && ($seen = \DateTime::createFromFormat(\DateTimeInterface::ATOM, $seenAt)) && $seen > $since) {
+                $since = $seen;
+            }
+            $rows = (new \craft\db\Query())
+                ->select(['askedAt', 'question', 'outcome', 'failReason'])
+                ->from(self::TURNS)
+                ->where(['outcome' => ['apiError', 'rateLimited']])
+                ->andWhere(['>', 'askedAt', Db::prepareDateForDb($since)])
+                ->orderBy(['askedAt' => SORT_DESC])
+                ->limit($limit)
+                ->all();
+        } catch (\Throwable $e) {
+            $this->shrug($e, 'incidents');
+            return [];
+        }
+
+        return array_map(function (array $r): array {
+            [$why, $todo] = $this->explain((string) $r['outcome'], (string) ($r['failReason'] ?? ''));
+            return [
+                // Stored in UTC; read as UTC and shown in the site's time zone.
+                'at' => \craft\helpers\DateTimeHelper::toDateTime((string) $r['askedAt'], false),
+                'question' => (string) ($r['question'] ?? ''),
+                'outcome' => (string) $r['outcome'],
+                'why' => $why,
+                'todo' => $todo,
+            ];
+        }, $rows);
+    }
+
+    /** A recorded reason, as [what happened, what to do]. */
+    private function explain(string $outcome, string $reason): array
+    {
+        $calm = "Nothing to fix if it's a one-off. If it keeps happening, check status.anthropic.com.";
+        [$kind, $detail] = array_pad(explode(':', $reason, 2), 2, '');
+        return match (true) {
+            $outcome === 'rateLimited' => [
+                'More than 30 questions came from one connection (IP) within an hour (150 for a VIP door), so this one was refused.',
+                'If that was you testing, ignore it. If real visitors hit it, the limit is RATE_LIMIT in AskController.',
+            ],
+            // 10 s until 3 Oct 2026, 20 s since (AskController's Client `timeout`).
+            $kind === 'timeout' => ["Anthropic didn't start replying in the time allowed (20 seconds; 10 before 3 Oct 2026).", $calm],
+            $kind === 'overloaded' => ["Anthropic was overloaded and turned the request away ({$detail}).", $calm],
+            $kind === 'anthropic' => ["Anthropic's API returned a server error ({$detail}).", $calm],
+            $kind === 'stream' => ["Anthropic stopped part-way through the answer ({$detail}).", $calm],
+            $kind === 'connection' => ["The server couldn't reach Anthropic at all.", 'One-off: nothing. Repeated: the server\'s network or DNS needs a look.'],
+            $kind === 'auth' => [
+                "Anthropic rejected the API key ({$detail}).",
+                'Every answer will fail until fixed: check KEY_ANTHROPIC_API in shared/.env, and the account\'s credit in the Anthropic Console.',
+            ],
+            $kind === 'request' => [
+                "Anthropic rejected the request ({$detail}): usually a model name it doesn't recognise.",
+                'Check KEY_ANTHROPIC_MODEL in shared/.env. If that\'s right, the server log at this time has the detail.',
+            ],
+            $kind === 'empty' => ['The model replied with nothing.', "Nothing to fix if it's a one-off."],
+            default => ['Not recorded: this happened before causes were logged (3 Oct 2026).', 'The server log for that time has the detail.'],
+        };
+    }
+
     public function insights(int $days = 30, string $segment = self::ALL): array
     {
         $since = (new \DateTime())->modify("-{$days} days");

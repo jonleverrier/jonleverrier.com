@@ -23,17 +23,8 @@
     {%- endif -%}
 {% endmacro %}
 {% import _self as f %}
-{# The health line, and ONLY when there is something wrong. An always-visible row of
-       zeros trains you to stop reading it; a row that appears only when it matters gets
-       read. apiError means visitors saw the fallback copy instead of an answer. #}
-    {% if stats.apiErrors or stats.rateLimited %}
-        <div class="jonson-w__warn">
-            {% if stats.apiErrors %}{{ stats.apiErrors }} answer{{ stats.apiErrors == 1 ? '' : 's' }} failed — visitors saw the fallback{% endif %}
-            {% if stats.apiErrors and stats.rateLimited %} · {% endif %}
-            {% if stats.rateLimited %}{{ stats.rateLimited }} question{{ stats.rateLimited == 1 ? '' : 's' }} rate-limited{% endif %}
-        </div>
-    {% endif %}
-
+{# The health line moved to insights.twig (the incidents block): it lists each
+       unanswered question with its cause and what to do, once, above the tabs. #}
     <div class="jonson-w__stats">
         {# "total" and "avg" spelled out, so the row reads as counts-then-average rather
            than three numbers of unstated kind. The tooltips carry the period, which the

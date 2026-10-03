@@ -65,6 +65,11 @@ class AskController extends Controller
     // Set once a turn has been recorded, so no path can double-count. The generator
     // has enough branches that "this one returns early" is not a safe assumption.
     private bool $logDone = false;
+    // Why this turn went unanswered, for the dashboard (Analytics::incidents): timeout,
+    // overloaded:529, anthropic:500, auth:401, request:400, stream:<type>, connection,
+    // empty, rateLimit. Set where each failure is found; recorded only on apiError /
+    // rateLimited turns.
+    private string $logFailReason = '';
     private const VIP_CONTEXT_CHARS = 6000; // how much of a VIP's note rides along (see vipPrompt)
     private const TRANSCRIPT_PREFIX = 'jonson-transcript'; // per-session full transcript (uncapped) for lead capture
     private const ANSWER_PREFIX = 'jonson-answer'; // cached answer bundle per session+question
@@ -475,6 +480,7 @@ class AskController extends Controller
                 // somewhere to go; here every one of them lands back on this same
                 // message, which would read as the site taunting them.
                 yield $this->sse('done', ['answer' => $rateReply]);
+                $this->logFailReason = 'rateLimit';
                 $this->logTurn('rateLimited', $rateReply);
 
                 return;
@@ -497,8 +503,11 @@ class AskController extends Controller
             // It also isn't 120s any more because the answer streams from a PHP worker,
             // so every hung request holds one for its whole life. Enough at once and
             // the whole site stops serving, not just Jonson.
+            // 20, not 10 (Jon, 3 Oct 2026): on Opus 5 a first byte has come 10+ s late
+            // on a bad moment, and the visitor got the fallback where a slow answer was
+            // still coming. A real outage now takes 20 s to show its fallback.
             $client = new Client([
-                'timeout' => 10,
+                'timeout' => 20,
                 'read_timeout' => 60,
                 'http_errors' => false,
             ]);
@@ -528,6 +537,9 @@ class AskController extends Controller
                 }
             } catch (\Throwable $e) {
                 Craft::error('[jonson] ' . $e->getMessage(), __METHOD__);
+                // cURL 28 / "timed out": the 20 s wait for a first byte ran out (see the
+                // Client's `timeout`). Anything else thrown here is the network.
+                $this->logFailReason = preg_match('/timed out|cURL error 28/i', $e->getMessage()) ? 'timeout' : 'connection';
                 $result = ['error' => 'busy'];
             }
 
@@ -564,6 +576,7 @@ class AskController extends Controller
             $answer = $this->groundLinks($answer);
 
             if ($answer === '') {
+                $this->logFailReason = 'empty';
                 Craft::error('[jonson] empty answer for: ' . $question, __METHOD__);
                 yield from $this->outageReply($session, $question);
 
@@ -1075,6 +1088,12 @@ class AskController extends Controller
         if ($status !== 200) {
             // `canRetry` marks a failure that happened before any output streamed,
             // so the caller can safely fall back (e.g. fast mode → standard speed).
+            $this->logFailReason = match (true) {
+                $status === 429 || $status === 529 => "overloaded:{$status}",
+                $status >= 500 => "anthropic:{$status}",
+                $status === 401 || $status === 403 => "auth:{$status}",
+                default => "request:{$status}",
+            };
             return [
                 'error' => ($status === 429 || $status >= 500) ? 'busy' : 'generic',
                 'canRetry' => true,
@@ -1207,6 +1226,7 @@ class AskController extends Controller
                     break;
 
                 case 'error':
+                    $this->logFailReason = 'stream:' . substr((string) ($data['error']['type'] ?? 'error'), 0, 40);
                     return ['error' => 'generic', 'blocks' => $blocks];
             }
         }
@@ -4084,6 +4104,7 @@ class AskController extends Controller
                 'cacheReadTokens' => $this->logCacheRead,
                 'cacheWriteTokens' => $this->logCacheWrite,
                 'outTokens' => $this->logOutTokens,
+                'failReason' => $this->logFailReason,
             ],
             [
                 'cid' => (string) $this->request->getBodyParam('cid', ''),

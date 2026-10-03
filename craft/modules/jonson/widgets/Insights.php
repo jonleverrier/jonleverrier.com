@@ -90,6 +90,12 @@ class Insights extends Widget
             'prospects' => $this->prospects(),
             // The VIP door THIS browser holds, if any — for the kill button at the foot.
             'vipNow' => Jonson::getInstance()->vip->current(),
+            // Questions that went unanswered, with why and what to do — since the
+            // signed-in user last pressed "Mark as seen" (InsightsController).
+            'incidents' => $analytics->incidents(
+                $this->days,
+                Craft::$app->getUser()->getIdentity()?->getPreference(\modules\jonson\controllers\InsightsController::SEEN_PREF),
+            ),
         ]);
     }
 
