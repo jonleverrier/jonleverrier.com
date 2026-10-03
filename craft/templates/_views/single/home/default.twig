@@ -84,6 +84,7 @@
                 autocomplete="off"
                 data-jonson-input
                 {%- if prompts|length %} data-placeholder-cycle='{{ prompts|values|json_encode|raw }}'{% endif %}
+                {%- if prompts|length %} data-placeholder-fallback="{{ askPlaceholder }}"{% endif %}
             >
             </span>
             {# Always on: an empty field still has something to send — the prompt the
@@ -150,6 +151,7 @@
                 maxlength="1000"
                 autocomplete="off"
                 {%- if prompts|length %} data-placeholder-cycle='{{ prompts|values|json_encode|raw }}'{% endif %}
+                {%- if prompts|length %} data-placeholder-fallback="{{ askPlaceholder }}"{% endif %}
             >
             </span>
             <button class="c-jonson__submit" type="submit" aria-label="Submit">

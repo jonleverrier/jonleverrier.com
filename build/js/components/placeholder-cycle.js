@@ -29,6 +29,13 @@
  * It moves on the `translate` property, not `transform`, so it composes with the
  * line's own vertical centring and its exit, which are both on transform.
  *
+ * NEVER A QUESTION ALREADY ASKED (Jon, 3 Oct 2026). A prompt the visitor has asked in
+ * this conversation — any question in the thread, restored ones included — is skipped,
+ * matched on its words alone (case and punctuation aside). Asking the prompt on screen
+ * moves the line on at once (jonson-ask.js sends jonson:asked). With every prompt asked,
+ * the cycle retires and the field takes its plain placeholder
+ * (data-placeholder-fallback, the CMS's ask line).
+ *
  * WHAT IT SHARES. The prompt on screen is written to the input as data-cycle-current,
  * which jonson-ask.js reads so an empty submit asks the question the visitor is
  * looking at. Written even under reduced motion, where it simply never changes.
@@ -67,15 +74,48 @@ export function mountPlaceholderCycle(input) {
     }
     if (!prompts.length) return () => {};
 
-    let index = 0;
+    // What's been asked: every question in the thread, by its words alone.
+    const norm = (text) => String(text).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    const asked = () => new Set([...document.querySelectorAll('.c-jonson__question')].map((q) => norm(q.textContent || '')));
+    const isFresh = (i, seen = asked()) => !seen.has(norm(prompts[i]));
+    // The next prompt not yet asked, after `from` and wrapping round to it; -1 if none.
+    const nextFresh = (from) => {
+        const seen = asked();
+        for (let k = 1; k <= prompts.length; k++) {
+            const i = (from + k) % prompts.length;
+            if (isFresh(i, seen)) return i;
+        }
+        return -1;
+    };
+
+    let index = isFresh(0) ? 0 : Math.max(0, nextFresh(0));
     const setCurrent = () => {
         input.dataset.cycleCurrent = prompts[index];
     };
     setCurrent();
 
+    // Every prompt asked: no cycle, the plain placeholder, nothing for an empty submit
+    // to ask.
+    const fallback = input.dataset.placeholderFallback || '';
+    let retired = false;
+
     // Reduced motion: no cycle, no scroll — the template's placeholder shows the first.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const still = () => {
+            const i = isFresh(index) ? index : nextFresh(index);
+            if (i < 0) {
+                delete input.dataset.cycleCurrent;
+                if (fallback) input.placeholder = fallback;
+                return;
+            }
+            index = i;
+            setCurrent();
+            input.placeholder = `Ask "${prompts[index]}"`;
+        };
+        still();
+        document.addEventListener('jonson:asked', still);
         return () => {
+            document.removeEventListener('jonson:asked', still);
             delete input.dataset.cycleCurrent;
         };
     }
@@ -99,7 +139,7 @@ export function mountPlaceholderCycle(input) {
         });
         return el;
     };
-    let current = line(prompts[0]);
+    let current = line(prompts[index]);
     slot.appendChild(current);
     input.after(overlay);
     input.classList.add('is-cycling');
@@ -114,20 +154,36 @@ export function mountPlaceholderCycle(input) {
     // How long a lone long prompt takes to slide back to its start.
     const RETURN_MS = 600;
 
+    const retire = () => {
+        retired = true;
+        clearTimeout(timer);
+        timer = null;
+        overlay.remove();
+        input.classList.remove('is-cycling');
+        delete input.dataset.cycleCurrent;
+        if (fallback) input.placeholder = fallback;
+    };
+
     const advance = () => {
         timer = null;
-        if (!idle()) return;
+        if (retired || !idle()) return;
 
-        // Only one prompt: back to its start and round again, rather than swapping it
-        // for itself.
-        if (prompts.length === 1) {
+        const upcoming = nextFresh(index);
+        if (upcoming < 0) {
+            retire();
+            return;
+        }
+
+        // Only one prompt left to show: back to its start and round again, rather than
+        // swapping it for itself.
+        if (upcoming === index) {
             current.style.setProperty('--scroll-ms', `${RETURN_MS}ms`);
             current.style.translate = '';
             timer = setTimeout(present, RETURN_MS);
             return;
         }
 
-        index = (index + 1) % prompts.length;
+        index = upcoming;
         setCurrent();
 
         const next = line(prompts[index]);
@@ -151,11 +207,17 @@ export function mountPlaceholderCycle(input) {
     // font's width — at 1440 it read as fitting and never scrolled.)
     const present = () => {
         clearTimeout(timer);
+        // The line on screen has been asked since it arrived (a restored thread, or
+        // the visitor sent it): move on now rather than hold it.
+        if (!isFresh(index)) {
+            advance();
+            return;
+        }
         timer = setTimeout(() => {
             const overflow = current.scrollWidth - slot.clientWidth;
             if (overflow <= 1) {
                 // A lone prompt that fits has nowhere to go: leave it be.
-                timer = prompts.length > 1 ? setTimeout(advance, HOLD_MS - SCROLL_LEAD_MS) : null;
+                timer = nextFresh(index) !== index ? setTimeout(advance, HOLD_MS - SCROLL_LEAD_MS) : null;
                 return;
             }
             const ms = Math.max(800, Math.round((overflow / SCROLL_PX_PER_S) * 1000));
@@ -194,6 +256,16 @@ export function mountPlaceholderCycle(input) {
     input.addEventListener('blur', resume);
     input.addEventListener('input', onInput);
     input.addEventListener('jonson:listening', onListening);
+    // A question just went up: if it's the line on screen (or the last fresh one), move
+    // on — at once when the field is idle, else when it next is (resume → present).
+    const onAsked = () => {
+        if (retired || isFresh(index)) return;
+        if (idle()) {
+            clearTimeout(timer);
+            advance();
+        }
+    };
+    document.addEventListener('jonson:asked', onAsked);
     // After the fonts: the first line is the one on screen from page load, and the
     // lead-in alone doesn't cover a slow font.
     document.fonts.ready.then(() => {
@@ -207,6 +279,7 @@ export function mountPlaceholderCycle(input) {
         input.removeEventListener('blur', resume);
         input.removeEventListener('input', onInput);
         input.removeEventListener('jonson:listening', onListening);
+        document.removeEventListener('jonson:asked', onAsked);
         input.classList.remove('is-cycling');
         delete input.dataset.cycleCurrent;
         overlay.remove();

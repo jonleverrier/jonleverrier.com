@@ -442,6 +442,9 @@ export function mountJonson({warpOut} = {}) {
 
         turn.append(q, a);
         thread.append(turn);
+        // The asking bars skip prompts already asked (placeholder-cycle.js): tell them,
+        // now the question is in the thread they read.
+        document.dispatchEvent(new CustomEvent('jonson:asked', {detail: question}));
         return a;
     };
 
