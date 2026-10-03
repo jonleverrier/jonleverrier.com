@@ -35,6 +35,24 @@ class FindContext extends Component
     private const TESTIMONIAL_FEATURED_BOOST = 100; // a featured quote outranks any non-featured in generic (non-client) contexts
     private const LEAD_PER_TURN = 3; // a lead set (a VIP's relevant work) shows at most this many a turn — large cards, never the rail
 
+    // READ ONCE PER REQUEST (Jon, 3 Oct 2026: answers felt slower). The case studies are
+    // ~40 queries — each study follows its client, logo, image, sectors and skills — and
+    // one question read them five or more times: the prompt, the cards, the links, the
+    // claim check. Kept here for the request, and dropped whenever an entry or category
+    // is saved (Jonson::init), so a long-lived queue worker never answers from old content.
+    private array $memo = [];
+
+    private function memo(string $key, callable $load): array
+    {
+        return $this->memo[$key] ??= $load();
+    }
+
+    /** Forget everything read so far — called when content changes. */
+    public function forget(): void
+    {
+        $this->memo = [];
+    }
+
     /**
      * Content sources, keyed by `kind`. Photos are the only tag-dependent one;
      * everything else self-describes via its text.
@@ -509,6 +527,11 @@ class FindContext extends Component
      */
     public function clientWork(): array
     {
+        return $this->memo('clientWork', fn() => $this->loadClientWork());
+    }
+
+    private function loadClientWork(): array
+    {
         if (!Craft::$app->getEntries()->getSectionByHandle('clientList')) {
             return [];
         }
@@ -664,70 +687,7 @@ class FindContext extends Component
             return [];
         }
 
-        $out = [];
-        foreach (Entry::find()->status(Entry::STATUS_LIVE)->section('caseStudies')->all() as $entry) {
-            // The client is the `clientSelector` relation, NOT the Title. Those were the
-            // same thing while a client had one study; the moment one has two, Title has
-            // to name the study. CaseStudies is the only thing that knows how to follow
-            // the relation, and the templates read it through craft.frontend, so a card
-            // in an answer and the study's own page can't disagree. Short form here —
-            // it's a card eyebrow, same as the static strip.
-            $client = CaseStudies::clientName($entry);
-            // `longTitle ?: title` — the same pattern every other section uses (the
-            // contact single, the case study index). One display title, not two: the
-            // card, the study's own page and the model's background list all name a
-            // project the same way, so a visitor never meets it under two names.
-            $project = trim((string) ($this->fieldVal($entry, 'longTitle') ?? ''));
-            $title = $project !== '' ? $project : trim((string) $entry->title);
-            if ($title === '') {
-                continue; // truly empty entry — nothing to show
-            }
-            $out[] = [
-                'client' => $client,
-                'title' => $title,        // longTitle, else the study's own Title
-                // The study's own short Title ("StreetPal iOS App Design & Development",
-                // "Logo Design") — what the title MATCH tier reads word by word. The
-                // display title above is a sentence ("Giving street photographers a
-                // missing companion app"), and matching its words named StreetPal on
-                // "street" and Vaiie on "into"; the short title has no such words.
-                'name' => trim((string) $entry->title),
-                'slug' => (string) $entry->slug, // the id a [[next:]] prompt cites (@study:slug)
-                // `bio` on this entry type — the field other sections still call
-                // `summary` (clientList, curriculumVitae), so don't unify the two by
-                // hand. fieldVal returns null for a missing field rather than throwing,
-                // which is why the rename emptied this silently instead of erroring.
-                'summary' => trim((string) ($this->fieldVal($entry, 'bio') ?? '')),                   // public blurb
-                'jonsonSummary' => trim((string) ($this->fieldVal($entry, 'jonsonSummary') ?? '')),    // private AI context
-                // Long titles ("RegTech", not "Regulatory") — what Jonson READS, so the
-                // short back-office name can't be paraphrased into something untrue
-                // ("regulators").
-                'sectors' => $this->categoryTitles($entry, 'sectorSelector', true),
-                // MATCHING keeps the plain titles, exactly as before. Matching on the long
-                // titles too made "regtech" in an answer a sector-label hit for Vaiie — a
-                // higher tier than the looser matches that found White Paper ("conference
-                // platform"), StreetPal and Urban — so "here's a spread: regtech products,
-                // an estate agency rebrand, a conference platform…" showed two Vaiie cards
-                // and nothing else.
-                'sectorTerms' => $this->categoryTitles($entry, 'sectorSelector'),
-                'skills' => $this->categoryTitles($entry, 'skills'),
-                'featured' => $this->isFeatured($entry),
-                // The "Is present?" switch — this work is still going. The Year row
-                // on the study reads it as "2015 – present"; the persona needs it so
-                // it can tell a finished project from a live relationship instead of
-                // putting everything in the past tense.
-                'ongoing' => $this->isOngoing($entry),
-                'url' => (string) $entry->getUrl(),
-                // The client's own logo first, then the study's. Used to be the other
-                // way round, with the Client List matched BY NAME as the fallback —
-                // which only worked because a study's Title was its client's name.
-                // The relation says it outright, so the string match is gone.
-                'logo' => CaseStudies::clientLogo($entry),
-                // Card thumbnail. `largeImage` is the entry-level field the CP labels
-                // "Thumbnail"; the same field also appears inside the caseContent
-                // matrix, but this reads the one on the entry itself.
-                'image' => $this->firstAsset($entry, ['largeImage']),
-            ];
-        }
+        $out = $this->studyRows();
 
         // No context — the prompt's background list + the availability check — gets the
         // FULL set, so the model always knows every study exists.
@@ -886,6 +846,79 @@ class FindContext extends Component
         // "where next?" suggestions become the entry point into the work instead. A
         // targeted ask still shows its specific match above, featured or not.
         return array_values(array_filter($out, static fn(array $s) => $s['featured']));
+    }
+
+    /** Every live case study as the picker reads it — once per request (see memo). */
+    private function studyRows(): array
+    {
+        return $this->memo('studyRows', function (): array {
+            $out = [];
+            foreach (Entry::find()->status(Entry::STATUS_LIVE)->section('caseStudies')->all() as $entry) {
+                // The client is the `clientSelector` relation, NOT the Title. Those were the
+                // same thing while a client had one study; the moment one has two, Title has
+                // to name the study. CaseStudies is the only thing that knows how to follow
+                // the relation, and the templates read it through craft.frontend, so a card
+                // in an answer and the study's own page can't disagree. Short form here —
+                // it's a card eyebrow, same as the static strip.
+                $client = CaseStudies::clientName($entry);
+                // `longTitle ?: title` — the same pattern every other section uses (the
+                // contact single, the case study index). One display title, not two: the
+                // card, the study's own page and the model's background list all name a
+                // project the same way, so a visitor never meets it under two names.
+                $project = trim((string) ($this->fieldVal($entry, 'longTitle') ?? ''));
+                $title = $project !== '' ? $project : trim((string) $entry->title);
+                if ($title === '') {
+                    continue; // truly empty entry — nothing to show
+                }
+                $out[] = [
+                    'client' => $client,
+                    'title' => $title,        // longTitle, else the study's own Title
+                    // The study's own short Title ("StreetPal iOS App Design & Development",
+                    // "Logo Design") — what the title MATCH tier reads word by word. The
+                    // display title above is a sentence ("Giving street photographers a
+                    // missing companion app"), and matching its words named StreetPal on
+                    // "street" and Vaiie on "into"; the short title has no such words.
+                    'name' => trim((string) $entry->title),
+                    'slug' => (string) $entry->slug, // the id a [[next:]] prompt cites (@study:slug)
+                    // `bio` on this entry type — the field other sections still call
+                    // `summary` (clientList, curriculumVitae), so don't unify the two by
+                    // hand. fieldVal returns null for a missing field rather than throwing,
+                    // which is why the rename emptied this silently instead of erroring.
+                    'summary' => trim((string) ($this->fieldVal($entry, 'bio') ?? '')),                   // public blurb
+                    'jonsonSummary' => trim((string) ($this->fieldVal($entry, 'jonsonSummary') ?? '')),    // private AI context
+                    // Long titles ("RegTech", not "Regulatory") — what Jonson READS, so the
+                    // short back-office name can't be paraphrased into something untrue
+                    // ("regulators").
+                    'sectors' => $this->categoryTitles($entry, 'sectorSelector', true),
+                    // MATCHING keeps the plain titles, exactly as before. Matching on the long
+                    // titles too made "regtech" in an answer a sector-label hit for Vaiie — a
+                    // higher tier than the looser matches that found White Paper ("conference
+                    // platform"), StreetPal and Urban — so "here's a spread: regtech products,
+                    // an estate agency rebrand, a conference platform…" showed two Vaiie cards
+                    // and nothing else.
+                    'sectorTerms' => $this->categoryTitles($entry, 'sectorSelector'),
+                    'skills' => $this->categoryTitles($entry, 'skills'),
+                    'featured' => $this->isFeatured($entry),
+                    // The "Is present?" switch — this work is still going. The Year row
+                    // on the study reads it as "2015 – present"; the persona needs it so
+                    // it can tell a finished project from a live relationship instead of
+                    // putting everything in the past tense.
+                    'ongoing' => $this->isOngoing($entry),
+                    'url' => (string) $entry->getUrl(),
+                    // The client's own logo first, then the study's. Used to be the other
+                    // way round, with the Client List matched BY NAME as the fallback —
+                    // which only worked because a study's Title was its client's name.
+                    // The relation says it outright, so the string match is gone.
+                    'logo' => CaseStudies::clientLogo($entry),
+                    // Card thumbnail. `largeImage` is the entry-level field the CP labels
+                    // "Thumbnail"; the same field also appears inside the caseContent
+                    // matrix, but this reads the one on the entry itself.
+                    'image' => $this->firstAsset($entry, ['largeImage']),
+                ];
+            }
+
+            return $out;
+        });
     }
 
     /** Whether the case study is flagged Featured (the `isFeatured` lightswitch). */
@@ -1263,6 +1296,11 @@ class FindContext extends Component
      */
     public function sectors(): array
     {
+        return $this->memo('sectors', fn() => $this->loadSectors());
+    }
+
+    private function loadSectors(): array
+    {
         if (!Craft::$app->getCategories()->getGroupByHandle('sectorExperience')) {
             return [];
         }
@@ -1350,6 +1388,11 @@ class FindContext extends Component
      */
     public function workNames(): array
     {
+        return $this->memo('workNames', fn() => $this->loadWorkNames());
+    }
+
+    private function loadWorkNames(): array
+    {
         $names = array_map(static fn(array $c) => (string) ($c['name'] ?? ''), $this->clientWork());
         foreach ($this->caseStudies() as $study) {
             $names[] = (string) ($study['client'] ?? '');
@@ -1386,6 +1429,11 @@ class FindContext extends Component
      * as the CV is filled in. Skips until the section exists.
      */
     public function curriculumVitae(): array
+    {
+        return $this->memo('curriculumVitae', fn() => $this->loadCurriculumVitae());
+    }
+
+    private function loadCurriculumVitae(): array
     {
         if (!Craft::$app->getEntries()->getSectionByHandle('curriculumVitae')) {
             return [];

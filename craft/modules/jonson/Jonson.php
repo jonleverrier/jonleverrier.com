@@ -10,6 +10,7 @@ use craft\events\RegisterTemplateRootsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\helpers\Queue;
 use craft\services\Dashboard;
+use craft\services\Elements;
 use craft\web\UrlManager;
 use craft\web\View;
 use modules\jonson\jobs\GenerateNoteMemory;
@@ -61,6 +62,15 @@ class Jonson extends BaseModule
         // background — see services\NoteMemory for what a card is and why. The
         // write-back saves the entry again and lands here again; needs() then
         // finds the card full and nothing is queued, so it can't loop.
+        // Content changed: FindContext's per-request copies of the case studies, clients,
+        // CV and sectors are dropped, so anything that runs on after a save — a queue
+        // worker writing note memories or VIP picks — reads the new content.
+        foreach ([Elements::EVENT_AFTER_SAVE_ELEMENT, Elements::EVENT_AFTER_DELETE_ELEMENT] as $changed) {
+            Event::on(Elements::class, $changed, function () {
+                $this->findContext->forget();
+            });
+        }
+
         Event::on(
             Entry::class,
             Entry::EVENT_AFTER_SAVE,
