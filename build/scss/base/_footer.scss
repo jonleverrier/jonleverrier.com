@@ -117,6 +117,43 @@ $b-footer-strapline: getmap($colour, primary, 430);
     }
 }
 
+// ON A PHONE, THE PLACES TO GO COME FIRST (Jon, 3 Oct 2026): Quick Links, Discuss a
+// project, Find me elsewhere, Legal — where the desktop row reads Find me first, beside
+// the strapline. The strapline stays the footer's opening line, so its column is
+// opened up (display: contents) and only its "Find me" heading and icons move down.
+// Ordered by what each column holds, not its position, so a missing Discuss or Legal
+// column leaves the rest in sequence. The folds still work: :has() reads the markup,
+// which hasn't moved.
+@include mq(until, md) {
+    .b-footer__primary-col:first-child {
+        display: contents;
+
+        > .b-footer__whisper,
+        > [data-footer-panel] {
+            order: 3;
+        }
+
+        // It no longer follows the strapline on screen, so not the strapline's gap.
+        > .b-footer__strapline + * {
+            margin-top: 0;
+        }
+    }
+
+    // First after the strapline, so it takes the strapline's gap.
+    .b-footer__primary-col:has(#footer-quick-links) {
+        order: 1;
+        margin-top: getmap($space, rhythm, 700);
+    }
+
+    .b-footer__primary-col:has(#footer-discuss) {
+        order: 2;
+    }
+
+    .b-footer__primary-col:has(#footer-legal) {
+        order: 4;
+    }
+}
+
 // The fold itself, and it is CSS that owns it rather than the script. Keyed on the
 // column's own aria-expanded and scoped to below md, so the stylesheet decides whether
 // the state means anything at this width and can never strand a list hidden on a
