@@ -557,6 +557,7 @@
       "vip": "allan-wood",
       "turns": [
         {
+          "requireText": ["^[^.!?]{0,40}\\bAllan\\b"],
           "q": "What makes you different?",
           "expect": [
             "casestudies"
@@ -582,6 +583,7 @@
       "vip": "allan-wood",
       "turns": [
         {
+          "requireText": ["^[^.!?]{0,40}\\bAllan\\b"],
           "q": "What do your clients say about working with you?",
           "expect": [
             "testimonial"
@@ -599,6 +601,7 @@
       "vip": "allan-wood",
       "turns": [
         {
+          "requireText": ["^[^.!?]{0,40}\\bAllan\\b"],
           "q": "Tell me about yourself?",
           "forbidText": [
             "^[^.]{0,40}(?:—|–|;|,)\\s*(?:a|another)\\s+fellow\\b",

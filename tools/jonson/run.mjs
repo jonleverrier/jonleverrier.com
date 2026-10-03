@@ -229,6 +229,11 @@ async function runScenario(s) {
             const hit = r.answer.match(new RegExp(src, 'i'));
             if (hit) fails.push(`T${i + 1} answer said "${hit[0]}"`);
         }
+        // `requireText`: what the answer must say — a VIP opener greeting them by name
+        // before anything else (it went missing once the greeting grew a second sentence).
+        for (const src of turn.requireText || []) {
+            if (!new RegExp(src, 'i').test(r.answer)) fails.push(`T${i + 1} answer missing /${src}/`);
+        }
         // WHICH QUOTE LEADS, when a quote shows at all (the model decides whether).
         // Lee (Vaiie) led Oliver (Urban's CEO) for Allan on CMS order alone.
         if (turn.leadQuote) {
