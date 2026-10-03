@@ -513,9 +513,18 @@ class AskController extends Controller
                 // Delegates: yields `text` SSE events, returns the assembled content
                 // blocks (or an error flag). Fast mode falls back to standard speed
                 // if it fails before any output streamed.
-                $result = yield from $this->streamTurn($client, $apiKey, $model, $system, $volatile, $messages, [], $useFast);
+                //
+                // Paused at the chips (streamToChips): $turn holds the prose as soon as
+                // the model starts writing [[next: …]], and the rest of the stream is
+                // read after the answer is on screen (finishChips).
+                $turn = yield from $this->streamToChips($this->streamTurn($client, $apiKey, $model, $system, $volatile, $messages, [], $useFast, true));
+                $result = $turn['result'];
                 if ($useFast && !empty($result['error']) && !empty($result['canRetry'])) {
-                    $result = yield from $this->streamTurn($client, $apiKey, $model, $system, $volatile, $messages, [], false);
+                    $turn = yield from $this->streamToChips($this->streamTurn($client, $apiKey, $model, $system, $volatile, $messages, [], false, true));
+                    $result = $turn['result'];
+                }
+                if ($turn['prose'] !== null) {
+                    $result = ['blocks' => [['type' => 'text', 'text' => $turn['prose']]]];
                 }
             } catch (\Throwable $e) {
                 Craft::error('[jonson] ' . $e->getMessage(), __METHOD__);
@@ -712,6 +721,16 @@ class AskController extends Controller
                 // carries the same answer for every path that doesn't send this one
                 // (cached replays, the junk gate, API errors).
                 yield $this->sse('answer', ['answer' => $answer]);
+
+                // THE CHIPS, now the answer is showing. The model was still writing them
+                // when the prose went up; the rest of its stream is read here, without
+                // forwarding it (the page has revealed and ignores late text), and the
+                // [[next: …]] block joins the answer for the slate, history and cache. A
+                // rewritten answer (checkClaims) carries its own, so the first draft's
+                // are dropped with it.
+                if (!str_contains($answer, '[[next:')) {
+                    $answer = rtrim($answer) . $this->finishChips($turn);
+                }
 
                 // Read the exchange for the two signals that shape the slate: the
                 // funnel stage (which roles fill it; whether the lead path leads),
@@ -932,6 +951,54 @@ class AskController extends Controller
     }
 
     /**
+     * Forward a streamTurn() until it hands over its prose (the chips have begun), or to
+     * its end. Returns ['prose' => string|null, 'gen' => the paused generator|null,
+     * 'result' => streamTurn's return when it ran to the end, else null].
+     */
+    private function streamToChips(\Generator $gen): \Generator
+    {
+        foreach ($gen as $out) {
+            if (is_array($out)) {
+                return ['prose' => (string) ($out['prose'] ?? ''), 'gen' => $gen, 'result' => null];
+            }
+            yield $out;
+        }
+
+        return ['prose' => null, 'gen' => null, 'result' => $gen->getReturn()];
+    }
+
+    /**
+     * Read the rest of a paused stream and return its [[next: …]] block ("\n\n[[next: …]]"),
+     * or '' — nothing paused, the stream failed, or no chips came. Never forwarded: the
+     * answer is already on the page.
+     */
+    private function finishChips(array $turn): string
+    {
+        $gen = $turn['gen'] ?? null;
+        if (!$gen instanceof \Generator) {
+            return '';
+        }
+        try {
+            $gen->next();
+            while ($gen->valid()) {
+                $gen->next();
+            }
+            $text = '';
+            foreach ($gen->getReturn()['blocks'] ?? [] as $block) {
+                if (($block['type'] ?? '') === 'text') {
+                    $text .= $block['text'];
+                }
+            }
+        } catch (\Throwable $e) {
+            Craft::warning('[jonson] chips after the answer failed: ' . $e->getMessage(), __METHOD__);
+            return '';
+        }
+        $at = strpos($text, '[[next:');
+
+        return $at === false ? '' : "\n\n" . trim(substr($text, $at));
+    }
+
+    /**
      * Stream one Claude call. Yields `text` SSE events as tokens arrive and
      * returns ['blocks' => [...], 'stop' => <stop_reason>] — or ['error' =>
      * 'busy'|'generic'] on failure. `blocks` is the assistant's content (text +
@@ -946,6 +1013,7 @@ class AskController extends Controller
         array $messages,
         array $tools,
         bool $fast = false,
+        bool $pauseAtChips = false,
     ): \Generator {
         $headers = [
             'x-api-key' => $apiKey,
@@ -1015,6 +1083,7 @@ class AskController extends Controller
 
         $body = $res->getBody();
         $blocks = [];
+        $paused = false; // see $pauseAtChips: the prose has been handed over
         $cur = null; // block being assembled
         $stop = null;
         $eventType = '';
@@ -1094,6 +1163,21 @@ class AskController extends Controller
                             }
                             $cur['text'] .= $text;
                             yield $this->sse('text', ['text' => $text]);
+                            // THE PROSE IS DONE WHEN THE CHIPS BEGIN. The model always
+                            // writes [[next: …]] last; from here on it's only writing
+                            // follow-up chips. Hand the caller the prose now (an array,
+                            // where everything else yielded is an SSE string) so the
+                            // answer can be checked and shown while the chips finish.
+                            if ($pauseAtChips && !$paused && ($at = strpos($cur['text'], '[[next:')) !== false) {
+                                $paused = true;
+                                $prose = '';
+                                foreach ($blocks as $done) {
+                                    if (($done['type'] ?? '') === 'text') {
+                                        $prose .= $done['text'];
+                                    }
+                                }
+                                yield ['prose' => rtrim($prose . substr($cur['text'], 0, $at))];
+                            }
                         }
                     } elseif (($delta['type'] ?? '') === 'input_json_delta' && ($cur['type'] ?? '') === 'tool_use') {
                         $cur['json'] .= $delta['partial_json'] ?? '';
