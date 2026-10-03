@@ -601,6 +601,8 @@ class AskController extends Controller
             $cardSlugs = []; // studies whose cards show this turn — not auto-linked (see linkStudies)
             $suggestions = [];
             if ($answer !== '') {
+                $answer = $this->vipCardsFallback($answer);
+                $answer = $this->vipQuoteFallback($answer);
                 $clean = $this->stripMarkers($answer);
                 $ctx = Jonson::getInstance()->findContext;
                 $registry = $this->surfaceRegistry();
@@ -716,7 +718,20 @@ class AskController extends Controller
                 // and whether the visitor has signed off (the only thing that
                 // suppresses chips — deterministic, never a model marker). One cheap
                 // call, with funnelStage() as the fallback stage if it fails.
-                $exchange = $this->classifyExchange($client, $apiKey, $question, $clean, $this->funnelStage($session));
+                //
+                // Read against what Jon said BEFORE the question — what the visitor was
+                // replying to — never against this answer. They hadn't seen it when they
+                // asked, and a confident pitch read them as buying: "Why should I hire
+                // you?" with its own answer came back 'hot' 23 times in 30 (warm, by the
+                // stage definitions), and the floor below put a contact panel under it.
+                $before = '';
+                foreach (array_reverse($messages) as $m) {
+                    if ($m['role'] === 'assistant') {
+                        $before = $this->stripMarkers((string) $m['content']);
+                        break;
+                    }
+                }
+                $exchange = $this->classifyExchange($client, $apiKey, $question, $before, $this->funnelStage($session));
                 // Floor the stage by engagement depth: a few turns in, steer to work
                 // even when the questions themselves read casual (classifier stays
                 // cold/warm). The classifier can only push it warmer, never colder.
@@ -1944,14 +1959,17 @@ class AskController extends Controller
 
         $model = App::env('KEY_ANTHROPIC_MODEL_FAST') ?: 'claude-haiku-4-5';
         $system = 'You read one exchange on a freelance product designer\'s portfolio and report two '
-            . 'things about the VISITOR (judge mainly by their question; the answer is context only).'
+            . 'things about the VISITOR (judge by their question; what Jon said before it is context only).'
             . "\n\nstage — where they are in the sales funnel, exactly one of:"
             . "\n- cold: just orienting or getting to know Jon — who he is, what he does, personal or background curiosity."
             . "\n- warm: weighing Jon up as a potential hire — his process, experience, clients, sectors, or whether he fits something they're considering."
             . "\n- hot: a concrete need or buying signal — describing a project or problem of their own, a change in their business, or asking about availability, cost, timelines, or how to start / get in touch."
             . "\nWhen genuinely torn between two, pick the cooler one."
             . "\n\nsigned_off — true ONLY if the visitor is clearly ending the conversation (e.g. \"thanks, that's all\", \"bye\", \"not right now\", \"I'll be in touch\"). A normal question, however brief, is not signing off. When unsure, false.";
-        $user = "Visitor's question:\n{$question}\n\nAnswer given (context only):\n{$answer}";
+        // No context line on an opener: a note saying "first question" pulled openers to
+        // 'cold' ("Why should I hire you?" read cold 15 in 15, where it is warm).
+        $user = (trim($answer) !== '' ? "What Jon said last, which the visitor is replying to (context only):\n{$answer}\n\n" : '')
+            . "Visitor's question:\n{$question}";
 
         $tool = [
             'name' => 'read_exchange',
@@ -2774,6 +2792,108 @@ class AskController extends Controller
     }
 
     /** Strip inline markers (the [[next: …]] suggestions block + [[handle]]s). */
+    /**
+     * A QUOTE THE ANSWER GIVES A VIP SHOWS AS ITS CARD. The [[testimonial]] marker is the
+     * model's call, and in one run of six Opus 5 told Allan what "Oliver Atkinson at
+     * Urban.co.uk" said — his own sector's quote, the one the VIP order exists to lead
+     * with — and placed no marker, so the quote card never appeared.
+     *
+     * Only for a VIP door, only with no [[testimonial]] in the answer, and only when it
+     * names a testimonial's PERSON — a client's name alone is not a quote ("I rebranded
+     * Urban.co.uk"). The marker goes after the paragraph that names them; which quote
+     * shows is still decided downstream, by the subject window and the VIP order.
+     */
+    private function vipQuoteFallback(string $answer, ?\craft\elements\Entry $entry = null): string
+    {
+        if (preg_match('/\[\[testimonial\b/i', $answer)) {
+            return $answer;
+        }
+        $entry ??= Jonson::getInstance()->vip->current(); // passed in by tools/jonson/selection.php
+        if (!$entry) {
+            return $answer;
+        }
+        $people = [];
+        foreach (\craft\elements\Entry::find()->status('live')->section('testimonials')->all() as $quote) {
+            $name = trim((string) ($quote->personName ?? ''));
+            if ($name !== '') {
+                $people[] = $name;
+            }
+        }
+        $paragraphs = preg_split('/\n\s*\n/', $answer);
+        foreach ($paragraphs as $k => $paragraph) {
+            if (str_starts_with(trim($paragraph), '[[next')) {
+                break;
+            }
+            $plain = $this->stripMarkers($paragraph);
+            foreach ($people as $person) {
+                if (preg_match('/(?<![\w])' . preg_quote($person, '/') . '(?![\w])/iu', $plain)) {
+                    array_splice($paragraphs, $k + 1, 0, ['[[testimonial]]']);
+                    Craft::info("[jonson] VIP quote added: the answer named {$person} without [[testimonial]]", __METHOD__);
+
+                    return implode("\n\n", $paragraphs);
+                }
+            }
+        }
+
+        return $answer;
+    }
+
+    /**
+     * A VIP'S OWN WORK IS NEVER LEFT WITHOUT ITS CARDS (Jon, 3 Oct 2026: "fucking up the
+     * VIP isn't acceptable"). The model decides what shows by placing [[casestudies]], and
+     * in one run of six Opus 5 named Urban.co.uk and Vaiie Onboard to Allan — Urban being
+     * the study his note is about — and placed no marker, so nothing showed.
+     *
+     * Only for a VIP door, only when the model placed no [[casestudies]] at all, and only
+     * when the answer NAMES one of that visitor's relevant studies by its client or title
+     * (FindContext::withNamedIn — not a sector word or a skill). Then the marker goes in after the
+     * paragraph that named it, listing every study the answer named, as if the model had
+     * written it: grounding, framing, the once-per-conversation budget and the VIP lead
+     * order all apply unchanged downstream.
+     */
+    private function vipCardsFallback(string $answer, ?\craft\elements\Entry $entry = null): string
+    {
+        if (preg_match('/\[\[casestudies\b/i', $answer)) {
+            return $answer;
+        }
+        $vip = Jonson::getInstance()->vip;
+        $entry ??= $vip->current(); // passed in by tools/jonson/selection.php
+        if (!$entry) {
+            return $answer;
+        }
+        $ctx = Jonson::getInstance()->findContext;
+        $clean = $this->stripMarkers($answer);
+        // What the answer names, by the same rule the cards use when the model DID list
+        // them (withNamedIn): a study named by title comes alone, a client named brings
+        // its set.
+        $named = $ctx->withNamedIn([], $clean);
+        $theirs = array_column($vip->relevantStudies($entry), 'slug');
+        if (!array_intersect(array_column($named, 'slug'), $theirs)) {
+            return $answer;
+        }
+
+        // After the paragraph that first names one of their studies.
+        $paragraphs = preg_split('/\n\s*\n/', $answer);
+        $at = count($paragraphs) - 1;
+        foreach ($paragraphs as $k => $paragraph) {
+            if (str_starts_with(trim($paragraph), '[[next')) {
+                $at = max(0, $k - 1);
+                break;
+            }
+            $plain = $this->stripMarkers($paragraph);
+            foreach ($named as $study) {
+                if (in_array($study['slug'], $theirs, true) && in_array($ctx->studyMatchTier($plain, $study), [1, 2], true)) {
+                    $at = $k;
+                    break 2;
+                }
+            }
+        }
+        array_splice($paragraphs, $at + 1, 0, ['[[casestudies:' . implode(',', array_column($named, 'slug')) . ']]']);
+        Craft::info('[jonson] VIP cards added: the answer named their work without [[casestudies]]', __METHOD__);
+
+        return implode("\n\n", $paragraphs);
+    }
+
     /**
      * Every marker the model placed, by handle: its modifier (`[[handle:mod]]`),
      * whether it is FRAMED, and the order it first appeared in. A handle placed

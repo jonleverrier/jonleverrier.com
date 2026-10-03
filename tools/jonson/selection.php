@@ -27,6 +27,7 @@ $picks = $file['picks'] ?? [];
 $failed = 0;
 foreach ($cases as $c) {
     $lead = [];
+    $entry = null;
     if (!empty($c['vip'])) {
         $entry = Entry::find()->section('vip')->slug($c['vip'])->status(null)->one();
         if (!$entry) {
@@ -53,6 +54,21 @@ foreach ($cases as $c) {
         if (count($got) !== count(array_unique($got))) $fails[] = 'a study linked twice';
         $failed += $fails ? 1 : 0;
         printf("%-5s %-32s [%s]%s\n", $fails ? 'FAIL' : 'PASS', $c['id'], implode(', ', $got), $fails ? '  ← ' . implode('; ', $fails) : '');
+        continue;
+    }
+    // A VIP-fallback case: AskController::vipCardsFallback over a recorded answer, with
+    // the case's door. `adds` = the [[casestudies:…]] it must add (exact), or null when
+    // the answer must come back unchanged.
+    if (($c['kind'] ?? '') === 'vipfallback' || ($c['kind'] ?? '') === 'vipquote') {
+        $ask = new \modules\jonson\controllers\AskController('ask', Jonson::getInstance());
+        $quote = $c['kind'] === 'vipquote';
+        $out = (new ReflectionMethod($ask, $quote ? 'vipQuoteFallback' : 'vipCardsFallback'))->invoke($ask, $c['answer'], $entry ?? null);
+        preg_match($quote ? '/(\[\[testimonial\]\])/' : '/\[\[casestudies:([^\]]*)\]\]/', $out, $m);
+        $added = $out === $c['answer'] ? null : ($m[1] ?? '?');
+        $want = $c['adds'] ?? null;
+        $ok = $added === $want;
+        $failed += $ok ? 0 : 1;
+        printf("%-5s %-32s %s%s\n", $ok ? 'PASS' : 'FAIL', $c['id'], $added ?? 'unchanged', $ok ? '' : '  ← wanted ' . ($want ?? 'unchanged'));
         continue;
     }
     // A marker case: AskController::markersIn over a recorded answer — which markers
