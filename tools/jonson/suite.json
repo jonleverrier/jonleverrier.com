@@ -54,7 +54,6 @@
             "sectors",
             "method",
             "casestudies",
-            
             "contact"
           ]
         }
@@ -571,7 +570,8 @@
             "\\byou(?:'ve| have|'d| had)?\\s+(?:built|founded|ran|run|grew|grown|launched|started|took|taken|turned)\\b[^.]{0,40}urban",
             "\\b(?:since|when) we (?:first )?worked together",
             "your (?:time|work|role) (?:at|with|on) urban",
-            "^[^.]{0,40}(?:—|–|;|,)\\s*(?:a|another)\\s+fellow\\b"
+            "^[^.]{0,40}(?:—|–|;|,)\\s*(?:a|another)\\s+fellow\\b",
+            "\\bHiizzy\\b"
           ]
         }
       ]
@@ -586,7 +586,10 @@
           "expect": [
             "testimonial"
           ],
-          "leadQuote": "Oliver Atkinson"
+          "leadQuote": "Oliver Atkinson",
+          "forbidText": [
+            "\\bHiizzy\\b"
+          ]
         }
       ]
     },
@@ -598,7 +601,8 @@
         {
           "q": "Tell me about yourself?",
           "forbidText": [
-            "^[^.]{0,40}(?:—|–|;|,)\\s*(?:a|another)\\s+fellow\\b"
+            "^[^.]{0,40}(?:—|–|;|,)\\s*(?:a|another)\\s+fellow\\b",
+            "\\bHiizzy\\b"
           ]
         }
       ]

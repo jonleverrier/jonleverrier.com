@@ -56,6 +56,24 @@ foreach ($cases as $c) {
         printf("%-5s %-32s [%s]%s\n", $fails ? 'FAIL' : 'PASS', $c['id'], implode(', ', $got), $fails ? '  ← ' . implode('; ', $fails) : '');
         continue;
     }
+    // A hidden-note case: what a VIP's note knows must not be said back (AskController::
+    // hiddenNoteTerms → ClaimCheck::noteFindings / withoutNoteChips). `flags` = the
+    // note terms the prose names (exact, in order found); `chips` = the [[next:]] block
+    // left after scrubbing ('' when emptied); `said` = what the visitor typed.
+    if (($c['kind'] ?? '') === 'notehidden') {
+        $ask = new \modules\jonson\controllers\AskController('ask', Jonson::getInstance());
+        $base = (new ReflectionMethod($ask, 'claimContext'))->invoke($ask);
+        $terms = (new ReflectionMethod($ask, 'hiddenNoteTerms'))->invoke($ask, $base, $c['said'] ?? '', $entry ?? null);
+        $check = Jonson::getInstance()->claimCheck;
+        $flags = array_column($check->noteFindings($c['answer'], $terms), 'name');
+        preg_match('/\[\[next:[^\]]*\]\]/', $check->withoutNoteChips($c['answer'], $terms), $m);
+        $fails = [];
+        if ($flags !== ($c['flags'] ?? [])) $fails[] = 'flagged [' . implode(', ', $flags) . ']';
+        if (array_key_exists('chips', $c) && ($m[0] ?? '') !== $c['chips']) $fails[] = 'chips left: ' . ($m[0] ?? "''");
+        $failed += $fails ? 1 : 0;
+        printf("%-5s %-32s [%s]%s\n", $fails ? 'FAIL' : 'PASS', $c['id'], implode(', ', $flags), $fails ? '  ← ' . implode('; ', $fails) : '');
+        continue;
+    }
     // A VIP-fallback case: AskController::vipCardsFallback over a recorded answer, with
     // the case's door. `adds` = the [[casestudies:…]] it must add (exact), or null when
     // the answer must come back unchanged.

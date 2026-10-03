@@ -566,7 +566,16 @@ class AskController extends Controller
             // was a client — is written again with the mistake named; only that rare
             // answer waits for the rewrite. See services\ClaimCheck, and prove changes
             // with tools/jonson/claims.php.
-            $answer = yield from $this->checkClaims($answer, $client, $apiKey, $model, $system, $volatile, $messages, $question);
+            // What a VIP's private note knows that Jonson mustn't say (hiddenNoteTerms) —
+            // checked with the claims, and kept out of the chips below.
+            $said = $question;
+            foreach ($messages as $m) {
+                if ($m['role'] === 'user') {
+                    $said .= "\n" . $m['content'];
+                }
+            }
+            $noteTerms = $this->hiddenNoteTerms($system, $said);
+            $answer = yield from $this->checkClaims($answer, $client, $apiKey, $model, $system, $volatile, $messages, $question, $noteTerms);
 
             // GROUND THE LINKS before anything reads the answer. inlineMarkdown() lets a
             // same-site path through by shape — it cannot know which paths exist — so
@@ -744,6 +753,9 @@ class AskController extends Controller
                 if (!str_contains($answer, '[[next:')) {
                     $answer = rtrim($answer) . $this->finishChips($turn);
                 }
+                // A chip that names what only the VIP's note knows is dropped; the slate
+                // refills from the rest (suggestionsFor).
+                $answer = Jonson::getInstance()->claimCheck->withoutNoteChips($answer, $noteTerms);
 
                 // Read the exchange for the two signals that shape the slate: the
                 // funnel stage (which roles fill it; whether the lead path leads),
@@ -918,13 +930,17 @@ class AskController extends Controller
         string $volatile,
         array $messages,
         string $question,
+        array $noteTerms = [],
     ): \Generator {
         $jonson = Jonson::getInstance();
         $employers = $jonson->findContext->employers();
         $workNames = $jonson->findContext->workNames();
         $context = "$system\n$volatile\n$question";
 
-        $findings = $jonson->claimCheck->findings($answer, $context, $employers, $workNames);
+        $findings = [
+            ...$jonson->claimCheck->findings($answer, $context, $employers, $workNames),
+            ...$jonson->claimCheck->noteFindings($answer, $noteTerms),
+        ];
         if (!$findings) {
             return $answer;
         }
@@ -951,7 +967,10 @@ class AskController extends Controller
         }
 
         if (trim($rewritten) !== '') {
-            $still = $jonson->claimCheck->findings($rewritten, $context, $employers, $workNames);
+            $still = [
+                ...$jonson->claimCheck->findings($rewritten, $context, $employers, $workNames),
+                ...$jonson->claimCheck->noteFindings($rewritten, $noteTerms),
+            ];
             if (!$still) {
                 return $rewritten;
             }
@@ -2897,6 +2916,59 @@ class AskController extends Controller
 
     /** Strip inline markers (the [[next: …]] suggestions block + [[handle]]s). */
     /**
+     * THE NAMES JONSON KNOWS ONLY FROM A VIP'S PRIVATE NOTE, which it must not say
+     * (Jon, 3 Oct 2026: replies said "given what you're doing with Hiizzy" and chips
+     * asked about "MyJE" — the note is hidden context, not talking points).
+     *
+     * The capitalised words of the note, the company field and the door's title —
+     * names, in practice — less: anything Jonson also knows from Jon's own content
+     * ($base, the cached system prompt: "Jersey", "Urban.co.uk", "PropTech" are Jon's to
+     * mention), the visitor's own first and last name (the greeting uses them), and
+     * anything the visitor has said themselves this conversation ($said) — once they've
+     * named it, it's theirs to talk about. Compared whole-word, ignoring case, so a word
+     * that merely opens a sentence ("Wants", "Building") is ordinary prose Jon's content
+     * also uses, and drops out.
+     *
+     * @return string[]
+     */
+    private function hiddenNoteTerms(string $base, string $said, ?\craft\elements\Entry $entry = null): array
+    {
+        $vip = Jonson::getInstance()->vip;
+        $entry ??= $vip->current();
+        if (!$entry) {
+            return [];
+        }
+        $source = $vip->note($entry) . "\n" . $vip->field($entry, 'company') . "\n" . $entry->title;
+        $own = array_map('mb_strtolower', array_filter([$vip->field($entry, 'firstName'), $vip->field($entry, 'surname')]));
+        preg_match_all('/(?<![\p{L}\p{N}])(?:\p{Lu}[\p{L}\p{N}]*(?:[.\-][\p{L}\p{N}]+)*|\p{Ll}+\p{Lu}[\p{L}\p{N}]*)/u', $source, $m, PREG_OFFSET_CAPTURE);
+        $mentions = static fn(string $text, string $word): bool
+            => (bool) preg_match('/(?<![\p{L}\p{N}])' . preg_quote($word, '/') . '(?![\p{L}\p{N}])/iu', $text);
+        // A NAME, NOT A SENTENCE'S FIRST WORD. "Previously", "Loves", "She" are capitals
+        // only because they open a sentence; a word counts when it's capitalised
+        // somewhere mid-sentence, or carries a capital inside it (MyJE, iLotto).
+        $named = [];
+        foreach ($m[0] as [$word, $at]) {
+            $before = rtrim(substr($source, 0, $at));
+            $opens = $before === '' || preg_match('/[.!?:;\n•*\-–—"“(]$/u', $before);
+            if (!$opens || preg_match('/^.+\p{Lu}/u', $word)) {
+                $named[$word] = true;
+            }
+        }
+        $terms = [];
+        foreach (array_keys($named) as $word) {
+            if (mb_strlen($word) < 3 || in_array(mb_strtolower($word), $own, true)) {
+                continue;
+            }
+            if ($mentions($base, $word) || $mentions($said, $word)) {
+                continue;
+            }
+            $terms[] = $word;
+        }
+
+        return array_values($terms);
+    }
+
+    /**
      * A QUOTE THE ANSWER GIVES A VIP SHOWS AS ITS CARD. The [[testimonial]] marker is the
      * model's call, and in one run of six Opus 5 told Allan what "Oliver Atkinson at
      * Urban.co.uk" said — his own sector's quote, the one the VIP order exists to lead
@@ -3306,8 +3378,9 @@ class AskController extends Controller
                         . "(you don't have it) and don't make a thing of the return — then answer what "
                         . "they asked. Warm and brief, never gushing. "
                     : "This is your FIRST reply to them, so greet them: open with their first name "
-                        . "({$first}) and one line about what THEY are doing now — their work, their company — "
-                        . "then answer what they asked. Warm and brief, never gushing. " . self::VIP_GREETING_RULE . " THE GREETING "
+                        . "({$first}) and a warm line — nothing about their work, company or plans (see below: "
+                        . "what you know of them stays unspoken) — then answer what they asked. Warm and brief, "
+                        . "never gushing. " . self::VIP_GREETING_RULE . " THE GREETING "
                         . "IS THE FIRST THING IN THE REPLY, before the answer — never a line at the end and "
                         . "never a sign-off. Asked something short and practical, the pull is to answer it "
                         . "and greet afterwards; that lands the welcome as an afterthought, which is the "
@@ -3375,11 +3448,20 @@ class AskController extends Controller
             . $why
             . "- " . $naming . "\n"
             . ($hasNote
-                ? "- Draw on what you know about them openly, as shared context between two people who've "
-                    . "been introduced — \"as someone who's run a design team…\", \"given what you're building…\" — "
-                    . "and let it colour the angle, the examples and the depth you pitch at. What you must NOT do "
-                    . "is recite the note, list facts about them back at them, or say you were briefed, given "
-                    . "notes or sent a link. You simply know them.\n"
+                // THE NOTE STAYS HIDDEN (Jon, 3 Oct 2026). It used to be drawn on "openly"
+                // ("given what you're building…"), and replies and chips said Hiizzy and
+                // MyJE back to the people they were about. The note is a brief: it picks
+                // and orders what Jonson says, the way a briefed colleague brings the right
+                // examples without saying how they knew. AskController::hiddenNoteTerms
+                // and ClaimCheck enforce it in code; this is the instruction.
+                ? "- Use what you know about them SILENTLY. Let it choose the work you lead with, the angle you "
+                    . "take and the depth you pitch at — the way a well-briefed person brings exactly the right "
+                    . "examples without ever saying how they knew. Never name anything you know only from the note "
+                    . "— their company, product, project, sector, situation or plans — and never point at it "
+                    . "indirectly either (what they're building, working on, wrestling with): it enters the "
+                    . "conversation only once THEY have said it. Talk about your own work and experience, chosen "
+                    . "for them. Don't recite the note, list facts about them back at them, or say you were "
+                    . "briefed, given notes or sent a link.\n"
                 : "- Treat them as someone you invited and are glad to see, and let what they ask tell "
                     . "you the rest — ask, rather than assume, what brings them here. What you must NOT "
                     . "do is say you were briefed, given notes or sent a link.\n")
@@ -3389,8 +3471,10 @@ class AskController extends Controller
             . $theirWork
             . $theirQuotes
             . "- Your [[next:]] onward prompts are the questions THIS person would ask next, given who they "
-            . "are and what they're weighing up — never generic ones. Tailoring them doesn't lift the "
-            . "citation rule: each still ends with its @source, or it's dropped before they see it.\n"
+            . "are and what they're weighing up — never generic ones — asked about YOUR work and experience, "
+            . "in words they could have chosen. Like your replies, they never name anything from your note "
+            . "that they haven't said themselves. Tailoring them doesn't lift the citation rule: each still "
+            . "ends with its @source, or it's dropped before they see it.\n"
             . "- They were invited, so the moment to connect can come a little sooner than it would for a "
             . "stranger — but still only at a genuine ready-to-act beat, and still once.\n"
             . ($hasNote

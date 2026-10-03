@@ -63,6 +63,53 @@ class ClaimCheck extends Component
     }
 
     /**
+     * Names in the answer's prose that Jonson knows only from a VIP's private note
+     * (AskController::hiddenNoteTerms) — the note shapes what's said, it is never said
+     * back. Matched as written, case and all: "an energy app" is ordinary prose, "the
+     * Department of Energy" is the note's. Chips are not prose (see withoutNoteChips).
+     *
+     * @param string[] $terms
+     * @return array<array{name: string, problem: string}>
+     */
+    public function noteFindings(string $answer, array $terms): array
+    {
+        $text = $this->plain($answer);
+        $found = [];
+        foreach ($terms as $term) {
+            if (preg_match('/(?<![\p{L}\p{N}])' . preg_quote($term, '/') . '(?![\p{L}\p{N}])/u', $text)) {
+                $found[] = ['name' => $term, 'problem' => "names \"$term\", which you know only from your private note on this visitor and they haven't said themselves; use the note to choose what you say, never to name it or hint at it"];
+            }
+        }
+
+        return $found;
+    }
+
+    /**
+     * The answer with any [[next: …]] chip that names a note-only term removed — a chip
+     * is a question put in the visitor's mouth, and "…like MyJE?" told Réka what Jon had
+     * written about her. The rest of the block stands; an emptied block goes.
+     *
+     * @param string[] $terms
+     */
+    public function withoutNoteChips(string $answer, array $terms): string
+    {
+        if (!$terms || !preg_match('/\[\[next:([^\]]*)\]\]/u', $answer, $m, PREG_OFFSET_CAPTURE)) {
+            return $answer;
+        }
+        $kept = array_filter(array_map('trim', explode('|', $m[1][0])), function (string $chip) use ($terms): bool {
+            foreach ($terms as $term) {
+                if (preg_match('/(?<![\p{L}\p{N}])' . preg_quote($term, '/') . '(?![\p{L}\p{N}])/u', $chip)) {
+                    return false;
+                }
+            }
+            return $chip !== '';
+        });
+        $block = $kept ? '[[next: ' . implode(' | ', $kept) . ']]' : '';
+
+        return rtrim(substr($answer, 0, $m[0][1]) . $block . substr($answer, $m[0][1] + strlen($m[0][0])));
+    }
+
+    /**
      * The findings as one line each — for logs and tools/jonson/claims.php.
      *
      * @return string[]
